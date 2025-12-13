@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Estados posibles de un usuario
+enum UserStatus {
+  PENDING_VERIFICATION
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+// Roles de usuario
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+// Modelo de Usuario
+model User {
+  id                String      @id @default(cuid())
+  email             String      @unique
+  name              String
+  password          String
+  role              UserRole    @default(USER)
+  status            UserStatus  @default(PENDING_VERIFICATION)
+  
+  emailVerified     Boolean     @default(false)
+  verificationToken String?     @unique
+  tokenExpiry       DateTime?
+  
+  approvedBy        String?
+  approvedAt        DateTime?
+  rejectedBy        String?
+  rejectedAt        DateTime?
+  rejectionReason   String?
+  
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  lastLoginAt       DateTime?
+  
+  approvedByAdmin   User?       @relation("ApprovedUsers", fields: [approvedBy], references: [id])
+  approvedUsers     User[]      @relation("ApprovedUsers")
+  rejectedByAdmin   User?       @relation("RejectedUsers", fields: [rejectedBy], references: [id])
+  rejectedUsers     User[]      @relation("RejectedUsers")
+  
+  @@index([email])
+  @@index([status])
+  @@index([verificationToken])
+}
+
+model EmailLog {
+  id          String   @id @default(cuid())
+  to          String
+  subject     String
+  template    String
+  sentAt      DateTime @default(now())
+  success     Boolean
+  errorMsg    String?
+  
+  @@index([to])
+  @@index([sentAt])
+}

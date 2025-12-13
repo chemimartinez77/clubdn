@@ -1,0 +1,296 @@
+// server/src/controllers/authController.ts
+import { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
+import { prisma } from '../config/database';
+import {
+  sendVerificationEmail,
+  sendAdminNotification,
+} from '../services/emailService';
+
+/**
+ * Registro de nuevo usuario
+ * POST /api/auth/register
+ */
+export const register = async (req: Request, res: Response) => {
+  try {
+    const { name, email, password } = req.body;
+
+    // Verificar si el email ya existe
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Este email ya está registrado',
+      });
+    }
+
+    // Hash del password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Generar token de verificación
+    const verificationToken = randomUUID();
+    const tokenExpiry = new Date();
+    tokenExpiry.setHours(tokenExpiry.getHours() + 24); // 24 horas
+
+    // Crear usuario
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        verificationToken,
+        tokenExpiry,
+        status: 'PENDING_VERIFICATION',
+      },
+    });
+
+    // Enviar email de verificación
+    await sendVerificationEmail(email, name, verificationToken);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Registro exitoso. Por favor, verifica tu email.',
+      data: {
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error('Error en registro:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al procesar el registro',
+    });
+  }
+};
+
+/**
+ * Verificación de email
+ * GET /api/auth/verify-email?token=xxx
+ */
+export const verifyEmail = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.query;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Token de verificación no proporcionado',
+      });
+    }
+
+    // Buscar usuario por token
+    const user = await prisma.user.findFirst({
+      where: {
+        verificationToken: token,
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token de verificación inválido',
+      });
+    }
+
+    // Verificar que el token no haya expirado
+    if (user.tokenExpiry && user.tokenExpiry < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: 'El token de verificación ha expirado',
+      });
+    }
+
+    // Actualizar usuario
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        status: 'PENDING_APPROVAL',
+        verificationToken: null,
+        tokenExpiry: null,
+      },
+    });
+
+    // Obtener email del admin por defecto
+    const defaultAdminEmail = process.env.DEFAULT_ADMIN_EMAIL;
+
+    if (defaultAdminEmail) {
+      // Enviar notificación al admin
+      await sendAdminNotification(defaultAdminEmail, user.name, user.email);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message:
+        'Email verificado exitosamente. Tu solicitud será revisada por un administrador.',
+    });
+  } catch (error) {
+    console.error('Error en verificación de email:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al verificar el email',
+    });
+  }
+};
+
+/**
+ * Obtener usuario actual
+ * GET /api/auth/me
+ */
+export const getCurrentUser = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'No autenticado',
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        emailVerified: true,
+        createdAt: true,
+        lastLoginAt: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: { user },
+    });
+  } catch (error) {
+    console.error('Error al obtener usuario actual:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener usuario',
+    });
+  }
+};
+
+/**
+ * Login de usuario
+ * POST /api/auth/login
+ */
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+
+    // Buscar usuario por email
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Credenciales inválidas',
+      });
+    }
+
+    // Verificar password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Credenciales inválidas',
+      });
+    }
+
+    // Verificar estado del usuario
+    if (user.status === 'PENDING_VERIFICATION') {
+      return res.status(403).json({
+        success: false,
+        message: 'Debes verificar tu email antes de iniciar sesión',
+      });
+    }
+
+    if (user.status === 'PENDING_APPROVAL') {
+      return res.status(403).json({
+        success: false,
+        message: 'Tu solicitud está pendiente de aprobación por un administrador',
+      });
+    }
+
+    if (user.status === 'REJECTED') {
+      return res.status(403).json({
+        success: false,
+        message: 'Tu solicitud fue rechazada. Contacta al administrador para más información',
+      });
+    }
+
+    if (user.status === 'SUSPENDED') {
+      return res.status(403).json({
+        success: false,
+        message: 'Tu cuenta está suspendida. Contacta al administrador',
+      });
+    }
+
+    // Solo usuarios APPROVED pueden iniciar sesión
+    if (user.status !== 'APPROVED') {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permiso para acceder',
+      });
+    }
+
+    // Generar JWT token
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET!,
+      {
+        expiresIn: process.env.JWT_EXPIRATION || '7d',
+      }
+    );
+
+    // Actualizar último login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          status: user.status,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Error en login:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al iniciar sesión',
+    });
+  }
+};
