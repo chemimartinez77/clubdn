@@ -100,8 +100,6 @@ async function main() {
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
-  const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-  const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
   // Obtener el admin para registrar como quien aprobó y registró pagos
   const admin = await prisma.user.findFirst({
@@ -160,7 +158,7 @@ async function main() {
       ? new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000) // 1 año después
       : null;
 
-    const membership = await prisma.membership.create({
+    await prisma.membership.create({
       data: {
         userId: user.id,
         type: userData.membershipType,

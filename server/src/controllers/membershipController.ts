@@ -135,7 +135,7 @@ export const createMembership = async (req: Request, res: Response): Promise<voi
 
     const membership = await prisma.membership.create({
       data: {
-        userId,
+        userId: userId!,
         type,
         monthlyFee,
         startDate: now,
@@ -321,7 +321,7 @@ export const registerPayment = async (req: Request, res: Response): Promise<void
  * GET /api/membership/payment-status
  * Ver estado de pagos de todos los usuarios
  */
-export const getPaymentStatus = async (req: Request, res: Response): Promise<void> => {
+export const getPaymentStatus = async (_req: Request, res: Response): Promise<void> => {
   try {
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
