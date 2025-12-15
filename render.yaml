@@ -27,13 +27,15 @@ services:
   # Frontend Web
   - type: web
     name: clubdn-web
-    env: static
+    env: node
+    region: frankfurt
+    plan: free
     buildCommand: cd client && npm install && npm run build
-    staticPublishPath: ./client/dist
+    startCommand: cd client && npm start
     envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
       - key: VITE_API_URL
         sync: false
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
