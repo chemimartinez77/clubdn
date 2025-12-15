@@ -22,7 +22,10 @@
       "Bash(npx prisma:*)",
       "Bash(del check-user.ts)",
       "Bash(npm run build:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)"
     ]
   }
 }
