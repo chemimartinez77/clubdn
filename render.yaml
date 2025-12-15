@@ -1,6 +1,9 @@
+yaml: |
+  spec: v1
+
 services:
   # ------------------------------------
-  # 1. Backend API (Node.js) - Se queda en 'services'
+  # 1. Backend API (Node.js)
   # ------------------------------------
   - type: web
     name: clubdn-api
@@ -27,15 +30,13 @@ services:
     healthCheckPath: /api/health
 
 # ------------------------------------
-# 2. Frontend Web (React) - SECCIÓN NUEVA
+# 2. Frontend Web (React)
 # ------------------------------------
 staticSites:
   - name: clubdn-web
-    # No hace falta 'type' ni 'env', la sección ya indica que es estático
     region: frankfurt
     plan: free
     buildCommand: cd client && npm install && npm run build
-    # IMPORTANTE: La carpeta donde Vite genera los archivos
     publishPath: client/dist
     envVars:
       - key: NODE_ENV
@@ -45,7 +46,6 @@ staticSites:
           type: web
           name: clubdn-api
           envVarKey: RENDER_EXTERNAL_URL
-    # Regla de reescritura para React Router
     routes:
       - type: rewrite
         source: /**
