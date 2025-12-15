@@ -18,17 +18,39 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-const allowedOrigins = process.env.CLIENT_URL
+const allowedOrigins: (string | RegExp)[] = process.env.CLIENT_URL
   ? [process.env.CLIENT_URL]
   : ['http://localhost:5173', 'http://localhost:5174'];
 
-// En producción, también permitir el dominio de Render
+// En producción, permitir dominios de deployment
 if (process.env.NODE_ENV === 'production') {
   allowedOrigins.push('https://clubdn-web.onrender.com');
+  // Permitir cualquier dominio de Vercel
+  if (process.env.VERCEL) {
+    allowedOrigins.push(/\.vercel\.app$/);
+  }
 }
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Permitir requests sin origin (como mobile apps o curl)
+    if (!origin) return callback(null, true);
+
+    // Verificar si el origin está en la lista de permitidos
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return allowed === origin;
+      }
+      // Si es una RegExp
+      return allowed.test(origin);
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 
