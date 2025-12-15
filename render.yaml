@@ -1,3 +1,8 @@
+databases:
+  - name: clubdn-db
+    plan: free
+    region: frankfurt
+
 services:
   # Backend API
   - type: web
@@ -13,7 +18,9 @@ services:
       - key: PORT
         value: 10000
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: clubdn-db
+          property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: CLIENT_URL
