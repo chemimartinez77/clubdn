@@ -5,9 +5,8 @@ services:
     env: docker
     plan: free
     region: frankfurt
-    databases:
-      - name: clubdn
-        user: clubdn
+    databaseName: clubdn
+    databaseUser: clubdn
 
   # Backend API
   - type: web
