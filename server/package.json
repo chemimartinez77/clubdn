@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
+    "@prisma/client": "^6.10.0",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
@@ -9,11 +10,11 @@
     "express": "^5.2.1",
     "express-validator": "^7.3.1",
     "jsonwebtoken": "^9.0.3",
+    "prisma": "^6.10.0",
     "resend": "^6.6.0",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
-    "@prisma/client": "^6.10.0",
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
@@ -21,7 +22,6 @@
     "@types/node": "^25.0.1",
     "@types/xml2js": "^0.4.14",
     "nodemon": "^3.1.11",
-    "prisma": "^6.10.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
@@ -31,10 +31,11 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --exec tsx src/index.ts",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "start": "node dist/index.js",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:migrate:dev": "prisma migrate dev",
     "prisma:studio": "prisma studio"
   },
   "keywords": [],
