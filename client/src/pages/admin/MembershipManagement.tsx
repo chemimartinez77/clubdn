@@ -239,7 +239,7 @@ export default function MembershipManagement() {
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Acciones
                       </th>
-                      {MONTHS.map((month, index) => (
+                      {MONTHS.map((month) => (
                         <th key={month} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                           {month}
                         </th>
