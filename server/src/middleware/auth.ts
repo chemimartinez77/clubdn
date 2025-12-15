@@ -13,15 +13,16 @@ export const authenticate = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
 
     if (!token) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: 'Token no proporcionado'
       });
+      return;
     }
 
     const decoded = jwt.verify(
@@ -34,7 +35,7 @@ export const authenticate = async (
 
     next();
   } catch (error) {
-    return res.status(401).json({
+    res.status(401).json({
       success: false,
       message: 'Token inválido o expirado'
     });
@@ -45,12 +46,13 @@ export const requireAdmin = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
-    return res.status(403).json({
+    res.status(403).json({
       success: false,
       message: 'Acceso denegado. Se requieren permisos de administrador.'
     });
+    return;
   }
   next();
 };

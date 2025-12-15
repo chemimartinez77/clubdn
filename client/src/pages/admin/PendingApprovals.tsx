@@ -4,6 +4,7 @@ import Layout from '../../components/layout/Layout';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { useAdminUsers } from '../../hooks/useAdminUsers';
+import { useToast } from '../../hooks/useToast';
 import ApproveUserModal from '../../components/admin/ApproveUserModal';
 import RejectUserModal from '../../components/admin/RejectUserModal';
 
@@ -15,6 +16,7 @@ interface SelectedUser {
 
 export default function PendingApprovals() {
   const { pendingUsers, isLoading, error, refetch, approveUser, rejectUser, isApproving, isRejecting } = useAdminUsers();
+  const { success, error: showError } = useToast();
   const [selectedUser, setSelectedUser] = useState<SelectedUser | null>(null);
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
@@ -29,12 +31,26 @@ export default function PendingApprovals() {
     setRejectModalOpen(true);
   };
 
-  const handleConfirmApprove = (userId: string, customMessage?: string) => {
-    approveUser({ userId, customMessage });
+  const handleConfirmApprove = async (userId: string, customMessage?: string) => {
+    try {
+      await approveUser({ userId, customMessage });
+      success('Usuario aprobado exitosamente');
+      setApproveModalOpen(false);
+      setSelectedUser(null);
+    } catch (err) {
+      showError('Error al aprobar usuario');
+    }
   };
 
-  const handleConfirmReject = (userId: string, reason?: string, customMessage?: string) => {
-    rejectUser({ userId, reason, customMessage });
+  const handleConfirmReject = async (userId: string, reason?: string, customMessage?: string) => {
+    try {
+      await rejectUser({ userId, reason, customMessage });
+      success('Usuario rechazado');
+      setRejectModalOpen(false);
+      setSelectedUser(null);
+    } catch (err) {
+      showError('Error al rechazar usuario');
+    }
   };
 
   const formatDate = (dateString: string) => {

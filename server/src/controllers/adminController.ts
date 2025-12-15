@@ -7,10 +7,10 @@ import {
 } from '../services/emailService';
 
 /**
- * Listar solicitudes pendientes de aprobación
+ * Listar solicitudes pendientes de aprobaciï¿½n
  * GET /api/admin/pending-approvals
  */
-export const getPendingApprovals = async (req: Request, res: Response) => {
+export const getPendingApprovals = async (_req: Request, res: Response) => {
   try {
     const pendingUsers = await prisma.user.findMany({
       where: {
@@ -70,11 +70,11 @@ export const approveUser = async (req: Request, res: Response) => {
       });
     }
 
-    // Verificar que esté pendiente de aprobación
+    // Verificar que estï¿½ pendiente de aprobaciï¿½n
     if (user.status !== 'PENDING_APPROVAL') {
       return res.status(400).json({
         success: false,
-        message: 'Este usuario no está pendiente de aprobación',
+        message: 'Este usuario no estï¿½ pendiente de aprobaciï¿½n',
       });
     }
 
@@ -88,7 +88,7 @@ export const approveUser = async (req: Request, res: Response) => {
       },
     });
 
-    // Enviar email de aprobación
+    // Enviar email de aprobaciï¿½n
     await sendApprovalEmail(user.email, user.name, customMessage);
 
     return res.status(200).json({
@@ -133,11 +133,11 @@ export const rejectUser = async (req: Request, res: Response) => {
       });
     }
 
-    // Verificar que esté pendiente de aprobación
+    // Verificar que estï¿½ pendiente de aprobaciï¿½n
     if (user.status !== 'PENDING_APPROVAL') {
       return res.status(400).json({
         success: false,
-        message: 'Este usuario no está pendiente de aprobación',
+        message: 'Este usuario no estï¿½ pendiente de aprobaciï¿½n',
       });
     }
 

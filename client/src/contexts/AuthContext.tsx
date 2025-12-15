@@ -1,56 +1,99 @@
 // client/src/contexts/AuthContext.tsx
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext } from 'react';
+import type { ReactNode } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api/axios';
-import type { User, AuthContextType, LoginData, ApiResponse } from '../types/auth';
+import type { User, LoginData, ApiResponse } from '../types/auth';
+
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  refetchUser: () => void;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    // Cargar usuario y token del localStorage al iniciar
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+  // Query para obtener el usuario actual
+  const {
+    data: user = null,
+    isLoading,
+    refetch: refetchUser
+  } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      try {
+        const response = await api.get<ApiResponse<{ user: User }>>('/api/auth/me');
+        return response.data.data?.user || null;
+      } catch (error) {
+        // Si falla la autenticación, limpiar el token
+        localStorage.removeItem('token');
+        return null;
+      }
+    },
+    enabled: !!localStorage.getItem('token'),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    retry: false
+  });
+
+  // Mutation para login
+  const loginMutation = useMutation({
+    mutationFn: async ({ email, password }: LoginData) => {
+      const response = await api.post<ApiResponse<{ token: string; user: User }>>(
+        '/api/auth/login',
+        { email, password }
+      );
+      return response.data.data;
+    },
+    onSuccess: (data) => {
+      if (data) {
+        localStorage.setItem('token', data.token);
+        queryClient.setQueryData(['currentUser'], data.user);
+      }
     }
+  });
 
-    setIsLoading(false);
-  }, []);
+  // Mutation para logout
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      localStorage.removeItem('token');
+      queryClient.clear();
+    },
+    onSuccess: () => {
+      navigate('/login');
+    }
+  });
 
   const login = async (email: string, password: string) => {
-    const loginData: LoginData = { email, password };
-    const response = await api.post<ApiResponse<{ token: string; user: User }>>(
-      '/api/auth/login',
-      loginData
-    );
-
-    if (response.data.success && response.data.data) {
-      const { token, user } = response.data.data;
-      setToken(token);
-      setUser(user);
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-    }
+    await loginMutation.mutateAsync({ email, password });
   };
 
   const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    logoutMutation.mutate();
   };
 
-  return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value: AuthContextType = {
+    user,
+    isLoading,
+    isAuthenticated: !!user,
+    isAdmin: user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN',
+    login,
+    logout,
+    refetchUser
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

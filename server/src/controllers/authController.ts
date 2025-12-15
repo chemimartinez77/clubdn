@@ -8,6 +8,7 @@ import {
   sendVerificationEmail,
   sendAdminNotification,
 } from '../services/emailService';
+import { logLoginAttempt } from '../services/loginAttemptService';
 
 /**
  * Registro de nuevo usuario
@@ -201,6 +202,12 @@ export const login = async (req: Request, res: Response) => {
     });
 
     if (!user) {
+      await logLoginAttempt({
+        email,
+        success: false,
+        failureReason: 'invalid_credentials',
+        req
+      });
       return res.status(401).json({
         success: false,
         message: 'Credenciales inválidas',
@@ -211,6 +218,13 @@ export const login = async (req: Request, res: Response) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
+      await logLoginAttempt({
+        email,
+        success: false,
+        failureReason: 'invalid_password',
+        userId: user.id,
+        req
+      });
       return res.status(401).json({
         success: false,
         message: 'Credenciales inválidas',
@@ -219,6 +233,13 @@ export const login = async (req: Request, res: Response) => {
 
     // Verificar estado del usuario
     if (user.status === 'PENDING_VERIFICATION') {
+      await logLoginAttempt({
+        email,
+        success: false,
+        failureReason: 'pending_verification',
+        userId: user.id,
+        req
+      });
       return res.status(403).json({
         success: false,
         message: 'Debes verificar tu email antes de iniciar sesión',
@@ -226,6 +247,13 @@ export const login = async (req: Request, res: Response) => {
     }
 
     if (user.status === 'PENDING_APPROVAL') {
+      await logLoginAttempt({
+        email,
+        success: false,
+        failureReason: 'pending_approval',
+        userId: user.id,
+        req
+      });
       return res.status(403).json({
         success: false,
         message: 'Tu solicitud está pendiente de aprobación por un administrador',
@@ -233,6 +261,13 @@ export const login = async (req: Request, res: Response) => {
     }
 
     if (user.status === 'REJECTED') {
+      await logLoginAttempt({
+        email,
+        success: false,
+        failureReason: 'rejected',
+        userId: user.id,
+        req
+      });
       return res.status(403).json({
         success: false,
         message: 'Tu solicitud fue rechazada. Contacta al administrador para más información',
@@ -240,6 +275,13 @@ export const login = async (req: Request, res: Response) => {
     }
 
     if (user.status === 'SUSPENDED') {
+      await logLoginAttempt({
+        email,
+        success: false,
+        failureReason: 'suspended',
+        userId: user.id,
+        req
+      });
       return res.status(403).json({
         success: false,
         message: 'Tu cuenta está suspendida. Contacta al administrador',
@@ -248,6 +290,13 @@ export const login = async (req: Request, res: Response) => {
 
     // Solo usuarios APPROVED pueden iniciar sesión
     if (user.status !== 'APPROVED') {
+      await logLoginAttempt({
+        email,
+        success: false,
+        failureReason: 'not_approved',
+        userId: user.id,
+        req
+      });
       return res.status(403).json({
         success: false,
         message: 'No tienes permiso para acceder',
@@ -255,22 +304,29 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Generar JWT token
+    const jwtExpiration = (process.env.JWT_EXPIRATION || '7d') as jwt.SignOptions['expiresIn'];
     const token = jwt.sign(
       {
         userId: user.id,
         email: user.email,
         role: user.role,
       },
-      process.env.JWT_SECRET!,
-      {
-        expiresIn: process.env.JWT_EXPIRATION || '7d',
-      }
+      process.env.JWT_SECRET as jwt.Secret,
+      { expiresIn: jwtExpiration }
     );
 
     // Actualizar último login
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
+    });
+
+    // Registrar login exitoso
+    await logLoginAttempt({
+      email,
+      success: true,
+      userId: user.id,
+      req
     });
 
     return res.status(200).json({
@@ -278,16 +334,27 @@ export const login = async (req: Request, res: Response) => {
       data: {
         token,
         user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          status: user.status,
+          id: updatedUser.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          status: updatedUser.status,
+          createdAt: updatedUser.createdAt.toISOString(),
+          lastLoginAt: updatedUser.lastLoginAt?.toISOString() || null,
         },
       },
     });
   } catch (error) {
     console.error('Error en login:', error);
+
+    // Registrar error del servidor
+    await logLoginAttempt({
+      email: req.body.email || 'unknown',
+      success: false,
+      failureReason: 'server_error',
+      req
+    });
+
     return res.status(500).json({
       success: false,
       message: 'Error al iniciar sesión',

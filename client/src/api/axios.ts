@@ -1,16 +1,25 @@
 // client/src/api/axios.ts
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const normalizeBaseUrl = (url?: string) => {
+  if (!url) return undefined;
+  return url.endsWith('/') ? url.slice(0, -1) : url;
+};
+
+const defaultBaseUrl = import.meta.env.DEV
+  ? 'http://localhost:5000'
+  : (typeof window !== 'undefined' ? window.location.origin : undefined);
+
+const API_URL = normalizeBaseUrl(import.meta.env.VITE_API_URL) ?? normalizeBaseUrl(defaultBaseUrl) ?? '';
 
 export const api = axios.create({
   baseURL: API_URL,
   headers: {
-    'Content-Type': 'application/json',
-  },
+    'Content-Type': 'application/json'
+  }
 });
 
-// Interceptor para aÒadir el token JWT a todas las peticiones
+// Interceptor para aÔøΩadir el token JWT a todas las peticiones
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -29,10 +38,14 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token inv·lido o expirado
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // No redirigir si es un intento de login fallido
+      const isLoginAttempt = error.config?.url?.includes('/api/auth/login');
+
+      if (!isLoginAttempt) {
+        // Token inv√°lido o expirado
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

@@ -1,0 +1,43 @@
+interface EmailOptions {
+    to: string;
+    subject: string;
+    html: string;
+    template: string;
+}
+/**
+ * Función base para enviar emails
+ */
+export declare const sendEmail: (options: EmailOptions) => Promise<{
+    success: boolean;
+    messageId: string;
+}>;
+/**
+ * Email de verificación de cuenta
+ */
+export declare const sendVerificationEmail: (email: string, name: string, token: string) => Promise<{
+    success: boolean;
+    messageId: string;
+}>;
+/**
+ * Notificación al admin de nueva solicitud
+ */
+export declare const sendAdminNotification: (adminEmail: string, userName: string, userEmail: string) => Promise<{
+    success: boolean;
+    messageId: string;
+}>;
+/**
+ * Email de aprobación de solicitud
+ */
+export declare const sendApprovalEmail: (email: string, name: string, customMessage?: string) => Promise<{
+    success: boolean;
+    messageId: string;
+}>;
+/**
+ * Email de rechazo de solicitud
+ */
+export declare const sendRejectionEmail: (email: string, name: string, reason?: string, customMessage?: string) => Promise<{
+    success: boolean;
+    messageId: string;
+}>;
+export {};
+//# sourceMappingURL=emailService.d.ts.map

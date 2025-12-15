@@ -5,6 +5,11 @@ import dotenv from 'dotenv';
 import { prisma } from './config/database';
 import authRoutes from './routes/authRoutes';
 import adminRoutes from './routes/adminRoutes';
+import statsRoutes from './routes/statsRoutes';
+import profileRoutes from './routes/profileRoutes';
+import eventRoutes from './routes/eventRoutes';
+import bggRoutes from './routes/bggRoutes';
+import membershipRoutes from './routes/membershipRoutes';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -41,6 +46,11 @@ app.get('/api/health', (_req, res) => {
 // Rutas de autenticación y administración
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/bgg', bggRoutes);
+app.use('/api/membership', membershipRoutes);
 
 // Ruta 404
 app.use((_req, res) => {

@@ -1,5 +1,5 @@
 // server/src/routes/authRoutes.ts
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { body } from 'express-validator';
 import { register, verifyEmail, login, getCurrentUser } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
@@ -32,7 +32,7 @@ router.post(
       .matches(/[0-9]/)
       .withMessage('La contraseña debe contener al menos un número'),
   ],
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     // Verificar errores de validación
     const { validationResult } = await import('express-validator');
     const errors = validationResult(req);
@@ -77,7 +77,7 @@ router.post(
       .notEmpty()
       .withMessage('La contraseña es requerida'),
   ],
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     // Verificar errores de validación
     const { validationResult } = await import('express-validator');
     const errors = validationResult(req);

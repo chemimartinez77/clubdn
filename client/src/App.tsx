@@ -1,11 +1,19 @@
 // client/src/App.tsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import VerifyEmail from './pages/VerifyEmail';
 import Home from './pages/Home';
+import Profile from './pages/Profile';
+import Events from './pages/Events';
+import EventDetail from './pages/EventDetail';
+import CreatePartida from './pages/CreatePartida';
 import PendingApprovals from './pages/admin/PendingApprovals';
+import AdminDashboard from './pages/admin/Dashboard';
+import EventManagement from './pages/admin/EventManagement';
+import MembershipManagement from './pages/admin/MembershipManagement';
 import AdminRoute from './components/routes/AdminRoute';
 
 // Componente para rutas protegidas
@@ -49,8 +57,9 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
+      <ToastProvider position="top-right">
+        <AuthProvider>
+          <Routes>
           {/* Rutas públicas */}
           <Route
             path="/register"
@@ -79,8 +88,50 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Rutas de eventos */}
+          <Route
+            path="/events"
+            element={
+              <ProtectedRoute>
+                <Events />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/crear-partida"
+            element={
+              <ProtectedRoute>
+                <CreatePartida />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/:id"
+            element={
+              <ProtectedRoute>
+                <EventDetail />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Rutas de administración */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
           <Route
             path="/admin/pending-approvals"
             element={
@@ -89,11 +140,28 @@ function App() {
               </AdminRoute>
             }
           />
+          <Route
+            path="/admin/events"
+            element={
+              <AdminRoute>
+                <EventManagement />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/membership"
+            element={
+              <AdminRoute>
+                <MembershipManagement />
+              </AdminRoute>
+            }
+          />
 
           {/* Ruta por defecto */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </AuthProvider>
+        </AuthProvider>
+      </ToastProvider>
     </BrowserRouter>
   );
 }

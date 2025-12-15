@@ -13,14 +13,18 @@ export interface User {
   email: string;
   role: UserRole;
   status: UserStatus;
+  createdAt?: string;
+  lastLoginAt?: string | null;
 }
 
 export interface AuthContextType {
   user: User | null;
-  token: string | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  isLoading: boolean;
+  refetchUser: () => void;
 }
 
 export interface RegisterData {

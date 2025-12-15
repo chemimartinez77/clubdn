@@ -23,6 +23,12 @@ enum UserRole {
   SUPER_ADMIN
 }
 
+// Tipos de membresía
+enum MembershipType {
+  COLABORADOR  // 15€/mes, sin llave
+  SOCIO        // 19€/mes, con llave, requiere 1 año como COLABORADOR + aprobación
+}
+
 // Modelo de Usuario
 model User {
   id                String      @id @default(cuid())
@@ -50,10 +56,47 @@ model User {
   approvedUsers     User[]      @relation("ApprovedUsers")
   rejectedByAdmin   User?       @relation("RejectedUsers", fields: [rejectedBy], references: [id])
   rejectedUsers     User[]      @relation("RejectedUsers")
-  
+
+  profile           UserProfile?
+  organizedEvents   Event[]              @relation("EventOrganizer")
+  eventRegistrations EventRegistration[]
+  membership        Membership?
+  payments          Payment[]
+  loginAttempts     LoginAttempt[]
+
   @@index([email])
   @@index([status])
   @@index([verificationToken])
+}
+
+// Perfil extendido de usuario
+model UserProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Información personal
+  avatar          String?  // URL o path del avatar
+  phone           String?
+  birthDate       DateTime?
+  bio             String?  @db.Text
+
+  // Preferencias de juegos
+  favoriteGames   String[] // Array de nombres de juegos favoritos
+  playStyle       String?  // Competitivo, Casual, Social, etc.
+
+  // Social
+  discord         String?
+  telegram        String?
+
+  // Configuración
+  notifications   Boolean  @default(true)
+  emailUpdates    Boolean  @default(true)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model EmailLog {
@@ -64,7 +107,163 @@ model EmailLog {
   sentAt      DateTime @default(now())
   success     Boolean
   errorMsg    String?
-  
+
   @@index([to])
   @@index([sentAt])
+}
+
+// Registro de intentos de login
+model LoginAttempt {
+  id          String   @id @default(cuid())
+  email       String
+  ipAddress   String?
+  userAgent   String?
+  success     Boolean
+  failureReason String?  // "invalid_credentials", "pending_verification", "pending_approval", "rejected", "suspended"
+  userId      String?   // Solo si el login fue exitoso o si el usuario existe
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attemptedAt DateTime @default(now())
+
+  @@index([email])
+  @@index([ipAddress])
+  @@index([success])
+  @@index([attemptedAt])
+  @@index([userId])
+}
+
+// Tipos de eventos
+enum EventType {
+  PARTIDA
+  TORNEO
+  OTROS
+}
+
+// Estados de eventos
+enum EventStatus {
+  SCHEDULED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+// Estados de registro
+enum RegistrationStatus {
+  CONFIRMED
+  CANCELLED
+  WAITLIST
+}
+
+// Modelo de Evento
+model Event {
+  id              String   @id @default(cuid())
+  title           String
+  description     String   @db.Text
+
+  // Tipo de evento
+  type            EventType @default(OTROS)
+
+  // Datos del juego (opcional, para partidas)
+  gameName        String?
+  gameImage       String?
+  bggId           String?
+
+  // Fecha y hora
+  date            DateTime
+  startHour       Int?      // 0-23
+  startMinute     Int?      // 0, 15, 30, 45
+  durationHours   Int?      // Duración estimada en horas
+  durationMinutes Int?      // Duración estimada en minutos
+
+  // Ubicación
+  location        String
+  address         String?
+
+  // Capacidad
+  maxAttendees    Int
+  registrations   EventRegistration[]
+
+  // Estado
+  status          EventStatus @default(SCHEDULED)
+
+  // Organizador
+  createdBy       String
+  organizer       User     @relation("EventOrganizer", fields: [createdBy], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([date])
+  @@index([status])
+  @@index([createdBy])
+  @@index([type])
+}
+
+// Registro a eventos
+model EventRegistration {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status      RegistrationStatus @default(CONFIRMED)
+
+  createdAt   DateTime @default(now())
+
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@index([status])
+}
+
+// Membresía del usuario
+model Membership {
+  id                String         @id @default(cuid())
+  userId            String         @unique
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type              MembershipType @default(COLABORADOR)
+  monthlyFee        Decimal        @default(15.00) @db.Decimal(10, 2)
+
+  // Fechas importantes
+  startDate         DateTime       @default(now())  // Fecha de inicio como miembro
+  becameSocioAt     DateTime?      // Fecha en que pasó a SOCIO (si aplica)
+
+  // Estado de pagos
+  isActive          Boolean        @default(true)   // Si está al día con los pagos
+  lastPaymentDate   DateTime?      // Último pago registrado
+  nextPaymentDue    DateTime?      // Próxima fecha de pago
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([type])
+  @@index([isActive])
+}
+
+// Registro de pagos
+model Payment {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount          Decimal  @db.Decimal(10, 2)
+  month           Int      // 1-12
+  year            Int      // 2024, 2025, etc.
+
+  // Información del pago
+  paymentMethod   String?  // "efectivo", "transferencia", "bizum", etc.
+  reference       String?  // Número de referencia o comprobante
+  notes           String?  @db.Text
+
+  // Registro
+  registeredBy    String   // Admin que registró el pago
+  paidAt          DateTime @default(now())
+
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, month, year]) // Un pago por mes/año por usuario
+  @@index([userId])
+  @@index([year, month])
+  @@index([paidAt])
 }
