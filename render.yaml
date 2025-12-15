@@ -1,6 +1,6 @@
 services:
   # ------------------------------------
-  # 1. Backend API (Node.js)
+  # 1. Backend API (Node.js) - Se queda en 'services'
   # ------------------------------------
   - type: web
     name: clubdn-api
@@ -14,42 +14,38 @@ services:
         value: production
       - key: PORT
         value: 10000
-      # Aquí pegaremos tu URL de Neon manualmente en el dashboard
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
         generateValue: true
-      # Variables para Resend (Email)
       - key: RESEND_API_KEY
         sync: false
       - key: FROM_EMAIL
         sync: false
-      # Configuración del cliente (CORS, etc)
       - key: CLIENT_URL
         sync: false 
     healthCheckPath: /api/health
 
-  # ------------------------------------
-  # 2. Frontend Web (React + Vite)
-  # ------------------------------------
-  - type: static
-    name: clubdn-web
-    env: static
+# ------------------------------------
+# 2. Frontend Web (React) - SECCIÓN NUEVA
+# ------------------------------------
+staticSites:
+  - name: clubdn-web
+    # No hace falta 'type' ni 'env', la sección ya indica que es estático
     region: frankfurt
     plan: free
     buildCommand: cd client && npm install && npm run build
-    # Vite suele generar los archivos en 'dist' dentro de la carpeta del cliente
-    staticPublishPath: client/dist
+    # IMPORTANTE: La carpeta donde Vite genera los archivos
+    publishPath: client/dist
     envVars:
       - key: NODE_ENV
         value: production
-      # Enlazamos automáticamente la URL del backend al frontend
       - key: VITE_API_URL
         fromService:
           type: web
           name: clubdn-api
           envVarKey: RENDER_EXTERNAL_URL
-    # Esta regla es vital para React Router (SPA)
+    # Regla de reescritura para React Router
     routes:
       - type: rewrite
         source: /**
