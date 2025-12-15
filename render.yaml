@@ -26,11 +26,11 @@ services:
         sync: false 
     healthCheckPath: /api/health
 
-# ------------------------------------
-# 2. Frontend Web (React)
-# ------------------------------------
-staticSites:
-  - name: clubdn-web
+  # ------------------------------------
+  # 2. Frontend Web (React)
+  # ------------------------------------
+  - type: static
+    name: clubdn-web
     region: frankfurt
     plan: free
     buildCommand: cd client && npm install && npm run build
