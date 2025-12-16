@@ -18,7 +18,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-dark rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xl">DN</span>
             </div>
             <span className="text-xl font-bold text-gray-900">Club DN</span>
@@ -28,7 +28,7 @@ export default function Header() {
           <nav className="hidden md:flex items-center space-x-6">
             <Link
               to="/"
-              className="text-gray-700 hover:text-purple-600 transition-colors"
+              className="text-gray-700 hover:text-primary transition-colors"
             >
               Inicio
             </Link>
@@ -36,7 +36,7 @@ export default function Header() {
             {isAdmin && (
               <Link
                 to="/admin/pending-approvals"
-                className="text-gray-700 hover:text-purple-600 transition-colors flex items-center gap-1"
+                className="text-gray-700 hover:text-primary transition-colors flex items-center gap-1"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -52,10 +52,10 @@ export default function Header() {
             <div className="relative">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="flex items-center space-x-2 text-gray-700 hover:text-purple-600 transition-colors"
+                className="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors"
               >
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <span className="text-purple-600 font-semibold text-sm">
+                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                  <span className="text-primary font-semibold text-sm">
                     {user?.name.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -81,7 +81,7 @@ export default function Header() {
                     <div className="px-4 py-2 border-b border-gray-200">
                       <p className="text-sm font-medium text-gray-900">{user?.name}</p>
                       <p className="text-xs text-gray-500">{user?.email}</p>
-                      <p className="text-xs text-purple-600 mt-1 font-medium">
+                      <p className="text-xs text-primary mt-1 font-medium">
                         {user?.role === 'ADMIN' ? 'Administrador' : 'Usuario'}
                       </p>
                     </div>
@@ -128,7 +128,7 @@ export default function Header() {
             <nav className="flex flex-col space-y-2">
               <Link
                 to="/"
-                className="px-4 py-2 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg transition-colors"
+                className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Inicio
@@ -137,7 +137,7 @@ export default function Header() {
               {isAdmin && (
                 <Link
                   to="/admin/pending-approvals"
-                  className="px-4 py-2 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg transition-colors flex items-center gap-2"
+                  className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors flex items-center gap-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -146,6 +146,13 @@ export default function Header() {
                   Administración
                 </Link>
               )}
+
+              <div className="border-t border-gray-200 my-2" />
+
+              {/* Theme Selector Mobile */}
+              <div className="px-4 py-2">
+                <ThemeSelector />
+              </div>
 
               <div className="border-t border-gray-200 my-2" />
 
