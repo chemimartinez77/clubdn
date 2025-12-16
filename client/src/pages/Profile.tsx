@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardHeader, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import ThemeSelector from '../components/ThemeSelector';
 import { useToast } from '../hooks/useToast';
 import { api } from '../api/axios';
 import type { UserProfile, UpdateProfileData } from '../types/profile';
@@ -359,14 +360,20 @@ export default function Profile() {
                 {/* Settings */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuración</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <span className={`w-5 h-5 rounded ${profile.notifications ? 'bg-green-500' : 'bg-gray-300'}`}></span>
-                      <span className="text-sm text-gray-700">Notificaciones en la aplicación</span>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <span className={`w-5 h-5 rounded ${profile.notifications ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                        <span className="text-sm text-gray-700">Notificaciones en la aplicación</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`w-5 h-5 rounded ${profile.emailUpdates ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                        <span className="text-sm text-gray-700">Actualizaciones por email</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`w-5 h-5 rounded ${profile.emailUpdates ? 'bg-green-500' : 'bg-gray-300'}`}></span>
-                      <span className="text-sm text-gray-700">Actualizaciones por email</span>
+                    <div className="pt-4 border-t border-gray-200">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Tema de la aplicación</p>
+                      <ThemeSelector />
                     </div>
                   </div>
                 </div>

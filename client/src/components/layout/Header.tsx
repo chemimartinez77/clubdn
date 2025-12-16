@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import ThemeSelector from '../ThemeSelector';
 
 export default function Header() {
   const { user, logout, isAdmin } = useAuth();
@@ -46,9 +45,6 @@ export default function Header() {
                 Administración
               </Link>
             )}
-
-            {/* Theme Selector */}
-            <ThemeSelector />
 
             {/* User Dropdown */}
             <div className="relative">
@@ -148,13 +144,6 @@ export default function Header() {
                   Administración
                 </Link>
               )}
-
-              <div className="border-t border-gray-200 my-2" />
-
-              {/* Theme Selector Mobile */}
-              <div className="px-4 py-2">
-                <ThemeSelector />
-              </div>
 
               <div className="border-t border-gray-200 my-2" />
 
