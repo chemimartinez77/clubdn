@@ -7,8 +7,8 @@ services:
     env: node
     region: frankfurt
     plan: free
-    buildCommand: cd server && npm install --include=dev && npm run build
-    startCommand: cd server && npm run prisma:migrate && npm start
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm run prisma:migrate && npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -34,8 +34,8 @@ services:
     env: node
     region: frankfurt
     plan: free
-    buildCommand: cd client && npm install --include=dev && npm run build
-    startCommand: cd client && node server.js
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: node server.js
     envVars:
       - key: NODE_ENV
         value: production
