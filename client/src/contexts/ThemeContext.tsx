@@ -38,9 +38,9 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     const lighten = (color: string, amount: number) => {
       // Convertir hex a RGB
       const hex = color.replace('#', '');
-      const r = parseInt(hex.substr(0, 2), 16);
-      const g = parseInt(hex.substr(2, 2), 16);
-      const b = parseInt(hex.substr(4, 2), 16);
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
 
       // Mezclar con blanco
       const newR = Math.round(r + (255 - r) * amount);
@@ -52,9 +52,9 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
     const darken = (color: string, amount: number) => {
       const hex = color.replace('#', '');
-      const r = parseInt(hex.substr(0, 2), 16);
-      const g = parseInt(hex.substr(2, 2), 16);
-      const b = parseInt(hex.substr(4, 2), 16);
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
 
       const newR = Math.round(r * (1 - amount));
       const newG = Math.round(g * (1 - amount));
