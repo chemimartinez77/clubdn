@@ -63,7 +63,7 @@ export default function Events() {
               onClick={() => setViewMode('list')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 viewMode === 'list'
-                  ? 'bg-white text-purple-700 shadow-sm'
+                  ? 'bg-white text-[var(--color-primaryDark)] shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -76,7 +76,7 @@ export default function Events() {
               onClick={() => setViewMode('calendar')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 viewMode === 'calendar'
-                  ? 'bg-white text-purple-700 shadow-sm'
+                  ? 'bg-white text-[var(--color-primaryDark)] shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -102,7 +102,7 @@ export default function Events() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar por título, descripción o ubicación..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 />
               </div>
 
@@ -114,7 +114,7 @@ export default function Events() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as EventStatus | '')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
                   <option value="">Todos los estados</option>
                   <option value="SCHEDULED">Programados</option>
@@ -131,7 +131,7 @@ export default function Events() {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)] mx-auto mb-4"></div>
               <p className="text-gray-600">Cargando eventos...</p>
             </div>
           </div>

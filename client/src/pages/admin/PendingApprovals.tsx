@@ -99,7 +99,7 @@ export default function PendingApprovals() {
                 Usuarios Pendientes de Aprobación
               </h2>
               {!isLoading && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[var(--color-primary-100)] text-[var(--color-primary-800)]">
                   {pendingUsers.length} {pendingUsers.length === 1 ? 'usuario' : 'usuarios'}
                 </span>
               )}
@@ -110,7 +110,7 @@ export default function PendingApprovals() {
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)] mx-auto mb-4"></div>
                   <p className="text-gray-600">Cargando solicitudes...</p>
                 </div>
               </div>
@@ -169,8 +169,8 @@ export default function PendingApprovals() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                                <span className="text-purple-600 font-semibold text-sm">
+                              <div className="h-10 w-10 rounded-full bg-[var(--color-primary-100)] flex items-center justify-center">
+                                <span className="text-[var(--color-primary)] font-semibold text-sm">
                                   {user.name.charAt(0).toUpperCase()}
                                 </span>
                               </div>

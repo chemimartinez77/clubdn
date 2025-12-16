@@ -77,7 +77,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Escribe el nombre del juego..."
-                className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 autoFocus
               />
               <svg
@@ -109,7 +109,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)] mx-auto mb-4"></div>
                 <p className="text-gray-600">Buscando juegos en BoardGameGeek...</p>
               </div>
             </div>
@@ -154,7 +154,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                 <button
                   key={game.id}
                   onClick={() => handleSelectGame(game)}
-                  className="flex items-center gap-4 p-3 rounded-lg border border-gray-200 hover:bg-purple-50 hover:border-purple-300 transition-colors text-left"
+                  className="flex items-center gap-4 p-3 rounded-lg border border-gray-200 hover:bg-[var(--color-primary-50)] hover:border-[var(--color-primary-300)] transition-colors text-left"
                 >
                   {game.thumbnail ? (
                     <img
@@ -180,7 +180,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                       <p className="text-sm text-gray-600">{game.yearPublished}</p>
                     )}
                   </div>
-                  <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>

@@ -21,7 +21,7 @@ export default function ThemeSelector() {
                 px-4 py-2 rounded-lg text-sm font-medium transition-all
                 ${
                   isActive
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
+                    ? 'bg-[var(--color-primary)] text-white shadow-lg shadow-purple-500/50'
                     : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 }
               `}

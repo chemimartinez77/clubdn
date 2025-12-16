@@ -50,7 +50,7 @@ export default function AdminDashboard() {
       <Layout>
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)] mx-auto mb-4"></div>
             <p className="text-gray-600">Cargando estadísticas...</p>
           </div>
         </div>
@@ -114,8 +114,8 @@ export default function AdminDashboard() {
                   <p className="text-sm font-medium text-gray-600">Total Usuarios</p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">{stats.userStats.total}</p>
                 </div>
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <svg className="w-8 h-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="p-3 bg-[var(--color-primary-100)] rounded-lg">
+                  <svg className="w-8 h-8 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>
@@ -213,8 +213,8 @@ export default function AdminDashboard() {
                 {stats.recentUsers.map((user) => (
                   <div key={user.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                        <span className="text-purple-600 font-semibold">
+                      <div className="w-10 h-10 bg-[var(--color-primary-100)] rounded-full flex items-center justify-center">
+                        <span className="text-[var(--color-primary)] font-semibold">
                           {user.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
@@ -243,10 +243,10 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
-                <p className="text-sm font-medium text-purple-700 mb-2">Últimos 7 días</p>
-                <p className="text-4xl font-bold text-purple-900">{stats.userStats.newUsers.last7Days}</p>
-                <p className="text-xs text-purple-600 mt-2">nuevos registros</p>
+              <div className="text-center p-6 bg-gradient-to-br from-[var(--color-primary-50)] to-[var(--color-primary-100)] rounded-lg">
+                <p className="text-sm font-medium text-[var(--color-primaryDark)] mb-2">Últimos 7 días</p>
+                <p className="text-4xl font-bold text-[var(--color-primary-900)]">{stats.userStats.newUsers.last7Days}</p>
+                <p className="text-xs text-[var(--color-primary)] mt-2">nuevos registros</p>
               </div>
               <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
                 <p className="text-sm font-medium text-blue-700 mb-2">Últimos 30 días</p>

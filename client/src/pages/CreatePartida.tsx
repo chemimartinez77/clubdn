@@ -110,7 +110,7 @@ export default function CreatePartida() {
                   Elige un juego (opcional)
                 </label>
                 {selectedGame ? (
-                  <div className="flex items-center gap-4 p-4 border border-purple-300 rounded-lg bg-purple-50">
+                  <div className="flex items-center gap-4 p-4 border border-[var(--color-primary-300)] rounded-lg bg-[var(--color-primary-50)]">
                     {selectedGame.image && (
                       <img
                         src={selectedGame.image}
@@ -138,7 +138,7 @@ export default function CreatePartida() {
                   <button
                     type="button"
                     onClick={() => setIsGameModalOpen(true)}
-                    className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-colors text-gray-600 hover:text-purple-700"
+                    className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-[var(--color-primary-400)] hover:bg-[var(--color-primary-50)] transition-colors text-gray-600 hover:text-[var(--color-primaryDark)]"
                   >
                     <svg className="w-6 h-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -160,7 +160,7 @@ export default function CreatePartida() {
                   minLength={3}
                   maxLength={100}
                   defaultValue={selectedGame ? `Partida de ${selectedGame.name}` : ''}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   placeholder="Ej: Partida de Catan"
                 />
               </div>
@@ -175,7 +175,7 @@ export default function CreatePartida() {
                   required
                   minLength={10}
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none"
                   placeholder="Dale a los jugadores más información acerca de la partida..."
                 />
               </div>
@@ -193,14 +193,14 @@ export default function CreatePartida() {
                       name="date"
                       required
                       min={today}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Hora</label>
                     <select
                       name="startHour"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     >
                       <option value="">--</option>
                       {hours.map(hour => (
@@ -214,7 +214,7 @@ export default function CreatePartida() {
                     <label className="block text-xs text-gray-600 mb-1">Minutos</label>
                     <select
                       name="startMinute"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     >
                       <option value="">--</option>
                       {minutes.map(minute => (
@@ -237,7 +237,7 @@ export default function CreatePartida() {
                     <label className="block text-xs text-gray-600 mb-1">Horas</label>
                     <select
                       name="durationHours"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     >
                       <option value="">--</option>
                       {Array.from({ length: 13 }, (_, i) => i).map(hour => (
@@ -249,7 +249,7 @@ export default function CreatePartida() {
                     <label className="block text-xs text-gray-600 mb-1">Minutos</label>
                     <select
                       name="durationMinutes"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     >
                       <option value="">--</option>
                       {minutes.map(minute => (
@@ -270,7 +270,7 @@ export default function CreatePartida() {
                   name="location"
                   required
                   minLength={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   placeholder="Nombre del lugar"
                 />
               </div>
@@ -283,7 +283,7 @@ export default function CreatePartida() {
                 <input
                   type="text"
                   name="address"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   placeholder="Dirección completa"
                 />
               </div>
@@ -300,7 +300,7 @@ export default function CreatePartida() {
                   min={1}
                   max={100}
                   defaultValue={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Incluye el organizador en este número

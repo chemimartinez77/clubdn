@@ -54,12 +54,15 @@ export default function VerifyEmail() {
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 flex items-center justify-center p-4">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
+    >
       <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
         <div className="text-center">
           {status === 'loading' && (
             <>
-              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[var(--color-primary)] mx-auto mb-4"></div>
               <h2 className="text-2xl font-bold text-gray-800 mb-2">
                 Verificando email...
               </h2>
@@ -90,7 +93,7 @@ export default function VerifyEmail() {
               <p className="text-gray-600 mb-6">{message}</p>
               <Link
                 to="/login"
-                className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                className="inline-block bg-[var(--color-primary)] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[var(--color-primaryDark)] transition-colors"
               >
                 Ir al inicio de sesión
               </Link>
@@ -120,7 +123,7 @@ export default function VerifyEmail() {
               <p className="text-gray-600 mb-6">{message}</p>
               <Link
                 to="/register"
-                className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                className="inline-block bg-[var(--color-primary)] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[var(--color-primaryDark)] transition-colors"
               >
                 Volver al registro
               </Link>

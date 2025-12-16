@@ -82,7 +82,7 @@ export default function MembershipManagement() {
       'En tiempo': 'bg-green-100 text-green-800',
       'Pendiente': 'bg-yellow-100 text-yellow-800',
       'Retraso': 'bg-red-100 text-red-800',
-      'Año completo': 'bg-purple-100 text-purple-800'
+      'Año completo': 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]'
     };
     return (
       <span className={`px-2 py-1 text-xs font-semibold rounded ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
@@ -93,7 +93,7 @@ export default function MembershipManagement() {
 
   const getMembershipBadge = (type: MembershipType) => {
     return type === 'SOCIO'
-      ? <span className="px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded">SOCIO</span>
+      ? <span className="px-2 py-1 text-xs font-semibold bg-[var(--color-primary-100)] text-[var(--color-primary-800)] rounded">SOCIO</span>
       : <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded">COLABORADOR</span>;
   };
 
@@ -144,7 +144,7 @@ export default function MembershipManagement() {
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 bg-white"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
                 >
                   {[selectedYear - 1, selectedYear, selectedYear + 1].map(year => (
                     <option key={year} value={year}>{year}</option>
@@ -160,14 +160,14 @@ export default function MembershipManagement() {
                     placeholder="Buscar por nombre..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
                   />
                 </div>
 
                 <select
                   value={membershipFilter}
                   onChange={(e) => setMembershipFilter(e.target.value as 'all' | MembershipType)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 bg-white"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
                 >
                   <option value="all">Cualquier tipo de miembro</option>
                   <option value="COLABORADOR">COLABORADOR</option>
@@ -181,7 +181,7 @@ export default function MembershipManagement() {
                       type="checkbox"
                       checked={statusFilters.nuevo}
                       onChange={() => toggleStatusFilter('nuevo')}
-                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                      className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
                     />
                     <span className="text-sm text-gray-700">Nuevo</span>
                   </label>
@@ -191,7 +191,7 @@ export default function MembershipManagement() {
                       type="checkbox"
                       checked={statusFilters.enTiempo}
                       onChange={() => toggleStatusFilter('enTiempo')}
-                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                      className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
                     />
                     <span className="text-sm text-gray-700">En tiempo</span>
                   </label>
@@ -201,7 +201,7 @@ export default function MembershipManagement() {
                       type="checkbox"
                       checked={statusFilters.pendiente}
                       onChange={() => toggleStatusFilter('pendiente')}
-                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                      className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
                     />
                     <span className="text-sm text-gray-700">Pendiente</span>
                   </label>
@@ -211,7 +211,7 @@ export default function MembershipManagement() {
                       type="checkbox"
                       checked={statusFilters.retraso}
                       onChange={() => toggleStatusFilter('retraso')}
-                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                      className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
                     />
                     <span className="text-sm text-gray-700">Retraso</span>
                   </label>
@@ -282,7 +282,7 @@ export default function MembershipManagement() {
                                 checked={isPaid}
                                 onChange={() => handleTogglePayment(user.id, month)}
                                 disabled={togglePaymentMutation.isPending}
-                                className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 cursor-pointer disabled:opacity-50"
+                                className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)] cursor-pointer disabled:opacity-50"
                               />
                             </td>
                           );

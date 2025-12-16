@@ -27,14 +27,17 @@ export default function WelcomeCard({ user }: WelcomeCardProps) {
   };
 
   return (
-    <Card className="bg-gradient-to-br from-purple-600 to-indigo-700 text-white">
+    <Card
+      className="text-white"
+      style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
+    >
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold mb-1">
               {getGreeting()}, {user.name}!
             </h2>
-            <p className="text-purple-100">
+            <p className="text-white/80">
               Bienvenido al Club DN
             </p>
           </div>
@@ -47,13 +50,13 @@ export default function WelcomeCard({ user }: WelcomeCardProps) {
 
         <div className="mt-6 grid grid-cols-2 gap-4 pt-4 border-t border-white/20">
           <div>
-            <p className="text-purple-200 text-sm">Miembro desde</p>
+            <p className="text-white/70 text-sm">Miembro desde</p>
             <p className="font-medium text-sm">
               {formatDate(user.createdAt)}
             </p>
           </div>
           <div>
-            <p className="text-purple-200 text-sm">Último acceso</p>
+            <p className="text-white/70 text-sm">Último acceso</p>
             <p className="font-medium text-sm">
               {formatDate(user.lastLoginAt)}
             </p>

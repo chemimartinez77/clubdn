@@ -30,17 +30,17 @@ function QuickAction({ to, title, description, icon, enabled = true }: QuickActi
   return (
     <Link
       to={to}
-      className="block p-4 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 transition-colors"
+      className="block p-4 rounded-lg border border-[var(--color-primary-200)] bg-[var(--color-primary-50)] hover:bg-[var(--color-primary-100)] transition-colors"
     >
       <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-purple-100 text-purple-600">
+        <div className="p-2 rounded-lg bg-[var(--color-primary-100)] text-[var(--color-primary)]">
           {icon}
         </div>
         <div className="flex-1">
-          <p className="font-medium text-purple-900">{title}</p>
-          <p className="text-sm text-purple-700">{description}</p>
+          <p className="font-medium text-[var(--color-primary-900)]">{title}</p>
+          <p className="text-sm text-[var(--color-primaryDark)]">{description}</p>
         </div>
-        <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </div>

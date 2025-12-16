@@ -78,7 +78,7 @@ export default function Profile() {
     return (
       <Layout>
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]"></div>
         </div>
       </Layout>
     );
@@ -124,7 +124,10 @@ export default function Profile() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-full flex items-center justify-center">
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center"
+                style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
+              >
                 <span className="text-3xl font-bold text-white">
                   {profile.user?.name.charAt(0).toUpperCase()}
                 </span>
@@ -151,7 +154,7 @@ export default function Profile() {
                         type="tel"
                         value={formData.phone || ''}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                         placeholder="+34 600 000 000"
                       />
                     </div>
@@ -163,7 +166,7 @@ export default function Profile() {
                         type="date"
                         value={formData.birthDate || ''}
                         onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       />
                     </div>
                   </div>
@@ -175,7 +178,7 @@ export default function Profile() {
                       value={formData.bio || ''}
                       onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                       rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       placeholder="Cuéntanos sobre ti..."
                     />
                   </div>
@@ -193,7 +196,7 @@ export default function Profile() {
                         type="text"
                         value={formData.favoriteGames?.join(', ') || ''}
                         onChange={(e) => handleFavoriteGamesChange(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                         placeholder="Catan, Ticket to Ride, Pandemic"
                       />
                       <p className="text-xs text-gray-500 mt-1">Separados por comas</p>
@@ -205,7 +208,7 @@ export default function Profile() {
                       <select
                         value={formData.playStyle || ''}
                         onChange={(e) => setFormData({ ...formData, playStyle: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       >
                         <option value="">Selecciona...</option>
                         <option value="Competitivo">Competitivo</option>
@@ -230,7 +233,7 @@ export default function Profile() {
                         type="text"
                         value={formData.discord || ''}
                         onChange={(e) => setFormData({ ...formData, discord: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                         placeholder="usuario#1234"
                       />
                     </div>
@@ -242,7 +245,7 @@ export default function Profile() {
                         type="text"
                         value={formData.telegram || ''}
                         onChange={(e) => setFormData({ ...formData, telegram: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                         placeholder="@usuario"
                       />
                     </div>
@@ -258,7 +261,7 @@ export default function Profile() {
                         type="checkbox"
                         checked={formData.notifications ?? true}
                         onChange={(e) => setFormData({ ...formData, notifications: e.target.checked })}
-                        className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-600"
+                        className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
                       />
                       <span className="text-sm text-gray-700">Recibir notificaciones en la aplicación</span>
                     </label>
@@ -267,7 +270,7 @@ export default function Profile() {
                         type="checkbox"
                         checked={formData.emailUpdates ?? true}
                         onChange={(e) => setFormData({ ...formData, emailUpdates: e.target.checked })}
-                        className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-600"
+                        className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
                       />
                       <span className="text-sm text-gray-700">Recibir actualizaciones por email</span>
                     </label>
@@ -316,7 +319,7 @@ export default function Profile() {
                       {profile.favoriteGames.length > 0 ? (
                         <div className="flex flex-wrap gap-2 mt-2">
                           {profile.favoriteGames.map((game, idx) => (
-                            <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                            <span key={idx} className="px-3 py-1 bg-[var(--color-primary-100)] text-[var(--color-primary-800)] rounded-full text-sm">
                               {game}
                             </span>
                           ))}

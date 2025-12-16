@@ -58,7 +58,10 @@ export default function Register() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 flex items-center justify-center p-4">
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
+      >
         <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
           <div className="text-center">
             <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
@@ -86,7 +89,7 @@ export default function Register() {
             </p>
             <Link
               to="/login"
-              className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              className="inline-block bg-[var(--color-primary)] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[var(--color-primaryDark)] transition-colors"
             >
               Ir al inicio de sesión
             </Link>
@@ -97,7 +100,10 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 flex items-center justify-center p-4">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
+    >
       <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
@@ -124,7 +130,7 @@ export default function Register() {
               id="name"
               type="text"
               {...register('name')}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent ${
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent ${
                 errors.name ? 'border-red-500' : 'border-gray-300'
               }`}
             />
@@ -144,7 +150,7 @@ export default function Register() {
               id="email"
               type="email"
               {...register('email')}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent ${
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent ${
                 errors.email ? 'border-red-500' : 'border-gray-300'
               }`}
             />
@@ -164,7 +170,7 @@ export default function Register() {
               id="password"
               type="password"
               {...register('password')}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent ${
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent ${
                 errors.password ? 'border-red-500' : 'border-gray-300'
               }`}
             />
@@ -179,14 +185,14 @@ export default function Register() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:bg-purple-400 disabled:cursor-not-allowed"
+            className="w-full bg-[var(--color-primary)] text-white py-3 rounded-lg font-semibold hover:bg-[var(--color-primaryDark)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Registrando...' : 'Registrarse'}
           </button>
 
           <p className="text-center text-gray-600">
             ¿Ya tienes cuenta?{' '}
-            <Link to="/login" className="text-purple-600 hover:underline font-semibold">
+            <Link to="/login" className="text-[var(--color-primary)] hover:underline font-semibold">
               Inicia sesión
             </Link>
           </p>

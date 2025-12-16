@@ -158,7 +158,7 @@ export default function EventManagement() {
           <CardContent className="p-0">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]"></div>
               </div>
             ) : events.length === 0 ? (
               <div className="text-center py-12">
@@ -252,7 +252,7 @@ export default function EventManagement() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleEdit(event)}
-                              className="text-purple-600 hover:text-purple-900"
+                              className="text-[var(--color-primary)] hover:text-[var(--color-primary-900)]"
                               title="Editar"
                             >
                               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -320,7 +320,7 @@ export default function EventManagement() {
                       name="type"
                       required
                       defaultValue={editingEvent?.type || 'OTROS'}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     >
                       <option value="PARTIDA">Partida</option>
                       <option value="TORNEO">Torneo</option>
@@ -340,7 +340,7 @@ export default function EventManagement() {
                       defaultValue={editingEvent?.title}
                       minLength={3}
                       maxLength={100}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       placeholder="Nombre del evento"
                     />
                   </div>
@@ -356,7 +356,7 @@ export default function EventManagement() {
                       defaultValue={editingEvent?.description}
                       minLength={10}
                       rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none"
                       placeholder="Describe el evento..."
                     />
                   </div>
@@ -371,7 +371,7 @@ export default function EventManagement() {
                       name="date"
                       required
                       defaultValue={editingEvent?.date ? new Date(editingEvent.date).toISOString().slice(0, 16) : ''}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     />
                   </div>
 
@@ -386,7 +386,7 @@ export default function EventManagement() {
                       required
                       defaultValue={editingEvent?.location}
                       minLength={3}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       placeholder="Nombre del lugar"
                     />
                   </div>
@@ -400,7 +400,7 @@ export default function EventManagement() {
                       type="text"
                       name="address"
                       defaultValue={editingEvent?.address || ''}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       placeholder="Dirección completa"
                     />
                   </div>
@@ -417,7 +417,7 @@ export default function EventManagement() {
                       defaultValue={editingEvent?.maxAttendees}
                       min={1}
                       max={1000}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       placeholder="Número de asistentes"
                     />
                   </div>

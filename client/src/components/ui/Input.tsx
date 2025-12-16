@@ -13,7 +13,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       w-full px-4 py-2 rounded-lg border transition-colors
       ${error
         ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-        : 'border-gray-300 focus:border-purple-500 focus:ring-purple-500'
+        : 'border-gray-300 focus:border-[var(--color-primary-50)]0 focus:ring-[var(--color-primary)]'
       }
       focus:outline-none focus:ring-2 focus:ring-offset-0
       disabled:bg-gray-100 disabled:cursor-not-allowed

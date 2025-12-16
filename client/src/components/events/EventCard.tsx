@@ -40,7 +40,7 @@ export default function EventCard({ event }: EventCardProps) {
   return (
     <Link
       to={`/events/${event.id}`}
-      className="block bg-white rounded-lg border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all"
+      className="block bg-white rounded-lg border border-gray-200 hover:border-[var(--color-primary-300)] hover:shadow-md transition-all"
     >
       <div className="p-6">
         {/* Header */}

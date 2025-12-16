@@ -60,11 +60,11 @@ export default function EventCalendar({ events, currentMonth }: EventCalendarPro
       <div
         key={day}
         className={`min-h-[100px] border border-gray-200 p-2 ${
-          isToday ? 'bg-purple-50 border-purple-300' : 'bg-white'
+          isToday ? 'bg-[var(--color-primary-50)] border-[var(--color-primary-300)]' : 'bg-white'
         }`}
       >
         <div className={`text-sm font-medium mb-1 ${
-          isToday ? 'text-purple-700' : 'text-gray-700'
+          isToday ? 'text-[var(--color-primaryDark)]' : 'text-gray-700'
         }`}>
           {day}
         </div>
@@ -75,7 +75,7 @@ export default function EventCalendar({ events, currentMonth }: EventCalendarPro
               <Link
                 key={event.id}
                 to={`/events/${event.id}`}
-                className="block text-xs p-1 rounded bg-purple-100 text-purple-800 hover:bg-purple-200 truncate"
+                className="block text-xs p-1 rounded bg-[var(--color-primary-100)] text-[var(--color-primary-800)] hover:bg-[var(--color-primary-200)] truncate"
               >
                 {event.title}
               </Link>
@@ -126,11 +126,11 @@ export default function EventCalendar({ events, currentMonth }: EventCalendarPro
       {/* Legend */}
       <div className="mt-4 flex items-center gap-4 text-xs text-gray-600">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-purple-100"></div>
+          <div className="w-3 h-3 rounded bg-[var(--color-primary-100)]"></div>
           <span>Evento programado</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-purple-50 border border-purple-300"></div>
+          <div className="w-3 h-3 rounded bg-[var(--color-primary-50)] border border-[var(--color-primary-300)]"></div>
           <span>Hoy</span>
         </div>
       </div>
