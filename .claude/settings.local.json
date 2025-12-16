@@ -28,7 +28,8 @@
       "Bash(git push)",
       "Bash(vercel --prod:*)",
       "Bash(del serververcel.json clientvercel.json serverapiindex.js)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(git mv:*)"
     ]
   }
 }
