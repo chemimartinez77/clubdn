@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import VerifyEmail from './pages/VerifyEmail';
@@ -57,9 +58,10 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <BrowserRouter>
-      <ToastProvider position="top-right">
-        <AuthProvider>
-          <Routes>
+      <ThemeProvider>
+        <ToastProvider position="top-right">
+          <AuthProvider>
+            <Routes>
           {/* Rutas públicas */}
           <Route
             path="/register"
@@ -159,9 +161,10 @@ function App() {
 
           {/* Ruta por defecto */}
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-        </AuthProvider>
-      </ToastProvider>
+            </Routes>
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+/* Theme Variables */
+:root {
+  --color-primary: #9333ea;
+  --color-primaryDark: #7e22ce;
+  --color-primaryLight: #a855f7;
+  --color-background: #0f0515;
+  --color-surface: #1a0b2e;
+  --color-text: #ffffff;
+  --color-textSecondary: #d1d5db;
+  --color-border: #4c1d95;
+  --color-hover: #6b21a8;
+  --color-accent: #c084fc;
+}
+
 /* Toast Animations */
 @keyframes slide-in-right {
   from {

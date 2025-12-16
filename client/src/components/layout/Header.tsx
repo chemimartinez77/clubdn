@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import ThemeSelector from '../ThemeSelector';
 
 export default function Header() {
   const { user, logout, isAdmin } = useAuth();
@@ -43,6 +44,9 @@ export default function Header() {
                 Administración
               </Link>
             )}
+
+            {/* Theme Selector */}
+            <ThemeSelector />
 
             {/* User Dropdown */}
             <div className="relative">
