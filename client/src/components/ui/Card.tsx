@@ -4,11 +4,12 @@ import React from 'react';
 interface CardProps {
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function Card({ children, className = '' }: CardProps) {
+export function Card({ children, className = '', style }: CardProps) {
   return (
-    <div className={`bg-white rounded-lg shadow-md overflow-hidden ${className}`}>
+    <div className={`bg-white rounded-lg shadow-md overflow-hidden ${className}`} style={style}>
       {children}
     </div>
   );
