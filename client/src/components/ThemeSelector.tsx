@@ -1,5 +1,6 @@
 import { useTheme } from '../hooks/useTheme';
-import { themes, ThemeName } from '../config/themes';
+import { themes } from '../config/themes';
+import type { ThemeName } from '../config/themes';
 
 export default function ThemeSelector() {
   const { themeName, setTheme } = useTheme();
