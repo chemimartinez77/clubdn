@@ -36,29 +36,32 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
       ];
     }
 
+    // Build membership filter object
+    const membershipFilter: any = {};
+
     // Membership type filter
     if (membershipType !== 'all') {
       if (membershipType === 'BAJA') {
-        where.membership = {
-          fechaBaja: { not: null }
-        };
+        membershipFilter.fechaBaja = { not: null };
       } else {
-        where.membership = {
-          type: membershipType,
-          fechaBaja: null
-        };
+        membershipFilter.type = membershipType;
+        membershipFilter.fechaBaja = null;
       }
-    } else {
-      // For 'all', we want users with membership (active or inactive)
-      where.membership = { isNot: null };
     }
 
     // Date range filter (startDate)
     if (dateFrom || dateTo) {
-      if (!where.membership) where.membership = {};
-      where.membership.startDate = {};
-      if (dateFrom) where.membership.startDate.gte = new Date(dateFrom as string);
-      if (dateTo) where.membership.startDate.lte = new Date(dateTo as string);
+      membershipFilter.startDate = {};
+      if (dateFrom) membershipFilter.startDate.gte = new Date(dateFrom as string);
+      if (dateTo) membershipFilter.startDate.lte = new Date(dateTo as string);
+    }
+
+    // Apply membership filter
+    if (Object.keys(membershipFilter).length > 0) {
+      where.membership = membershipFilter;
+    } else {
+      // For 'all' with no date filter, we want users with membership (active or inactive)
+      where.membership = { isNot: null };
     }
 
     // Get users with pagination
@@ -220,21 +223,32 @@ export const exportMembersCSV = async (req: Request, res: Response): Promise<voi
       ];
     }
 
+    // Build membership filter object
+    const membershipFilterExport: any = {};
+
+    // Membership type filter
     if (membershipType !== 'all') {
       if (membershipType === 'BAJA') {
-        where.membership = { fechaBaja: { not: null } };
+        membershipFilterExport.fechaBaja = { not: null };
       } else {
-        where.membership = { type: membershipType, fechaBaja: null };
+        membershipFilterExport.type = membershipType;
+        membershipFilterExport.fechaBaja = null;
       }
-    } else {
-      where.membership = { isNot: null };
     }
 
+    // Date range filter (startDate)
     if (dateFrom || dateTo) {
-      if (!where.membership) where.membership = {};
-      where.membership.startDate = {};
-      if (dateFrom) where.membership.startDate.gte = new Date(dateFrom as string);
-      if (dateTo) where.membership.startDate.lte = new Date(dateTo as string);
+      membershipFilterExport.startDate = {};
+      if (dateFrom) membershipFilterExport.startDate.gte = new Date(dateFrom as string);
+      if (dateTo) membershipFilterExport.startDate.lte = new Date(dateTo as string);
+    }
+
+    // Apply membership filter
+    if (Object.keys(membershipFilterExport).length > 0) {
+      where.membership = membershipFilterExport;
+    } else {
+      // For 'all' with no date filter, we want users with membership (active or inactive)
+      where.membership = { isNot: null };
     }
 
     const users = await prisma.user.findMany({
