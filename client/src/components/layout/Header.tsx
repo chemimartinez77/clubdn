@@ -20,7 +20,7 @@ export default function Header() {
             <img
               src="/logo.png"
               alt="Club DN Logo"
-              className="w-8 h-8 rounded-lg"
+              className="w-32 h-16 rounded-lg"
             />
             <span className="text-xl font-bold text-gray-900">Club DN</span>
           </Link>
