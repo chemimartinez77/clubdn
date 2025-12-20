@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_1 = require("../middleware/auth");
 const adminController_1 = require("../controllers/adminController");
+const memberController_1 = require("../controllers/memberController");
 const router = (0, express_1.Router)();
 // Todas las rutas requieren autenticaci�n y permisos de admin
 router.use(auth_1.authenticate);
@@ -23,5 +24,20 @@ router.post('/approve/:userId', adminController_1.approveUser);
  * Rechazar un usuario
  */
 router.post('/reject/:userId', adminController_1.rejectUser);
+/**
+ * GET /api/admin/members
+ * Obtener listado de miembros con filtros y paginación
+ */
+router.get('/members', memberController_1.getMembers);
+/**
+ * POST /api/admin/members/:memberId/mark-baja
+ * Marcar un miembro como BAJA
+ */
+router.post('/members/:memberId/mark-baja', memberController_1.markMemberAsBaja);
+/**
+ * GET /api/admin/members/export/csv
+ * Exportar miembros a CSV
+ */
+router.get('/members/export/csv', memberController_1.exportMembersCSV);
 exports.default = router;
 //# sourceMappingURL=adminRoutes.js.map

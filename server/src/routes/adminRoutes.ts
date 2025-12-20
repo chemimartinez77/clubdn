@@ -6,16 +6,21 @@ import {
   approveUser,
   rejectUser,
 } from '../controllers/adminController';
+import {
+  getMembers,
+  markMemberAsBaja,
+  exportMembersCSV
+} from '../controllers/memberController';
 
 const router = Router();
 
-// Todas las rutas requieren autenticación y permisos de admin
+// Todas las rutas requieren autenticaciï¿½n y permisos de admin
 router.use(authenticate);
 router.use(requireAdmin);
 
 /**
  * GET /api/admin/pending-approvals
- * Listar solicitudes pendientes de aprobación
+ * Listar solicitudes pendientes de aprobaciï¿½n
  */
 router.get('/pending-approvals', getPendingApprovals);
 
@@ -30,5 +35,23 @@ router.post('/approve/:userId', approveUser);
  * Rechazar un usuario
  */
 router.post('/reject/:userId', rejectUser);
+
+/**
+ * GET /api/admin/members
+ * Obtener listado de miembros con filtros y paginaciÃ³n
+ */
+router.get('/members', getMembers);
+
+/**
+ * POST /api/admin/members/:memberId/mark-baja
+ * Marcar un miembro como BAJA
+ */
+router.post('/members/:memberId/mark-baja', markMemberAsBaja);
+
+/**
+ * GET /api/admin/members/export/csv
+ * Exportar miembros a CSV
+ */
+router.get('/members/export/csv', exportMembersCSV);
 
 export default router;

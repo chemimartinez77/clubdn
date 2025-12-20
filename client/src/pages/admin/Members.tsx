@@ -1,0 +1,515 @@
+// client/src/pages/admin/Members.tsx
+import { useState } from 'react';
+import Layout from '../../components/layout/Layout';
+import { Card, CardHeader, CardContent } from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import Modal from '../../components/ui/Modal';
+import { useMembers } from '../../hooks/useMembers';
+import { useToast } from '../../hooks/useToast';
+import type { MemberData, MemberFilters } from '../../types/members';
+
+export default function Members() {
+  const { success, error } = useToast();
+
+  // Filter state
+  const [filters, setFilters] = useState<MemberFilters>({
+    search: '',
+    membershipType: 'all',
+    dateFrom: '',
+    dateTo: '',
+    paymentStatus: 'all',
+    page: 1,
+    pageSize: 25,
+  });
+
+  // Modal states
+  const [selectedMember, setSelectedMember] = useState<MemberData | null>(null);
+  const [bajaModalOpen, setBajaModalOpen] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+
+  // Fetch members data
+  const { data, isLoading, refetch, markAsBaja, isMarkingBaja, exportCSV } = useMembers(filters);
+
+  // Update filter and reset to page 1
+  const updateFilter = <K extends keyof MemberFilters>(key: K, value: MemberFilters[K]) => {
+    setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
+  };
+
+  // Pagination handlers
+  const goToPage = (page: number) => {
+    setFilters(prev => ({ ...prev, page }));
+  };
+
+  const changePageSize = (pageSize: number) => {
+    setFilters(prev => ({ ...prev, pageSize, page: 1 }));
+  };
+
+  // Action handlers
+  const handleViewMember = (member: MemberData) => {
+    setSelectedMember(member);
+    setViewModalOpen(true);
+  };
+
+  const handleMarkAsBaja = (member: MemberData) => {
+    setSelectedMember(member);
+    setBajaModalOpen(true);
+  };
+
+  const confirmMarkAsBaja = () => {
+    if (!selectedMember) return;
+
+    markAsBaja(
+      { memberId: selectedMember.id },
+      {
+        onSuccess: () => {
+          success('Miembro marcado como BAJA exitosamente');
+          setBajaModalOpen(false);
+          setSelectedMember(null);
+        },
+        onError: () => {
+          error('Error al marcar miembro como BAJA');
+        },
+      }
+    );
+  };
+
+  // Format date helper
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-';
+    return new Intl.DateTimeFormat('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }).format(new Date(dateString));
+  };
+
+  // Membership badge helper
+  const getMembershipBadge = (type: 'SOCIO' | 'COLABORADOR' | 'BAJA' | null) => {
+    if (!type) return <span className="text-gray-500">-</span>;
+
+    const styles = {
+      SOCIO: 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]',
+      COLABORADOR: 'bg-blue-100 text-blue-800',
+      BAJA: 'bg-gray-200 text-gray-700',
+    };
+
+    return (
+      <span className={`px-2 py-1 text-xs font-semibold rounded ${styles[type]}`}>
+        {type}
+      </span>
+    );
+  };
+
+  // Payment status badge helper
+  const getPaymentStatusBadge = (status: 'al_dia' | 'con_retrasos') => {
+    const styles = {
+      al_dia: 'bg-green-100 text-green-800',
+      con_retrasos: 'bg-red-100 text-red-800',
+    };
+
+    const labels = {
+      al_dia: 'Al día',
+      con_retrasos: 'Con retrasos',
+    };
+
+    return (
+      <span className={`px-2 py-1 text-xs font-semibold rounded ${styles[status]}`}>
+        {labels[status]}
+      </span>
+    );
+  };
+
+  return (
+    <Layout>
+      <div className="max-w-full mx-auto space-y-6 px-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Directorio de Miembros</h1>
+            <p className="text-gray-600 mt-1">
+              Gestiona y consulta la información de todos los miembros del club
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
+              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Actualizar
+            </Button>
+            <Button onClick={exportCSV} variant="primary" size="sm">
+              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Exportar CSV
+            </Button>
+          </div>
+        </div>
+
+        {/* Filters Card */}
+        <Card>
+          <CardHeader>
+            <h2 className="text-xl font-semibold text-gray-900">Filtros</h2>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Search */}
+              <div className="lg:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Buscar por nombre o email
+                </label>
+                <input
+                  type="text"
+                  value={filters.search}
+                  onChange={(e) => updateFilter('search', e.target.value)}
+                  placeholder="Buscar..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                />
+              </div>
+
+              {/* Membership Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tipo de membresía
+                </label>
+                <select
+                  value={filters.membershipType}
+                  onChange={(e) => updateFilter('membershipType', e.target.value as any)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
+                >
+                  <option value="all">Todos</option>
+                  <option value="SOCIO">SOCIO</option>
+                  <option value="COLABORADOR">COLABORADOR</option>
+                  <option value="BAJA">BAJA</option>
+                </select>
+              </div>
+
+              {/* Payment Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Estado de pago
+                </label>
+                <select
+                  value={filters.paymentStatus}
+                  onChange={(e) => updateFilter('paymentStatus', e.target.value as any)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
+                >
+                  <option value="all">Todos</option>
+                  <option value="al_dia">Al día</option>
+                  <option value="con_retrasos">Con retrasos</option>
+                </select>
+              </div>
+
+              {/* Date From */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha desde
+                </label>
+                <input
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => updateFilter('dateFrom', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                />
+              </div>
+
+              {/* Date To */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha hasta
+                </label>
+                <input
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(e) => updateFilter('dateTo', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                />
+              </div>
+
+              {/* Page Size */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Registros por página
+                </label>
+                <select
+                  value={filters.pageSize}
+                  onChange={(e) => changePageSize(parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
+                >
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+
+              {/* Clear Filters */}
+              <div className="flex items-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setFilters({
+                      search: '',
+                      membershipType: 'all',
+                      dateFrom: '',
+                      dateTo: '',
+                      paymentStatus: 'all',
+                      page: 1,
+                      pageSize: 25,
+                    })
+                  }
+                  className="w-full"
+                >
+                  Limpiar filtros
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Members Table */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Miembros</h2>
+              {data && (
+                <span className="text-sm text-gray-600">
+                  Mostrando {data.members.length} de {data.pagination.totalMembers} miembros
+                </span>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)] mx-auto"></div>
+                <p className="text-gray-600 mt-4">Cargando miembros...</p>
+              </div>
+            ) : !data || data.members.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                No se encontraron miembros con los filtros seleccionados
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Nombre
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Tipo
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Fecha Incorporación
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Estado de Pago
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Acciones
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {data.members.map((member) => (
+                        <tr key={member.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{member.name}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-500">{member.email}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {getMembershipBadge(member.membershipType)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(member.startDate)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {getPaymentStatusBadge(member.paymentStatus)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewMember(member)}
+                              >
+                                Ver
+                              </Button>
+                              {member.membershipType !== 'BAJA' && (
+                                <Button
+                                  variant="danger"
+                                  size="sm"
+                                  onClick={() => handleMarkAsBaja(member)}
+                                >
+                                  Dar de baja
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                {data.pagination.totalPages > 1 && (
+                  <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                    <div className="text-sm text-gray-700">
+                      Página {data.pagination.currentPage} de {data.pagination.totalPages}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => goToPage(data.pagination.currentPage - 1)}
+                        disabled={data.pagination.currentPage === 1}
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => goToPage(data.pagination.currentPage + 1)}
+                        disabled={data.pagination.currentPage === data.pagination.totalPages}
+                      >
+                        Siguiente
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* View Member Modal */}
+      <Modal
+        isOpen={viewModalOpen}
+        onClose={() => {
+          setViewModalOpen(false);
+          setSelectedMember(null);
+        }}
+        title="Detalles del Miembro"
+        size="lg"
+      >
+        {selectedMember && (
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700">Nombre</label>
+              <p className="text-gray-900">{selectedMember.name}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Email</label>
+              <p className="text-gray-900">{selectedMember.email}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Teléfono</label>
+              <p className="text-gray-900">{selectedMember.phone || '-'}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Tipo de Membresía</label>
+              <div className="mt-1">{getMembershipBadge(selectedMember.membershipType)}</div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Cuota Mensual</label>
+              <p className="text-gray-900">
+                {selectedMember.monthlyFee ? `€${selectedMember.monthlyFee.toFixed(2)}` : '-'}
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Fecha de Incorporación</label>
+              <p className="text-gray-900">{formatDate(selectedMember.startDate)}</p>
+            </div>
+            {selectedMember.fechaBaja && (
+              <div>
+                <label className="text-sm font-medium text-gray-700">Fecha de Baja</label>
+                <p className="text-gray-900">{formatDate(selectedMember.fechaBaja)}</p>
+              </div>
+            )}
+            <div>
+              <label className="text-sm font-medium text-gray-700">Estado de Pago</label>
+              <div className="mt-1">{getPaymentStatusBadge(selectedMember.paymentStatus)}</div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Último Pago</label>
+              <p className="text-gray-900">{formatDate(selectedMember.lastPaymentDate)}</p>
+            </div>
+            <div className="pt-4 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setViewModalOpen(false);
+                  setSelectedMember(null);
+                }}
+              >
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Mark as BAJA Confirmation Modal */}
+      <Modal
+        isOpen={bajaModalOpen}
+        onClose={() => {
+          setBajaModalOpen(false);
+          setSelectedMember(null);
+        }}
+        title="Confirmar Baja de Miembro"
+      >
+        {selectedMember && (
+          <div className="space-y-4">
+            <p className="text-gray-700">
+              ¿Estás seguro que deseas dar de baja al siguiente miembro?
+            </p>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="font-medium text-gray-900">{selectedMember.name}</p>
+              <p className="text-sm text-gray-600">{selectedMember.email}</p>
+              <p className="text-sm text-gray-600 mt-2">
+                Tipo: {getMembershipBadge(selectedMember.membershipType)}
+              </p>
+            </div>
+            <p className="text-sm text-red-600">
+              Esta acción marcará al miembro como BAJA. El registro se conservará pero el miembro
+              no aparecerá en las listas activas.
+            </p>
+            <div className="pt-4 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setBajaModalOpen(false);
+                  setSelectedMember(null);
+                }}
+                disabled={isMarkingBaja}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                onClick={confirmMarkAsBaja}
+                isLoading={isMarkingBaja}
+                disabled={isMarkingBaja}
+              >
+                {isMarkingBaja ? 'Procesando...' : 'Confirmar Baja'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </Layout>
+  );
+}

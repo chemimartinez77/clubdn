@@ -227,6 +227,7 @@ model Membership {
   // Fechas importantes
   startDate         DateTime       @default(now())  // Fecha de inicio como miembro
   becameSocioAt     DateTime?      // Fecha en que pasó a SOCIO (si aplica)
+  fechaBaja         DateTime?      // Fecha de baja del miembro
 
   // Estado de pagos
   isActive          Boolean        @default(true)   // Si está al día con los pagos
@@ -239,6 +240,7 @@ model Membership {
   @@index([userId])
   @@index([type])
   @@index([isActive])
+  @@index([fechaBaja])
 }
 
 // Registro de pagos

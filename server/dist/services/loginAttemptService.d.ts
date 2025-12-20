@@ -18,10 +18,10 @@ export declare function getRecentLoginAttempts(email: string, limit?: number): P
     id: string;
     email: string;
     userId: string | null;
-    success: boolean;
-    failureReason: string | null;
     ipAddress: string | null;
     userAgent: string | null;
+    success: boolean;
+    failureReason: string | null;
     attemptedAt: Date;
 }[]>;
 /**

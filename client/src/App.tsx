@@ -15,6 +15,7 @@ import PendingApprovals from './pages/admin/PendingApprovals';
 import AdminDashboard from './pages/admin/Dashboard';
 import EventManagement from './pages/admin/EventManagement';
 import MembershipManagement from './pages/admin/MembershipManagement';
+import Members from './pages/admin/Members';
 import AdminRoute from './components/routes/AdminRoute';
 
 // Componente para rutas protegidas
@@ -155,6 +156,14 @@ function App() {
             element={
               <AdminRoute>
                 <MembershipManagement />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/members"
+            element={
+              <AdminRoute>
+                <Members />
               </AdminRoute>
             }
           />

@@ -14,13 +14,14 @@ const statsRoutes_1 = __importDefault(require("./routes/statsRoutes"));
 const profileRoutes_1 = __importDefault(require("./routes/profileRoutes"));
 const eventRoutes_1 = __importDefault(require("./routes/eventRoutes"));
 const bggRoutes_1 = __importDefault(require("./routes/bggRoutes"));
+const membershipRoutes_1 = __importDefault(require("./routes/membershipRoutes"));
 // Cargar variables de entorno
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
-// Middleware
+// Middleware CORS
 app.use((0, cors_1.default)({
-    origin: process.env.CLIENT_URL || ['http://localhost:5173', 'http://localhost:5174'],
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true,
 }));
 app.use(express_1.default.json());
@@ -47,6 +48,7 @@ app.use('/api/stats', statsRoutes_1.default);
 app.use('/api/profile', profileRoutes_1.default);
 app.use('/api/events', eventRoutes_1.default);
 app.use('/api/bgg', bggRoutes_1.default);
+app.use('/api/membership', membershipRoutes_1.default);
 // Ruta 404
 app.use((_req, res) => {
     res.status(404).json({
@@ -83,4 +85,6 @@ process.on('SIGINT', async () => {
         process.exit(0);
     });
 });
+// Exportar app para testing
+exports.default = app;
 //# sourceMappingURL=index.js.map
