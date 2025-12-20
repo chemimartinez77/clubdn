@@ -32,7 +32,8 @@
       "Bash(git mv:*)",
       "Bash(find:*)",
       "Bash(node update-theme-colors.js:*)",
-      "Bash(del update-theme-colors.js)"
+      "Bash(del update-theme-colors.js)",
+      "Bash(npx ts-node:*)"
     ]
   }
 }
