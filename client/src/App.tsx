@@ -16,6 +16,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import EventManagement from './pages/admin/EventManagement';
 import MembershipManagement from './pages/admin/MembershipManagement';
 import Members from './pages/admin/Members';
+import Games from './pages/Games';
 import AdminRoute from './components/routes/AdminRoute';
 
 // Componente para rutas protegidas
@@ -122,6 +123,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <EventDetail />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Ruta de juegos */}
+          <Route
+            path="/games"
+            element={
+              <ProtectedRoute>
+                <Games />
               </ProtectedRoute>
             }
           />

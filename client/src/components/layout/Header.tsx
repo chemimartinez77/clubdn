@@ -34,6 +34,18 @@ export default function Header() {
             >
               Inicio
             </Link>
+            <Link
+              to="/events"
+              className="text-gray-700 hover:text-primary transition-colors"
+            >
+              Eventos
+            </Link>
+            <Link
+              to="/games"
+              className="text-gray-700 hover:text-primary transition-colors"
+            >
+              Juegos
+            </Link>
 
             {isAdmin && (
               <div className="relative">
@@ -180,6 +192,20 @@ export default function Header() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Inicio
+              </Link>
+              <Link
+                to="/events"
+                className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Eventos
+              </Link>
+              <Link
+                to="/games"
+                className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Juegos
               </Link>
 
               {isAdmin && (
