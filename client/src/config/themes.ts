@@ -1,4 +1,4 @@
-export type ThemeName = 'purple' | 'blue' | 'green';
+export type ThemeName = 'purple' | 'blue' | 'green' | 'red' | 'brown';
 
 export interface Theme {
   name: ThemeName;
@@ -64,6 +64,38 @@ export const themes: Record<ThemeName, Theme> = {
       border: '#064e3b',
       hover: '#059669',
       accent: '#34d399',
+    },
+  },
+  red: {
+    name: 'red',
+    displayName: 'Rojo Oscuro',
+    colors: {
+      primary: '#b91c1c',
+      primaryDark: '#991b1b',
+      primaryLight: '#dc2626',
+      background: '#1a0a0a',
+      surface: '#2d1515',
+      text: '#ffffff',
+      textSecondary: '#d1d5db',
+      border: '#7f1d1d',
+      hover: '#c92a2a',
+      accent: '#f87171',
+    },
+  },
+  brown: {
+    name: 'brown',
+    displayName: 'Marrón',
+    colors: {
+      primary: '#92400e',
+      primaryDark: '#78350f',
+      primaryLight: '#b45309',
+      background: '#120c05',
+      surface: '#231a0f',
+      text: '#ffffff',
+      textSecondary: '#d1d5db',
+      border: '#713f12',
+      hover: '#a16207',
+      accent: '#fbbf24',
     },
   },
 };

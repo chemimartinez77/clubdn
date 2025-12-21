@@ -213,10 +213,30 @@ export const listGames = async (req: Request, res: Response) => {
     const where: any = {};
 
     if (search && typeof search === 'string') {
-      where.name = {
-        contains: search,
-        mode: 'insensitive'
-      };
+      // Buscar tanto en el nombre principal como en los nombres alternativos
+      // Usamos alternateNames con array_to_string para búsqueda parcial
+      where.OR = [
+        {
+          name: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        }
+      ];
+
+      // También buscar en los juegos donde algún nombre alternativo contiene el término
+      const gamesWithAltNames = await prisma.$queryRaw`
+        SELECT id FROM "Game"
+        WHERE array_to_string("alternateNames", '|') ILIKE ${'%' + search + '%'}
+      `;
+
+      if (Array.isArray(gamesWithAltNames) && gamesWithAltNames.length > 0) {
+        where.OR.push({
+          id: {
+            in: gamesWithAltNames.map((g: any) => g.id)
+          }
+        });
+      }
     }
 
     const [games, totalGames] = await Promise.all([
@@ -229,6 +249,7 @@ export const listGames = async (req: Request, res: Response) => {
           id: true,
           name: true,
           yearPublished: true,
+          image: true,
           thumbnail: true,
           minPlayers: true,
           maxPlayers: true,

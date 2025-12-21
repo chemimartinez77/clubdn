@@ -148,11 +148,11 @@ export default function Games() {
                 onClick={() => setSelectedGameId(game.id)}
                 className="group relative bg-white rounded-lg shadow hover:shadow-xl transition-all duration-200 overflow-hidden border border-gray-200 hover:border-[var(--color-primary)] cursor-pointer"
               >
-                {/* Thumbnail con overlay */}
+                {/* Game Image */}
                 <div className="relative aspect-square">
-                  {game.thumbnail ? (
+                  {game.image ? (
                     <img
-                      src={game.thumbnail}
+                      src={game.image}
                       alt={game.name}
                       className="w-full h-full object-cover"
                     />

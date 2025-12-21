@@ -39,6 +39,7 @@ export interface GameListItem {
   id: string;
   name: string;
   yearPublished: number | null;
+  image: string;
   thumbnail: string;
   minPlayers: number | null;
   maxPlayers: number | null;
