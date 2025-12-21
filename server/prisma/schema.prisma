@@ -166,6 +166,7 @@ model Event {
   gameName        String?
   gameImage       String?
   bggId           String?
+  game            Game?    @relation("GameEvents", fields: [bggId], references: [id])
 
   // Fecha y hora
   date            DateTime
@@ -268,4 +269,70 @@ model Payment {
   @@index([userId])
   @@index([year, month])
   @@index([paidAt])
+}
+
+// Juego de mesa (BoardGameGeek)
+model Game {
+  id                String   @id // BGG ID
+
+  // Nombres
+  name              String   // Nombre principal
+  alternateNames    String[] // Nombres alternativos en otros idiomas
+
+  // Información básica
+  description       String?  @db.Text
+  yearPublished     Int?
+
+  // Imágenes
+  image             String?  // URL de imagen grande
+  thumbnail         String?  // URL de miniatura
+
+  // Jugadores
+  minPlayers        Int?
+  maxPlayers        Int?
+
+  // Tiempo de juego (en minutos)
+  playingTime       Int?     // Tiempo típico
+  minPlaytime       Int?     // Tiempo mínimo
+  maxPlaytime       Int?     // Tiempo máximo
+
+  // Edad
+  minAge            Int?
+
+  // Estadísticas de BGG
+  usersRated        Int?
+  averageRating     Float?
+  bayesAverage      Float?
+  rank              Int?     // Overall rank
+  strategyRank      Int?     // Strategy game rank
+  complexityRating  Float?   // Weight/complexity (1-5)
+
+  // Comunidad
+  numOwned          Int?
+  numWanting        Int?
+  numWishing        Int?
+  numComments       Int?
+
+  // Categorías (arrays de strings)
+  categories        String[] // Economic, Exploration, Nautical, Pirates, etc.
+  mechanics         String[] // Hand Management, Set Collection, etc.
+  families          String[] // Components, Themes, etc.
+
+  // Creadores
+  designers         String[] // Nombres de diseñadores
+  artists           String[] // Nombres de artistas
+  publishers        String[] // Editoriales
+
+  // Metadatos
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  lastSyncedAt      DateTime @default(now()) // Última vez que se sincronizó con BGG
+
+  // Relación con eventos
+  events            Event[]  @relation("GameEvents")
+
+  @@index([name])
+  @@index([yearPublished])
+  @@index([rank])
+  @@index([averageRating])
 }

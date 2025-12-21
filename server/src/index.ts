@@ -10,6 +10,7 @@ import profileRoutes from './routes/profileRoutes';
 import eventRoutes from './routes/eventRoutes';
 import bggRoutes from './routes/bggRoutes';
 import membershipRoutes from './routes/membershipRoutes';
+import gameRoutes from './routes/gameRoutes';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -51,6 +52,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/bgg', bggRoutes);
 app.use('/api/membership', membershipRoutes);
+app.use('/api/games', gameRoutes);
 
 // Ruta 404
 app.use((_req, res) => {

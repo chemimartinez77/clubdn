@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.searchBGGGames = searchBGGGames;
 exports.getBGGGame = getBGGGame;
+exports.getBGGGameFull = getBGGGameFull;
 // server/src/services/bggService.ts
 const axios_1 = __importDefault(require("axios"));
 const xml2js_1 = require("xml2js");
@@ -160,6 +161,99 @@ async function getBGGGame(gameId) {
     }
     catch (error) {
         console.error('Error al obtener juego de BGG:', error);
+        return null;
+    }
+}
+/**
+ * Obtener detalles completos de un juego específico con estadísticas
+ */
+async function getBGGGameFull(gameId) {
+    try {
+        const rawDetails = await requestWithRetry('/thing', {
+            id: gameId,
+            type: 'boardgame,boardgameexpansion',
+            stats: 1
+        });
+        const result = await (0, xml2js_1.parseStringPromise)(rawDetails);
+        if (!result.items || !result.items.item) {
+            return null;
+        }
+        const item = normalizeItems(result.items.item)[0];
+        // Extraer nombres alternativos
+        const names = normalizeItems(item?.name);
+        const alternateNames = names
+            .filter((n) => n?.$?.type === 'alternate')
+            .map((n) => n?.$?.value || '')
+            .filter(Boolean);
+        // Extraer categorías
+        const categories = normalizeItems(item?.link)
+            .filter((l) => l?.$?.type === 'boardgamecategory')
+            .map((l) => l?.$?.value || '')
+            .filter(Boolean);
+        // Extraer mecánicas
+        const mechanics = normalizeItems(item?.link)
+            .filter((l) => l?.$?.type === 'boardgamemechanic')
+            .map((l) => l?.$?.value || '')
+            .filter(Boolean);
+        // Extraer familias
+        const families = normalizeItems(item?.link)
+            .filter((l) => l?.$?.type === 'boardgamefamily')
+            .map((l) => l?.$?.value || '')
+            .filter(Boolean);
+        // Extraer diseñadores
+        const designers = normalizeItems(item?.link)
+            .filter((l) => l?.$?.type === 'boardgamedesigner')
+            .map((l) => l?.$?.value || '')
+            .filter(Boolean);
+        // Extraer artistas
+        const artists = normalizeItems(item?.link)
+            .filter((l) => l?.$?.type === 'boardgameartist')
+            .map((l) => l?.$?.value || '')
+            .filter(Boolean);
+        // Extraer publishers
+        const publishers = normalizeItems(item?.link)
+            .filter((l) => l?.$?.type === 'boardgamepublisher')
+            .map((l) => l?.$?.value || '')
+            .filter(Boolean);
+        // Extraer estadísticas
+        const stats = item?.statistics?.[0]?.ratings?.[0];
+        const ranks = normalizeItems(stats?.ranks?.[0]?.rank);
+        const boardgameRank = ranks.find((r) => r?.$?.name === 'boardgame');
+        const strategyRank = ranks.find((r) => r?.$?.name === 'strategygames');
+        return {
+            id: item.$.id,
+            name: extractPrimaryName(item),
+            alternateNames,
+            description: item.description?.[0] || '',
+            yearPublished: item.yearpublished?.[0]?.$.value ? parseInt(item.yearpublished[0].$.value) : null,
+            image: item.image?.[0] || '',
+            thumbnail: item.thumbnail?.[0] || '',
+            minPlayers: item.minplayers?.[0]?.$.value ? parseInt(item.minplayers[0].$.value) : null,
+            maxPlayers: item.maxplayers?.[0]?.$.value ? parseInt(item.maxplayers[0].$.value) : null,
+            playingTime: item.playingtime?.[0]?.$.value ? parseInt(item.playingtime[0].$.value) : null,
+            minPlaytime: item.minplaytime?.[0]?.$.value ? parseInt(item.minplaytime[0].$.value) : null,
+            maxPlaytime: item.maxplaytime?.[0]?.$.value ? parseInt(item.maxplaytime[0].$.value) : null,
+            minAge: item.minage?.[0]?.$.value ? parseInt(item.minage[0].$.value) : null,
+            usersRated: stats?.usersrated?.[0]?.$.value ? parseInt(stats.usersrated[0].$.value) : null,
+            averageRating: stats?.average?.[0]?.$.value ? parseFloat(stats.average[0].$.value) : null,
+            bayesAverage: stats?.bayesaverage?.[0]?.$.value ? parseFloat(stats.bayesaverage[0].$.value) : null,
+            rank: boardgameRank?.$?.value && boardgameRank.$.value !== 'Not Ranked' ? parseInt(boardgameRank.$.value) : null,
+            strategyRank: strategyRank?.$?.value && strategyRank.$.value !== 'Not Ranked' ? parseInt(strategyRank.$.value) : null,
+            complexityRating: stats?.averageweight?.[0]?.$.value ? parseFloat(stats.averageweight[0].$.value) : null,
+            numOwned: stats?.owned?.[0]?.$.value ? parseInt(stats.owned[0].$.value) : null,
+            numWanting: stats?.wanting?.[0]?.$.value ? parseInt(stats.wanting[0].$.value) : null,
+            numWishing: stats?.wishing?.[0]?.$.value ? parseInt(stats.wishing[0].$.value) : null,
+            numComments: stats?.numcomments?.[0]?.$.value ? parseInt(stats.numcomments[0].$.value) : null,
+            categories,
+            mechanics,
+            families,
+            designers,
+            artists,
+            publishers
+        };
+    }
+    catch (error) {
+        console.error('Error al obtener detalles completos de BGG:', error);
         return null;
     }
 }

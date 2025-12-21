@@ -16,7 +16,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
   const [searchQuery, setSearchQuery] = useState('');
   const [searchTrigger, setSearchTrigger] = useState('');
 
-  const { data: games, isLoading, refetch } = useQuery({
+  const { data: games, isLoading } = useQuery({
     queryKey: ['bgg-search', searchTrigger],
     queryFn: async () => {
       if (!searchTrigger || searchTrigger.length < 2) return [];
@@ -25,14 +25,13 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
       );
       return response.data.data?.games || [];
     },
-    enabled: false, // No ejecutar automáticamente
+    enabled: !!searchTrigger && searchTrigger.length >= 2, // Ejecutar cuando hay searchTrigger
     staleTime: 5 * 60 * 1000 // 5 minutos
   });
 
   const handleSearchClick = () => {
     if (searchQuery.length >= 2) {
       setSearchTrigger(searchQuery);
-      refetch();
     }
   };
 
