@@ -93,7 +93,7 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
       const hasCurrentMonthPayment = user.payments.length > 0;
 
       // Determine membership type
-      let membershipType: 'SOCIO' | 'COLABORADOR' | 'BAJA' | null = null;
+      let membershipType: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA' | null = null;
       if (user.membership) {
         if (user.membership.fechaBaja) {
           membershipType = 'BAJA';

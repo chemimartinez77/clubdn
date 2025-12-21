@@ -1,7 +1,7 @@
 // server/src/types/members.ts
 export interface MemberFilters {
   search?: string;
-  membershipType?: 'SOCIO' | 'COLABORADOR' | 'BAJA' | 'all';
+  membershipType?: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA' | 'all';
   dateFrom?: string;
   dateTo?: string;
   paymentStatus?: 'al_dia' | 'con_retrasos' | 'all';
@@ -13,7 +13,7 @@ export interface MemberData {
   id: string;
   name: string;
   email: string;
-  membershipType: 'SOCIO' | 'COLABORADOR' | 'BAJA' | null;
+  membershipType: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA' | null;
   startDate: string | null;
   fechaBaja: string | null;
   paymentStatus: 'al_dia' | 'con_retrasos';
