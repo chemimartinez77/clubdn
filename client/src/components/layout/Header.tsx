@@ -46,6 +46,18 @@ export default function Header() {
             >
               Juegos
             </Link>
+            <Link
+              to="/ludoteca"
+              className="text-gray-700 hover:text-primary transition-colors"
+            >
+              Ludoteca
+            </Link>
+            <Link
+              to="/documentos"
+              className="text-gray-700 hover:text-primary transition-colors"
+            >
+              Documentos
+            </Link>
 
             {isAdmin && (
               <div className="relative">
@@ -101,6 +113,13 @@ export default function Header() {
                         onClick={() => setIsAdminMenuOpen(false)}
                       >
                         Gestión de Eventos
+                      </Link>
+                      <Link
+                        to="/financiero"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        onClick={() => setIsAdminMenuOpen(false)}
+                      >
+                        Gestión Financiera
                       </Link>
                       <div className="border-t border-gray-200 my-1"></div>
                       <Link
@@ -215,6 +234,20 @@ export default function Header() {
               >
                 Juegos
               </Link>
+              <Link
+                to="/ludoteca"
+                className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Ludoteca
+              </Link>
+              <Link
+                to="/documentos"
+                className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Documentos
+              </Link>
 
               {isAdmin && (
                 <>
@@ -250,6 +283,13 @@ export default function Header() {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Gestión de Eventos
+                  </Link>
+                  <Link
+                    to="/financiero"
+                    className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Gestión Financiera
                   </Link>
                   <Link
                     to="/admin/config"

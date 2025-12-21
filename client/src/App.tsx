@@ -18,6 +18,9 @@ import MembershipManagement from './pages/admin/MembershipManagement';
 import Members from './pages/admin/Members';
 import ClubConfig from './pages/admin/ClubConfig';
 import Games from './pages/Games';
+import Financiero from './pages/Financiero';
+import Ludoteca from './pages/Ludoteca';
+import Documentos from './pages/Documentos';
 import AdminRoute from './components/routes/AdminRoute';
 
 // Componente para rutas protegidas
@@ -134,6 +137,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <Games />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/financiero"
+            element={
+              <AdminRoute>
+                <Financiero />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/ludoteca"
+            element={
+              <ProtectedRoute>
+                <Ludoteca />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documentos"
+            element={
+              <ProtectedRoute>
+                <Documentos />
               </ProtectedRoute>
             }
           />
