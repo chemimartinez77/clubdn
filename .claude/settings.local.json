@@ -34,7 +34,8 @@
       "Bash(node update-theme-colors.js:*)",
       "Bash(del update-theme-colors.js)",
       "Bash(npx ts-node:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(del serverupdate-admin-password.ts)"
     ]
   }
 }

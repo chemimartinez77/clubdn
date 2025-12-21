@@ -15,7 +15,7 @@ export default function Financiero() {
   // Datos de ejemplo - categorías de gastos
   const categories = [
     { name: 'Alquiler', icon: '🏠', color: 'bg-blue-100 text-blue-800' },
-    { name: 'Iberdrola', icon: '⚡', color: 'bg-yellow-100 text-yellow-800' },
+    { name: 'Luz', icon: '⚡', color: 'bg-yellow-100 text-yellow-800' },
     { name: 'Agua', icon: '💧', color: 'bg-cyan-100 text-cyan-800' },
     { name: 'Internet', icon: '🌐', color: 'bg-purple-100 text-purple-800' },
     { name: 'Limpieza', icon: '🧹', color: 'bg-green-100 text-green-800' },
