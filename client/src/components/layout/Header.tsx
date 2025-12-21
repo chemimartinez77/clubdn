@@ -102,6 +102,14 @@ export default function Header() {
                       >
                         Gestión de Eventos
                       </Link>
+                      <div className="border-t border-gray-200 my-1"></div>
+                      <Link
+                        to="/admin/config"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        onClick={() => setIsAdminMenuOpen(false)}
+                      >
+                        Configuración del Club
+                      </Link>
                     </div>
                   </>
                 )}
@@ -242,6 +250,13 @@ export default function Header() {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Gestión de Eventos
+                  </Link>
+                  <Link
+                    to="/admin/config"
+                    className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Configuración del Club
                   </Link>
                 </>
               )}

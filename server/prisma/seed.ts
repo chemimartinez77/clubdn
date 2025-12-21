@@ -44,8 +44,58 @@ async function main() {
   await prisma.userProfile.deleteMany({})
   await prisma.loginAttempt.deleteMany({})
   await prisma.user.deleteMany({})
+  await prisma.clubConfig.deleteMany({})
 
   console.log('✅ Base de datos limpiada')
+
+  // Crear configuración del club
+  console.log('⚙️  Creando configuración del club...')
+  await prisma.clubConfig.create({
+    data: {
+      id: 'club_config',
+      clubName: 'Club DN',
+      membershipTypes: [
+        {
+          type: 'SOCIO',
+          displayName: 'Socio',
+          price: 19,
+          hasKey: true,
+          description: 'Socio con llave. Requiere 1 año como colaborador + aprobación'
+        },
+        {
+          type: 'COLABORADOR',
+          displayName: 'Colaborador',
+          price: 15,
+          hasKey: false,
+          description: 'Colaborador sin llave'
+        },
+        {
+          type: 'FAMILIAR',
+          displayName: 'Familiar',
+          price: 10,
+          hasKey: false,
+          description: 'Familiar vinculado a un socio'
+        },
+        {
+          type: 'EN_PRUEBAS',
+          displayName: 'En Pruebas',
+          price: 0,
+          hasKey: false,
+          description: 'Periodo de prueba gratuito'
+        },
+        {
+          type: 'BAJA',
+          displayName: 'Baja',
+          price: 0,
+          hasKey: false,
+          description: 'Usuario dado de baja'
+        }
+      ],
+      defaultCurrency: 'EUR'
+    }
+  })
+  console.log('✅ Configuración del club creada')
+
   console.log('📝 Creando usuarios y membresías...')
 
   let usersCreated = 0
@@ -83,18 +133,30 @@ async function main() {
 
     // Solo crear membership para usuarios APPROVED
     if (status === UserStatus.APPROVED) {
-      const membershipType = randomFrom([MembershipType.COLABORADOR, MembershipType.SOCIO])
+      const membershipType = randomFrom([
+        MembershipType.COLABORADOR,
+        MembershipType.SOCIO,
+        MembershipType.FAMILIAR,
+        MembershipType.EN_PRUEBAS,
+        MembershipType.BAJA
+      ])
       const startDate = randomDate(new Date(2023, 0, 1), new Date())
 
-      // 10% de usuarios con fechaBaja
-      const hasFechaBaja = Math.random() < 0.1
+      // Configurar precio según tipo
+      let monthlyFee = 15
+      if (membershipType === MembershipType.SOCIO) monthlyFee = 19
+      else if (membershipType === MembershipType.FAMILIAR) monthlyFee = 10
+      else if (membershipType === MembershipType.EN_PRUEBAS || membershipType === MembershipType.BAJA) monthlyFee = 0
+
+      // Si es BAJA, siempre tiene fechaBaja
+      const hasFechaBaja = membershipType === MembershipType.BAJA || Math.random() < 0.05
       const fechaBaja = hasFechaBaja ? randomDate(startDate, new Date()) : null
 
       await prisma.membership.create({
         data: {
           userId: user.id,
           type: membershipType,
-          monthlyFee: membershipType === MembershipType.COLABORADOR ? 15 : 19,
+          monthlyFee,
           startDate,
           becameSocioAt: membershipType === MembershipType.SOCIO ? randomDate(startDate, new Date()) : null,
           fechaBaja,

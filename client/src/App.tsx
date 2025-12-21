@@ -16,6 +16,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import EventManagement from './pages/admin/EventManagement';
 import MembershipManagement from './pages/admin/MembershipManagement';
 import Members from './pages/admin/Members';
+import ClubConfig from './pages/admin/ClubConfig';
 import Games from './pages/Games';
 import AdminRoute from './components/routes/AdminRoute';
 
@@ -175,6 +176,14 @@ function App() {
             element={
               <AdminRoute>
                 <Members />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/config"
+            element={
+              <AdminRoute>
+                <ClubConfig />
               </AdminRoute>
             }
           />

@@ -25,8 +25,11 @@ enum UserRole {
 
 // Tipos de membresía
 enum MembershipType {
-  COLABORADOR  // 15€/mes, sin llave
   SOCIO        // 19€/mes, con llave, requiere 1 año como COLABORADOR + aprobación
+  COLABORADOR  // 15€/mes, sin llave
+  FAMILIAR     // Vinculado a un socio
+  EN_PRUEBAS   // Periodo de prueba
+  BAJA         // Usuario dado de baja
 }
 
 // Modelo de Usuario
@@ -335,4 +338,25 @@ model Game {
   @@index([yearPublished])
   @@index([rank])
   @@index([averageRating])
+}
+
+// Configuración del club
+model ClubConfig {
+  id        String   @id @default("club_config") // Solo habrá un registro
+
+  // Tipos de membresía disponibles con sus configuraciones
+  membershipTypes Json // Array de objetos con: { type, displayName, price, hasKey, description }
+
+  // Otras configuraciones del club
+  clubName       String   @default("Club DN")
+  clubEmail      String?
+  clubPhone      String?
+  clubAddress    String?
+
+  // Configuración de cuotas
+  defaultCurrency String  @default("EUR")
+
+  // Metadatos
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
