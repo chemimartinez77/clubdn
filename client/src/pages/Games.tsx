@@ -132,7 +132,7 @@ export default function Games() {
               <button
                 key={game.id}
                 onClick={() => setSelectedGameId(game.id)}
-                className="group relative bg-white rounded-lg shadow hover:shadow-xl transition-all duration-200 overflow-hidden border border-gray-200 hover:border-[var(--color-primary)]"
+                className="group relative bg-white rounded-lg shadow hover:shadow-xl transition-all duration-200 overflow-hidden border border-gray-200 hover:border-[var(--color-primary)] cursor-pointer"
               >
                 {/* Thumbnail con overlay */}
                 <div className="relative aspect-square">
@@ -154,21 +154,6 @@ export default function Games() {
                       </svg>
                     </div>
                   )}
-
-                  {/* Overlay con lupa */}
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-200 flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                      </svg>
-                      <p className="text-white text-sm font-medium mt-2">Ver detalles</p>
-                    </div>
-                  </div>
 
                   {/* Ranking badge */}
                   {game.rank && (

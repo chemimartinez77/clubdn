@@ -73,14 +73,18 @@ export default function GameDetailModal({ gameId, isOpen, onClose }: GameDetailM
                   )}
 
                   {/* Logo BGG */}
-                  <div className="mt-4 text-center text-xs text-gray-500">
+                  <div className="mt-4 flex justify-center">
                     <a
                       href={`https://boardgamegeek.com/boardgame/${game.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-[var(--color-primary)]"
+                      className="hover:opacity-80 transition-opacity"
                     >
-                      Powered by BoardGameGeek
+                      <img
+                        src="/powered.by.bgg.webp"
+                        alt="Powered by BoardGameGeek"
+                        className="h-8"
+                      />
                     </a>
                   </div>
                 </div>
