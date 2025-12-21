@@ -71,8 +71,17 @@ export default function CreatePartida() {
     createMutation.mutate(data);
   };
 
-  const handleGameSelect = (game: BGGGame) => {
+  const handleGameSelect = async (game: BGGGame) => {
     setSelectedGame(game);
+
+    // Guardar el juego completo en la base de datos
+    try {
+      await api.get(`/api/games/${game.id}`);
+      console.log(`Juego ${game.name} guardado en BD`);
+    } catch (error) {
+      console.error('Error al guardar juego en BD:', error);
+      // No mostramos error al usuario porque el juego ya se seleccionó correctamente
+    }
   };
 
   const handleRemoveGame = () => {
