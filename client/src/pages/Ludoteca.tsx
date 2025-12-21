@@ -8,29 +8,6 @@ type GameType = 'all' | 'wargame' | 'boardgame';
 export default function Ludoteca() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<GameType>('all');
-  const [showAddModal, setShowAddModal] = useState(false);
-
-  // Datos de ejemplo
-  const exampleGames = [
-    {
-      id: 1,
-      name: 'Air Force',
-      players: '1-2',
-      duration: '60 min',
-      type: 'Wargame' as const,
-      owner: 'Alfonso Navarro',
-      image: 'https://via.placeholder.com/150'
-    },
-    {
-      id: 2,
-      name: 'Carcassonne',
-      players: '2-5',
-      duration: '45 min',
-      type: 'Juego de mesa' as const,
-      owner: 'Alfonso Navarro',
-      image: 'https://via.placeholder.com/150'
-    }
-  ];
 
   const stats = {
     total: 0,
@@ -49,7 +26,6 @@ export default function Ludoteca() {
             <p className="text-gray-600 mt-1">Catálogo de juegos disponibles en el club</p>
           </div>
           <button
-            onClick={() => setShowAddModal(true)}
             className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primaryDark)] transition-colors flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -177,7 +153,6 @@ export default function Ludoteca() {
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Ludoteca vacía</h3>
               <p className="text-gray-600 mb-6">Aún no hay juegos registrados en la ludoteca del club</p>
               <button
-                onClick={() => setShowAddModal(true)}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primaryDark)] transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

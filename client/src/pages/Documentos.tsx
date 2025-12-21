@@ -18,28 +18,6 @@ interface Document {
 export default function Documentos() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVisibility, setSelectedVisibility] = useState<Visibility>('all');
-  const [showUploadModal, setShowUploadModal] = useState(false);
-
-  // Datos de ejemplo
-  const exampleDocuments: Document[] = [
-    {
-      id: 1,
-      title: 'www.google.es',
-      type: 'link',
-      visibility: 'public',
-      createdAt: '02/05/2025',
-      icon: '🔗'
-    },
-    {
-      id: 2,
-      title: 'documento',
-      type: 'pdf',
-      visibility: 'private',
-      size: '90.06 KB',
-      createdAt: '02/05/2025',
-      icon: '📄'
-    }
-  ];
 
   const documents: Document[] = [];
 
@@ -102,7 +80,6 @@ export default function Documentos() {
             </p>
           </div>
           <button
-            onClick={() => setShowUploadModal(true)}
             className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primaryDark)] transition-colors flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -225,7 +202,6 @@ export default function Documentos() {
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay documentos</h3>
                 <p className="text-gray-600 mb-6">Aún no se han compartido documentos o enlaces</p>
                 <button
-                  onClick={() => setShowUploadModal(true)}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primaryDark)] transition-colors"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
