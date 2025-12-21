@@ -85,12 +85,25 @@ export default function Games() {
           </CardContent>
         </Card>
 
-        {/* Stats Summary */}
-        {pagination && (
-          <div className="text-sm text-gray-600">
-            Mostrando {games.length} de {pagination.totalGames} juegos
-          </div>
-        )}
+        {/* Stats Summary and BGG Logo */}
+        <div className="flex items-center justify-between">
+          {pagination && (
+            <div className="text-sm text-gray-600">
+              Mostrando {games.length} de {pagination.totalGames} juegos
+            </div>
+          )}
+          <a
+            href="https://boardgamegeek.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#FF5100] hover:bg-[#E64900] text-white rounded-lg transition-colors text-xs font-medium"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 100 100" fill="currentColor">
+              <path d="M50 10 L90 30 L90 70 L50 90 L10 70 L10 30 Z" />
+            </svg>
+            Powered by BGG
+          </a>
+        </div>
 
         {/* Games Grid */}
         {isLoading ? (
