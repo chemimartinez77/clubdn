@@ -78,12 +78,13 @@ export default function GameDetailModal({ gameId, isOpen, onClose }: GameDetailM
                       href={`https://boardgamegeek.com/boardgame/${game.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#FF5100] hover:bg-[#E64900] text-white rounded-lg transition-colors text-sm font-medium"
+                      className="hover:opacity-80 transition-opacity"
                     >
-                      <svg className="w-5 h-5" viewBox="0 0 100 100" fill="currentColor">
-                        <path d="M50 10 L90 30 L90 70 L50 90 L10 70 L10 30 Z" />
-                      </svg>
-                      Powered by BoardGameGeek
+                      <img
+                        src="/bgg.powered.webp"
+                        alt="Powered by BoardGameGeek"
+                        className="h-8"
+                      />
                     </a>
                   </div>
                 </div>

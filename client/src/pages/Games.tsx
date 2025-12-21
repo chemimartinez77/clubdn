@@ -96,12 +96,13 @@ export default function Games() {
             href="https://boardgamegeek.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#FF5100] hover:bg-[#E64900] text-white rounded-lg transition-colors text-xs font-medium"
+            className="hover:opacity-80 transition-opacity"
           >
-            <svg className="w-4 h-4" viewBox="0 0 100 100" fill="currentColor">
-              <path d="M50 10 L90 30 L90 70 L50 90 L10 70 L10 30 Z" />
-            </svg>
-            Powered by BGG
+            <img
+              src="/bgg.powered.webp"
+              alt="Powered by BoardGameGeek"
+              className="h-8"
+            />
           </a>
         </div>
 
