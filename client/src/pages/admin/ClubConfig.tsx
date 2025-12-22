@@ -68,6 +68,26 @@ export default function ClubConfigPage() {
     setMembershipTypes(updated);
   };
 
+  const handleAddMembershipType = () => {
+    const newType: MembershipTypeConfig = {
+      type: 'NUEVO' as any, // Temporal, el usuario deberá cambiarlo
+      displayName: 'Nuevo Tipo',
+      price: 0,
+      hasKey: false,
+      description: 'Descripción del nuevo tipo de membresía'
+    };
+    setMembershipTypes([...membershipTypes, newType]);
+  };
+
+  const handleRemoveMembershipType = (index: number) => {
+    if (membershipTypes.length <= 1) {
+      showError('Debe haber al menos un tipo de membresía');
+      return;
+    }
+    const updated = membershipTypes.filter((_, i) => i !== index);
+    setMembershipTypes(updated);
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -202,18 +222,52 @@ export default function ClubConfigPage() {
         {/* Tipos de Membresía */}
         <Card>
           <CardHeader>
-            <CardTitle>Tipos de Membresía</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Tipos de Membresía</CardTitle>
+              {isEditing && (
+                <button
+                  onClick={handleAddMembershipType}
+                  className="px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primaryDark)] transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Añadir Tipo
+                </button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {membershipTypes.map((type, index) => (
-                <div key={type.type} className="border border-gray-200 rounded-lg p-4">
+                <div key={index} className="border border-gray-200 rounded-lg p-4 relative">
+                  {isEditing && (
+                    <button
+                      onClick={() => handleRemoveMembershipType(index)}
+                      className="absolute top-2 right-2 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Eliminar tipo de membresía"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Tipo
                       </label>
-                      <p className="text-gray-900 py-2 font-medium">{type.type}</p>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={type.type}
+                          onChange={(e) => handleMembershipTypeChange(index, 'type', e.target.value as any)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                          placeholder="SOCIO, COLABORADOR, etc."
+                        />
+                      ) : (
+                        <p className="text-gray-900 py-2 font-medium">{type.type}</p>
+                      )}
                     </div>
 
                     <div>
