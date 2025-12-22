@@ -5,7 +5,11 @@ const express_1 = require("express");
 const statsController_1 = require("../controllers/statsController");
 const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
-// Todas las rutas requieren autenticación y permisos de admin
+// Estadísticas de admin (requiere permisos)
 router.get('/admin', auth_1.authenticate, auth_1.requireAdmin, statsController_1.getAdminStats);
+// Estadísticas del usuario autenticado
+router.get('/user', auth_1.authenticate, statsController_1.getUserStats);
+// Estadísticas globales del club (públicas para usuarios autenticados)
+router.get('/club', auth_1.authenticate, statsController_1.getClubStats);
 exports.default = router;
 //# sourceMappingURL=statsRoutes.js.map

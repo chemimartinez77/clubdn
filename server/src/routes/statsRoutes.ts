@@ -1,11 +1,17 @@
 // server/src/routes/statsRoutes.ts
 import { Router } from 'express';
-import { getAdminStats } from '../controllers/statsController';
+import { getAdminStats, getUserStats, getClubStats } from '../controllers/statsController';
 import { authenticate, requireAdmin } from '../middleware/auth';
 
 const router = Router();
 
-// Todas las rutas requieren autenticación y permisos de admin
+// Estadísticas de admin (requiere permisos)
 router.get('/admin', authenticate, requireAdmin, getAdminStats);
+
+// Estadísticas del usuario autenticado
+router.get('/user', authenticate, getUserStats);
+
+// Estadísticas globales del club (públicas para usuarios autenticados)
+router.get('/club', authenticate, getClubStats);
 
 export default router;

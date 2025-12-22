@@ -1,6 +1,7 @@
 // server/src/controllers/statsController.ts
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
+import { RegistrationStatus, EventStatus } from '@prisma/client';
 
 /**
  * Obtener estadísticas generales del sistema (solo admins)
@@ -123,6 +124,295 @@ export const getAdminStats = async (_req: Request, res: Response): Promise<void>
     res.status(500).json({
       success: false,
       message: 'Error al obtener estadísticas'
+    });
+  }
+};
+
+/**
+ * Obtener estadísticas del usuario
+ */
+export const getUserStats = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'No autorizado' });
+      return;
+    }
+
+    // 1. Eventos asistidos (confirmados y completados)
+    const eventsAttended = await prisma.eventRegistration.count({
+      where: {
+        userId,
+        status: RegistrationStatus.CONFIRMED,
+        event: {
+          status: EventStatus.COMPLETED
+        }
+      }
+    });
+
+    // 2. Partidas jugadas (solo eventos tipo PARTIDA)
+    const gamesPlayed = await prisma.eventRegistration.count({
+      where: {
+        userId,
+        status: RegistrationStatus.CONFIRMED,
+        event: {
+          type: 'PARTIDA',
+          status: EventStatus.COMPLETED
+        }
+      }
+    });
+
+    // 3. Top 3 juegos más jugados por el usuario
+    const userTopGames = await prisma.eventRegistration.findMany({
+      where: {
+        userId,
+        status: RegistrationStatus.CONFIRMED,
+        event: {
+          type: 'PARTIDA',
+          status: EventStatus.COMPLETED,
+          gameName: { not: null }
+        }
+      },
+      select: {
+        event: {
+          select: {
+            gameName: true,
+            gameImage: true
+          }
+        }
+      }
+    });
+
+    // Contar juegos y obtener top 3
+    const gameCounts = userTopGames.reduce((acc: Record<string, { count: number; image: string | null }>, reg) => {
+      const gameName = reg.event.gameName;
+      if (gameName) {
+        if (!acc[gameName]) {
+          acc[gameName] = { count: 0, image: reg.event.gameImage || null };
+        }
+        acc[gameName].count++;
+      }
+      return acc;
+    }, {});
+
+    const topGames = Object.entries(gameCounts)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, 3)
+      .map(([name, data]) => ({ name, count: data.count, image: data.image }));
+
+    // 4. Próximos eventos (confirmados y programados o en curso)
+    const upcomingEvents = await prisma.eventRegistration.count({
+      where: {
+        userId,
+        status: RegistrationStatus.CONFIRMED,
+        event: {
+          status: {
+            in: [EventStatus.SCHEDULED, EventStatus.ONGOING]
+          },
+          date: {
+            gte: new Date()
+          }
+        }
+      }
+    });
+
+    // 5. Con quién ha jugado más partidas (top 3 compañeros)
+    const playedWith = await prisma.eventRegistration.findMany({
+      where: {
+        userId,
+        status: RegistrationStatus.CONFIRMED,
+        event: {
+          type: 'PARTIDA',
+          status: EventStatus.COMPLETED
+        }
+      },
+      select: {
+        event: {
+          select: {
+            registrations: {
+              where: {
+                userId: { not: userId },
+                status: RegistrationStatus.CONFIRMED
+              },
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Contar partidas con cada usuario
+    const playerCounts: Record<string, { name: string; count: number }> = {};
+    playedWith.forEach(reg => {
+      reg.event.registrations.forEach(otherReg => {
+        const playerId = otherReg.user.id;
+        if (!playerCounts[playerId]) {
+          playerCounts[playerId] = { name: otherReg.user.name, count: 0 };
+        }
+        playerCounts[playerId].count++;
+      });
+    });
+
+    const topPlayers = Object.values(playerCounts)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+
+    // 6. Horarios más frecuentes (a qué hora suele jugar)
+    const eventsWithTime = await prisma.eventRegistration.findMany({
+      where: {
+        userId,
+        status: RegistrationStatus.CONFIRMED,
+        event: {
+          type: 'PARTIDA',
+          status: EventStatus.COMPLETED,
+          startHour: { not: null }
+        }
+      },
+      select: {
+        event: {
+          select: {
+            startHour: true
+          }
+        }
+      }
+    });
+
+    // Agrupar por rangos horarios
+    const timeRanges: Record<string, number> = {
+      'Mañana (8-12h)': 0,
+      'Tarde (12-18h)': 0,
+      'Noche (18-24h)': 0,
+      'Madrugada (0-8h)': 0
+    };
+
+    eventsWithTime.forEach(reg => {
+      const hour = reg.event.startHour;
+      if (hour !== null && hour !== undefined) {
+        if (hour >= 8 && hour < 12) {
+          timeRanges['Mañana (8-12h)'] = (timeRanges['Mañana (8-12h)'] || 0) + 1;
+        } else if (hour >= 12 && hour < 18) {
+          timeRanges['Tarde (12-18h)'] = (timeRanges['Tarde (12-18h)'] || 0) + 1;
+        } else if (hour >= 18 && hour < 24) {
+          timeRanges['Noche (18-24h)'] = (timeRanges['Noche (18-24h)'] || 0) + 1;
+        } else {
+          timeRanges['Madrugada (0-8h)'] = (timeRanges['Madrugada (0-8h)'] || 0) + 1;
+        }
+      }
+    });
+
+    const mostCommonTimeRange = Object.entries(timeRanges)
+      .sort(([, a], [, b]) => b - a)[0] || ['N/A', 0];
+
+    // 7. Días de la semana más frecuentes
+    const eventsWithDay = await prisma.eventRegistration.findMany({
+      where: {
+        userId,
+        status: RegistrationStatus.CONFIRMED,
+        event: {
+          type: 'PARTIDA',
+          status: EventStatus.COMPLETED
+        }
+      },
+      select: {
+        event: {
+          select: {
+            date: true
+          }
+        }
+      }
+    });
+
+    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+
+    eventsWithDay.forEach(reg => {
+      const dayOfWeek = new Date(reg.event.date).getDay();
+      if (dayCounts[dayOfWeek] !== undefined) {
+        dayCounts[dayOfWeek]++;
+      }
+    });
+
+    const topDays = dayCounts
+      .map((count, index) => ({ day: dayNames[index], count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+
+    res.json({
+      success: true,
+      data: {
+        eventsAttended,
+        gamesPlayed,
+        topGames,
+        upcomingEvents,
+        topPlayers,
+        favoriteTimeRange: mostCommonTimeRange[0],
+        topDays
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al obtener estadísticas del usuario:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener estadísticas'
+    });
+  }
+};
+
+/**
+ * Obtener estadísticas globales del club
+ */
+export const getClubStats = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    // Top 3 juegos más jugados en el club
+    const clubEvents = await prisma.event.findMany({
+      where: {
+        type: 'PARTIDA',
+        status: EventStatus.COMPLETED,
+        gameName: { not: null }
+      },
+      select: {
+        gameName: true,
+        gameImage: true
+      }
+    });
+
+    const gameCounts = clubEvents.reduce((acc: Record<string, { count: number; image: string | null }>, event) => {
+      const gameName = event.gameName;
+      if (gameName) {
+        if (!acc[gameName]) {
+          acc[gameName] = { count: 0, image: event.gameImage || null };
+        }
+        acc[gameName].count++;
+      }
+      return acc;
+    }, {});
+
+    const clubTopGames = Object.entries(gameCounts)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, 3)
+      .map(([name, data]) => ({ name, count: data.count, image: data.image }));
+
+    res.json({
+      success: true,
+      data: {
+        topGames: clubTopGames
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al obtener estadísticas del club:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener estadísticas del club'
     });
   }
 };
