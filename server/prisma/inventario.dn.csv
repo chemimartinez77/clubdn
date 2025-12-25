@@ -1,11 +1,1212 @@
 BGG ID,ID Interno,Fecha Adquisicion,Nombre,Descripcion,Notas,Tipo de juego,Estado,Propietario
-340169,DN-001,01/01/2020,7 Wonders Duel,Juego de cartas para dos jugadores,,mesa,Bueno,club@dn.com
-174430,DN-002,15/02/2020,Gloomhaven,Juego de aventuras cooperativo,,mesa,Nuevo,club@dn.com
-167791,DN-003,20/03/2020,Terraforming Mars,Juego de estrategia sobre la colonización de Marte,,mesa,Bueno,club@dn.com
-173346,DN-004,10/04/2020,7 Wonders,Juego de civilizaciones,,mesa,Regular,club@dn.com
-,DN-005,05/05/2020,Advanced Squad Leader,Wargame táctico de la Segunda Guerra Mundial,,wargame,Bueno,socio1@example.com
-68448,DN-006,12/06/2020,Love Letter,Juego de cartas de deducción,,cartas,Nuevo,club@dn.com
-,DN-007,18/07/2020,Warhammer 40K,Juego de miniaturas en el universo 40K,,mini,Bueno,socio2@example.com
-161936,DN-008,25/08/2020,Pandemic Legacy: Season 1,Juego cooperativo legacy,,mesa,Bueno,club@dn.com
-,DN-009,30/09/2020,Dungeons & Dragons 5E - Player's Handbook,Manual básico del jugador,,rol,Nuevo,club@dn.com
-220308,DN-010,15/10/2020,Gaia Project,Juego de estrategia espacial,,mesa,Bueno,club@dn.com
+3608,696,16/08/2025,Air force,Ingles,,wargame,Regular,alfonsonavarrofuentes@gmail.com
+822,256,16/08/2025,Carcassonne ,Castellano ,,mesa,Bueno,alfonsonavarrofuentes@gmail.com
+254,91,16/08/2025,Empires in Arms,Ingles,,wargame,Bueno,alfonsonavarrofuentes@gmail.com
+37836,511,16/08/2025,Julius Caesar,Castellano,,wargame,Bueno,alfonsonavarrofuentes@gmail.com
+753,241,16/08/2025,Panzerkrieg,Ingles,,wargame,Bueno,alfonsonavarrofuentes@gmail.com
+1563,212,16/08/2025,Rise and decline of the third reich,Ingles,,wargame,Bueno,alfonsonavarrofuentes@gmail.com
+329,238,16/08/2025,Russian Front,Ingles,,wargame,Bueno,alfonsonavarrofuentes@gmail.com
+1593,588,16/08/2025,Down with the king ,Ingles,,wargame,Regular,beldasempere@nomail.com
+128996,866,16/08/2025,1775 La guerra de la independencia de los Estados Unidos,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+94246,880,16/08/2025,1812 The invasion of canada,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+13709,764,16/08/2025,1st Ypres Galicia 1914,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+267058,982,16/08/2025,300 - Tierra y agua,Castellano,,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+204516,873,16/08/2025,878 Vikings La invasion de inglaterra,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+8616,879,16/08/2025,A bridge too far,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+26250,583,16/08/2025,A las barricadas,Castellano,,wargame,Regular,clubdreadnought.vlc@gmail.com
+7253,461,16/08/2025,A raging storm,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+19622,1035,16/08/2025,A victory lost crisis en Ukraine,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+337324,181,16/08/2025,A.D.E.L.E.,Castellano,Sin usar. Abierto ,mesa,Bueno,clubdreadnought.vlc@gmail.com
+60131,25,16/08/2025,Aargh!Tect,Aleman,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+155987,124,16/08/2025,Abyss,English,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+6559,728,16/08/2025,Across the Rappahannock,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+20542,753,16/08/2025,Advanced squad leader starter kit #3,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+271262,750,16/08/2025,Advanced squad leader starter kit #4,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+2078,616,16/08/2025,Aegean strike,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+40914,493,16/08/2025,Afrika Korps,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+264647,569,16/08/2025,Age of civilization,Castellano,Cartas precintadas,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+26,114,16/08/2025,Age of Renaissance,Ingles,Hay 4 cajas de tabaco dentro 🤣🤣🤣 con tokens dentro,mesa,Regular,clubdreadnought.vlc@gmail.com
+200680,183,16/08/2025,Agricola,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+200680,188,16/08/2025,Agricola,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+3608,703,16/08/2025,Air force,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+247367,890,16/08/2025,Aire Tierra y Mar,Castellano,,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+256442,193,16/08/2025,Airship city,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+285203,655,16/08/2025,Alien 51 el ascensor,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+48726,90,16/08/2025,Alien frontiers ,Ingles,,mesa,Regular,clubdreadnought.vlc@gmail.com
+2651,373,16/08/2025,Alta tension ,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+234487,163,16/08/2025,Altiplano,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+257047,168,16/08/2025,Altiplano el viajero ,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+7739,910,16/08/2025,america in flames democracy vs darkness,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+358661,556,16/08/2025,Andromeda's Edge ,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+429653,547,16/08/2025,Andromeda's Edge Deluxe edition,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+428249,540,16/08/2025,Andromeda's Edge materia oscura,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+24935,339,16/08/2025,anima la sombra de Omega,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+300099,418,16/08/2025,Animix,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+37008,12,16/08/2025,Arkham horror La cabra negra de los bosques,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+194789,601,16/08/2025,Asalto a la torre del mago,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+112574,993,16/08/2025,Asalto al poder,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+367260,338,16/08/2025,Ascending Empires ,Castellano ,Tapa golpeada,mesa,Bueno,clubdreadnought.vlc@gmail.com
+336495,108,16/08/2025,Asesinato en la Mansion Cthulhu ,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+6044,622,16/08/2025,Attila,Italiano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+156443,46,16/08/2025,Av Ghost,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+269426,50,16/08/2025,Av Ghost Grace,Independiente ,Precintado ,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+14996,451,16/08/2025,Aventureros al tren. Europa,Castellano,Mapas extra: España y Cuba,mesa,Bueno,clubdreadnought.vlc@gmail.com
+10093,402,16/08/2025,Axis & Allies ,Ingles,,wargame,Malo,clubdreadnought.vlc@gmail.com
+41863,1049,16/08/2025,Axis & allies 1942,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+41863,1051,16/08/2025,Axis & allies 1942 ,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+61692,1045,16/08/2025,Axis & allies Europe,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+55829,1046,16/08/2025,Axis & allies pacific,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+123185,432,16/08/2025,"Axis & Allies Spring 1941, The world is at war",Ingles,,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+230802,94,16/08/2025,Azul ,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+332613,104,16/08/2025,Azul expansion pabellon acristalado,Castellano ,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+294345,110,16/08/2025,Azul extension mosaïque eclatante,Frances,,mesa,Regular,clubdreadnought.vlc@gmail.com
+256226,99,16/08/2025,Azul vitrales de sintra,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+351538,30,16/08/2025,Bamboo,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+351538,812,16/08/2025,Bamboo,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+177736,392,16/08/2025,Banquete de Odin,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+3353,570,16/08/2025,Barbarossa to Berlin,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+178944,231,16/08/2025,Battalia the creation,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+205651,235,16/08/2025,Battalia the stormgates,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+5607,765,16/08/2025,Battle of the bulge,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+4278,517,16/08/2025,Battle over britain,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+7650,409,16/08/2025,Battlefield: Europe,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+7470,424,16/08/2025,Battlespace,Castellano,Sin manual,mesa,Regular,clubdreadnought.vlc@gmail.com
+31759,354,16/08/2025,Battletech,Castellano,Sin manual. Hay 3 copias. Los otros si tienen,mesa,Regular,clubdreadnought.vlc@gmail.com
+142526,1030,16/08/2025,Battletech alpha strike,Aleman,,mini,Nuevo,clubdreadnought.vlc@gmail.com
+7943,379,16/08/2025,Battletech. Battletroops. ,Ingles,Caja rota,mesa,Malo,clubdreadnought.vlc@gmail.com
+283768,387,16/08/2025,Battletech. Beginner box,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+288087,939,16/08/2025,Berridos,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+198452,446,16/08/2025,Betrayak at House on the Hill Widow's Walk,Ingles,Precintado. Expansion,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+10547,452,16/08/2025,Betrayal at House on the Hill,Ingles,Caja rota. Sin destroquelar. ,mesa,Malo,clubdreadnought.vlc@gmail.com
+358504,107,16/08/2025,Betrayal La casa de la colina ,Castellano,3ª edicion ,mesa,Bueno,clubdreadnought.vlc@gmail.com
+5287,255,16/08/2025,Beyond Valor,Ingles ,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+5287,260,16/08/2025,Beyond Valor,Ingles ,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+5287,263,16/08/2025,Beyond Valor,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+24020,528,16/08/2025,Blitzwar,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+130922,916,16/08/2025,Blocks in Afrika,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+63013,785,16/08/2025,Blood and jungle,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+220987,969,16/08/2025,Blood monday,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+240980,470,16/08/2025,Blood on the clock tower,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+508,652,16/08/2025,Blue Max,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+140933,488,16/08/2025,Blueprints,Aleman,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+17115,761,16/08/2025,Borodino ,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+9062,941,16/08/2025,Borodino '41,Ingles,Sin destroquelar,wargame,Regular,clubdreadnought.vlc@gmail.com
+28720,295,16/08/2025,Brass,Aleman ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+224517,320,16/08/2025,Brass Birmingham,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+332386,447,16/08/2025,Brew ,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+5831,755,16/08/2025,Britain stands alone ,Ingles,Sin destroquelar ,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+240,650,16/08/2025,Britania,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+30057,826,16/08/2025,Burger Joint,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+19348,54,16/08/2025,Byzantium,Ingles ,Reglas en castellano fotocopiadas,mesa,Bueno,clubdreadnought.vlc@gmail.com
+271321,704,16/08/2025,Cabo,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+132,604,16/08/2025,Caesar & cleopatra,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+275916,613,16/08/2025,Cairn,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+199383,406,16/08/2025,Calimala,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+299154,336,16/08/2025,Camara y accion ,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+10496,677,16/08/2025,Camelot Legends,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+29227,899,16/08/2025,Camino de la gloria ,Castellano,Solo tablero e instrucciones ,wargame,Malo,clubdreadnought.vlc@gmail.com
+302281,781,16/08/2025,Candy Lab,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+822,799,16/08/2025,Carcassonne + expansion la fiesta,Castellano,Caja en mal estado,mesa,Malo,clubdreadnought.vlc@gmail.com
+2993,264,16/08/2025,Carcassonne expansion posadas y catedrales,Castellano ,Caja rellena de cartas de magic,cartas,Regular,clubdreadnought.vlc@gmail.com
+231484,337,16/08/2025,Carnaval de monstruos,Castellano,Sin destroquelar. Cartaa sin abrir. Sin uso.,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+177352,159,16/08/2025,Carson City,Ingles ,Reglas traducidas ,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+19237,442,16/08/2025,Cash n guns,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+257733,686,16/08/2025,Castillos de arena,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+91534,610,16/08/2025,Catan de cartas,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+66056,513,16/08/2025,Catan el duelo,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+102794,327,16/08/2025,Caverna,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+102794,697,16/08/2025,Caverna,Castellano,Precintado ,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+374200,492,16/08/2025,Celtae,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+209685,673,16/08/2025,Century. La ruta de las especias,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+154905,521,16/08/2025,Cerveceros,Castellano,Precintado,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+30379,268,16/08/2025,Chamge Horses,Ingles ,Incluye fotocopia manual en Castellano ,mesa,Bueno,clubdreadnought.vlc@gmail.com
+553,252,16/08/2025,Chez Geek vagos comparten piso,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+338766,580,16/08/2025,Chupate esa,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+37345,543,16/08/2025,Circus Maximus,Aleman,Cartas precintadas,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+244,582,16/08/2025,Circus maximus,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+10168,706,16/08/2025,"Citadel, The Battle of Dien Bien Phu ",Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+6923,396,16/08/2025,Citytech. Universo Battletech,Castellano,2 copias,mesa,Bueno,clubdreadnought.vlc@gmail.com
+6923,415,16/08/2025,Citytech. Universo Battletech,Castellano,Sin manual. 2 copias.,mesa,Regular,clubdreadnought.vlc@gmail.com
+205398,527,16/08/2025,Ciudadelas,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+233247,532,16/08/2025,Civilizacion,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+233247,229,16/08/2025,Civilization,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+71,578,16/08/2025,Civilization,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+299659,454,16/08/2025,Clash os Cultures - Edicion monumental,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+22141,217,16/08/2025,Cleopatra,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+3553,1042,16/08/2025,Close action the age of fighting sail vol.1,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+8607,292,16/08/2025,Code of bushido,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+178900,213,16/08/2025,Codigo secreto,Castellano ,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+245638,254,16/08/2025,Coimbra,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+283095,2,16/08/2025,Colonias cosmicas,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+283095,482,16/08/2025,Colonias cosmicas,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+21050,581,16/08/2025,Combat Commander Europe ,Ingles,Tradumaquetado ,wargame,Bueno,clubdreadnought.vlc@gmail.com
+28181,576,16/08/2025,Combat Commander Pacific ,Ingles,En cajas organizadores ,wargame,Bueno,clubdreadnought.vlc@gmail.com
+14105,646,16/08/2025,Command & Colors Ancients,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+38927,634,16/08/2025,"Command & Colors Ancients, exp 5, Epic Antients II",Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+22605,641,16/08/2025,"Command & Colors Ancients, exp. 1, Greece and Eastern Kingdoms ",Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+24089,603,16/08/2025,"Command & Colors Ancients, exp. 2, Rome vs. the Barbarians",Ingles,"Sin reglas originales, solo traducidas ",wargame,Bueno,clubdreadnought.vlc@gmail.com
+38928,611,16/08/2025,"Command & Colors Ancients, exp. 4, Imperial Rome",Ingles,Sin reglas,wargame,Bueno,clubdreadnought.vlc@gmail.com
+88853,619,16/08/2025,"Command & Colors Ancients, exp. 6, Spartan Army ",Ingles,,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+29853,597,16/08/2025,"Command & Colors Ancients, expansion 3, The Roman Civil Wars ",Ingles,"Sin reglas originales, solo traduccion ",wargame,Bueno,clubdreadnought.vlc@gmail.com
+281515,855,16/08/2025,Company of Heroes Board Game,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+147151,175,16/08/2025,Concept,Castellano,Sin destroquelar,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+299255,10,16/08/2025,Conexion Viena,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+132028,819,16/08/2025,Conflict of heroes el oso despierta,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+255164,595,16/08/2025,Conquistador,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+292064,384,16/08/2025,Co-op expansion company of heroes,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+269511,5,16/08/2025,Cooper Island,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+187976,205,16/08/2025,Covil - Los señores oscuros ,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+8610,302,16/08/2025,Croix de guerre,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+8610,307,16/08/2025,Croix de Guerre,Ingles ,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+212688,371,16/08/2025,Cthulhu Crusades,Ingles,Cartas precintadas,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+312251,596,16/08/2025,Curious cargo,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+8666,898,16/08/2025,Days of decision,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+8666,914,16/08/2025,days of decision,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+8666,923,16/08/2025,days of decision,Ingles,,wargame,Malo,clubdreadnought.vlc@gmail.com
+8679,929,16/08/2025,days of decision iii,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+160958,520,16/08/2025,DC comics deck building game,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+5779,1062,16/08/2025,D-Day,Ingles,Tapa rota en un canto,wargame,Bueno,clubdreadnought.vlc@gmail.com
+37120,244,16/08/2025,De mudanzas,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+31294,606,16/08/2025,Dead End,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+150376,741,16/08/2025,Dead of Winter,Ingles,Sin destroquelar ,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+149620,758,16/08/2025,Decision at elst,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+202077,118,16/08/2025,Deep madness,Castellano,"Hay 2 cajas iguales con contenido distinto. Bien faltan componentes, bien el juego ocupa 2 cajas.",mesa,Nuevo,clubdreadnought.vlc@gmail.com
+202077,130,16/08/2025,Deep Madness,Ingles,"Por destroquelar. Hay otro igual al que le faltan componentes, o quiza hacen falta las 2 cajas.",mesa,Nuevo,clubdreadnought.vlc@gmail.com
+221421,174,16/08/2025,Deep Madness. Endless nightmares,Ingles,Repetido. Precintado. El otro esta en castellano.,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+221421,146,16/08/2025,Deep Madness. Endless Nightmares. Expansion,Castellano,Falta Manual.,mesa,Bueno,clubdreadnought.vlc@gmail.com
+212573,160,16/08/2025,Deep Madness. Rise of Dagon,Castellano,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+212574,215,16/08/2025,Deep madness. The oracle’s betrayal,Castellano,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+222586,200,16/08/2025,Deep madness. Uncounted horrors,Castellano,"Esta repetido, pero la caja sin abrir pesa mucho menos. Quiza hay componentes de otras expansiones.",mesa,Bueno,clubdreadnought.vlc@gmail.com
+222586,204,16/08/2025,Deep madness. Uncounted horrors,Ingles,Por abrir,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+298535,747,16/08/2025,Deluxe advanced squad leader,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+90568,956,16/08/2025,Democracy under siege,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+104162,529,16/08/2025,Descent viaje a las tinieblas ,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+104162,863,16/08/2025,Descent viaje a las tinieblas segunda edicion,Castellano,,mesa,Regular,clubdreadnought.vlc@gmail.com
+21439,881,16/08/2025,Despues de Colditz,Castellano,,wargame,Regular,clubdreadnought.vlc@gmail.com
+357465,637,16/08/2025,Dice cup,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+1,236,16/08/2025,Die Macher,Ingles- Aleman,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+163077,773,16/08/2025,Dien bien phu,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+172642,653,16/08/2025,Dinamita El juego,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+483,639,16/08/2025,Diplomacy,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+483,51,16/08/2025,Diplomacy,Ingles,Minis abajo del inserto. Fichas sin destroquelar. No se si faltan componentes.,wargame,Regular,clubdreadnought.vlc@gmail.com
+39856,349,16/08/2025,Dixit,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+92828,654,16/08/2025,Dixit Odyssey,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+152955,869,16/08/2025,Dogfight I Guerra Mundial,Castellano,,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+36218,33,16/08/2025,Dominion ,Castellano ,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+51811,29,16/08/2025,Dominion Terramar,Castellano ,Parcialmente enfundado,cartas,Bueno,clubdreadnought.vlc@gmail.com
+221155,83,16/08/2025,Donning the purple,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+686,209,16/08/2025,Dr Jekyll & Mr Hyde,Castellano,,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+686,729,16/08/2025,Dr Jekyll & Mr Hyde,Castellano,,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+4337,533,16/08/2025,Dragon hordes,Ingles,,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+224141,422,16/08/2025,Dreadball,Ingles,,mini,Bueno,clubdreadnought.vlc@gmail.com
+329714,398,16/08/2025,Dreadful circus,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+373660,719,16/08/2025,Drop zone: Sainte-mere-eglise,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+70324,258,16/08/2025,Duel of the Giants,Ingles ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+343696,685,16/08/2025,Dune Traicion,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+343696,689,16/08/2025,Dune Traicion,Castellano,Copia 2,cartas,Bueno,clubdreadnought.vlc@gmail.com
+334349,449,16/08/2025,Dungeon Fighter - Collector's edition,Ingles,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+413393,142,16/08/2025,Dungeon lite specters and ghouls expansion,Castellano,Precintado,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+2017396,8,16/08/2025,Dungeonquest ,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+315196,779,16/08/2025,Dungeons and dragons Comienza la aventura,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+292067,875,16/08/2025,Eastern reinforcements,Ingles,Expansion del Company of heroes,wargame,Bueno,clubdreadnought.vlc@gmail.com
+274363,681,16/08/2025,El desafio de los templos,Castellano,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+245655,1069,16/08/2025,El dilema del rey,Castellano,Necesita kit de rearme,mesa,Bueno,clubdreadnought.vlc@gmail.com
+25255,841,16/08/2025,El duelo de las aguilas ,Castellano,Sin fichas,wargame,Malo,clubdreadnought.vlc@gmail.com
+171011,48,16/08/2025,El favor del faraon ,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+93,380,16/08/2025,El grande ,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+85394,663,16/08/2025,El ultimo banquete,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+181817,22,16/08/2025,Eldritch horror Bajo las piramides,Castellano,Faltan fichas,mesa,Bueno,clubdreadnought.vlc@gmail.com
+164167,40,16/08/2025,Eldritch horror Las montañas de la locura,Castellano,"Faltan fichas, entiendo que estaran en el base",mesa,Bueno,clubdreadnought.vlc@gmail.com
+209686,27,16/08/2025,Eldritch horror Las tierras del sueño,Castellano,En la caja hay dos ampliaciones marcadas con nota. Tierras de sueño y señales de carcosa,mesa,Bueno,clubdreadnought.vlc@gmail.com
+220913,7,16/08/2025,Eldritch horror. Ciudades en ruinas,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+292065,886,16/08/2025,Elite Commanders Company of Heroes,Ingles,Expansion,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+3452,226,16/08/2025,Emerald ,Aleman,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+387201,491,16/08/2025,Emerge,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+163640,514,16/08/2025,Eminent domain microcosmos,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+351526,115,16/08/2025,Enciclopedia ,Castellano ,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+175621,678,16/08/2025,Epic,Castellano,Dos copias iguales (no copio registro),cartas,Nuevo,clubdreadnought.vlc@gmail.com
+107718,382,16/08/2025,epica edades oscuras,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+329450,133,16/08/2025,Equinox,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+310222,391,16/08/2025,Era of inquisition ,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+237023,393,16/08/2025,Era of kingdoms,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+196354,412,16/08/2025,Era of tribes ,Aleman,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+341286,286,16/08/2025,Eriantys,Castellano ,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+253214,356,16/08/2025,Escape tales el despertar,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+223396,400,16/08/2025,Espada negra,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+31291,862,16/08/2025,España 1936,Castellano,"Sin destroquelar
+Copia 1",wargame,Nuevo,clubdreadnought.vlc@gmail.com
+22160,455,16/08/2025,EuroFront The war in Europe 1936-45,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+370448,943,16/08/2025,Europa Universalis,Castellano,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+254127,495,16/08/2025,Europa Universalis,Castellano,Falta el manual ,wargame,Bueno,clubdreadnought.vlc@gmail.com
+370448,885,16/08/2025,Europa Universalis deluxe,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+17895,78,16/08/2025,Europe for whom the bell tolls,Ingles,Expansion,wargame,Bueno,clubdreadnought.vlc@gmail.com
+34090,854,16/08/2025,Excalibur,Castellano,Muy incompleto ,wargame,Malo,clubdreadnought.vlc@gmail.com
+172225,936,16/08/2025,Exploding kittens,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+50,617,16/08/2025,Exploradores,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+150615,251,16/08/2025,Fanhunter las montañas de la locura,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+38548,306,16/08/2025,Fast flowing forest fellers,Ingles ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+271601,280,16/08/2025,Feed the Kraken,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+256320,479,16/08/2025,Fertility ,Castellano,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+112962,317,16/08/2025,Festung Budapest,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+28829,539,16/08/2025,Field Commander Rommel,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+144189,57,16/08/2025,Fire in the lake,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+3692,635,16/08/2025,Fire power,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+8833,523,16/08/2025,Firefight,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+8833,526,16/08/2025,Firefight,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+322564,359,16/08/2025,Fjords,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+8730,800,16/08/2025,Flying colors ,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+4050,228,16/08/2025,Fortress Europa,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+284189,474,16/08/2025,Foundations of Rome,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+296043,41,16/08/2025,Four Gardens,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+254936,844,16/08/2025,Frontier Wars,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+715,88,16/08/2025,Fuga de Colditz,Castellano,,mesa,Regular,clubdreadnought.vlc@gmail.com
+258308,185,16/08/2025,Fuji,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+29416,378,16/08/2025,Funkenschlag,Aleman,Con la expansion Die neuen Krafwerkskarten,mesa,Bueno,clubdreadnought.vlc@gmail.com
+5293,795,16/08/2025,G.i. anvil of victory,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+257321,153,16/08/2025,Gen 7,Castellano ,Precintado,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+189453,223,16/08/2025,Genios victorianos,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+170969,727,16/08/2025,Gigamon,Castellano,Precintado,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+343526,420,16/08/2025,Gijoe,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+118567,197,16/08/2025,Gladiatori,Multi idioma - no esta en Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+291457,144,16/08/2025,Gloomhaven fauces de leon ,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+369681,572,16/08/2025,Godzilla vs kong,Castellano,Precintado ,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+242,507,16/08/2025,Golpe,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+406370,450,16/08/2025,Graffiti Rush,Castellano,Precintado,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+58099,763,16/08/2025,Granada,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+193738,443,16/08/2025,Great western trail,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+193738,28,16/08/2025,Great Western trail ,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+295394,720,16/08/2025,Gua Ta Fac,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+115746,519,16/08/2025,Guerra del Anillo,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+7086,796,16/08/2025,Guilford,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+93041,346,16/08/2025,Guilty gods,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+8609,296,16/08/2025,Gung Ho!,Ingles,,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+109215,38,16/08/2025,Gunship First Strike!,Ingles,Cartas precintadas.,mesa,Bueno,clubdreadnought.vlc@gmail.com
+3685,746,16/08/2025,Hammer of the Scots,Castellano,,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+286749,220,16/08/2025,Hamsa Teutonica- Big Box,Frances,Esquina de la tapa con golpe,mesa,Bueno,clubdreadnought.vlc@gmail.com
+6503,660,16/08/2025,Harpoon Captain's Edition,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+300329,305,16/08/2025,Harry potter strike,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+254682,726,16/08/2025,hatten in flames,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+57925,440,16/08/2025,Havana ,Italiano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+5291,864,16/08/2025,Hedgegrow hell,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+5291,911,16/08/2025,Hedgerow hell,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+321608,92,16/08/2025,Hegemony,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+638,608,16/08/2025,Hera and zeus,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+17392,722,16/08/2025,Here I Stand,Ingles,Tradumaquetado ,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+223049,496,16/08/2025,Heroes a medida,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+286081,901,16/08/2025,Herrlof,Castellano,,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+267568,170,16/08/2025,Hex roller,Castellano,Precintado,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+224,920,16/08/2025,History of the World ,Ingles,Caja hundida ,wargame,Regular,clubdreadnought.vlc@gmail.com
+207572,757,16/08/2025,Holland '44,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+8608,288,16/08/2025,Hollow legions,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+8608,291,16/08/2025,Hollow Legions,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+25821,790,16/08/2025,Hombres lobo de Castronegro,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+285773,845,16/08/2025,Hora final,Castellano,Sin destroquelar.,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+222586,567,16/08/2025,Horrores incontables. Deep madness. Expansion.,Castellano,Cartas en castellano de juego ya existente.,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+134253,158,16/08/2025,Hostage negotiator,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+7453,457,16/08/2025,Hube's pocket,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+3634,967,16/08/2025,Iberos,Castellano,,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+6128,640,16/08/2025,Idro La rivolta del tritoni,Italiano ,,wargame,Regular,clubdreadnought.vlc@gmail.com
+371972,331,16/08/2025,Ierusalem,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+177478,44,16/08/2025,Iki,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+19650,780,16/08/2025,Il principe,Ingles,Reglas traducidas,mesa,Bueno,clubdreadnought.vlc@gmail.com
+8124,265,16/08/2025,Industria,Aleman,Reglas Castellano fotocopias,mesa,Bueno,clubdreadnought.vlc@gmail.com
+42897,760,16/08/2025,Infantry attacks august 1914,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+16498,698,16/08/2025,Inka,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+323903,441,16/08/2025,Inserta Moneda para jugar,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+13980,701,16/08/2025,Into a Beartrap ,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+37867,787,16/08/2025,Into the rubble,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+200785,839,16/08/2025,Inventores Legendarios,Castellano,Sin destroquelar. Cartas sin abrir.,mesa,Bueno,clubdreadnought.vlc@gmail.com
+24994,788,16/08/2025,Island of death ,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+327711,271,16/08/2025,It’s a wonderful kingdom,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+180256,477,16/08/2025,Its mine,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+883,123,16/08/2025,Ivanhoe,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+314530,135,16/08/2025,Iwari edicion deluxe,Ingles,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+377793,106,16/08/2025,Jekyll & Hyde vs Scotland Yard,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+297129,199,16/08/2025,Jekyll vs hyde,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+253215,751,16/08/2025,Jetpack Joyride escapa del laboratorio,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+169255,315,16/08/2025,Juego de Tronos - El juego de cartas,Castellano ,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+103343,120,16/08/2025,Juego de tronos el juego de tablero,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+37836,737,16/08/2025,Julius Caesar ,Castellano,do it games,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+193042,261,16/08/2025,Junkart,Castellano,Instrucciones en castellano impresas,mesa,Bueno,clubdreadnought.vlc@gmail.com
+8612,900,16/08/2025,Kampfgruppe peiper 1,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+8614,870,16/08/2025,Kampfgruppe peiper 2,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+8614,872,16/08/2025,Kampfgruppe peiper 2,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+8612,908,16/08/2025,Kampfgruppe proper 2,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+103947,777,16/08/2025,kampfgruppe sherer the shield of cholm,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+309688,173,16/08/2025,Kaos,Castellano ,,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+139992,23,16/08/2025,Kaos Ball,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+41003,934,16/08/2025,Keltis El camino de las piedras,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+257501,659,16/08/2025,Keyforge,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+419754,714,16/08/2025,Keyframes,Castellano,Precintado ,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+419754,783,16/08/2025,Keyframes,Castellano,Es la segunda copia que encuentro,cartas,Bueno,clubdreadnought.vlc@gmail.com
+194196,623,16/08/2025,Kharnage,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+199966,76,16/08/2025,Kingsburg,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+1780,891,16/08/2025,Knights of camelot,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+5394,838,16/08/2025,Kölin,Ingles,,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+196,851,16/08/2025,Kremlin,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+21734,299,16/08/2025,Krumble,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+17041,802,16/08/2025,La Bataille d`Austerlitz,Frances,,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+113971,1048,16/08/2025,La bataille de Dresde,Castellano,"Copia 2
+Sin abrir",wargame,Nuevo,clubdreadnought.vlc@gmail.com
+34591,421,16/08/2025,"La batalla del ebro, 1938",Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+376223,734,16/08/2025,La caza,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+27848,316,16/08/2025,La era de Conan el juego de tablero,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+173105,1002,16/08/2025,La gran guerra,Castellano,Copia 1,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+173105,1007,16/08/2025,La gran guerra,Castellano,"Copia 2
+Sin abrir",wargame,Nuevo,clubdreadnought.vlc@gmail.com
+14589,837,16/08/2025,La guerra de España ,Castellano,,wargame,Regular,clubdreadnought.vlc@gmail.com
+330145,849,16/08/2025,La guerra de la triple alianza,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+65244,793,16/08/2025,La isla prohibida,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+20601,892,16/08/2025,La legion ,Castellano,Solo tablero e instrucciones ,wargame,Malo,clubdreadnought.vlc@gmail.com
+184151,434,16/08/2025,La leyenda de los cinco anillos,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+41114,162,16/08/2025,La resistencia ,Castellano ,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+284083,164,16/08/2025,La tripulacion,Castellano,,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+242742,34,16/08/2025,Las llaves del castillo,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+176229,518,16/08/2025,Las mareas del tiempo,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+274450,161,16/08/2025,Last aurora,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+274450,664,16/08/2025,Last Aurora,Castellano,Por abrir,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+21915,568,16/08/2025,le vol de l’aigle,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+165872,816,16/08/2025,Liberty or Death The American insurrection ,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+246201,954,16/08/2025,Lincoln,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+18460,913,16/08/2025,Lock 'N Load,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+18460,848,16/08/2025,Lock'n load band of heroes,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+317299,813,16/08/2025,Loco Momo,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+337098,322,16/08/2025,Lords of vaala,Castellano ,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+12414,1044,16/08/2025,Los Arapiles ,Castellano,,wargame,Regular,clubdreadnought.vlc@gmail.com
+171668,490,16/08/2025,Los inseparables,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+24480,9,16/08/2025,Los Pilares de la Tierra,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+70512,194,16/08/2025,Luna,Ingles ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+280453,403,16/08/2025,Maestros del Renacimiento,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+40816,247,16/08/2025,Magestorm,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+298378,375,16/08/2025,Maha raja,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+298378,644,16/08/2025,Maharaja,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+287228,724,16/08/2025,Mal trago,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+260201,360,16/08/2025,Manitoba,Castellano,Sin uso. Cartas sin abrir.,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+279877,221,16/08/2025,Mar Rojo la guerra civil Castellanoa en el mar,Castellano,Cartas precintadas,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+184424,401,16/08/2025,Mega Civilization,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+283924,237,16/08/2025,Mercaderes de Dunhuang,Castellano,Cartas precintadas,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+306040,473,16/08/2025,Merv,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+258207,67,16/08/2025,Milito the ancient warfare cards game,Ingles,Sin desprecintar,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+304336,166,16/08/2025,Million dollar script,Castellano ,Precintado ,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+20839,614,16/08/2025,Mockba,Italiano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+481409,308,16/08/2025,Modern Art,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+40381,319,16/08/2025,Modern Art el juego de cartas,Castellano,,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+20078,809,16/08/2025,Monmouth ,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+6353,960,16/08/2025,Monty's gamble,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+7622,342,16/08/2025,Morsecode Empires of apocalypse part 1,Ingles ,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+7622,344,16/08/2025,Morsecode Empires of apocalypse part 1,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+7622,358,16/08/2025,Morsecode Empires of apocalypse part 1,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+1669,642,16/08/2025,Mosby's Raiders,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+72287,408,16/08/2025,Mr jack pocket,Castellano,,cartas,Regular,clubdreadnought.vlc@gmail.com
+1927,129,16/08/2025,Munchkin,Castellano,Edicion edge,cartas,Regular,clubdreadnought.vlc@gmail.com
+181268,688,16/08/2025,Munchkin navidades light,Castellano,Precintado,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+91312,293,16/08/2025,Mundodisco,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+25228,846,16/08/2025,Napoleon en Waterloo ,Castellano,,wargame,Regular,clubdreadnought.vlc@gmail.com
+278165,35,16/08/2025,Narcos plata  o plomo,Castellano ,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+71906,284,16/08/2025,Naufragos,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+167355,333,16/08/2025,Nemesis,Castellano ,Tablero partido por la mitad,mesa,Regular,clubdreadnought.vlc@gmail.com
+280812,486,16/08/2025,Neta tanka,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+161757,369,16/08/2025,New salem,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+13308,1068,16/08/2025,Niagara,Aleman,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+33924,952,16/08/2025,Nightfighter,Ingles,Reglas traducidas,wargame,Bueno,clubdreadnought.vlc@gmail.com
+36946,626,16/08/2025,Noviembre Rojo,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+292066,896,16/08/2025,Oberkommando west,Ingles,Expansion de Company of heroes,wargame,Bueno,clubdreadnought.vlc@gmail.com
+31354,191,16/08/2025,Oil field,English,Sin destroquelar,mesa,Bueno,clubdreadnought.vlc@gmail.com
+36661,132,16/08/2025,One more Barrel,Ingles ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+393868,694,16/08/2025,Onus! El aguila del imperio ,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+332070,665,16/08/2025,Onus! Traianus,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+332070,676,16/08/2025,Onus! Traianus Compendium,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+20692,365,16/08/2025,operacao mx1 wargame,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+16753,713,16/08/2025,Operation Veritable,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+9497,709,16/08/2025,operation: watchtower,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+164928,171,16/08/2025,Orleans ,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+204814,177,16/08/2025,Orleans Comercio e intriga ,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+2389,1050,16/08/2025,Othello ,Castellano,,mesa,Regular,clubdreadnought.vlc@gmail.com
+223278,462,16/08/2025,Palace of mad king ludwig,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+300531,138,16/08/2025,Paleo ,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+30549,436,16/08/2025,Pandemic,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+30549,84,16/08/2025,Pandemic,Castellano ,Enfundafo,mesa,Bueno,clubdreadnought.vlc@gmail.com
+40849,80,16/08/2025,Pandemic Al limite ,Castellano ,Enfundado,mesa,Bueno,clubdreadnought.vlc@gmail.com
+280789,77,16/08/2025,Pandemic Respuesta rapida ,Castellano ,Enfundado,mesa,Bueno,clubdreadnought.vlc@gmail.com
+121073,776,16/08/2025,Panico lab,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+5035,624,16/08/2025,Panzer armee afrika,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+5035,631,16/08/2025,Panzer Armee Afrika,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+291962,340,16/08/2025,Paper Dungeons,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+86673,823,16/08/2025,Paranoia,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+5288,267,16/08/2025,Paratrooper,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+5825,230,16/08/2025,Paris Paris ,Multiidioma ,,mesa,Regular,clubdreadnought.vlc@gmail.com
+5290,276,16/08/2025,Partisan,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+320897,334,16/08/2025,Pasapalabra junior,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+2593,953,16/08/2025,Pass the pigs ,Ingles,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+271060,61,16/08/2025,Pathfinder adventure card game,Castellano,Copia 1,cartas,Bueno,clubdreadnought.vlc@gmail.com
+271060,65,16/08/2025,Pathfinder juego de cartas de aventura,Castellano,Copia 2,cartas,Bueno,clubdreadnought.vlc@gmail.com
+292068,888,16/08/2025,Pathfinder pack,Ingles,Expansion de Company of heroes,wargame,Bueno,clubdreadnought.vlc@gmail.com
+91,565,16/08/2025,Paths of Glory ,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+4275,419,16/08/2025,Pea Ridge,Ingles,Reglas traducidas ,wargame,Bueno,clubdreadnought.vlc@gmail.com
+8613,858,16/08/2025,Pegasus Bridge,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+8613,884,16/08/2025,Pegasus bridge,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+262024,559,16/08/2025,Penitent and forsaken epic monster. Deep Madness,Figura,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+38870,806,16/08/2025,Pensacola ,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+231032,1,16/08/2025,Perfect Hotel,Casrellano,,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+231032,695,16/08/2025,Perfect hotel,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+309728,627,16/08/2025,Pessoa,Castellano,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+282414,278,16/08/2025,Pharaon,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+125548,774,16/08/2025,Pixel Tactics,Castellano,Cartas enfundadas,cartas,Bueno,clubdreadnought.vlc@gmail.com
+160908,195,16/08/2025,Plus ultra,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+189086,782,16/08/2025,Poland in flames,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+156009,772,16/08/2025,Port Royal,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+76417,178,16/08/2025,Poseidon 1800 a.c,Ingles ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+58708,367,16/08/2025,Power Grid Collector Box,Aleman,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+58708,366,16/08/2025,Power Grid Collector Box,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+341974,314,16/08/2025,Power plants,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+355957,350,16/08/2025,Pradera rio abajo ,Castellano ,Caja vacia ,mesa,Bueno,clubdreadnought.vlc@gmail.com
+15275,1031,16/08/2025,Prelude to disaster,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+40634,962,16/08/2025,Price of freedom ,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+555,63,16/08/2025,Principes de Florencia ,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+182054,918,16/08/2025,Project Elite,Ingles,Expansion de Aliens,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+256999,906,16/08/2025,Project Elite ,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+328261,770,16/08/2025,Prokhorovka!,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+3316,768,16/08/2025,Prussia's glory,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+17395,754,16/08/2025,Prussia's glory 2,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+3228,210,16/08/2025,Pueblo,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+265285,325,16/08/2025,Queenz,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+20445,330,16/08/2025,Quest for the dragonlords ,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+8218,335,16/08/2025,Quest for the dragonlords the crystal of power,Ingles ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+254386,364,16/08/2025,Raccoon Tycoon,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+125752,304,16/08/2025,Race formula 90 + miniatures ,Ingles ,La caja de minis esta fuera,mesa,Bueno,clubdreadnought.vlc@gmail.com
+350093,310,16/08/2025,Race formula 90 expansion 3,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+3202,853,16/08/2025,RAF ,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+132233,592,16/08/2025,Rally,Castellano,,mesa,Regular,clubdreadnought.vlc@gmail.com
+303635,801,16/08/2025,Rat attack party ,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+8611,882,16/08/2025,Red barricades ,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+8611,904,16/08/2025,Red barricades ,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+1687,615,16/08/2025,Red Empire,Ingles,,cartas,Regular,clubdreadnought.vlc@gmail.com
+209456,321,16/08/2025,Red Factories,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+20053,970,16/08/2025,Red Vengeance,Ingles,,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+161417,589,16/08/2025,Red7,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+766,937,16/08/2025,Regatta,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+307002,794,16/08/2025,Regicide,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+363089,909,16/08/2025,Regine ,Castellano,,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+217861,575,16/08/2025,Reinos de papel,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+369876,460,16/08/2025,Rèquiem ,Castellano,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+100901,656,16/08/2025,Rescate,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+25223,867,16/08/2025,Resiste Satlingrado? ,Castellano,"Incompleto, solo instrucciones y tablero. ",wargame,Malo,clubdreadnought.vlc@gmail.com
+25223,586,16/08/2025,Resiste Stalingrado,Castellano,,wargame,Regular,clubdreadnought.vlc@gmail.com
+352697,723,16/08/2025,Resistid!,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+265260,742,16/08/2025,Revolucion 1828,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+241831,417,16/08/2025,Reykholt,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+119591,413,16/08/2025,Rialto,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+51,248,16/08/2025,Ricochet robots,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+1563,218,16/08/2025,Rise and decline of the third reich,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+1563,208,16/08/2025,Rise and decline of the third reich,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+1563,222,16/08/2025,Rise and decline of the third reich,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+30658,388,16/08/2025,Rise of empires ,Aleman,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+1794,484,16/08/2025,Risk edicion batallas napoleonicas ,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+7831,756,16/08/2025,Risorgimento 1859,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+227515,176,16/08/2025,Riverboat,Castellano,Sin usar pero abierto. La caja un poco castigada,mesa,Bueno,clubdreadnought.vlc@gmail.com
+232666,216,16/08/2025,Robin hood and the merry men,Ingles ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+216201,13,16/08/2025,Robo Rally,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+25229,874,16/08/2025,Rommel y Montgomery ,Castellano,,wargame,Regular,clubdreadnought.vlc@gmail.com
+237182,249,16/08/2025,Root,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+177965,234,16/08/2025,Rush and Bash,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+9220,155,16/08/2025,Saboteur y expansion Los enanos contraatacan,Castellano,Caja bigbox que contiene expansion,cartas,Bueno,clubdreadnought.vlc@gmail.com
+131379,733,16/08/2025,Saipan 1944,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+227029,607,16/08/2025,Sakura,Ingles,Tambien en frances,mesa,Bueno,clubdreadnought.vlc@gmail.com
+330769,554,16/08/2025,Saladin,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+189222,323,16/08/2025,Salt Lands,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+178397,469,16/08/2025,Samhain,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+3373,246,16/08/2025,San Gimignano,Aleman ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+8217,287,16/08/2025,San Juan,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+229220,301,16/08/2025,Santa Maria,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+251217,383,16/08/2025,Santa Maria American Kingdoms,Multiidioma,Expansion,mesa,Bueno,clubdreadnought.vlc@gmail.com
+8125,294,16/08/2025,Santiago,Ingles ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+3413,810,16/08/2025,Saratoga,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+394340,537,16/08/2025,Scope panzer,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+169786,707,16/08/2025,Scythe,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+24227,721,16/08/2025,Scythe el auge de fenris,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+199727,717,16/08/2025,Scythe invasores de tierras lejanas,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+223555,712,16/08/2025,Scythe vientos de guerra y paz,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+148261,525,16/08/2025,Sea Fall,Castellano,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+307656,820,16/08/2025,Seastead,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+31624,430,16/08/2025,Sechsstädtebund,Aleman,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+188834,385,16/08/2025,Secret Hitler ,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+177844,150,16/08/2025,Sector 6,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+177844,692,16/08/2025,Sector 6,Castellano,Precintado,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+4343,463,16/08/2025,Semper Fi,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+36597,797,16/08/2025,Serpents of the sea,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+270847,516,16/08/2025,Set & Match,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+6087,633,16/08/2025,Sicilia ‘43,Italiano ,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+38402,630,16/08/2025,Sidibaba,Castellano,Caja rota,mesa,Regular,clubdreadnought.vlc@gmail.com
+242343,453,16/08/2025,Siege storm,Castellano, ,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+17484,948,16/08/2025,Silent war ,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+348821,716,16/08/2025,Sinthesis,Castellano,Sin usar. Cartas precintadas.,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+437933,699,16/08/2025,Slaughter at ponyri,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+144171,279,16/08/2025,Smallworld royal bonus,Ingles ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+306864,117,16/08/2025,Smartphone Actualizacion 1.1,Castellano ,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+122522,669,16/08/2025,Smash up,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+225610,995,16/08/2025,Smolensk Barbarossa Derailed,Ingles,"Algunas hojas impresas en castellano
+Destroquelado en parte",wargame,Nuevo,clubdreadnought.vlc@gmail.com
+67185,830,16/08/2025,Sobek,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+280202,456,16/08/2025,Social train,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+255255,431,16/08/2025,Somnium,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+71721,464,16/08/2025,Space Hulk Death Angel ,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+71721,437,16/08/2025,Space Hulk el juego de cartas,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+235375,560,16/08/2025,Spirits of the forest,Castellano,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+188601,671,16/08/2025,Spoilers,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+229006,465,16/08/2025,Spynet,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+229006,632,16/08/2025,Spynet,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+1035,791,16/08/2025,Squad Leader,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+41481,332,16/08/2025,st nazaire operation chariot,ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+18791,618,16/08/2025,Star Wars,Ingles,Precintado,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+1270,767,16/08/2025,Star Wars customizable card game,Ingles,,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+4095,273,16/08/2025,Starmunchkin,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+363369,476,16/08/2025,Starship captains,Aleman,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+4453,945,16/08/2025,statis pro basketball,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+4453,946,16/08/2025,statis pro basketball,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+4453,947,16/08/2025,statis pro basketball,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+161614,17,16/08/2025,Stockpile,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+1423,668,16/08/2025,Storm over arnhem,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+24920,942,16/08/2025,Storm over stalingrad,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+232822,410,16/08/2025,Stratego,Portugues ,,mesa,Regular,clubdreadnought.vlc@gmail.com
+411087,792,16/08/2025,Streamer Standoff,Ingles,Sin destroquelar.  Cartas sin abrir.,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+257669,550,16/08/2025,Streaming ,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+5292,860,16/08/2025,Street of fire,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+5292,894,16/08/2025,Streets of fire ,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+9625,165,16/08/2025,Struggle of empires,"Ingles,aleman y frances ",Tradumaquetadas las reglas,mesa,Regular,clubdreadnought.vlc@gmail.com
+292069,883,16/08/2025,Stug assault pack,Ingles,Expansion de Company of heroes,wargame,Bueno,clubdreadnought.vlc@gmail.com
+6789,1058,16/08/2025,Subasta ,Castellano,,mesa,Regular,clubdreadnought.vlc@gmail.com
+123260,19,16/08/2025,Suburbia,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+325348,817,16/08/2025,Successors,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+27,363,16/08/2025,Suprematie,Frances,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+133473,683,16/08/2025,Sushi Go,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+6930,762,16/08/2025,Sweden fights on,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+339945,326,16/08/2025,Sword & Fire Manila,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+35761,201,16/08/2025,Sylla,Aleman ,Reglas traducidas castellano,mesa,Bueno,clubdreadnought.vlc@gmail.com
+338095,600,16/08/2025,Tacmento,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+70919,427,16/08/2025,Takenoko,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+246816,458,16/08/2025,Tales of glory,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+329432,876,16/08/2025,Tarawa,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+8615,902,16/08/2025,Tarawa,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+228411,590,16/08/2025,Telon de acero,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+229853,504,16/08/2025,Teotihuacan,Castellano,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+292063,878,16/08/2025,Terrain Pack 1 Company of Heroes,Ingles,Expansion ,wargame,Bueno,clubdreadnought.vlc@gmail.com
+371433,510,16/08/2025,Terrorscape,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+183315,975,16/08/2025,Tetrarchia,Castellano,,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+359763,505,16/08/2025,That old wallpaper,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+254713,198,16/08/2025,The Artemis project,Castellano,Caja un poco rota,mesa,Bueno,clubdreadnought.vlc@gmail.com
+145642,243,16/08/2025,The cards of Cthulhu,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+271320,125,16/08/2025,The Castles of Burgundy - Ed. Alea,Ingles- Frances,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+10663,585,16/08/2025,The civil war,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+474,955,16/08/2025,The cold war ,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+270956,309,16/08/2025,The court of miracles,Ingles,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+9263,833,16/08/2025,The forgotten wars : korea,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+5233,710,16/08/2025,The great battles of alexander,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+42892,411,16/08/2025,The isle of doctor Necreaux,Ingles,Cartas precintadas,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+7748,828,16/08/2025,The italian front 1915-1918,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+15052,621,16/08/2025,The Korean war ,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+8604,311,16/08/2025,the last hurrah!,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+283863,180,16/08/2025,The Magnificent,Castellano ,Falta el manual. Sin destroquelar,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+177659,95,16/08/2025,The Manhattan Project 2: Minutes to Midnight ,Ingles ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+227224,829,16/08/2025,The red cathedral,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+359747,825,16/08/2025,The red cathedral contractors,Castellano,Expansion The red catedral,mesa,Bueno,clubdreadnought.vlc@gmail.com
+288182,620,16/08/2025,The smog riders: Showdown,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+371942,803,16/08/2025,The white castle,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+24693,963,16/08/2025,They shall not pass,Ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+341753,390,16/08/2025,Tholos,Castellano,"Hay dos copias de este juego,",mesa,Bueno,clubdreadnought.vlc@gmail.com
+341753,395,16/08/2025,Tholos,Castellano,Hay dos copias,mesa,Bueno,clubdreadnought.vlc@gmail.com
+209951,861,16/08/2025,Thunder in the East,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+347977,552,16/08/2025,Thunder road parte 2,Castellano,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+347978,555,16/08/2025,Thunder road parte 3,Castellano,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+347976,549,16/08/2025,Thunder road parte 4,Castellano,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+342070,545,16/08/2025,Thunder road vendetta,Castellano,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+377645,927,16/08/2025,Tic Dice Town,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+253284,206,16/08/2025,Ticket to ride new york,Ingles ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+3354,428,16/08/2025,Tide of fortune,Ingles,,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+42,89,16/08/2025,Tigris & Euphrates,Ingles ,Con traduccion de reglas,mesa,Bueno,clubdreadnought.vlc@gmail.com
+54,52,16/08/2025,Tikal,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+351913,466,16/08/2025,Tiletum,Castellano,,mesa,Regular,clubdreadnought.vlc@gmail.com
+146508,394,16/08/2025,Time stories,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+1353,715,16/08/2025,Times up,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+3405,708,16/08/2025,Tin Soldiers,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+35570,126,16/08/2025,Tinner's trail,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+244536,638,16/08/2025,Tiny epic Zombies,Ingles,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+15269,368,16/08/2025,Titularing,Castellano,,mesa,Regular,clubdreadnought.vlc@gmail.com
+31697,959,16/08/2025,Totensonntag,Ingles,,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+300,312,16/08/2025,Toutankamon,Frances ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+24827,47,16/08/2025,Traders of carthage,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+32364,887,16/08/2025,Trafalgar,Castellano,,wargame,Regular,clubdreadnought.vlc@gmail.com
+21287,324,16/08/2025,Tribus tiembla la pradera,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+5274,426,16/08/2025,Triumphant fox,Ingles,,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+298060,169,16/08/2025,Truffle shuffle,Castellano ,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+12493,429,16/08/2025,Twilight Imperium- Third Edition,Ingles,Falta el manual,mesa,Bueno,clubdreadnought.vlc@gmail.com
+410247,328,16/08/2025,Twilight of the reich ,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+351040,649,16/08/2025,Un dia en las carreras,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+43528,4,16/08/2025,Un Mundo sin Fin,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+43528,207,16/08/2025,Un mundo sin fin,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+701,667,16/08/2025,Una nacion dividida,Castellano,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+247763,389,16/08/2025,Underwater cities,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+208411,297,16/08/2025,Unreal estate,Ingles,,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+369024,211,16/08/2025,Valley Hoopers,Ingles ,Cuadernillo de reglas en castellano y tapete fuera de la caja ,mesa,Bueno,clubdreadnought.vlc@gmail.com
+388554,938,16/08/2025,Valley Of tears ,Ingles,,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+19829,702,16/08/2025,Valor of the guards,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+257058,433,16/08/2025,Valparaiso,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+257058,56,16/08/2025,Valparaiso ,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+132326,122,16/08/2025,Venetia,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+43570,738,16/08/2025,Viernes,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+29225,625,16/08/2025,Vietnam,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+349177,240,16/08/2025,Vikings gone wild,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+358085,544,16/08/2025,Village rails,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+241724,815,16/08/2025,Villagers,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+345377,119,16/08/2025,Virtu,Castellano ,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+180020,584,16/08/2025,Virus,Castellano,,cartas,Bueno,clubdreadnought.vlc@gmail.com
+180020,657,16/08/2025,Virus ,Castellano,Segunda copia encontrada,cartas,Bueno,clubdreadnought.vlc@gmail.com
+229713,1001,16/08/2025,War room jumbo pack expansion ,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+2718,386,16/08/2025,War! - Age of Imperialism,Ingles,,mesa,Nuevo,clubdreadnought.vlc@gmail.com
+7479,149,16/08/2025,WarCraft the board game,Ingles ,Copia 1,mesa,Bueno,clubdreadnought.vlc@gmail.com
+365650,345,16/08/2025,Warhammer Horus Heresy,Ingles ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+365650,343,16/08/2025,Warhammer Horus heresy ,Ingles ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+22038,224,16/08/2025,Warrior knights,Ingles,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+6124,645,16/08/2025,Waterloo the last great battle,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+262543,189,16/08/2025,Wavelenght,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+78,459,16/08/2025,West front the war in europe 1943-45,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+8605,281,16/08/2025,West of alamein,ingles,,wargame,Regular,clubdreadnought.vlc@gmail.com
+268329,1065,16/08/2025,White dwarf,Castellano,,mini,Bueno,clubdreadnought.vlc@gmail.com
+266192,62,16/08/2025,Wingspan,Castellano ,Contiene las cartas de la expansion europea,mesa,Bueno,clubdreadnought.vlc@gmail.com
+290448,68,16/08/2025,Wingspan expansion europea ,Castellano ,"Solo contiene cajas para cartas, sus cartas estan en la caja del juego base",mesa,Bueno,clubdreadnought.vlc@gmail.com
+300580,71,16/08/2025,Wingspan expansion oceania,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+1382,156,16/08/2025,Winner 's Circle,"Ingles, aleman y chino",,mesa,Bueno,clubdreadnought.vlc@gmail.com
+128142,912,16/08/2025,Winter,Castellano,,cartas,Nuevo,clubdreadnought.vlc@gmail.com
+355093,81,16/08/2025,Woodcraft,Castellano ,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+25729,370,16/08/2025,World at war Eisenbach gap,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+328295,871,16/08/2025,World Builder Company of Heroes,Ingles,Expansion ,wargame,Nuevo,clubdreadnought.vlc@gmail.com
+1499,903,16/08/2025,world in flames,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+1499,922,16/08/2025,World in flames ,Ingles,,wargame,Malo,clubdreadnought.vlc@gmail.com
+1499,932,16/08/2025,World in flames 5th edition,Ingles,Vacio ,wargame,Malo,clubdreadnought.vlc@gmail.com
+150446,919,16/08/2025,World in flames the final edition,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+150446,935,16/08/2025,World in flames the final edition,Ingles,Solo fichas,wargame,Malo,clubdreadnought.vlc@gmail.com
+82222,407,16/08/2025,Xia - Leyendas de un sistema a la deriva ,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+5289,272,16/08/2025,Yanks,Ingles,,wargame,Bueno,clubdreadnought.vlc@gmail.com
+113924,564,16/08/2025,Zombicide ,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+137988,562,16/08/2025,Zombicide Temporada 2 - Prision Outbreak,Castellano,,mesa,Bueno,clubdreadnought.vlc@gmail.com
+174430,850,16/08/2025,Gloomhaven,Castellano,,mesa,Bueno,grompay@gmail.com
+161970,643,16/08/2025,Alchemists,Ingles,,mesa,Bueno,gronanx@gmail.com
+104627,73,16/08/2025,Feudalia ,Castellano ,,mesa,Bueno,gronanx@gmail.com
+110524,69,16/08/2025,Goblins inc,Ingles ,,mesa,Bueno,gronanx@gmail.com
+204472,242,16/08/2025,Subterra,Castellano ,,mesa,Bueno,gronanx@gmail.com
+230085,147,16/08/2025,Agra,Ingles ,,mesa,Bueno,jcqkla@gmail.com
+39463,1066,16/08/2025,Cosmic Encounter,Castellano,,mesa,Bueno,jcqkla@gmail.com
+61001,1067,16/08/2025,Cosmic Encounter: Cosmic Incursion,Castellano,Expansion,mesa,Bueno,jcqkla@gmail.com
+283355,137,16/08/2025,Dune,Castellano ,,mesa,Bueno,jcqkla@gmail.com
+97207,290,16/08/2025,Dungeon Petz ,Aleman ,Incluye fotocopia manual en Castellano ,mesa,Bueno,jcqkla@gmail.com
+119391,140,16/08/2025,Il vecchio,English,,mesa,Bueno,jcqkla@gmail.com
+1209,579,16/08/2025,Pax britannica,Ingles,,wargame,Bueno,jcqkla@gmail.com
+5699,439,16/08/2025,Afrika,Ingles,The Gamers ,wargame,Bueno,joluvice@gmail.com
+15987,82,16/08/2025,Arkham horror,Castellano,Componentes de expansiones en el base,mesa,Bueno,joluvice@gmail.com
+21059,86,16/08/2025,Arkham horror el horror de dunwich,Castellano ,Algunas fichas en el base ,mesa,Bueno,joluvice@gmail.com
+31536,93,16/08/2025,Arkham horror el horror de kingsport ,Castellano,,mesa,Bueno,joluvice@gmail.com
+69789,74,16/08/2025,Ascension. Chronicle of the Godslayer,Ingles,,cartas,Bueno,joluvice@gmail.com
+95064,79,16/08/2025,Ascension. Return of the Fallen,Ingles,Expansion,cartas,Bueno,joluvice@gmail.com
+494,499,16/08/2025,Ave Caesar,Aleman,,mesa,Bueno,joluvice@gmail.com
+760,113,16/08/2025,Battle line,Ingles,,cartas,Bueno,joluvice@gmail.com
+31759,145,16/08/2025,Battletech Introductory Box set,Ingles ,,mini,Nuevo,joluvice@gmail.com
+11,219,16/08/2025,Bohnanza,Ingles,,cartas,Bueno,joluvice@gmail.com
+28720,112,16/08/2025,Brass - Edicion 2006,Ingles ,Incluye fotocopia manual en Castellano ,mesa,Bueno,joluvice@gmail.com
+106711,6,16/08/2025,Britannia,Ingles,Por destroquelar,mesa,Nuevo,joluvice@gmail.com
+18602,70,16/08/2025,Caylus,Ingles ,Viene con fotocopia del reglamento en Castellano,mesa,Bueno,joluvice@gmail.com
+27746,45,16/08/2025,Colosseum,Castellano,,mesa,Bueno,joluvice@gmail.com
+17710,377,16/08/2025,Conquest of the Empire,Ingles,Incluye fotocopia manual en Castellano ,mesa,Bueno,joluvice@gmail.com
+38506,227,16/08/2025,Der Hexer von Salem ,Aleman ,,mesa,Bueno,joluvice@gmail.com
+1,60,16/08/2025,Die Macher,Ingles,,mesa,Bueno,joluvice@gmail.com
+46255,444,16/08/2025,Director de campaña 2008,Castellano,Caja gastada,mesa,Bueno,joluvice@gmail.com
+316554,42,16/08/2025,Dune Imperium,Castellano,,mesa,Bueno,joluvice@gmail.com
+342031,55,16/08/2025,Dune Imperium - El Auge de Ix,Castellano ,La mayoria de.componentes estan integrados en la caja base,mesa,Bueno,joluvice@gmail.com
+15069,37,16/08/2025,Ekonos. The economy game,Ingles,,mesa,Bueno,joluvice@gmail.com
+147170,318,16/08/2025,El grande ,Ingles ,Decennial edition,mesa,Bueno,joluvice@gmail.com
+77423,438,16/08/2025,El señor de los anillos.,Castellano,,mesa,Bueno,joluvice@gmail.com
+100423,3,16/08/2025,El simbolo arcano,Castellano,,mesa,Bueno,joluvice@gmail.com
+236930,102,16/08/2025,Eldritch horror Las mascaras de nyarlathotep,Castellano,Incluye expansion esta vestigios extraños,mesa,Bueno,joluvice@gmail.com
+31291,893,16/08/2025,España 1936,Castellano,"Tapa rota en un canto
+Copia 2",wargame,Bueno,joluvice@gmail.com
+1159,15,16/08/2025,EVO - The last gasp os the dinosaurs,Ingles,,mesa,Bueno,joluvice@gmail.com
+833,766,16/08/2025,For the people ,Ingles,,wargame,Bueno,joluvice@gmail.com
+28,711,16/08/2025,Iluminati,Ingles,,cartas,Regular,joluvice@gmail.com
+32969,636,16/08/2025,Insmouth escape,Castellano,,mesa,Bueno,joluvice@gmail.com
+154509,36,16/08/2025,Kingsport Festival,Castellano ,,mesa,Bueno,joluvice@gmail.com
+22198,397,16/08/2025,La gran muralla China,Castellano,Cartas precintadas,cartas,Nuevo,joluvice@gmail.com
+40270,58,16/08/2025,La llamada de cathulu el juego de cartas,Castellano,,cartas,Bueno,joluvice@gmail.com
+24473,895,16/08/2025,Megastar,Aleman,,cartas,Bueno,joluvice@gmail.com
+31563,348,16/08/2025,Middle-Earth Quest,Castellano,,mesa,Bueno,joluvice@gmail.com
+4356,141,16/08/2025,Monkeys On the moon,Ingles,,cartas,Bueno,joluvice@gmail.com
+238393,20,16/08/2025,Monolith Arena,Castellano ,,mesa,Bueno,joluvice@gmail.com
+20079,100,16/08/2025,Pacific typhoon,Ingles,,cartas,Bueno,joluvice@gmail.com
+192153,423,16/08/2025,Pandemic el reino de cthulu,Castellano,,mesa,Bueno,joluvice@gmail.com
+42898,907,16/08/2025,Pocket Battles Celts & Romans,Ingles,,cartas,Bueno,joluvice@gmail.com
+42452,232,16/08/2025,Rattus,Castellano ,,mesa,Bueno,joluvice@gmail.com
+128442,64,16/08/2025,Relic. Warhammer 40000,Castellano,,mesa,Bueno,joluvice@gmail.com
+20551,352,16/08/2025,Shogun,Castellano,,mesa,Bueno,joluvice@gmail.com
+121958,203,16/08/2025,Sky traders,Castellano,,mesa,Bueno,joluvice@gmail.com
+22497,940,16/08/2025,Straw,Ingles,,cartas,Bueno,joluvice@gmail.com
+53953,26,16/08/2025,Thunderstone,Castellano,,cartas,Bueno,joluvice@gmail.com
+21790,405,16/08/2025,Thurn und taxis,Aleman,,mesa,Bueno,joluvice@gmail.com
+104363,134,16/08/2025,Twilight imperium rex ultimos dias del imperio,Castellano,Cotillon ,mesa,Bueno,joluvice@gmail.com
+12333,771,16/08/2025,Twilight struggle,Ingles,,wargame,Bueno,joluvice@gmail.com
+3307,1017,16/08/2025,Wallenstein ,Ingles,,wargame,Bueno,joluvice@gmail.com
+277408,399,16/08/2025,Austerlitz 1805,Castellano,,wargame,Bueno,jgromero1969@gmail.com
+25841,553,16/08/2025,Le grand empire,Ingles,,wargame,Bueno,jgromero1969@gmail.com
+32327,376,16/08/2025,Waterloo 1815,Castellano,,wargame,Bueno,jgromero1969@gmail.com
+106662,253,16/08/2025,"Alta tension, las primeras chispas ",Castellano ,,mesa,Bueno,jcqkla@gmail.com
+5235,980,16/08/2025,Samurai Blades,Ingles,,wargame,Regular,jcqkla@gmail.com
+5835,740,16/08/2025,Command Decision,Ingles,,wargame,Bueno,mikirover@gmail.com
+2017396,18,16/08/2025,Dungeonquest ,Ingles ,Games Workshop,mesa,Bueno,mikirover@gmail.com
+2699,542,16/08/2025,Fire Team,Ingles,,wargame,Bueno,mikirover@gmail.com
+5875,847,16/08/2025,Last battle ,Ingles,,wargame,Malo,mikirover@gmail.com
+13,347,16/08/2025,Los colonos de catan,Castellano,,mesa,Bueno,mikirover@gmail.com
+221022,1057,16/08/2025,Telefoot ,Frances,,mesa,Regular,mikirover@gmail.com
+13080,1054,16/08/2025,Thalassa ,Frances,,mesa,Bueno,mikirover@gmail.com
+4985,1066,16/08/2025,Warmaster,Castellano,,wargame,Bueno,mikirover@gmail.com
+1997,629,16/08/2025,Zargo’s Lords,Italiano,,wargame,Bueno,mikirover@gmail.com
+284818,250,16/08/2025,Caylus 1303,Castellano,,mesa,Bueno,mpgdominguez@gmail.com
+193738,508,16/08/2025,Great western trail ,Castellano,,mesa,Nuevo,mpgdominguez@gmail.com
+174155,282,16/08/2025,Lignum,Ingles,,mesa,Bueno,mpgdominguez@gmail.com
+131287,239,16/08/2025,Panamax,Castellano,,mesa,Bueno,mpgdominguez@gmail.com
+296100,840,16/08/2025,Rococo edicion Deluxe,Castellano,,mesa,Bueno,mpgdominguez@gmail.com
+229853,538,16/08/2025,Teotihuacan,Castellano,Esta es la buena con su dueño,mesa,Bueno,mpgdominguez@gmail.com
+370448,1025,16/08/2025,Europa Universalis ,Castellano,,wargame,Bueno,nickkempe@gmail.com
+188866,313,16/08/2025,Incomodos invitados. El caso Walton,Castellano,,mesa,Bueno,nickkempe@gmail.com
+319078,298,16/08/2025,Scandaloh!,Castellano,,mesa,Bueno,nickkempe@gmail.com
+3000,921,16/08/2025,1806,Ingles,,wargame,Bueno,pecete256@gmail.com
+8702,985,16/08/2025,1807,Ingles,,wargame,Regular,pecete256@gmail.com
+3724,577,16/08/2025,1809,Ingles,,wargame,Bueno,pecete256@gmail.com
+9791,546,16/08/2025,¿pasaran?,Ingles,,wargame,Bueno,pecete256@gmail.com
+14354,824,16/08/2025,2eme d b Normandie ,Frances,,wargame,Regular,pecete256@gmail.com
+4090,1063,16/08/2025,2nd Fleet,Ingles,,wargame,Bueno,pecete256@gmail.com
+4921,1064,16/08/2025,3rd fleet,Ingles,,wargame,Bueno,pecete256@gmail.com
+4920,1060,16/08/2025,5th Fleet,Ingles,,wargame,Bueno,pecete256@gmail.com
+4854,1061,16/08/2025,7th Fleet ,Ingles,,wargame,Bueno,pecete256@gmail.com
+701,831,16/08/2025,A house divided ,Ingles,,wargame,Regular,pecete256@gmail.com
+250805,1006,16/08/2025,Africa Oriental Italiana,Castellano,,wargame,Malo,pecete256@gmail.com
+5700,732,16/08/2025,Air bridge to victory,Ingles,,wargame,Bueno,pecete256@gmail.com
+7390,59,16/08/2025,Air Force expansion kit,Ingles,Expansion,wargame,Bueno,pecete256@gmail.com
+218683,670,16/08/2025,Alesia,Ingles,,wargame,Bueno,pecete256@gmail.com
+295103,989,16/08/2025,Almoravid,Castellano,,wargame,Bueno,pecete256@gmail.com
+1608,594,16/08/2025,Ambush,Ingles,,wargame,Bueno,pecete256@gmail.com
+1608,599,16/08/2025,Ambush,Ingles,,wargame,Bueno,pecete256@gmail.com
+1606,602,16/08/2025,Ambush move out,Ingles,,wargame,Bueno,pecete256@gmail.com
+1606,605,16/08/2025,Ambush move out ,Ingles,,wargame,Bueno,pecete256@gmail.com
+1605,609,16/08/2025,Ambush Purple Heart,Ingles,,wargame,Bueno,pecete256@gmail.com
+1612,612,16/08/2025,Ambush silver star,Ingles,,wargame,Bueno,pecete256@gmail.com
+209511,541,16/08/2025,Atlanta is ours,Ingles,Sin destroquelar. Con el mini modulo de The Skirmisher ,wargame,Nuevo,pecete256@gmail.com
+277408,404,16/08/2025,Austerlitz 1805,Ingles,,wargame,Bueno,pecete256@gmail.com
+5173,744,16/08/2025,Avalanche: the invasion of italy,Ingles,,wargame,Regular,pecete256@gmail.com
+17144,651,16/08/2025,Barbarossa,Ingles,,wargame,Bueno,pecete256@gmail.com
+35476,745,16/08/2025,Barbarossa Crimea,Ingles,,wargame,Bueno,pecete256@gmail.com
+29875,743,16/08/2025,Barbarossa Kiev to Rostov ,Ingles,,wargame,Bueno,pecete256@gmail.com
+10641,666,16/08/2025,Barbossa army,Ingles,,wargame,Bueno,pecete256@gmail.com
+17041,775,16/08/2025,Bataille d'Austerlitz ,Ingles,,wargame,Nuevo,pecete256@gmail.com
+12895,1041,16/08/2025,Bataille wavre ,Ingles,,wargame,Regular,pecete256@gmail.com
+33665,534,16/08/2025,Battle Above the Clouds,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+6405,834,16/08/2025,Battles of f the ancient world ,Ingles,,wargame,Bueno,pecete256@gmail.com
+11092,1040,16/08/2025,Battles of the Peninsular War 1808-1814,Ingles,,wargame,Bueno,pecete256@gmail.com
+31759,362,16/08/2025,Battletech,Castellano,,mesa,Bueno,pecete256@gmail.com
+31759,372,16/08/2025,Battletech,Castellano,3 copias,mesa,Bueno,pecete256@gmail.com
+20266,859,16/08/2025,Bitter end,Ingles,,wargame,Regular,pecete256@gmail.com
+235,571,16/08/2025,Black beard,Ingles,,wargame,Bueno,pecete256@gmail.com
+4200,468,16/08/2025,Black Wednesday ,Ingles,,wargame,Bueno,pecete256@gmail.com
+8358,868,16/08/2025,blitzkrieg in the south,Ingles,,wargame,Regular,pecete256@gmail.com
+7847,748,16/08/2025,Blood on the snow,Ingles,,wargame,Regular,pecete256@gmail.com
+508,658,16/08/2025,Blue Max,Castellano,,wargame,Regular,pecete256@gmail.com
+358607,1014,16/08/2025,Bonaparte in the Quadrilateral ,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+381624,1037,16/08/2025,Bonaparte overruns Piedmont ,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+5834,852,16/08/2025,Campaign to slalingrad,Ingles,,wargame,Regular,pecete256@gmail.com
+1883,691,16/08/2025,Cataphract,Ingles,,wargame,Bueno,pecete256@gmail.com
+5778,1047,16/08/2025,Chancellorsville,Ingles,,wargame,Bueno,pecete256@gmail.com
+9204,865,16/08/2025,Cherkassy pocket,Ingles,,wargame,Regular,pecete256@gmail.com
+8220,561,16/08/2025,Civil War,Italiano,,wargame,Regular,pecete256@gmail.com
+31553,503,16/08/2025,Cobra,Castellano,,wargame,Regular,pecete256@gmail.com
+21050,587,16/08/2025,Combat Commander Europe ,Ingles,Cartas enfundadas ,wargame,Bueno,pecete256@gmail.com
+5835,736,16/08/2025,Command Decision,Ingles,,wargame,Bueno,pecete256@gmail.com
+9504,598,16/08/2025,Corteo,Italiano,,wargame,Regular,pecete256@gmail.com
+8361,842,16/08/2025,Crimean shield,Ingles,,wargame,Bueno,pecete256@gmail.com
+3607,690,16/08/2025,Dauntless,Ingles,,wargame,Regular,pecete256@gmail.com
+27420,672,16/08/2025,Devil horseman,Ingles,,wargame,Bueno,pecete256@gmail.com
+5277,675,16/08/2025,Dia D: operacion overlord,Castellano,,wargame,Malo,pecete256@gmail.com
+5277,682,16/08/2025,dia d: operacion overlord,Castellano,,wargame,Regular,pecete256@gmail.com
+163077,414,16/08/2025,Dien Bien Phu,Ingles,,wargame,Bueno,pecete256@gmail.com
+295072,749,16/08/2025,Downfall of Empires ,Castellano,,wargame,Nuevo,pecete256@gmail.com
+345594,752,16/08/2025,Downfall of the Third Reich,Castellano,,wargame,Nuevo,pecete256@gmail.com
+22143,445,16/08/2025,East Front the war in russia 1941-45,Ingles,,wargame,Bueno,pecete256@gmail.com
+8756,536,16/08/2025,Eastern Front Solitaire,Ingles,,wargame,Bueno,pecete256@gmail.com
+362917,973,16/08/2025,El otro lado de la colina ,Castellano,,wargame,Bueno,pecete256@gmail.com
+254,97,16/08/2025,Empires in arms,Ingles,,wargame,Regular,pecete256@gmail.com
+254,98,16/08/2025,Empires in Arms,Ingles,,wargame,Bueno,pecete256@gmail.com
+6894,1015,16/08/2025,España 36,Castellano,,wargame,Regular,pecete256@gmail.com
+5827,49,16/08/2025,Europa A winter war,Ingles,,wargame,Bueno,pecete256@gmail.com
+5829,24,16/08/2025,Europa Balkan Front,Ingles,Expansion,wargame,Bueno,pecete256@gmail.com
+8993,31,16/08/2025,Europa Fire in the East,ingkes,,wargame,Bueno,pecete256@gmail.com
+8993,32,16/08/2025,Europa Fire in the East,Ingles,,wargame,Regular,pecete256@gmail.com
+28289,21,16/08/2025,Europa First to fight,Ingles,Expansion ,wargame,Bueno,pecete256@gmail.com
+17895,72,16/08/2025,Europa For whom the bell tolls,Ingles,Expansion,wargame,Bueno,pecete256@gmail.com
+7690,39,16/08/2025,Europa Scorched Earth,Ingles,,wargame,Bueno,pecete256@gmail.com
+3766,75,16/08/2025,Europa Second Front,Ingles ,Expansion,wargame,Bueno,pecete256@gmail.com
+7633,11,16/08/2025,Europa Spain and Portugal,Ingles,Expansion ,wargame,Bueno,pecete256@gmail.com
+7637,14,16/08/2025,Europa The fall of france,Ingles,,wargame,Bueno,pecete256@gmail.com
+7639,43,16/08/2025,Europa the finest hour,Ingles,,wargame,Bueno,pecete256@gmail.com
+17971,66,16/08/2025,Europa War in the desert,Ingles ,,wargame,Bueno,pecete256@gmail.com
+9196,16,16/08/2025,"Fire in the East, The Urals",Ingles,Expansion,wargame,Bueno,pecete256@gmail.com
+18652,361,16/08/2025,For honor and glory,Ingles,,wargame,Bueno,pecete256@gmail.com
+4050,233,16/08/2025,Fortress Europa,Ingles,,wargame,Regular,pecete256@gmail.com
+18115,1034,16/08/2025,Four Lost Battles,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+1717,856,16/08/2025,Freedom in the galaxy,Ingles,,wargame,Bueno,pecete256@gmail.com
+4201,928,16/08/2025,"GD'40 The battle for stonne, France 1940",Ingles,Sin destroquelar,wargame,Regular,pecete256@gmail.com
+4843,843,16/08/2025,Give me liberty ,Ingles,,wargame,Regular,pecete256@gmail.com
+1821,506,16/08/2025,Grant takes command ,Ingles,Sin destroquelar ,wargame,Bueno,pecete256@gmail.com
+4916,730,16/08/2025,Great war at sea,Ingles,,wargame,Regular,pecete256@gmail.com
+4212,501,16/08/2025,Here come the Rebels,Ingles,,wargame,Regular,pecete256@gmail.com
+2920,924,16/08/2025,Highway to the kremlin,Ingles,,wargame,Regular,pecete256@gmail.com
+2920,926,16/08/2025,Highway to the kremlin ,Ingles,,wargame,Regular,pecete256@gmail.com
+2494,471,16/08/2025,Hispania,Ingles,,wargame,Bueno,pecete256@gmail.com
+2168,225,16/08/2025,Hitler’s war,Ingles,,wargame,Bueno,pecete256@gmail.com
+301616,522,16/08/2025,Hood strikes North ,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+145975,705,16/08/2025,Hoplite ,Ingles,,wargame,Bueno,pecete256@gmail.com
+138166,157,16/08/2025,Huida de Silver City,Castellano ,,mesa,Bueno,pecete256@gmail.com
+1496,822,16/08/2025,Imperium romanum II,Ingles,,wargame,Regular,pecete256@gmail.com
+347638,986,16/08/2025,Inferno ,Ingles,,wargame,Bueno,pecete256@gmail.com
+10186,1053,16/08/2025,JENA,Ingles,No destroquelar,wargame,Bueno,pecete256@gmail.com
+10304,693,16/08/2025,Julius caesar,Ingles,,wargame,Bueno,pecete256@gmail.com
+5264,416,16/08/2025,Kanev,Ingles,,wargame,Bueno,pecete256@gmail.com
+987,266,16/08/2025,Kingmaker,Ingles,,mesa,Bueno,pecete256@gmail.com
+11438,977,16/08/2025,La bataille corunne espagnol,Ingles,,wargame,Regular,pecete256@gmail.com
+13520,979,16/08/2025,La bataille d'albuera espagnol ,Ingles,,wargame,Regular,pecete256@gmail.com
+184590,784,16/08/2025,La Bataille d'Aspern-Essling,Ingles,,wargame,Nuevo,pecete256@gmail.com
+12898,1012,16/08/2025,La bataille d'auerstadt,Ingles,,wargame,Regular,pecete256@gmail.com
+350342,778,16/08/2025,La Bataille de Berlin,Ingles,,wargame,Nuevo,pecete256@gmail.com
+11438,968,16/08/2025,La bataille de corunna espagnol,Ingles,,wargame,Regular,pecete256@gmail.com
+29262,807,16/08/2025,La Bataille de Deutsch-Wagram,Ingles,,wargame,Nuevo,pecete256@gmail.com
+113971,1039,16/08/2025,La bataille de Dresde ,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+19124,818,16/08/2025,La Bataille de Friedland ,Ingles,,wargame,Nuevo,pecete256@gmail.com
+255,811,16/08/2025,La Bataille de Jena - Aurstaedt,Ingles,,wargame,Nuevo,pecete256@gmail.com
+15274,1055,16/08/2025,La bataille de la Moscowa,Ingles,Sin destroquelar,wargame,Nuevo,pecete256@gmail.com
+81571,786,16/08/2025,La Bataille de Leipzig ,Ingles,,wargame,Nuevo,pecete256@gmail.com
+12896,958,16/08/2025,La bataille de les quatre bras,Ingles,,wargame,Regular,pecete256@gmail.com
+12897,1000,16/08/2025,La bataille de ligny,Ingles,,wargame,Regular,pecete256@gmail.com
+12897,1029,16/08/2025,La Bataille de Ligny ,Frances,Sin destroquelar,wargame,Nuevo,pecete256@gmail.com
+11437,1021,16/08/2025,La bataille de lützen,Ingles,,wargame,Regular,pecete256@gmail.com
+5508,1018,16/08/2025,La bataille de mont Saint Jean,Frances,Sin destroquelar,wargame,Nuevo,pecete256@gmail.com
+5508,1043,16/08/2025,La bataille de mont saint jean,Ingles,,wargame,Regular,pecete256@gmail.com
+12899,1009,16/08/2025,La bataille de preussisch - eylau,Ingles,,wargame,Regular,pecete256@gmail.com
+12899,1003,16/08/2025,La bataille de preussisch-eylau,Ingles,,wargame,Regular,pecete256@gmail.com
+430586,789,16/08/2025,La Bataille d'Eggmühl,Ingles,,wargame,Nuevo,pecete256@gmail.com
+12896,1016,16/08/2025,La bataille des quatre bras,Ingles,,wargame,Regular,pecete256@gmail.com
+13995,988,16/08/2025,La bataille d'espagnol talavera,Ingles,,wargame,Regular,pecete256@gmail.com
+13995,1026,16/08/2025,La bataille d'espagnol -talavera,Ingles,,wargame,Regular,pecete256@gmail.com
+11436,1024,16/08/2025,La bataille d'orthez,Ingles,,wargame,Regular,pecete256@gmail.com
+5508,1033,16/08/2025,La bataille the mont saint jean,Ingles,,wargame,Regular,pecete256@gmail.com
+39598,997,16/08/2025,La guerra de la independencia,Castellano,,wargame,Regular,pecete256@gmail.com
+9609,480,16/08/2025,La guerra del anillo ,Castellano,Caja gastada,mesa,Bueno,pecete256@gmail.com
+122328,502,16/08/2025,La guerra del anillo. Señores de la tierra media. Expansion.,Castellano,"Faltan componentes. Al ser expansion, quiza en juego base.",mesa,Malo,pecete256@gmail.com
+276,931,16/08/2025,La guerre de l' empereur,Frances,,wargame,Regular,pecete256@gmail.com
+90183,1022,16/08/2025,La marcha sobre Madrid,Castellano,No hay reglas,wargame,Regular,pecete256@gmail.com
+152345,990,16/08/2025,La patrie en Danger ,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+29985,836,16/08/2025,Land without end ,Ingles,,wargame,Regular,pecete256@gmail.com
+8711,1019,16/08/2025,Landships!,Ingles,,wargame,Regular,pecete256@gmail.com
+144474,563,16/08/2025,le vol de l’aigle volume 3,Ingles,,wargame,Bueno,pecete256@gmail.com
+12895,1038,16/08/2025,Les batailles de wavre,Ingles,,wargame,Regular,pecete256@gmail.com
+3035,1036,16/08/2025,Les derniers jours de la grande armee,Ingles,,wargame,Regular,pecete256@gmail.com
+9277,827,16/08/2025,Leuthen ,Ingles,,wargame,Bueno,pecete256@gmail.com
+11706,647,16/08/2025,Lightning D-Day,Ingles,,cartas,Bueno,pecete256@gmail.com
+12629,877,16/08/2025,Marching through Georgia ,Ingles,,wargame,Regular,pecete256@gmail.com
+6353,965,16/08/2025,Monty's gamble,Ingles,Reglas traducido,wargame,Bueno,pecete256@gmail.com
+6353,972,16/08/2025,Monty's gamble,Ingles,Copia 2,wargame,Bueno,pecete256@gmail.com
+116806,998,16/08/2025,Napoleon against Russia ,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+4086,109,16/08/2025,Napoleon at bay,Ingles ,,wargame,Bueno,pecete256@gmail.com
+4086,950,16/08/2025,Napoleon at bay ,Ingles,,wargame,Regular,pecete256@gmail.com
+10183,974,16/08/2025,Napoleon at Leipzig,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+10183,1056,16/08/2025,Napoleon at Leipzig,Ingles,No destroquelar,wargame,Bueno,pecete256@gmail.com
+10183,1059,16/08/2025,Napoleon at Leipzig,Ingles,Copia 2,wargame,Regular,pecete256@gmail.com
+23400,994,16/08/2025,Napoleon at the crossroads,Ingles,,wargame,Bueno,pecete256@gmail.com
+308862,1023,16/08/2025,Napoleon invades Spain,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+273769,1005,16/08/2025,Napoleon Retreats ,Ingles,,wargame,Nuevo,pecete256@gmail.com
+5504,186,16/08/2025,Napoleon’s Battles,Ingles,,wargame,Bueno,pecete256@gmail.com
+26540,798,16/08/2025,Napoleonic battles austerlitz 1805,Ingles,,wargame,Regular,pecete256@gmail.com
+388325,804,16/08/2025,Napoleònics wars,Ingles,,wargame,Bueno,pecete256@gmail.com
+15200,961,16/08/2025,Napoleon's Battle of Borodino 1812,Ingles,,wargame,Regular,pecete256@gmail.com
+415885,1032,16/08/2025,Napoleon's Counterstrike ,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+413991,1028,16/08/2025,Napoleon's End,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+174298,996,16/08/2025,Napoleon's Last Gamble ,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+218007,1010,16/08/2025,Napoleon's Quagmire,Ingles,,wargame,Bueno,pecete256@gmail.com
+245823,1008,16/08/2025,Napoleon's Resurgence ,Ingles,,wargame,Nuevo,pecete256@gmail.com
+273909,1020,16/08/2025,Napoleon's Wheel,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+249590,992,16/08/2025,Nevsky,Ingles,,wargame,Bueno,pecete256@gmail.com
+5239,628,16/08/2025,Omaha beachhead,Ingles,,wargame,Bueno,pecete256@gmail.com
+4205,481,16/08/2025,On to Richmond ,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+4205,558,16/08/2025,On to Richmond ,Ingles,,wargame,Bueno,pecete256@gmail.com
+185837,687,16/08/2025,Onus! Expansion Terrenos y Fortalezas ,Castellano,,wargame,Bueno,pecete256@gmail.com
+359657,718,16/08/2025,Onus! Pack,Castellano,,wargame,Bueno,pecete256@gmail.com
+332070,680,16/08/2025,Onus! Traianus,Castellano,,wargame,Bueno,pecete256@gmail.com
+5058,435,16/08/2025,Operation Crusader,Ingles,,wargame,Bueno,pecete256@gmail.com
+17295,551,16/08/2025,Operation Husky,Ingles,,wargame,Bueno,pecete256@gmail.com
+194078,735,16/08/2025,Operation mercury ,Ingles,,wargame,Bueno,pecete256@gmail.com
+8056,573,16/08/2025,Operation Shoestring ,Ingles,,wargame,Bueno,pecete256@gmail.com
+11433,1027,16/08/2025,Operation SPARK! the relief of Leningrad,Ingles,,wargame,Bueno,pecete256@gmail.com
+314577,725,16/08/2025,Pacific War,Ingles,,wargame,Bueno,pecete256@gmail.com
+5275,905,16/08/2025,Piercing the reich,Ingles,,wargame,Regular,pecete256@gmail.com
+5275,897,16/08/2025,Piercing the reich,Ingles,,wargame,Regular,pecete256@gmail.com
+352135,983,16/08/2025,Plantagenet,Ingles,,wargame,Bueno,pecete256@gmail.com
+1425,679,16/08/2025,Raid on st nazaire,Ingles,,wargame,Regular,pecete256@gmail.com
+11937,832,16/08/2025,Red army ,Ingles,,wargame,Regular,pecete256@gmail.com
+3070,805,16/08/2025,Red parachutes,Ingles,,wargame,Regular,pecete256@gmail.com
+3070,808,16/08/2025,Red parachutes ,Ingles,,wargame,Regular,pecete256@gmail.com
+11699,769,16/08/2025,Red steel,Ingles,,wargame,Regular,pecete256@gmail.com
+1711,190,16/08/2025,Richthofen’s War,Ingles,,wargame,Bueno,pecete256@gmail.com
+10376,889,16/08/2025,Ring of fire,Ingles,,wargame,Regular,pecete256@gmail.com
+4121,489,16/08/2025,Road to the rhine,Ingles,,wargame,Bueno,pecete256@gmail.com
+4206,494,16/08/2025,Roads to Gettysburg,Ingles,,wargame,Regular,pecete256@gmail.com
+215565,548,16/08/2025,Roads to Gettysburg II,Ingles,Con modulos de The Skirmisher ,wargame,Bueno,pecete256@gmail.com
+288,478,16/08/2025,Rossyia 1917,Frances,,wargame,Bueno,pecete256@gmail.com
+3,566,16/08/2025,Samurai,Ingles,,wargame,Regular,pecete256@gmail.com
+3061,648,16/08/2025,Samurai,Ingles,,wargame,Bueno,pecete256@gmail.com
+352996,944,16/08/2025,Sherwood,Ingles,,wargame,Bueno,pecete256@gmail.com
+40692,259,16/08/2025,Smallworld,Castellano,,mesa,Bueno,pecete256@gmail.com
+40692,283,16/08/2025,Smallworld ,Ingles ,,mesa,Bueno,pecete256@gmail.com
+122316,270,16/08/2025,Smallworld realms ,Ingles ,,mesa,Bueno,pecete256@gmail.com
+207121,275,16/08/2025,Smallworld river world ,Ingles ,,mesa,Bueno,pecete256@gmail.com
+97786,262,16/08/2025,Smallworld underground ,Castellano ,,mesa,Bueno,pecete256@gmail.com
+1444,700,16/08/2025,SPQR,Ingles,,wargame,Bueno,pecete256@gmail.com
+12140,472,16/08/2025,Stalingrad pocket,Ingles,,wargame,Regular,pecete256@gmail.com
+670,574,16/08/2025,Starship troopers,Ingles,,wargame,Regular,pecete256@gmail.com
+4214,487,16/08/2025,Stonewall in the Valley ,Ingles,,wargame,Bueno,pecete256@gmail.com
+4211,498,16/08/2025,Stonewall Jackson's Way,Ingles,,wargame,Regular,pecete256@gmail.com
+99358,530,16/08/2025,Stonewall Jackson's Way II,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+4210,515,16/08/2025,Stonewall's Last Battle ,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+3083,1052,16/08/2025,Submarine ,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+101596,353,16/08/2025,Supervivientes ,Castellano,,mesa,Bueno,pecete256@gmail.com
+7480,731,16/08/2025,Sword of Rome,Ingles,,wargame,Bueno,pecete256@gmail.com
+7922,981,16/08/2025,The 6 days of Glory ,Ingles,,wargame,Bueno,pecete256@gmail.com
+10392,966,16/08/2025,The campaings of Napoleon ,Ingles,,wargame,Regular,pecete256@gmail.com
+67199,984,16/08/2025,The coming Storm,Ingles,,wargame,Bueno,pecete256@gmail.com
+5698,991,16/08/2025,The emperor returns,Ingles,,wargame,Regular,pecete256@gmail.com
+4293,497,16/08/2025,The great redoubt,Ingles,,wargame,Bueno,pecete256@gmail.com
+31443,917,16/08/2025,The habit of victory,Ingles,,wargame,Regular,pecete256@gmail.com
+85572,978,16/08/2025,The Last Success ,Ingles,Sin destroquelar ,wargame,Nuevo,pecete256@gmail.com
+14080,949,16/08/2025,The mighty endeavor,Ingles,Sin destroquelar,wargame,Bueno,pecete256@gmail.com
+2808,485,16/08/2025,The russian campaign,Ingles,,wargame,Bueno,pecete256@gmail.com
+2808,500,16/08/2025,The russian campaign,Ingles,,wargame,Bueno,pecete256@gmail.com
+11967,1004,16/08/2025,The seven days of 1809,Ingles,Reglas traducidas,wargame,Bueno,pecete256@gmail.com
+11967,1011,16/08/2025,The Seven days of 1809,Ingles,Copia 2,wargame,Bueno,pecete256@gmail.com
+5021,172,16/08/2025,the struggle of nations,ingles ,,wargame,Bueno,pecete256@gmail.com
+5021,179,16/08/2025,The struggle of nations,Ingles,,wargame,Bueno,pecete256@gmail.com
+6197,987,16/08/2025,The sun of Austerlitz,Ingles,,wargame,Regular,pecete256@gmail.com
+755,662,16/08/2025,Thunder at cassino ,Ingles,,wargame,Regular,pecete256@gmail.com
+417100,557,16/08/2025,Thunder on the Mississippi ,Ingles,"Sin destroquelar, con modulo de The Skirmisher ",wargame,Nuevo,pecete256@gmail.com
+4204,448,16/08/2025,Tunisia ,Ingles,MMP,wargame,Bueno,pecete256@gmail.com
+759,684,16/08/2025,Turning point stalingrad,Ingles,,wargame,Regular,pecete256@gmail.com
+6928,739,16/08/2025,Typhoon,Ingles,,wargame,Bueno,pecete256@gmail.com
+701,661,16/08/2025,Una nacion dividida,Castellano,,wargame,Regular,pecete256@gmail.com
+626,105,16/08/2025,War and Peace,Ingles,,wargame,Bueno,pecete256@gmail.com
+18034,483,16/08/2025,War of the rings.Battles of the third age.,Ingles,,mesa,Bueno,pecete256@gmail.com
+21040,915,16/08/2025,"Waterloo, The Fate of France",Castellano,,wargame,Bueno,pecete256@gmail.com
+26676,814,16/08/2025,Wilderness wars ,Ingles,,wargame,Bueno,pecete256@gmail.com
+160418,821,16/08/2025,Wing leader ,Ingles,,wargame,Regular,pecete256@gmail.com
+828,593,16/08/2025,Wizards ,Ingles,,wargame,Regular,pecete256@gmail.com
+128671,329,16/08/2025,Spartacus,Castellano,,mesa,Bueno,Quique xapo
+20609,1013,16/08/2025,Asia engulfed ,Ingles,,wargame,Bueno,Quique xapu
+229713,999,16/08/2025,War room,Ingles,,wargame,Bueno,ralba3333@gmail.com
+154246,274,16/08/2025,La isla,Castellano ,,mesa,Bueno,scamp5618@gmail.com
+6521,759,16/08/2025,Magdar,Ingles,,mesa,Bueno,scamp5618@gmail.com
+7479,152,16/08/2025,WarCraft the board game,Ingles ,Copia 2,mesa,Bueno,scamp5618@gmail.com
+329465,184,16/08/2025,Amanecer Rojo,Castellano ,,mesa,Bueno,tininagus@gmail.com
+337853,467,16/08/2025,Angel Fury,Castellano,Precintado,mesa,Nuevo,tininagus@gmail.com
+285967,930,16/08/2025,Ankh Dioses de egipto,Castellano,Por destroquelar.,mesa,Nuevo,tininagus@gmail.com
+236457,674,16/08/2025,Arquitectos reino del oeste,Castellano,,mesa,Bueno,tininagus@gmail.com
+176544,127,16/08/2025,Automania ,Aleman ,Reglas traducidas,mesa,Bueno,tininagus@gmail.com
+266164,101,16/08/2025,Babylonia,Castellano ,,mesa,Bueno,tininagus@gmail.com
+123847,925,16/08/2025,Batallas de poniente,Castellano,"Sin abrir
+Expansion de ejercito - Casa Baratheon",mesa,Nuevo,tininagus@gmail.com
+67492,933,16/08/2025,Batallas de poniente (juego basico),Castellano,,mesa,Bueno,tininagus@gmail.com
+25417,357,16/08/2025,Battlelore,Castellano,,mesa,Bueno,tininagus@gmail.com
+166000,143,16/08/2025,Battlelore guardianea de hernfar,Castellano,Sin abrir,mesa,Nuevo,tininagus@gmail.com
+179175,139,16/08/2025,Battlelore heraldos de la siniestra caida ,Frances,,mesa,Bueno,tininagus@gmail.com
+166001,151,16/08/2025,Battlelore partida de guerra de desden,Castellano,Sin abrir,mesa,Nuevo,tininagus@gmail.com
+179176,148,16/08/2025,Battlelore terrores de las brumas,Castellano,Sin abrir ,mesa,Nuevo,tininagus@gmail.com
+372631,535,16/08/2025,Books of time ,Ingles,,mesa,Bueno,tininagus@gmail.com
+172308,425,16/08/2025,Broom service,Aleman,,mesa,Bueno,tininagus@gmail.com
+184921,245,16/08/2025,Bunny Kingdom,Castellano ,,mesa,Bueno,tininagus@gmail.com
+274841,111,16/08/2025,Coatl ,Castellano ,,mesa,Bueno,tininagus@gmail.com
+54998,192,16/08/2025,Cyclades,Ingles ,,mesa,Bueno,tininagus@gmail.com
+155820,196,16/08/2025,Cyclades Titans,Castellano ,,mesa,Bueno,tininagus@gmail.com
+162082,374,16/08/2025,Deus,Ingles,,mesa,Bueno,tininagus@gmail.com
+250881,53,16/08/2025,Dominations,Castellano,,mesa,Bueno,tininagus@gmail.com
+2346,269,16/08/2025,Dvonn,Multilingüe,,mesa,Bueno,tininagus@gmail.com
+271055,96,16/08/2025,Dwellings of Eldervale,Ingles,,mesa,Nuevo,tininagus@gmail.com
+171908,475,16/08/2025,El Grande Ed 20 aniversario,Castellano,,mesa,Bueno,tininagus@gmail.com
+206718,85,16/08/2025,Ethnos,Castellano ,,mesa,Bueno,tininagus@gmail.com
+139991,257,16/08/2025,Fresco Big box,Multiidioma ,,mesa,Bueno,tininagus@gmail.com
+155821,182,16/08/2025,Inis ,Castellano ,,mesa,Bueno,tininagus@gmail.com
+127023,187,16/08/2025,Kemet,Ingles ,,mesa,Bueno,tininagus@gmail.com
+125618,341,16/08/2025,Libertalia,Castellano ,,mesa,Bueno,tininagus@gmail.com
+230933,87,16/08/2025,Merlin,Castellano ,,mesa,Bueno,tininagus@gmail.com
+306040,202,16/08/2025,Merv,Ingles ,Manual tradumaquetado en Castellano ,mesa,Bueno,tininagus@gmail.com
+346501,214,16/08/2025,Mille Fiori,Frances ,,mesa,Bueno,tininagus@gmail.com
+329551,103,16/08/2025,Mosaic,Ingles ,,mesa,Bueno,tininagus@gmail.com
+25554,154,16/08/2025,Notre dame,Castellano ,,mesa,Bueno,tininagus@gmail.com
+19764,289,16/08/2025,Pünct,Multilingüe ,,mesa,Bueno,tininagus@gmail.com
+12,300,16/08/2025,RA,Castellano ,,mesa,Bueno,tininagus@gmail.com
+217861,381,16/08/2025,Reinos de papel,Castellano,Contiene expansion,cartas,Bueno,tininagus@gmail.com
+169426,121,16/08/2025,Roll player,Castellano,,mesa,Bueno,tininagus@gmail.com
+213360,128,16/08/2025,Roll player monstruos y esbirros expansion,Castellano,El contenido esta en el base,mesa,Bueno,tininagus@gmail.com
+267009,512,16/08/2025,Rome and Roll,Castellano,Roll and Write,mesa,Bueno,tininagus@gmail.com
+3,303,16/08/2025,Samurai,Castellano ,,mesa,Bueno,tininagus@gmail.com
+20551,355,16/08/2025,Shogun,Castellano,,mesa,Bueno,tininagus@gmail.com
+246684,116,16/08/2025,Smartphone ,Castellano ,,mesa,Bueno,tininagus@gmail.com
+137269,524,16/08/2025,Spyrium,Castellano,,mesa,Bueno,tininagus@gmail.com
+63628,131,16/08/2025,The Manhattan Project ,Aleman ,Hoja de ayuda en castellano ,mesa,Bueno,tininagus@gmail.com
+233078,351,16/08/2025,Twilight imperium,Castellano,,mesa,Bueno,tininagus@gmail.com
+31999,277,16/08/2025,Tzaar,Multilingüe,,mesa,Bueno,tininagus@gmail.com
+221318,136,16/08/2025,Whistle Stop,Ingles ,Con separadores ,mesa,Bueno,tininagus@gmail.com
+7854,285,16/08/2025,Yinsh,Multilingüe ,,mesa,Bueno,tininagus@gmail.com
+84838,509,16/08/2025,Yomi,Ingles,,mesa,Bueno,tininagus@gmail.com
+283294,167,16/08/2025,Yukon Airways,Castellano ,,mesa,Bueno,tininagus@gmail.com
+14278,951,16/08/2025,Cite Medievale Fortifiee,Castellano,,wargame,Bueno,vrm1965@hotmail.com
+3756,957,16/08/2025,Croisades,Frances,,wargame,Bueno,vrm1965@hotmail.com
+1323,971,16/08/2025,Cry Havoc,Ingles,,wargame,Regular,vrm1965@hotmail.com
+2077,591,16/08/2025,Hells highway,Ingles,,mesa,Bueno,vrm1965@hotmail.com
+27848,531,16/08/2025,La era de Conan ,Castellano,,mesa,Bueno,vrm1965@hotmail.com
+5571,964,16/08/2025,Siege,Castellano,,wargame,Bueno,vrm1965@hotmail.com
+6926,976,16/08/2025,Vikings,Frances,,wargame,Regular,vrm1965@hotmail.com
+29226,835,16/08/2025,El zorro del desierto,Castellano,,wargame,Regular,ximocosta2@gmail.com
+25223,857,16/08/2025,Resiste Satlingrado? ,Castellano,Caja vacia ,wargame,Malo,ximocosta2@gmail.com
+,10101,16/08/2025,Indiana jones,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10102,16/08/2025,"Warhammer, el juego de rol: Secretos de DJ",Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10103,16/08/2025,Bloodshadows,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10104,16/08/2025,Advanced Dungeons & Dragons: Manual of the planes,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10105,16/08/2025,Advanced Dungeons & Dragons: Player handbook,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10106,16/08/2025,Advanced Dungeons & Dragons: Wilderness survival game,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10107,16/08/2025,Advanced Dungeons & Dragons: Dungeoneer’s survival guide,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10108,16/08/2025,Advanced Dungeons & Dragons: Unearthed arcana,Castellano,,rol,Regular,clubdreadnought.vlc@gmail.com
+,10109,16/08/2025,Advanced Dungeons & Dragons: Friend Folio,Castellano,,rol,Regular,clubdreadnought.vlc@gmail.com
+,10110,16/08/2025,DC heroes,Castellano,Tiene fuera poster y fichas de personaje,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10111,16/08/2025,Advanced Dungeons & Dragons: Fighter’s Handbook,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10112,16/08/2025,"Warhammer, el juego de rol: Tormenta Inminente. ",Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10113,16/08/2025,Advanced Dungeons & Dragons: Wizard’s Handbook,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10114,16/08/2025,Advanced Dungeons & Dragons: Priest’s Handbook,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10115,16/08/2025,Dungeons and dragons puño y espada,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10116,16/08/2025,Stormbringer,Castellano,Lleva cartas y hojas anexas,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10117,16/08/2025,"Warhammer, el juego de rol: Guia del DJ",Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10118,16/08/2025,Advanced Dungeons & Dragons: Reinos olvidados. Escenario de campaña,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10119,16/08/2025,Ravenloft,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10120,16/08/2025,Ravenloft secretos de los reinos del terror,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10121,16/08/2025,Kult,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10122,16/08/2025,Advanced Dungeons & Dragons: Guia del Dungeon master,Ingles,Warhammer role- play,rol,Nuevo,clubdreadnought.vlc@gmail.com
+,10123,16/08/2025,"Warhammer, el juego de rol: Guia de criaturas ",Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10124,16/08/2025,La llamada de cthulhu,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10125,16/08/2025,Advanced Dungeons & Dragons: Manual del jugador,Castellano,Hay 7 copias,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10126,16/08/2025,"Warhammer, el juego de rol",No hablan,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10127,16/08/2025,Advanced Dungeons & Dragons: Dungeon Master’s Guide,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10128,16/08/2025,Advanced Dungeons & Dragons: Player’s handbook,Castellano,Hay 2 copias,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10129,16/08/2025,Advanced Dungeons & Dragons: Forgotten Realms,Castellano,Lleva material anexo fuera del libro,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10130,16/08/2025,Twilight 2000,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10131,16/08/2025,Warhammer 40000,Castellano,Warhammer fantasia juego de rol,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10132,16/08/2025,Star trek,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10133,16/08/2025,Advanced Dungeons & Dragons: Reinos Olvidados. Escenario de Campaña,Castellano,2 copias,rol,Nuevo,clubdreadnought.vlc@gmail.com
+,10134,16/08/2025,Fantasy miniatures ,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10135,16/08/2025,Principe valiente,Castellano,Hay 2 copias,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10136,16/08/2025,Arcs magica,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10137,16/08/2025,Arcs magica 5 ed,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10138,16/08/2025,Paranoia orcbusters-cazaorcos y enviad mas clones ,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10139,16/08/2025,D&D: Set 5: Inmortals Rules,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10140,16/08/2025,Rune quest el señor de las runas,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10141,16/08/2025,D&D: Set 4: Master rules,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10142,16/08/2025,Apple lane ,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10143,16/08/2025,D&d champions of mystara,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10144,16/08/2025,D&D: set 3: Companion rules,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10145,16/08/2025,Hollow world,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10146,16/08/2025,Rune quest avanzado (89),No,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10147,16/08/2025,Duce italia 1943 - 1945,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10148,16/08/2025,D&D Set 2: Expert Rules,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10149,16/08/2025,Rune quest basico (88),Castellano,Con material extra en el exterior,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10150,16/08/2025,D&d hail of heroes ,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10151,16/08/2025,D&D: Set 1: Basic rules,Castellano,,rol,Nuevo,clubdreadnought.vlc@gmail.com
+,10152,16/08/2025,Generatela,Castellano,Lleva material en el exterior,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10153,16/08/2025,Firefight,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10154,16/08/2025,Mark of amber,Castellano,Lleva material en el exterior,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10155,16/08/2025,D&D: Basic Set,Castellano,,rol,Nuevo,clubdreadnought.vlc@gmail.com
+,10156,16/08/2025,Glorantha el mundo y sus habitantes,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10157,16/08/2025,War Law (A Mass combat system for use with Rolemaster),Castellano,,rol,Nuevo,clubdreadnought.vlc@gmail.com
+,10158,16/08/2025,El abismo de la garganta de la serpiente ,Ingles,Expansion,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10159,16/08/2025,D&D: Expert set,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10160,16/08/2025,Gazetteer,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10161,16/08/2025,El libro de los trolls,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10162,16/08/2025,El portal karshit ,Castellano,"Inicial, intermedio y avanzado",rol,Bueno,clubdreadnought.vlc@gmail.com
+,10163,16/08/2025,Karameikos,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10164,16/08/2025,The beast within,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10165,16/08/2025,Hijas de la noche las cronicas de Santon,Castellano,"Inicial, intermedio y avanzado",rol,Bueno,clubdreadnought.vlc@gmail.com
+,10166,16/08/2025,Night of the vampire ,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10167,16/08/2025,Paranoia el cantar de las cubas,Castellano,Un turbulento mundo de peligrosas aventuras,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10168,16/08/2025,La ciudad perdida de eldarad,Castellano,,rol,Nuevo,clubdreadnought.vlc@gmail.com
+,10169,16/08/2025,Rolemaster (The complete fantasy Role playing game system in the box),Castellano,,rol,Nuevo,clubdreadnought.vlc@gmail.com
+,10170,16/08/2025,Apple lane el sendero del pomar (2),Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10171,16/08/2025,Secretos antiguos de glorantha,Castellano,,rol,Nuevo,clubdreadnought.vlc@gmail.com
+,10172,16/08/2025,La llamada de cthulhu la maldicion de los chthonians,Castellano,,rol,Nuevo,clubdreadnought.vlc@gmail.com
+,10173,16/08/2025,Rune quest avanzado (89),Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10174,16/08/2025,Rune quest basico (88),Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10175,16/08/2025,Revistas Alea 36 tomos,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10176,16/08/2025,Revistas Lider ,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10177,16/08/2025,D&d wrath of the inmortals,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10178,16/08/2025,Rolemaster: Black Ops,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10179,16/08/2025,Cyber space sprawlgangs & megacorps,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10180,16/08/2025,Car Wars,Ingles,,rol,Nuevo,clubdreadnought.vlc@gmail.com
+,10181,16/08/2025,Glantri ,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10182,16/08/2025,Rolemaster: Mentalism companion,Ingles,,rol,Regular,clubdreadnought.vlc@gmail.com
+,10183,16/08/2025,Cyber space death valley free prison,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10184,16/08/2025,Car Wars,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10185,16/08/2025,Rolemaster: Essence Companion,Ingles,,rol,Malo,clubdreadnought.vlc@gmail.com
+,10186,16/08/2025,Cyber space cyber rogues,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10187,16/08/2025,Cyber space the bodybank,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10188,16/08/2025,Rolemaster: Martial Arts Companion,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10189,16/08/2025,Action Under Sail,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10190,16/08/2025,Cyber space edge on,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10191,16/08/2025,Rolemaster: Gamemasterlaw,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10192,16/08/2025,D&d Birthright,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10193,16/08/2025,Cyber space death game 2090,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10194,16/08/2025,Paranoia XP,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10195,16/08/2025,Rolemaster: Arcane Companion,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10196,16/08/2025,Judges Manual,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10197,16/08/2025,Atlas de los reinos olvidados ,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10198,16/08/2025,Bolide ,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10199,16/08/2025,Rolemaster: Races and Cultures,Ingles,2a Edicion,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10200,16/08/2025,Revistas varias,Ingles,2a edicion,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10201,16/08/2025,D&d guia del Dungeon master,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10202,16/08/2025,Space master legacy of the ancients,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10203,16/08/2025,Race the wind,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10204,16/08/2025,Joshuan's almanac,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10205,16/08/2025,Rolemaster: Player Guide,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10206,16/08/2025,"Warhammer 40,000 Chapter Approved",Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10207,16/08/2025,Rolemaster: Treasure Companion,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10208,16/08/2025,D&d poor wizards II ,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10209,16/08/2025,The rules with no name ,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10210,16/08/2025,La llamada de cthulhu el rastro de tsathogghua,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10211,16/08/2025,Rolemaster: Talent law,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10212,16/08/2025,En Avant!,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10213,16/08/2025,D&d poor wizards almanac,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10214,16/08/2025,Rolemaster companion (7 revistas),Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10215,16/08/2025,Los Cazafantasmas ,Ingles,,rol,Regular,clubdreadnought.vlc@gmail.com
+,10216,16/08/2025,Rolemaster: Channeling companion,Ingles,,rol,Regular,clubdreadnought.vlc@gmail.com
+,10217,16/08/2025,World War 2,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10218,16/08/2025,Armies of the Imperium,Castellano,Alea con revistas de juego de mesa,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10219,16/08/2025,Rolemaster: Arms Law,Castellano,50 ejemplares,rol,Regular,clubdreadnought.vlc@gmail.com
+,10220,16/08/2025,D&d reinos olvidados guia de volo para los valles,Ingles,,rol,Regular,clubdreadnought.vlc@gmail.com
+,10221,16/08/2025,"Rolemaster Channeling, Mentalismo & Essence (3 revistas)",Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10222,16/08/2025,Streetfight,Ingles,Impreso ,rol,Regular,clubdreadnought.vlc@gmail.com
+,10223,16/08/2025,Rolemaster: Creatures & Monsters,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10224,16/08/2025,Rolemaster: 3 in 1,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10225,16/08/2025,The rules with no name,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10226,16/08/2025,Rolemaster Heroes and Rogues ,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10227,16/08/2025,Rolemaster Heroes and Rogues ,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10228,16/08/2025,Rolemaster: Spell Law pack,Castellano,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10229,16/08/2025,Rolemaster Companion (7 revistas de la coleccion),Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10230,16/08/2025,Rolemaster: Manual de hechizos,Castellano,Impreso,rol,Regular,clubdreadnought.vlc@gmail.com
+,10231,16/08/2025,Rolemaster: Annual 1996 y 1997,Ingles,,rol,Bueno,clubdreadnought.vlc@gmail.com
+,10232,16/08/2025,Spell Law,Ingles,Encuadernado,rol,Malo,clubdreadnought.vlc@gmail.com
+,10233,16/08/2025,Character Law & Campaign Law,Ingles,Impreso ,rol,Malo,clubdreadnought.vlc@gmail.com
+,10234,16/08/2025,Arms Law & Claw Law,Ingles,Impreso,rol,Malo,clubdreadnought.vlc@gmail.com
+,10235,16/08/2025,Shadow World Master Atlas,Ingles,Impreso,rol,Malo,clubdreadnought.vlc@gmail.com
