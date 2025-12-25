@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getClubStats = exports.getUserStats = exports.getAdminStats = void 0;
+exports.getClubStats = exports.getUserUpcomingEvents = exports.getUserGamesPlayed = exports.getUserEventsAttended = exports.getUserStats = exports.getAdminStats = void 0;
 const database_1 = require("../config/database");
 const client_1 = require("@prisma/client");
 /**
@@ -341,6 +341,177 @@ const getUserStats = async (req, res) => {
     }
 };
 exports.getUserStats = getUserStats;
+/**
+ * Obtener eventos asistidos del usuario (detallados)
+ */
+const getUserEventsAttended = async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'No autorizado' });
+            return;
+        }
+        const events = await database_1.prisma.eventRegistration.findMany({
+            where: {
+                userId,
+                status: client_1.RegistrationStatus.CONFIRMED,
+                event: {
+                    status: client_1.EventStatus.COMPLETED
+                }
+            },
+            select: {
+                event: {
+                    select: {
+                        id: true,
+                        title: true,
+                        description: true,
+                        type: true,
+                        gameName: true,
+                        gameImage: true,
+                        date: true,
+                        startHour: true,
+                        startMinute: true,
+                        location: true,
+                        status: true
+                    }
+                }
+            },
+            orderBy: {
+                event: {
+                    date: 'desc'
+                }
+            }
+        });
+        res.json({
+            success: true,
+            data: events.map(e => e.event)
+        });
+    }
+    catch (error) {
+        console.error('Error al obtener eventos asistidos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener eventos asistidos'
+        });
+    }
+};
+exports.getUserEventsAttended = getUserEventsAttended;
+/**
+ * Obtener partidas jugadas del usuario (detalladas)
+ */
+const getUserGamesPlayed = async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'No autorizado' });
+            return;
+        }
+        const games = await database_1.prisma.eventRegistration.findMany({
+            where: {
+                userId,
+                status: client_1.RegistrationStatus.CONFIRMED,
+                event: {
+                    type: 'PARTIDA',
+                    status: client_1.EventStatus.COMPLETED
+                }
+            },
+            select: {
+                event: {
+                    select: {
+                        id: true,
+                        title: true,
+                        description: true,
+                        type: true,
+                        gameName: true,
+                        gameImage: true,
+                        date: true,
+                        startHour: true,
+                        startMinute: true,
+                        location: true,
+                        status: true
+                    }
+                }
+            },
+            orderBy: {
+                event: {
+                    date: 'desc'
+                }
+            }
+        });
+        res.json({
+            success: true,
+            data: games.map(g => g.event)
+        });
+    }
+    catch (error) {
+        console.error('Error al obtener partidas jugadas:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener partidas jugadas'
+        });
+    }
+};
+exports.getUserGamesPlayed = getUserGamesPlayed;
+/**
+ * Obtener próximos eventos del usuario (detallados)
+ */
+const getUserUpcomingEvents = async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'No autorizado' });
+            return;
+        }
+        const events = await database_1.prisma.eventRegistration.findMany({
+            where: {
+                userId,
+                status: client_1.RegistrationStatus.CONFIRMED,
+                event: {
+                    status: {
+                        in: [client_1.EventStatus.SCHEDULED, client_1.EventStatus.ONGOING]
+                    },
+                    date: {
+                        gte: new Date()
+                    }
+                }
+            },
+            select: {
+                event: {
+                    select: {
+                        id: true,
+                        title: true,
+                        description: true,
+                        type: true,
+                        gameName: true,
+                        gameImage: true,
+                        date: true,
+                        startHour: true,
+                        startMinute: true,
+                        location: true,
+                        status: true
+                    }
+                }
+            },
+            orderBy: {
+                event: {
+                    date: 'asc'
+                }
+            }
+        });
+        res.json({
+            success: true,
+            data: events.map(e => e.event)
+        });
+    }
+    catch (error) {
+        console.error('Error al obtener próximos eventos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener próximos eventos'
+        });
+    }
+};
+exports.getUserUpcomingEvents = getUserUpcomingEvents;
 /**
  * Obtener estadísticas globales del club
  */

@@ -11,5 +11,9 @@ router.get('/admin', auth_1.authenticate, auth_1.requireAdmin, statsController_1
 router.get('/user', auth_1.authenticate, statsController_1.getUserStats);
 // Estadísticas globales del club (públicas para usuarios autenticados)
 router.get('/club', auth_1.authenticate, statsController_1.getClubStats);
+// Detalles de eventos del usuario
+router.get('/user/events-attended', auth_1.authenticate, statsController_1.getUserEventsAttended);
+router.get('/user/games-played', auth_1.authenticate, statsController_1.getUserGamesPlayed);
+router.get('/user/upcoming-events', auth_1.authenticate, statsController_1.getUserUpcomingEvents);
 exports.default = router;
 //# sourceMappingURL=statsRoutes.js.map

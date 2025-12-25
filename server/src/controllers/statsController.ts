@@ -368,6 +368,186 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
 };
 
 /**
+ * Obtener eventos asistidos del usuario (detallados)
+ */
+export const getUserEventsAttended = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'No autorizado' });
+      return;
+    }
+
+    const events = await prisma.eventRegistration.findMany({
+      where: {
+        userId,
+        status: RegistrationStatus.CONFIRMED,
+        event: {
+          status: EventStatus.COMPLETED
+        }
+      },
+      select: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            type: true,
+            gameName: true,
+            gameImage: true,
+            date: true,
+            startHour: true,
+            startMinute: true,
+            location: true,
+            status: true
+          }
+        }
+      },
+      orderBy: {
+        event: {
+          date: 'desc'
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      data: events.map(e => e.event)
+    });
+
+  } catch (error) {
+    console.error('Error al obtener eventos asistidos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener eventos asistidos'
+    });
+  }
+};
+
+/**
+ * Obtener partidas jugadas del usuario (detalladas)
+ */
+export const getUserGamesPlayed = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'No autorizado' });
+      return;
+    }
+
+    const games = await prisma.eventRegistration.findMany({
+      where: {
+        userId,
+        status: RegistrationStatus.CONFIRMED,
+        event: {
+          type: 'PARTIDA',
+          status: EventStatus.COMPLETED
+        }
+      },
+      select: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            type: true,
+            gameName: true,
+            gameImage: true,
+            date: true,
+            startHour: true,
+            startMinute: true,
+            location: true,
+            status: true
+          }
+        }
+      },
+      orderBy: {
+        event: {
+          date: 'desc'
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      data: games.map(g => g.event)
+    });
+
+  } catch (error) {
+    console.error('Error al obtener partidas jugadas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener partidas jugadas'
+    });
+  }
+};
+
+/**
+ * Obtener próximos eventos del usuario (detallados)
+ */
+export const getUserUpcomingEvents = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'No autorizado' });
+      return;
+    }
+
+    const events = await prisma.eventRegistration.findMany({
+      where: {
+        userId,
+        status: RegistrationStatus.CONFIRMED,
+        event: {
+          status: {
+            in: [EventStatus.SCHEDULED, EventStatus.ONGOING]
+          },
+          date: {
+            gte: new Date()
+          }
+        }
+      },
+      select: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            type: true,
+            gameName: true,
+            gameImage: true,
+            date: true,
+            startHour: true,
+            startMinute: true,
+            location: true,
+            status: true
+          }
+        }
+      },
+      orderBy: {
+        event: {
+          date: 'asc'
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      data: events.map(e => e.event)
+    });
+
+  } catch (error) {
+    console.error('Error al obtener próximos eventos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener próximos eventos'
+    });
+  }
+};
+
+/**
  * Obtener estadísticas globales del club
  */
 export const getClubStats = async (_req: Request, res: Response): Promise<void> => {

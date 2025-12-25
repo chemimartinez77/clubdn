@@ -39,3 +39,18 @@ export interface ClubStatsResponse {
   success: boolean;
   data: ClubStats;
 }
+
+// Tipos para eventos detallados
+export interface EventDetail {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  gameName: string | null;
+  gameImage: string | null;
+  date: string;
+  startHour: number | null;
+  startMinute: number | null;
+  location: string;
+  status: string;
+}

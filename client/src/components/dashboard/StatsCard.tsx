@@ -1,8 +1,10 @@
 // client/src/components/dashboard/StatsCard.tsx
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardHeader, CardContent } from '../ui/Card';
+import Modal from '../ui/Modal';
 import { api } from '../../api/axios';
-import type { UserStatsResponse, ClubStatsResponse } from '../../types/stats';
+import type { UserStatsResponse, ClubStatsResponse, EventDetail } from '../../types/stats';
 
 interface StatItem {
   label: string;
@@ -18,7 +20,11 @@ const colorClasses = {
   yellow: 'bg-yellow-100 text-yellow-600',
 };
 
+type ModalType = 'eventsAttended' | 'gamesPlayed' | 'upcomingEvents' | null;
+
 export default function StatsCard() {
+  const [openModal, setOpenModal] = useState<ModalType>(null);
+
   // Obtener estadísticas del usuario
   const { data: userStats, isLoading: isLoadingUser } = useQuery({
     queryKey: ['userStats'],
@@ -37,7 +43,47 @@ export default function StatsCard() {
     }
   });
 
+  // Obtener eventos asistidos (solo cuando se abre el modal)
+  const { data: eventsAttended } = useQuery({
+    queryKey: ['eventsAttended'],
+    queryFn: async () => {
+      const response = await api.get<{ success: boolean; data: EventDetail[] }>('/api/stats/user/events-attended');
+      return response.data.data;
+    },
+    enabled: openModal === 'eventsAttended'
+  });
+
+  // Obtener partidas jugadas (solo cuando se abre el modal)
+  const { data: gamesPlayed } = useQuery({
+    queryKey: ['gamesPlayed'],
+    queryFn: async () => {
+      const response = await api.get<{ success: boolean; data: EventDetail[] }>('/api/stats/user/games-played');
+      return response.data.data;
+    },
+    enabled: openModal === 'gamesPlayed'
+  });
+
+  // Obtener próximos eventos (solo cuando se abre el modal)
+  const { data: upcomingEvents } = useQuery({
+    queryKey: ['upcomingEvents'],
+    queryFn: async () => {
+      const response = await api.get<{ success: boolean; data: EventDetail[] }>('/api/stats/user/upcoming-events');
+      return response.data.data;
+    },
+    enabled: openModal === 'upcomingEvents'
+  });
+
   const isLoading = isLoadingUser || isLoadingClub;
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  const formatTime = (hour: number | null, minute: number | null) => {
+    if (hour === null || minute === null) return '';
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  };
 
   // Estadísticas básicas en tarjetas
   const basicStats: StatItem[] = [
@@ -107,20 +153,33 @@ export default function StatsCard() {
         <div className="space-y-6">
           {/* Estadísticas básicas */}
           <div className="grid grid-cols-2 gap-4">
-            {basicStats.map((stat, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-3 p-4 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors"
-              >
-                <div className={`p-2 rounded-lg ${colorClasses[stat.color]}`}>
-                  {stat.icon}
+            {basicStats.map((stat, index) => {
+              // Determinar si esta tarjeta debe ser clicable
+              const isClickable = index === 0 || index === 1 || index === 3; // Eventos asistidos, Partidas jugadas, Próximos eventos
+              const onClick = isClickable ? () => {
+                if (index === 0) setOpenModal('eventsAttended');
+                else if (index === 1) setOpenModal('gamesPlayed');
+                else if (index === 3) setOpenModal('upcomingEvents');
+              } : undefined;
+
+              return (
+                <div
+                  key={index}
+                  onClick={onClick}
+                  className={`flex items-start gap-3 p-4 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors ${
+                    isClickable ? 'cursor-pointer hover:shadow-md' : ''
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg ${colorClasses[stat.color]}`}>
+                    {stat.icon}
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-sm text-gray-600">{stat.label}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-sm text-gray-600">{stat.label}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Juegos más jugados por el usuario */}
@@ -202,6 +261,114 @@ export default function StatsCard() {
           )}
         </div>
       </CardContent>
+
+      {/* Modales */}
+      <Modal
+        isOpen={openModal === 'eventsAttended'}
+        onClose={() => setOpenModal(null)}
+        title="Eventos Asistidos"
+        size="lg"
+      >
+        <div className="space-y-3">
+          {eventsAttended && eventsAttended.length > 0 ? (
+            eventsAttended.map((event) => (
+              <div key={event.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900">{event.title}</h4>
+                    <p className="text-sm text-gray-600 mt-1">{event.description}</p>
+                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                      <span>📅 {formatDate(event.date)}</span>
+                      {event.startHour !== null && (
+                        <span>🕐 {formatTime(event.startHour, event.startMinute)}</span>
+                      )}
+                      <span>📍 {event.location}</span>
+                    </div>
+                  </div>
+                  {event.gameImage && (
+                    <img src={event.gameImage} alt={event.gameName || ''} className="w-16 h-16 rounded object-cover ml-4" />
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-center text-gray-500 py-8">No hay eventos asistidos</p>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={openModal === 'gamesPlayed'}
+        onClose={() => setOpenModal(null)}
+        title="Partidas Jugadas"
+        size="lg"
+      >
+        <div className="space-y-3">
+          {gamesPlayed && gamesPlayed.length > 0 ? (
+            gamesPlayed.map((game) => (
+              <div key={game.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900">{game.title}</h4>
+                    {game.gameName && (
+                      <p className="text-sm text-blue-600 mt-1">🎮 {game.gameName}</p>
+                    )}
+                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                      <span>📅 {formatDate(game.date)}</span>
+                      {game.startHour !== null && (
+                        <span>🕐 {formatTime(game.startHour, game.startMinute)}</span>
+                      )}
+                      <span>📍 {game.location}</span>
+                    </div>
+                  </div>
+                  {game.gameImage && (
+                    <img src={game.gameImage} alt={game.gameName || ''} className="w-16 h-16 rounded object-cover ml-4" />
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-center text-gray-500 py-8">No hay partidas jugadas</p>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={openModal === 'upcomingEvents'}
+        onClose={() => setOpenModal(null)}
+        title="Próximos Eventos"
+        size="lg"
+      >
+        <div className="space-y-3">
+          {upcomingEvents && upcomingEvents.length > 0 ? (
+            upcomingEvents.map((event) => (
+              <div key={event.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900">{event.title}</h4>
+                    <p className="text-sm text-gray-600 mt-1">{event.description}</p>
+                    {event.gameName && (
+                      <p className="text-sm text-blue-600 mt-1">🎮 {event.gameName}</p>
+                    )}
+                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                      <span>📅 {formatDate(event.date)}</span>
+                      {event.startHour !== null && (
+                        <span>🕐 {formatTime(event.startHour, event.startMinute)}</span>
+                      )}
+                      <span>📍 {event.location}</span>
+                    </div>
+                  </div>
+                  {event.gameImage && (
+                    <img src={event.gameImage} alt={event.gameName || ''} className="w-16 h-16 rounded object-cover ml-4" />
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-center text-gray-500 py-8">No hay próximos eventos</p>
+          )}
+        </div>
+      </Modal>
     </Card>
   );
 }
