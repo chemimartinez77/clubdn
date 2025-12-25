@@ -1,6 +1,7 @@
 // client/src/components/dashboard/StatsCard.tsx
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from '../ui/Card';
 import Modal from '../ui/Modal';
 import { api } from '../../api/axios';
@@ -24,6 +25,7 @@ type ModalType = 'eventsAttended' | 'gamesPlayed' | 'upcomingEvents' | 'timeRang
 
 export default function StatsCard() {
   const [openModal, setOpenModal] = useState<ModalType>(null);
+  const navigate = useNavigate();
 
   // Obtener estadísticas del usuario
   const { data: userStats, isLoading: isLoadingUser } = useQuery({
@@ -283,7 +285,14 @@ export default function StatsCard() {
         <div className="space-y-3">
           {eventsAttended && eventsAttended.length > 0 ? (
             eventsAttended.map((event) => (
-              <div key={event.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <div
+                key={event.id}
+                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer hover:shadow-md"
+                onClick={() => {
+                  setOpenModal(null);
+                  navigate(`/events/${event.id}`);
+                }}
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900">{event.title}</h4>
@@ -317,7 +326,14 @@ export default function StatsCard() {
         <div className="space-y-3">
           {gamesPlayed && gamesPlayed.length > 0 ? (
             gamesPlayed.map((game) => (
-              <div key={game.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <div
+                key={game.id}
+                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer hover:shadow-md"
+                onClick={() => {
+                  setOpenModal(null);
+                  navigate(`/events/${game.id}`);
+                }}
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900">{game.title}</h4>
@@ -353,7 +369,14 @@ export default function StatsCard() {
         <div className="space-y-3">
           {upcomingEvents && upcomingEvents.length > 0 ? (
             upcomingEvents.map((event) => (
-              <div key={event.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <div
+                key={event.id}
+                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer hover:shadow-md"
+                onClick={() => {
+                  setOpenModal(null);
+                  navigate(`/events/${event.id}`);
+                }}
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900">{event.title}</h4>
@@ -387,7 +410,15 @@ export default function StatsCard() {
         title="Partidas por Horario"
         size="lg"
       >
-        <TimeRangeModalContent games={timeRangeGames || []} formatDate={formatDate} formatTime={formatTime} />
+        <TimeRangeModalContent
+          games={timeRangeGames || []}
+          formatDate={formatDate}
+          formatTime={formatTime}
+          onEventClick={(eventId) => {
+            setOpenModal(null);
+            navigate(`/events/${eventId}`);
+          }}
+        />
       </Modal>
     </Card>
   );
@@ -398,9 +429,10 @@ interface TimeRangeModalContentProps {
   games: EventDetail[];
   formatDate: (dateString: string) => string;
   formatTime: (hour: number | null, minute: number | null) => string;
+  onEventClick: (eventId: string) => void;
 }
 
-function TimeRangeModalContent({ games, formatDate, formatTime }: TimeRangeModalContentProps) {
+function TimeRangeModalContent({ games, formatDate, formatTime, onEventClick }: TimeRangeModalContentProps) {
   const [sortBy, setSortBy] = useState<'date' | 'time'>('date');
   const [filterRange, setFilterRange] = useState<'all' | 'morning' | 'afternoon' | 'evening' | 'night'>('all');
 
@@ -498,7 +530,11 @@ function TimeRangeModalContent({ games, formatDate, formatTime }: TimeRangeModal
                 </h5>
                 <div className="space-y-2">
                   {gamesInRange.map((game) => (
-                    <div key={game.id} className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div
+                      key={game.id}
+                      className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer hover:shadow-md"
+                      onClick={() => onEventClick(game.id)}
+                    >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h6 className="font-semibold text-gray-900 text-sm">{game.title}</h6>
