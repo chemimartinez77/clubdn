@@ -68,7 +68,7 @@ const conditionColors: Record<GameCondition, string> = {
 };
 
 export default function Ludoteca() {
-  const { showToast } = useToast();
+  const { error: showError } = useToast();
   const [items, setItems] = useState<LibraryItem[]>([]);
   const [stats, setStats] = useState<LibraryStats | null>(null);
   const [filters, setFilters] = useState<Filters | null>(null);
@@ -153,11 +153,11 @@ export default function Ludoteca() {
         setItems(data.data.items);
         setTotalPages(data.data.pagination.totalPages);
       } else {
-        showToast('Error al cargar los juegos', 'error');
+        showError('Error al cargar los juegos');
       }
     } catch (error) {
       console.error('Error loading items:', error);
-      showToast('Error al cargar los juegos', 'error');
+      showError('Error al cargar los juegos');
     } finally {
       setLoading(false);
     }
