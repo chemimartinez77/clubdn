@@ -360,3 +360,52 @@ model ClubConfig {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
+
+// Tipos de juegos en la ludoteca
+enum GameType {
+  WARGAME
+  MESA
+  CARTAS
+  MINI
+  ROL
+}
+
+// Estados de condición física del juego
+enum GameCondition {
+  NUEVO
+  BUENO
+  REGULAR
+  MALO
+}
+
+// Item físico en la ludoteca del club
+model LibraryItem {
+  id                String         @id @default(cuid())
+
+  // Identificadores
+  bggId             String?        // BGG ID del juego (almacenado como referencia, puede no estar en la tabla Game)
+  internalId        String         @unique // ID interno del club
+
+  // Información del juego
+  name              String
+  description       String?        @db.Text
+  notes             String?        @db.Text
+
+  // Clasificación
+  gameType          GameType       // wargame, mesa, cartas, mini, rol
+  condition         GameCondition  // Nuevo, Bueno, Regular, Malo
+
+  // Propiedad y adquisición
+  ownerEmail        String?        // Email del propietario (si no es del club)
+  acquisitionDate   DateTime?      // Fecha de adquisición
+
+  // Metadatos
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([name])
+  @@index([gameType])
+  @@index([condition])
+  @@index([ownerEmail])
+  @@index([bggId])
+}

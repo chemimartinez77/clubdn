@@ -1,0 +1,11 @@
+BGG ID,ID Interno,Fecha Adquisicion,Nombre,Descripcion,Notas,Tipo de juego,Estado,Propietario
+340169,DN-001,01/01/2020,7 Wonders Duel,Juego de cartas para dos jugadores,,mesa,Bueno,club@dn.com
+174430,DN-002,15/02/2020,Gloomhaven,Juego de aventuras cooperativo,,mesa,Nuevo,club@dn.com
+167791,DN-003,20/03/2020,Terraforming Mars,Juego de estrategia sobre la colonización de Marte,,mesa,Bueno,club@dn.com
+173346,DN-004,10/04/2020,7 Wonders,Juego de civilizaciones,,mesa,Regular,club@dn.com
+,DN-005,05/05/2020,Advanced Squad Leader,Wargame táctico de la Segunda Guerra Mundial,,wargame,Bueno,socio1@example.com
+68448,DN-006,12/06/2020,Love Letter,Juego de cartas de deducción,,cartas,Nuevo,club@dn.com
+,DN-007,18/07/2020,Warhammer 40K,Juego de miniaturas en el universo 40K,,mini,Bueno,socio2@example.com
+161936,DN-008,25/08/2020,Pandemic Legacy: Season 1,Juego cooperativo legacy,,mesa,Bueno,club@dn.com
+,DN-009,30/09/2020,Dungeons & Dragons 5E - Player's Handbook,Manual básico del jugador,,rol,Nuevo,club@dn.com
+220308,DN-010,15/10/2020,Gaia Project,Juego de estrategia espacial,,mesa,Bueno,club@dn.com

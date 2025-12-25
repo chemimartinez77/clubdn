@@ -17,6 +17,7 @@ const bggRoutes_1 = __importDefault(require("./routes/bggRoutes"));
 const membershipRoutes_1 = __importDefault(require("./routes/membershipRoutes"));
 const gameRoutes_1 = __importDefault(require("./routes/gameRoutes"));
 const configRoutes_1 = __importDefault(require("./routes/configRoutes"));
+const ludotecaRoutes_1 = __importDefault(require("./routes/ludotecaRoutes"));
 // Cargar variables de entorno
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -53,6 +54,7 @@ app.use('/api/bgg', bggRoutes_1.default);
 app.use('/api/membership', membershipRoutes_1.default);
 app.use('/api/games', gameRoutes_1.default);
 app.use('/api/config', configRoutes_1.default);
+app.use('/api/ludoteca', ludotecaRoutes_1.default);
 // Ruta 404
 app.use((_req, res) => {
     res.status(404).json({

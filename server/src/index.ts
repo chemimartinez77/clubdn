@@ -12,6 +12,7 @@ import bggRoutes from './routes/bggRoutes';
 import membershipRoutes from './routes/membershipRoutes';
 import gameRoutes from './routes/gameRoutes';
 import configRoutes from './routes/configRoutes';
+import ludotecaRoutes from './routes/ludotecaRoutes';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -55,6 +56,7 @@ app.use('/api/bgg', bggRoutes);
 app.use('/api/membership', membershipRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/config', configRoutes);
+app.use('/api/ludoteca', ludotecaRoutes);
 
 // Ruta 404
 app.use((_req, res) => {

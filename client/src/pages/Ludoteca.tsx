@@ -1,19 +1,171 @@
 // client/src/pages/Ludoteca.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
+import { useToast } from '../contexts/ToastContext';
 
-type GameType = 'all' | 'wargame' | 'boardgame';
+type GameType = 'WARGAME' | 'MESA' | 'CARTAS' | 'MINI' | 'ROL';
+type GameCondition = 'NUEVO' | 'BUENO' | 'REGULAR' | 'MALO';
+
+interface LibraryItem {
+  id: string;
+  bggId: string | null;
+  internalId: string;
+  name: string;
+  description: string | null;
+  notes: string | null;
+  gameType: GameType;
+  condition: GameCondition;
+  ownerEmail: string | null;
+  acquisitionDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface LibraryStats {
+  total: number;
+  clubItems: number;
+  memberItems: number;
+  byGameType: { type: GameType; count: number }[];
+  byCondition: { condition: GameCondition; count: number }[];
+  uniqueOwners: number;
+}
+
+interface Filters {
+  gameTypes: GameType[];
+  conditions: GameCondition[];
+  owners: string[];
+}
+
+const gameTypeLabels: Record<GameType, string> = {
+  WARGAME: 'Wargame',
+  MESA: 'Juego de Mesa',
+  CARTAS: 'Juego de Cartas',
+  MINI: 'Miniaturas',
+  ROL: 'Rol'
+};
+
+const gameTypeIcons: Record<GameType, string> = {
+  WARGAME: '🎖️',
+  MESA: '🎲',
+  CARTAS: '🃏',
+  MINI: '♟️',
+  ROL: '📖'
+};
+
+const conditionLabels: Record<GameCondition, string> = {
+  NUEVO: 'Nuevo',
+  BUENO: 'Bueno',
+  REGULAR: 'Regular',
+  MALO: 'Malo'
+};
+
+const conditionColors: Record<GameCondition, string> = {
+  NUEVO: 'bg-green-100 text-green-800',
+  BUENO: 'bg-blue-100 text-blue-800',
+  REGULAR: 'bg-yellow-100 text-yellow-800',
+  MALO: 'bg-red-100 text-red-800'
+};
 
 export default function Ludoteca() {
+  const { showToast } = useToast();
+  const [items, setItems] = useState<LibraryItem[]>([]);
+  const [stats, setStats] = useState<LibraryStats | null>(null);
+  const [filters, setFilters] = useState<Filters | null>(null);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<GameType>('all');
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedCondition, setSelectedCondition] = useState<string>('all');
+  const [selectedOwner, setSelectedOwner] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const stats = {
-    total: 0,
-    wargames: 0,
-    boardgames: 0,
-    owners: 0
+  // Cargar estadísticas y filtros
+  useEffect(() => {
+    loadStats();
+    loadFilters();
+  }, []);
+
+  // Cargar items con filtros
+  useEffect(() => {
+    loadItems();
+  }, [searchQuery, selectedType, selectedCondition, selectedOwner, currentPage]);
+
+  const loadStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/ludoteca/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data.data);
+      }
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  const loadFilters = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/ludoteca/filters', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFilters(data.data);
+      }
+    } catch (error) {
+      console.error('Error loading filters:', error);
+    }
+  };
+
+  const loadItems = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '12'
+      });
+
+      if (searchQuery) params.append('search', searchQuery);
+      if (selectedType !== 'all') params.append('gameType', selectedType);
+      if (selectedCondition !== 'all') params.append('condition', selectedCondition);
+      if (selectedOwner !== 'all') params.append('ownerEmail', selectedOwner);
+
+      const response = await fetch(`http://localhost:5000/api/ludoteca?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setItems(data.data.items);
+        setTotalPages(data.data.pagination.totalPages);
+      } else {
+        showToast('Error al cargar los juegos', 'error');
+      }
+    } catch (error) {
+      console.error('Error loading items:', error);
+      showToast('Error al cargar los juegos', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCurrentPage(1);
   };
 
   return (
@@ -25,144 +177,249 @@ export default function Ludoteca() {
             <h1 className="text-3xl font-bold text-gray-900">Ludoteca del Club</h1>
             <p className="text-gray-600 mt-1">Catálogo de juegos disponibles en el club</p>
           </div>
-          <button
-            className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primaryDark)] transition-colors flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Añadir Juego
-          </button>
         </div>
 
         {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Juegos</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Total Juegos</p>
+                    <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
                 </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Wargames</p>
-                  <p className="text-3xl font-bold text-red-600">{stats.wargames}</p>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Del Club</p>
+                    <p className="text-3xl font-bold text-green-600">{stats.clubItems}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <span className="text-2xl">🏛️</span>
+                  </div>
                 </div>
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">🎖️</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Juegos de Mesa</p>
-                  <p className="text-3xl font-bold text-green-600">{stats.boardgames}</p>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">De Socios</p>
+                    <p className="text-3xl font-bold text-purple-600">{stats.memberItems}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  </div>
                 </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">🎲</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Propietarios</p>
-                  <p className="text-3xl font-bold text-purple-600">{stats.owners}</p>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Propietarios</p>
+                    <p className="text-3xl font-bold text-orange-600">{stats.uniqueOwners + 1}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Filtros y búsqueda */}
         <Card>
           <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              {/* Búsqueda */}
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar por nombre..."
-                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-                />
-                <svg
-                  className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+            <form onSubmit={handleSearch} className="space-y-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                {/* Búsqueda */}
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar por nombre, descripción o ID..."
+                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  />
+                  <svg
+                    className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+
+                {/* Filtro por tipo */}
+                <select
+                  value={selectedType}
+                  onChange={(e) => { setSelectedType(e.target.value); setCurrentPage(1); }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+                  <option value="all">Todos los tipos</option>
+                  {filters?.gameTypes.map(type => (
+                    <option key={type} value={type}>{gameTypeIcons[type]} {gameTypeLabels[type]}</option>
+                  ))}
+                </select>
+
+                {/* Filtro por condición */}
+                <select
+                  value={selectedCondition}
+                  onChange={(e) => { setSelectedCondition(e.target.value); setCurrentPage(1); }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                >
+                  <option value="all">Todas las condiciones</option>
+                  {filters?.conditions.map(condition => (
+                    <option key={condition} value={condition}>{conditionLabels[condition]}</option>
+                  ))}
+                </select>
+
+                {/* Filtro por propietario */}
+                <select
+                  value={selectedOwner}
+                  onChange={(e) => { setSelectedOwner(e.target.value); setCurrentPage(1); }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                >
+                  <option value="all">Todos los propietarios</option>
+                  {filters?.owners.map(owner => (
+                    <option key={owner} value={owner}>
+                      {owner === 'club' ? '🏛️ Club DN' : owner}
+                    </option>
+                  ))}
+                </select>
               </div>
-
-              {/* Filtro por tipo */}
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value as GameType)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-              >
-                <option value="all">Todos los tipos</option>
-                <option value="wargame">Wargames</option>
-                <option value="boardgame">Juegos de mesa</option>
-              </select>
-
-              {/* Botón importar */}
-              <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                Importar Juegos
-              </button>
-            </div>
+            </form>
           </CardContent>
         </Card>
 
         {/* Lista de juegos */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center py-12 text-gray-500">
-              <svg className="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Ludoteca vacía</h3>
-              <p className="text-gray-600 mb-6">Aún no hay juegos registrados en la ludoteca del club</p>
-              <button
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primaryDark)] transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]"></div>
+          </div>
+        ) : items.length === 0 ? (
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center py-12 text-gray-500">
+                <svg className="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
-                Añadir primer juego
-              </button>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No se encontraron juegos</h3>
+                <p className="text-gray-600">Intenta ajustar los filtros de búsqueda</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {items.map(item => (
+                <Card key={item.id} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-3xl">{gameTypeIcons[item.gameType]}</span>
+                        <div>
+                          <p className="text-xs text-gray-500">{item.internalId}</p>
+                          <p className="text-xs text-gray-500">{gameTypeLabels[item.gameType]}</p>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${conditionColors[item.condition]}`}>
+                        {conditionLabels[item.condition]}
+                      </span>
+                    </div>
+
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.name}</h3>
+
+                    {item.description && (
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
+                    )}
+
+                    {item.notes && (
+                      <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                        <strong>Nota:</strong> {item.notes}
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        {item.ownerEmail ? (
+                          <>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span className="text-xs">{item.ownerEmail}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-lg">🏛️</span>
+                            <span className="text-xs font-medium">Club DN</span>
+                          </>
+                        )}
+                      </div>
+
+                      {item.bggId && (
+                        <a
+                          href={`https://boardgamegeek.com/boardgame/${item.bggId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-[var(--color-primary)] hover:underline flex items-center gap-1"
+                        >
+                          Ver en BGG
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Paginación */}
+            {totalPages > 1 && (
+              <div className="flex justify-center gap-2 mt-6">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+                <span className="px-4 py-2 text-gray-700">
+                  Página {currentPage} de {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                </button>
+              </div>
+            )}
+          </>
+        )}
 
         {/* Sección informativa */}
         <Card>
@@ -175,7 +432,7 @@ export default function Ludoteca() {
                 <div className="flex-1">
                   <h4 className="font-semibold text-blue-900 mb-1">Acerca de la Ludoteca</h4>
                   <p className="text-sm text-blue-800">
-                    La ludoteca del club es un catálogo de todos los juegos que los socios ponen a disposición del club.
+                    La ludoteca del club es un catálogo de todos los juegos que el club y los socios ponen a disposición.
                     Aquí podrás ver qué juegos están disponibles, quién es su propietario y sus características principales.
                     Si deseas aportar tus juegos a la ludoteca, contacta con la junta directiva.
                   </p>
