@@ -1,5 +1,5 @@
 // client/src/pages/Ludoteca.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
 import { useToast } from '../contexts/ToastContext';
@@ -79,22 +79,14 @@ export default function Ludoteca() {
   const [selectedOwner, setSelectedOwner] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
 
-  // Cargar estadísticas y filtros
-  useEffect(() => {
-    loadStats();
-    loadFilters();
-  }, []);
-
-  // Cargar items con filtros
-  useEffect(() => {
-    loadItems();
-  }, [searchQuery, selectedType, selectedCondition, selectedOwner, currentPage]);
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/ludoteca/stats', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/ludoteca/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -107,12 +99,13 @@ export default function Ludoteca() {
     } catch (error) {
       console.error('Error loading stats:', error);
     }
-  };
+  }, []);
 
-  const loadFilters = async () => {
+  const loadFilters = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/ludoteca/filters', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/ludoteca/filters`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -125,16 +118,17 @@ export default function Ludoteca() {
     } catch (error) {
       console.error('Error loading filters:', error);
     }
-  };
+  }, []);
 
-  const loadItems = async () => {
+  const loadItems = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: '12'
+        limit: itemsPerPage === -1 ? '9999' : itemsPerPage.toString()
       });
 
       if (searchQuery) params.append('search', searchQuery);
@@ -142,7 +136,7 @@ export default function Ludoteca() {
       if (selectedCondition !== 'all') params.append('condition', selectedCondition);
       if (selectedOwner !== 'all') params.append('ownerEmail', selectedOwner);
 
-      const response = await fetch(`http://localhost:5000/api/ludoteca?${params}`, {
+      const response = await fetch(`${API_URL}/api/ludoteca?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -152,7 +146,10 @@ export default function Ludoteca() {
         const data = await response.json();
         setItems(data.data.items);
         setTotalPages(data.data.pagination.totalPages);
+        setTotalItems(data.data.pagination.total);
       } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Error response:', errorData);
         showError('Error al cargar los juegos');
       }
     } catch (error) {
@@ -161,7 +158,18 @@ export default function Ludoteca() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage, searchQuery, selectedType, selectedCondition, selectedOwner, showError]);
+
+  // Cargar estadísticas y filtros
+  useEffect(() => {
+    loadStats();
+    loadFilters();
+  }, [loadStats, loadFilters]);
+
+  // Cargar items con filtros
+  useEffect(() => {
+    loadItems();
+  }, [loadItems]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -307,6 +315,32 @@ export default function Ludoteca() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Selector de items por página */}
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Mostrar:</label>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  >
+                    <option value={10}>10 por página</option>
+                    <option value={25}>25 por página</option>
+                    <option value={50}>50 por página</option>
+                    <option value={100}>100 por página</option>
+                    <option value={-1}>Todos ({totalItems})</option>
+                  </select>
+                </div>
+                {totalItems > 0 && (
+                  <div className="text-sm text-gray-600">
+                    Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalItems)} de {totalItems} juegos
+                  </div>
+                )}
               </div>
             </form>
           </CardContent>
