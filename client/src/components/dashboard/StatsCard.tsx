@@ -20,7 +20,7 @@ const colorClasses = {
   yellow: 'bg-yellow-100 text-yellow-600',
 };
 
-type ModalType = 'eventsAttended' | 'gamesPlayed' | 'upcomingEvents' | null;
+type ModalType = 'eventsAttended' | 'gamesPlayed' | 'upcomingEvents' | 'timeRange' | null;
 
 export default function StatsCard() {
   const [openModal, setOpenModal] = useState<ModalType>(null);
@@ -71,6 +71,16 @@ export default function StatsCard() {
       return response.data.data;
     },
     enabled: openModal === 'upcomingEvents'
+  });
+
+  // Obtener partidas jugadas para el modal de horario favorito (solo cuando se abre el modal)
+  const { data: timeRangeGames } = useQuery({
+    queryKey: ['timeRangeGames'],
+    queryFn: async () => {
+      const response = await api.get<{ success: boolean; data: EventDetail[] }>('/api/stats/user/games-played');
+      return response.data.data;
+    },
+    enabled: openModal === 'timeRange'
   });
 
   const isLoading = isLoadingUser || isLoadingClub;
@@ -155,10 +165,11 @@ export default function StatsCard() {
           <div className="grid grid-cols-2 gap-4">
             {basicStats.map((stat, index) => {
               // Determinar si esta tarjeta debe ser clicable
-              const isClickable = index === 0 || index === 1 || index === 3; // Eventos asistidos, Partidas jugadas, Próximos eventos
+              const isClickable = index === 0 || index === 1 || index === 2 || index === 3; // Todos clicables
               const onClick = isClickable ? () => {
                 if (index === 0) setOpenModal('eventsAttended');
                 else if (index === 1) setOpenModal('gamesPlayed');
+                else if (index === 2) setOpenModal('timeRange');
                 else if (index === 3) setOpenModal('upcomingEvents');
               } : undefined;
 
@@ -369,6 +380,153 @@ export default function StatsCard() {
           )}
         </div>
       </Modal>
+
+      <Modal
+        isOpen={openModal === 'timeRange'}
+        onClose={() => setOpenModal(null)}
+        title="Partidas por Horario"
+        size="lg"
+      >
+        <TimeRangeModalContent games={timeRangeGames || []} formatDate={formatDate} formatTime={formatTime} />
+      </Modal>
     </Card>
+  );
+}
+
+// Componente para el contenido del modal de horario favorito
+interface TimeRangeModalContentProps {
+  games: EventDetail[];
+  formatDate: (dateString: string) => string;
+  formatTime: (hour: number | null, minute: number | null) => string;
+}
+
+function TimeRangeModalContent({ games, formatDate, formatTime }: TimeRangeModalContentProps) {
+  const [sortBy, setSortBy] = useState<'date' | 'time'>('date');
+  const [filterRange, setFilterRange] = useState<'all' | 'morning' | 'afternoon' | 'evening' | 'night'>('all');
+
+  // Agrupar juegos por rango horario
+  const getTimeRange = (hour: number | null): string => {
+    if (hour === null) return 'Sin hora';
+    if (hour >= 8 && hour < 12) return 'Mañana (8-12h)';
+    if (hour >= 12 && hour < 18) return 'Tarde (12-18h)';
+    if (hour >= 18 && hour < 24) return 'Noche (18-24h)';
+    return 'Madrugada (0-8h)';
+  };
+
+  const getTimeRangeKey = (hour: number | null): 'morning' | 'afternoon' | 'evening' | 'night' | 'none' => {
+    if (hour === null) return 'none';
+    if (hour >= 8 && hour < 12) return 'morning';
+    if (hour >= 12 && hour < 18) return 'afternoon';
+    if (hour >= 18 && hour < 24) return 'evening';
+    return 'night';
+  };
+
+  // Filtrar por rango horario
+  const filteredGames = filterRange === 'all'
+    ? games
+    : games.filter(game => getTimeRangeKey(game.startHour) === filterRange);
+
+  // Ordenar
+  const sortedGames = [...filteredGames].sort((a, b) => {
+    if (sortBy === 'date') {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    } else {
+      // Ordenar por hora
+      const hourA = a.startHour ?? 0;
+      const hourB = b.startHour ?? 0;
+      const minuteA = a.startMinute ?? 0;
+      const minuteB = b.startMinute ?? 0;
+      const timeA = hourA * 60 + minuteA;
+      const timeB = hourB * 60 + minuteB;
+      return timeA - timeB;
+    }
+  });
+
+  // Agrupar por rango horario para mostrar
+  const gamesByTimeRange = sortedGames.reduce((acc, game) => {
+    const range = getTimeRange(game.startHour);
+    if (!acc[range]) acc[range] = [];
+    acc[range].push(game);
+    return acc;
+  }, {} as Record<string, EventDetail[]>);
+
+  const timeRangeOrder = ['Mañana (8-12h)', 'Tarde (12-18h)', 'Noche (18-24h)', 'Madrugada (0-8h)', 'Sin hora'];
+
+  return (
+    <div className="space-y-4">
+      {/* Filtros y ordenación */}
+      <div className="flex flex-wrap gap-3 pb-4 border-b border-gray-200">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">Ordenar:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'date' | 'time')}
+            className="text-sm border border-gray-300 rounded px-2 py-1"
+          >
+            <option value="date">Por fecha</option>
+            <option value="time">Por hora</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">Filtrar:</span>
+          <select
+            value={filterRange}
+            onChange={(e) => setFilterRange(e.target.value as typeof filterRange)}
+            className="text-sm border border-gray-300 rounded px-2 py-1"
+          >
+            <option value="all">Todos</option>
+            <option value="morning">Mañana (8-12h)</option>
+            <option value="afternoon">Tarde (12-18h)</option>
+            <option value="evening">Noche (18-24h)</option>
+            <option value="night">Madrugada (0-8h)</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Lista de juegos agrupados por horario */}
+      {sortedGames.length > 0 ? (
+        <div className="space-y-4">
+          {timeRangeOrder.map((rangeLabel) => {
+            const gamesInRange = gamesByTimeRange[rangeLabel];
+            if (!gamesInRange || gamesInRange.length === 0) return null;
+
+            return (
+              <div key={rangeLabel}>
+                <h5 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  {rangeLabel} <span className="text-gray-500 font-normal">({gamesInRange.length})</span>
+                </h5>
+                <div className="space-y-2">
+                  {gamesInRange.map((game) => (
+                    <div key={game.id} className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h6 className="font-semibold text-gray-900 text-sm">{game.title}</h6>
+                          {game.gameName && (
+                            <p className="text-xs text-blue-600 mt-1">🎮 {game.gameName}</p>
+                          )}
+                          <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                            <span>📅 {formatDate(game.date)}</span>
+                            {game.startHour !== null && (
+                              <span className="font-semibold text-green-600">🕐 {formatTime(game.startHour, game.startMinute)}</span>
+                            )}
+                            <span>📍 {game.location}</span>
+                          </div>
+                        </div>
+                        {game.gameImage && (
+                          <img src={game.gameImage} alt={game.gameName || ''} className="w-12 h-12 rounded object-cover ml-3" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-center text-gray-500 py-8">No hay partidas en este rango horario</p>
+      )}
+    </div>
   );
 }
