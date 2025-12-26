@@ -71,10 +71,30 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
       prisma.libraryItem.count({ where })
     ]);
 
+    // Para cada item, buscar si existe información del juego en la BD (thumbnail)
+    const itemsWithThumbnails = await Promise.all(
+      items.map(async (item) => {
+        if (item.bggId) {
+          const game = await prisma.game.findUnique({
+            where: { id: item.bggId },
+            select: { thumbnail: true }
+          });
+          return {
+            ...item,
+            gameThumbnail: game?.thumbnail || null
+          };
+        }
+        return {
+          ...item,
+          gameThumbnail: null
+        };
+      })
+    );
+
     res.json({
       success: true,
       data: {
-        items,
+        items: itemsWithThumbnails,
         pagination: {
           page: pageNum,
           limit: limitNum,

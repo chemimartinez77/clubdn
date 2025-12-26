@@ -21,6 +21,7 @@ interface LibraryItem {
   acquisitionDate: string | null;
   createdAt: string;
   updatedAt: string;
+  gameThumbnail?: string | null;
 }
 
 interface LibraryStats {
@@ -372,19 +373,32 @@ export default function Ludoteca() {
                 <Card key={item.id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-3xl">{gameTypeIcons[item.gameType]}</span>
-                        <div>
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="text-3xl flex-shrink-0">{gameTypeIcons[item.gameType]}</span>
+                        <div className="min-w-0">
                           <p className="text-xs text-gray-500">{item.internalId}</p>
                           <p className="text-xs text-gray-500">{gameTypeLabels[item.gameType]}</p>
                         </div>
                       </div>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${conditionColors[item.condition]}`}>
-                        {conditionLabels[item.condition]}
-                      </span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${conditionColors[item.condition]}`}>
+                          {conditionLabels[item.condition]}
+                        </span>
+                      </div>
                     </div>
 
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.name}</h3>
+                    <div className="flex gap-3 mb-2">
+                      {item.gameThumbnail && (
+                        <img
+                          src={item.gameThumbnail}
+                          alt={item.name}
+                          className="w-16 h-16 object-cover rounded-md flex-shrink-0 border border-gray-200"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.name}</h3>
+                      </div>
+                    </div>
 
                     {item.description && (
                       <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
