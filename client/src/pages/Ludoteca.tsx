@@ -69,6 +69,14 @@ const conditionColors: Record<GameCondition, string> = {
   MALO: 'bg-red-100 text-red-800'
 };
 
+// Helper para mostrar el nombre del propietario
+const getOwnerDisplayName = (ownerEmail: string | null): string => {
+  if (!ownerEmail || ownerEmail === 'club' || ownerEmail === 'clubdreadnought.vlc@gmail.com') {
+    return 'Club Dreadnought';
+  }
+  return ownerEmail;
+};
+
 export default function Ludoteca() {
   const { error: showError } = useToast();
   const [items, setItems] = useState<LibraryItem[]>([]);
@@ -314,7 +322,7 @@ export default function Ludoteca() {
                   <option value="all">Todos los propietarios</option>
                   {filters?.owners.map(owner => (
                     <option key={owner} value={owner}>
-                      {owner === 'club' ? '🏛️ Club DN' : owner}
+                      🏛️ {getOwnerDisplayName(owner === 'club' ? null : owner)}
                     </option>
                   ))}
                 </select>
@@ -372,31 +380,34 @@ export default function Ludoteca() {
               {items.map(item => (
                 <Card key={item.id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className="text-3xl flex-shrink-0">{gameTypeIcons[item.gameType]}</span>
-                        <div className="min-w-0">
-                          <p className="text-xs text-gray-500">{item.internalId}</p>
-                          <p className="text-xs text-gray-500">{gameTypeLabels[item.gameType]}</p>
-                        </div>
+                    <div className="flex gap-4 mb-3">
+                      {/* Miniatura del juego */}
+                      <div className="flex-shrink-0">
+                        {item.gameThumbnail ? (
+                          <img
+                            src={item.gameThumbnail}
+                            alt={item.name}
+                            className="w-24 h-24 object-contain rounded-md border border-gray-200 bg-white"
+                          />
+                        ) : (
+                          <div className="w-24 h-24 flex items-center justify-center rounded-md border border-gray-200 bg-gray-50">
+                            <span className="text-4xl">{gameTypeIcons[item.gameType]}</span>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${conditionColors[item.condition]}`}>
-                          {conditionLabels[item.condition]}
-                        </span>
-                      </div>
-                    </div>
 
-                    <div className="flex gap-3 mb-2">
-                      {item.gameThumbnail && (
-                        <img
-                          src={item.gameThumbnail}
-                          alt={item.name}
-                          className="w-16 h-16 object-cover rounded-md flex-shrink-0 border border-gray-200"
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.name}</h3>
+                      {/* Información del juego */}
+                      <div className="flex-1 min-w-0 flex flex-col">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="min-w-0">
+                            <p className="text-xs text-gray-500">{item.internalId}</p>
+                            <p className="text-xs text-gray-500">{gameTypeLabels[item.gameType]}</p>
+                          </div>
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${conditionColors[item.condition]}`}>
+                            {conditionLabels[item.condition]}
+                          </span>
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{item.name}</h3>
                       </div>
                     </div>
 
@@ -412,19 +423,8 @@ export default function Ludoteca() {
 
                     <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
-                        {item.ownerEmail ? (
-                          <>
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span className="text-xs">{item.ownerEmail}</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-lg">🏛️</span>
-                            <span className="text-xs font-medium">Club DN</span>
-                          </>
-                        )}
+                        <span className="text-lg">🏛️</span>
+                        <span className="text-xs font-medium">{getOwnerDisplayName(item.ownerEmail)}</span>
                       </div>
 
                       {item.bggId && (
