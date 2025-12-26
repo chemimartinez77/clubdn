@@ -165,18 +165,34 @@ export const getLibraryStats = async (_req: Request, res: Response): Promise<voi
     });
 
     // Items del club vs. de socios
+    // Consideramos como del club: ownerEmail null O clubdreadnought.vlc@gmail.com
     const clubItems = await prisma.libraryItem.count({
-      where: { ownerEmail: null }
+      where: {
+        OR: [
+          { ownerEmail: null },
+          { ownerEmail: 'clubdreadnought.vlc@gmail.com' }
+        ]
+      }
     });
 
     const memberItems = await prisma.libraryItem.count({
-      where: { ownerEmail: { not: null } }
+      where: {
+        AND: [
+          { ownerEmail: { not: null } },
+          { ownerEmail: { not: 'clubdreadnought.vlc@gmail.com' } }
+        ]
+      }
     });
 
-    // Propietarios únicos
+    // Propietarios únicos (excluyendo el club)
     const owners = await prisma.libraryItem.groupBy({
       by: ['ownerEmail'],
-      where: { ownerEmail: { not: null } },
+      where: {
+        AND: [
+          { ownerEmail: { not: null } },
+          { ownerEmail: { not: 'clubdreadnought.vlc@gmail.com' } }
+        ]
+      },
       _count: true
     });
 
