@@ -1,6 +1,6 @@
 // client/src/pages/CreatePartida.tsx
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
@@ -12,8 +12,12 @@ import type { BGGGame, CreateEventData } from '../types/event';
 
 export default function CreatePartida() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
+
+  // Obtener fecha predefinida del estado de navegación (desde el calendario)
+  const preselectedDate = (location.state as { selectedDate?: string })?.selectedDate;
 
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<BGGGame | null>(null);
@@ -202,6 +206,7 @@ export default function CreatePartida() {
                       name="date"
                       required
                       min={today}
+                      defaultValue={preselectedDate || ''}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     />
                   </div>

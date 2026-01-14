@@ -1,6 +1,6 @@
 // client/src/components/events/EventCalendar.tsx
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Event } from '../../types/event';
 
 interface EventCalendarProps {
@@ -9,6 +9,8 @@ interface EventCalendarProps {
 }
 
 export default function EventCalendar({ events, currentMonth }: EventCalendarProps) {
+  const navigate = useNavigate();
+
   const { daysInMonth, firstDayOfMonth, monthName } = useMemo(() => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
@@ -56,12 +58,26 @@ export default function EventCalendar({ events, currentMonth }: EventCalendarPro
       currentMonth.getMonth() === today.getMonth() &&
       currentMonth.getFullYear() === today.getFullYear();
 
+    // Verificar si el día es pasado (no se puede crear partida en días pasados)
+    const isPastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    // Formatear fecha para pasar a crear partida (YYYY-MM-DD)
+    const dateString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+    const handleDayClick = () => {
+      if (!isPastDay) {
+        navigate('/events/crear-partida', { state: { selectedDate: dateString } });
+      }
+    };
+
     return (
       <div
         key={day}
+        onClick={handleDayClick}
         className={`min-h-[100px] border border-gray-200 p-2 ${
           isToday ? 'bg-[var(--color-primary-50)] border-[var(--color-primary-300)]' : 'bg-white'
-        }`}
+        } ${!isPastDay ? 'cursor-pointer hover:bg-gray-50 transition-colors' : 'opacity-60'}`}
+        title={isPastDay ? 'No se pueden crear partidas en días pasados' : 'Clic para organizar una partida'}
       >
         <div className={`text-sm font-medium mb-1 ${
           isToday ? 'text-[var(--color-primaryDark)]' : 'text-gray-700'
@@ -75,6 +91,7 @@ export default function EventCalendar({ events, currentMonth }: EventCalendarPro
               <Link
                 key={event.id}
                 to={`/events/${event.id}`}
+                onClick={(e) => e.stopPropagation()}
                 className="block text-xs p-1 rounded bg-[var(--color-primary-100)] text-[var(--color-primary-800)] hover:bg-[var(--color-primary-200)] truncate"
               >
                 {event.title}
@@ -124,7 +141,7 @@ export default function EventCalendar({ events, currentMonth }: EventCalendarPro
       </div>
 
       {/* Legend */}
-      <div className="mt-4 flex items-center gap-4 text-xs text-gray-600">
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-600">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-[var(--color-primary-100)]"></div>
           <span>Evento programado</span>
@@ -132,6 +149,12 @@ export default function EventCalendar({ events, currentMonth }: EventCalendarPro
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-[var(--color-primary-50)] border border-[var(--color-primary-300)]"></div>
           <span>Hoy</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+          </svg>
+          <span>Clic en un día para organizar partida</span>
         </div>
       </div>
     </div>
