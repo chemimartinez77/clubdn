@@ -45,6 +45,12 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
               userId: true,
               status: true
             }
+          },
+          game: {
+            select: {
+              thumbnail: true,
+              image: true
+            }
           }
         },
         orderBy: { date: 'asc' },
@@ -120,6 +126,12 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
             }
           },
           orderBy: { createdAt: 'asc' }
+        },
+        game: {
+          select: {
+            thumbnail: true,
+            image: true
+          }
         }
       }
     });

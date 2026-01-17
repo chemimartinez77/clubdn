@@ -37,43 +37,62 @@ export default function EventCard({ event }: EventCardProps) {
   const isFull = availableSpots <= 0;
   const isPast = new Date(event.date) < new Date();
 
+  // Obtener miniatura del juego: primero de BD (game.thumbnail), luego de gameImage (BGG)
+  const gameThumbnail = event.game?.thumbnail || event.gameImage || null;
+  const isPartida = event.type === 'PARTIDA';
+
   return (
     <Link
       to={`/events/${event.id}`}
       className="block bg-white rounded-lg border border-gray-200 hover:border-[var(--color-primary-300)] hover:shadow-md transition-all"
     >
       <div className="p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <h3 className="text-xl font-bold text-gray-900 flex-1 pr-4">
-            {event.title}
-          </h3>
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[event.status]}`}>
-            {statusLabels[event.status]}
-          </span>
-        </div>
+        <div className="flex gap-4">
+          {/* Miniatura del juego (solo para partidas) */}
+          {isPartida && gameThumbnail && (
+            <div className="flex-shrink-0">
+              <img
+                src={gameThumbnail}
+                alt={event.gameName || 'Juego'}
+                className="w-20 h-20 object-contain rounded-lg bg-gray-50"
+              />
+            </div>
+          )}
 
-        {/* Date & Location */}
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center gap-2 text-gray-600">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="text-sm">{formatDate(event.date)}</span>
-          </div>
-          <div className="flex items-center gap-2 text-gray-600">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span className="text-sm">{event.location}</span>
+          <div className="flex-1 min-w-0">
+            {/* Header */}
+            <div className="flex items-start justify-between mb-3">
+              <h3 className="text-xl font-bold text-gray-900 flex-1 pr-4">
+                {event.title}
+              </h3>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${statusColors[event.status]}`}>
+                {statusLabels[event.status]}
+              </span>
+            </div>
+
+            {/* Date & Location */}
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center gap-2 text-gray-600">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="text-sm">{formatDate(event.date)}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="text-sm">{event.location}</span>
+              </div>
+            </div>
+
+            {/* Description Preview */}
+            <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+              {event.description}
+            </p>
           </div>
         </div>
-
-        {/* Description Preview */}
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-          {event.description}
-        </p>
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-100">

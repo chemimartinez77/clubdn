@@ -13,6 +13,10 @@ export interface Event {
   gameName?: string | null;
   gameImage?: string | null;
   bggId?: string | null;
+  game?: {
+    thumbnail: string | null;
+    image: string | null;
+  } | null;
 
   // Fecha y hora
   date: string;

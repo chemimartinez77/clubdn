@@ -113,6 +113,10 @@ export default function EventDetail() {
   const confirmed = event.registrations?.filter(r => r.status === 'CONFIRMED') || [];
   const waitlist = event.registrations?.filter(r => r.status === 'WAITLIST') || [];
 
+  // Obtener imagen del juego: primero de BD (game.image o game.thumbnail), luego de gameImage (BGG)
+  const gameImage = event.game?.image || event.game?.thumbnail || event.gameImage || null;
+  const isPartida = event.type === 'PARTIDA';
+
   return (
     <Layout>
       <div className="max-w-5xl mx-auto space-y-6">
@@ -130,45 +134,58 @@ export default function EventDetail() {
         {/* Event Details */}
         <Card>
           <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{event.title}</h1>
-                <div className="flex items-center gap-3">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[event.status]}`}>
-                    {statusLabels[event.status]}
-                  </span>
-                  {event.isUserRegistered && (
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      event.userRegistrationStatus === 'CONFIRMED'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {event.userRegistrationStatus === 'CONFIRMED' ? 'Estás registrado' : 'En lista de espera'}
+            <div className="flex items-start gap-6">
+              {/* Imagen del juego (solo para partidas) */}
+              {isPartida && gameImage && (
+                <div className="flex-shrink-0">
+                  <img
+                    src={gameImage}
+                    alt={event.gameName || 'Juego'}
+                    className="w-32 h-32 object-contain rounded-lg bg-gray-50"
+                  />
+                </div>
+              )}
+
+              <div className="flex-1 flex items-start justify-between">
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{event.title}</h1>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[event.status]}`}>
+                      {statusLabels[event.status]}
                     </span>
+                    {event.isUserRegistered && (
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        event.userRegistrationStatus === 'CONFIRMED'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {event.userRegistrationStatus === 'CONFIRMED' ? 'Estás registrado' : 'En lista de espera'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  {canRegister && (
+                    <Button
+                      onClick={() => registerMutation.mutate()}
+                      disabled={registerMutation.isPending}
+                      variant="primary"
+                    >
+                      {registerMutation.isPending ? 'Registrando...' : 'Registrarse'}
+                    </Button>
+                  )}
+                  {canUnregister && (
+                    <Button
+                      onClick={() => unregisterMutation.mutate()}
+                      disabled={unregisterMutation.isPending}
+                      variant="outline"
+                    >
+                      {unregisterMutation.isPending ? 'Cancelando...' : 'Cancelar registro'}
+                    </Button>
                   )}
                 </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                {canRegister && (
-                  <Button
-                    onClick={() => registerMutation.mutate()}
-                    disabled={registerMutation.isPending}
-                    variant="primary"
-                  >
-                    {registerMutation.isPending ? 'Registrando...' : 'Registrarse'}
-                  </Button>
-                )}
-                {canUnregister && (
-                  <Button
-                    onClick={() => unregisterMutation.mutate()}
-                    disabled={unregisterMutation.isPending}
-                    variant="outline"
-                  >
-                    {unregisterMutation.isPending ? 'Cancelando...' : 'Cancelar registro'}
-                  </Button>
-                )}
               </div>
             </div>
           </CardHeader>

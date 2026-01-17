@@ -13,7 +13,7 @@ import type { ApiResponse } from '../types/auth';
 type ViewMode = 'list' | 'calendar';
 
 export default function Events() {
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [statusFilter, setStatusFilter] = useState<EventStatus | ''>('');
   const [search, setSearch] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date());
