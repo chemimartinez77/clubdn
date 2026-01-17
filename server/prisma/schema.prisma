@@ -66,6 +66,7 @@ model User {
   membership        Membership?
   payments          Payment[]
   loginAttempts     LoginAttempt[]
+  uploadedDocuments Document[]
 
   @@index([email])
   @@index([status])
@@ -408,4 +409,38 @@ model LibraryItem {
   @@index([condition])
   @@index([ownerEmail])
   @@index([bggId])
+}
+
+// Visibilidad de documentos
+enum DocumentVisibility {
+  PUBLIC      // Todos los miembros autenticados
+  ADMIN       // Solo ADMIN y SUPER_ADMIN
+  SUPER_ADMIN // Solo SUPER_ADMIN
+}
+
+// Documentos del club
+model Document {
+  id            String             @id @default(cuid())
+
+  // Metadatos del archivo
+  title         String
+  filename      String             // Nombre original del archivo
+  mimeType      String             // application/pdf, image/png, etc.
+  size          Int                // Tamaño en bytes
+
+  // Contenido binario (almacenado en BYTEA)
+  content       Bytes
+
+  // Permisos/Visibilidad
+  visibility    DocumentVisibility @default(PUBLIC)
+
+  // Auditoría
+  uploadedById  String
+  uploadedBy    User               @relation(fields: [uploadedById], references: [id])
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([visibility])
+  @@index([uploadedById])
+  @@index([title])
 }

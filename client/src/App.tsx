@@ -159,9 +159,9 @@ function App() {
           <Route
             path="/documentos"
             element={
-              <AdminRoute>
+              <ProtectedRoute>
                 <Documentos />
-              </AdminRoute>
+              </ProtectedRoute>
             }
           />
 
