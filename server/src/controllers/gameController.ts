@@ -20,20 +20,7 @@ export const getOrCreateGame = async (req: Request, res: Response) => {
       });
     }
 
-    // Verificar si el juego ya existe en la base de datos
-    let game = await prisma.game.findUnique({
-      where: { id: gameId }
-    });
-
-    if (game) {
-      return res.json({
-        success: true,
-        data: game,
-        cached: true
-      });
-    }
-
-    // Si no existe, buscar en BGG
+    // Buscar en BGG siempre para obtener URLs actualizadas
     console.log(`[GAME] Buscando juego ${gameId} en BGG...`);
     const bggGame = await getBGGGameFull(gameId);
 
@@ -44,7 +31,34 @@ export const getOrCreateGame = async (req: Request, res: Response) => {
       });
     }
 
-    // Guardar en la base de datos
+    // Verificar si el juego ya existe en la base de datos
+    let game = await prisma.game.findUnique({
+      where: { id: gameId }
+    });
+
+    if (game) {
+      // Actualizar las URLs de imagen si han cambiado
+      if (game.image !== bggGame.image || game.thumbnail !== bggGame.thumbnail) {
+        console.log(`[GAME] Actualizando URLs de imagen para ${game.name}...`);
+        game = await prisma.game.update({
+          where: { id: gameId },
+          data: {
+            image: bggGame.image,
+            thumbnail: bggGame.thumbnail,
+            lastSyncedAt: new Date()
+          }
+        });
+        console.log(`[GAME] URLs actualizadas para ${game.name}`);
+      }
+
+      return res.json({
+        success: true,
+        data: game,
+        cached: true
+      });
+    }
+
+    // Si no existe, guardar en la base de datos
     game = await prisma.game.create({
       data: {
         id: bggGame.id,
