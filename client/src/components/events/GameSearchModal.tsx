@@ -15,15 +15,31 @@ interface GameSearchModalProps {
 export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearchModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchTrigger, setSearchTrigger] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const { data: games, isLoading } = useQuery({
-    queryKey: ['bgg-search', searchTrigger],
+  const emptyResult = {
+    games: [],
+    total: 0,
+    page,
+    pageSize,
+    totalPages: 0
+  };
+
+  const { data: searchResult = emptyResult, isLoading } = useQuery({
+    queryKey: ['bgg-search', searchTrigger, page],
     queryFn: async () => {
-      if (!searchTrigger || searchTrigger.length < 2) return [];
-      const response = await api.get<ApiResponse<{ games: BGGGame[] }>>(
-        `/api/bgg/search?query=${encodeURIComponent(searchTrigger)}`
+      if (!searchTrigger || searchTrigger.length < 2) return emptyResult;
+      const response = await api.get<ApiResponse<{
+        games: BGGGame[];
+        total: number;
+        page: number;
+        pageSize: number;
+        totalPages: number;
+      }>>(
+        `/api/bgg/search?query=${encodeURIComponent(searchTrigger)}&page=${page}&pageSize=${pageSize}`
       );
-      return response.data.data?.games || [];
+      return response.data.data || emptyResult;
     },
     enabled: !!searchTrigger && searchTrigger.length >= 2, // Ejecutar cuando hay searchTrigger
     staleTime: 5 * 60 * 1000 // 5 minutos
@@ -32,6 +48,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
   const handleSearchClick = () => {
     if (searchQuery.length >= 2) {
       setSearchTrigger(searchQuery);
+      setPage(1);
     }
   };
 
@@ -45,6 +62,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
     onSelect(game);
     setSearchQuery('');
     setSearchTrigger('');
+    setPage(1);
     onClose();
   };
 
@@ -130,7 +148,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
               <p className="text-gray-600">Escribe el nombre del juego y haz click en Buscar</p>
               <p className="text-gray-500 text-sm mt-2">O presiona Enter para buscar</p>
             </div>
-          ) : games && games.length === 0 ? (
+          ) : searchResult.games.length === 0 ? (
             <div className="text-center py-12">
               <svg
                 className="w-16 h-16 mx-auto text-gray-400 mb-4"
@@ -149,7 +167,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3">
-              {games?.map((game) => (
+              {searchResult.games.map((game) => (
                 <button
                   key={game.id}
                   onClick={() => handleSelectGame(game)}
@@ -189,7 +207,30 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-200">
+        <div className="p-6 border-t border-gray-200 space-y-3">
+          {searchTrigger && searchResult.totalPages > 1 && (
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>
+                Página {searchResult.page} de {searchResult.totalPages} · {searchResult.total} resultados
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                  disabled={isLoading || searchResult.page <= 1}
+                  variant="outline"
+                >
+                  Anterior
+                </Button>
+                <Button
+                  onClick={() => setPage((prev) => Math.min(searchResult.totalPages, prev + 1))}
+                  disabled={isLoading || searchResult.page >= searchResult.totalPages}
+                  variant="outline"
+                >
+                  Siguiente
+                </Button>
+              </div>
+            </div>
+          )}
           <Button onClick={onClose} variant="outline" className="w-full">
             Cancelar
           </Button>
