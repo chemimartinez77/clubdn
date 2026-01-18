@@ -11,15 +11,17 @@ import type { EventsResponse, EventStatus } from '../types/event';
 import type { ApiResponse } from '../types/auth';
 
 type ViewMode = 'list' | 'calendar';
+type TypeFilter = 'PARTIDA' | 'OTROS' | '';
 
 export default function Events() {
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [statusFilter, setStatusFilter] = useState<EventStatus | ''>('');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('PARTIDA');
   const [search, setSearch] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['events', statusFilter, search],
+    queryKey: ['events', statusFilter, typeFilter, search],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (statusFilter) params.append('status', statusFilter);
@@ -33,7 +35,11 @@ export default function Events() {
     }
   });
 
-  const events = data?.events || [];
+  // Filtrar eventos por tipo en el cliente
+  const allEvents = data?.events || [];
+  const events = typeFilter
+    ? allEvents.filter(event => event.type === typeFilter)
+    : allEvents;
 
   const handlePreviousMonth = () => {
     setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1));
@@ -91,19 +97,21 @@ export default function Events() {
         {/* Filters */}
         <Card>
           <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Search */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Type Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Buscar
+                  Tipo
                 </label>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar por título, descripción o ubicación..."
+                <select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-                />
+                >
+                  <option value="PARTIDA">Partidas</option>
+                  <option value="OTROS">Eventos</option>
+                  <option value="">Todos</option>
+                </select>
               </div>
 
               {/* Status Filter */}
@@ -122,6 +130,20 @@ export default function Events() {
                   <option value="COMPLETED">Completados</option>
                   <option value="CANCELLED">Cancelados</option>
                 </select>
+              </div>
+
+              {/* Search */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Buscar
+                </label>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                />
               </div>
             </div>
           </CardContent>
