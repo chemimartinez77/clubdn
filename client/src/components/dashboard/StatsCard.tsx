@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from '../ui/Card';
 import Modal from '../ui/Modal';
 import { api } from '../../api/axios';
+import { GameImage } from '../events/EventCard';
 import type { UserStatsResponse, ClubStatsResponse, EventDetail } from '../../types/stats';
 
 interface StatItem {
@@ -305,9 +306,9 @@ export default function StatsCard() {
                       <span>📍 {event.location}</span>
                     </div>
                   </div>
-                  {event.gameImage && (
-                    <img src={event.gameImage} alt={event.gameName || ''} className="w-16 h-16 rounded object-cover ml-4" />
-                  )}
+                  <div className="ml-4">
+                    <GameImage src={event.gameImage || null} alt={event.gameName || 'Evento'} size="sm" />
+                  </div>
                 </div>
               </div>
             ))
@@ -348,9 +349,9 @@ export default function StatsCard() {
                       <span>📍 {game.location}</span>
                     </div>
                   </div>
-                  {game.gameImage && (
-                    <img src={game.gameImage} alt={game.gameName || ''} className="w-16 h-16 rounded object-cover ml-4" />
-                  )}
+                  <div className="ml-4">
+                    <GameImage src={game.gameImage || null} alt={game.gameName || 'Juego'} size="sm" />
+                  </div>
                 </div>
               </div>
             ))
@@ -392,9 +393,9 @@ export default function StatsCard() {
                       <span>📍 {event.location}</span>
                     </div>
                   </div>
-                  {event.gameImage && (
-                    <img src={event.gameImage} alt={event.gameName || ''} className="w-16 h-16 rounded object-cover ml-4" />
-                  )}
+                  <div className="ml-4">
+                    <GameImage src={event.gameImage || null} alt={event.gameName || 'Evento'} size="sm" />
+                  </div>
                 </div>
               </div>
             ))
@@ -549,9 +550,9 @@ function TimeRangeModalContent({ games, formatDate, formatTime, onEventClick }: 
                             <span>📍 {game.location}</span>
                           </div>
                         </div>
-                        {game.gameImage && (
-                          <img src={game.gameImage} alt={game.gameName || ''} className="w-12 h-12 rounded object-cover ml-3" />
-                        )}
+                        <div className="ml-3">
+                          <GameImage src={game.gameImage || null} alt={game.gameName || 'Juego'} size="sm" />
+                        </div>
                       </div>
                     </div>
                   ))}

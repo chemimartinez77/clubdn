@@ -1,5 +1,4 @@
 // client/src/pages/EventDetail.tsx
-import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
@@ -7,17 +6,9 @@ import { Card, CardHeader, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useToast } from '../hooks/useToast';
 import { api } from '../api/axios';
+import { GameImage } from '../components/events/EventCard';
 import type { Event } from '../types/event';
 import type { ApiResponse } from '../types/auth';
-
-// Placeholder SVG para cuando la imagen no carga
-const GamePlaceholder = ({ className }: { className?: string }) => (
-  <div className={`flex items-center justify-center bg-gray-100 rounded-lg ${className}`}>
-    <svg className="w-16 h-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
-    </svg>
-  </div>
-);
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -124,9 +115,8 @@ export default function EventDetail() {
   const waitlist = event.registrations?.filter(r => r.status === 'WAITLIST') || [];
 
   // Obtener imagen del juego: primero de BD (game.image o game.thumbnail), luego de gameImage (BGG)
-  const gameImage = event.game?.image || event.game?.thumbnail || event.gameImage || null;
+  const gameImageUrl = event.game?.image || event.game?.thumbnail || event.gameImage || null;
   const isPartida = event.type === 'PARTIDA';
-  const [imageError, setImageError] = useState(false);
 
   return (
     <Layout>
@@ -149,16 +139,7 @@ export default function EventDetail() {
               {/* Imagen del juego (solo para partidas) */}
               {isPartida && (
                 <div className="flex-shrink-0">
-                  {gameImage && !imageError ? (
-                    <img
-                      src={gameImage}
-                      alt={event.gameName || 'Juego'}
-                      className="w-32 h-32 object-contain rounded-lg bg-gray-50"
-                      onError={() => setImageError(true)}
-                    />
-                  ) : (
-                    <GamePlaceholder className="w-32 h-32" />
-                  )}
+                  <GameImage src={gameImageUrl} alt={event.gameName || 'Juego'} size="lg" />
                 </div>
               )}
 
