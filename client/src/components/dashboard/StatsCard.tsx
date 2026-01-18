@@ -307,7 +307,7 @@ export default function StatsCard() {
                     </div>
                   </div>
                   <div className="ml-4">
-                    <GameImage src={event.gameImage || null} alt={event.gameName || 'Evento'} size="sm" />
+                    <GameImage src={event.game?.image || event.game?.thumbnail || event.gameImage || null} alt={event.gameName || 'Evento'} size="sm" />
                   </div>
                 </div>
               </div>
@@ -350,7 +350,7 @@ export default function StatsCard() {
                     </div>
                   </div>
                   <div className="ml-4">
-                    <GameImage src={game.gameImage || null} alt={game.gameName || 'Juego'} size="sm" />
+                    <GameImage src={game.game?.image || game.game?.thumbnail || game.gameImage || null} alt={game.gameName || 'Juego'} size="sm" />
                   </div>
                 </div>
               </div>
@@ -394,7 +394,7 @@ export default function StatsCard() {
                     </div>
                   </div>
                   <div className="ml-4">
-                    <GameImage src={event.gameImage || null} alt={event.gameName || 'Evento'} size="sm" />
+                    <GameImage src={event.game?.image || event.game?.thumbnail || event.gameImage || null} alt={event.gameName || 'Evento'} size="sm" />
                   </div>
                 </div>
               </div>
@@ -551,7 +551,7 @@ function TimeRangeModalContent({ games, formatDate, formatTime, onEventClick }: 
                           </div>
                         </div>
                         <div className="ml-3">
-                          <GameImage src={game.gameImage || null} alt={game.gameName || 'Juego'} size="sm" />
+                          <GameImage src={game.game?.image || game.game?.thumbnail || game.gameImage || null} alt={game.gameName || 'Juego'} size="sm" />
                         </div>
                       </div>
                     </div>

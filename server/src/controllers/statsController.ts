@@ -396,11 +396,18 @@ export const getUserEventsAttended = async (req: Request, res: Response): Promis
             type: true,
             gameName: true,
             gameImage: true,
+            bggId: true,
             date: true,
             startHour: true,
             startMinute: true,
             location: true,
-            status: true
+            status: true,
+            game: {
+              select: {
+                thumbnail: true,
+                image: true
+              }
+            }
           }
         }
       },
@@ -455,11 +462,18 @@ export const getUserGamesPlayed = async (req: Request, res: Response): Promise<v
             type: true,
             gameName: true,
             gameImage: true,
+            bggId: true,
             date: true,
             startHour: true,
             startMinute: true,
             location: true,
-            status: true
+            status: true,
+            game: {
+              select: {
+                thumbnail: true,
+                image: true
+              }
+            }
           }
         }
       },
@@ -518,11 +532,18 @@ export const getUserUpcomingEvents = async (req: Request, res: Response): Promis
             type: true,
             gameName: true,
             gameImage: true,
+            bggId: true,
             date: true,
             startHour: true,
             startMinute: true,
             location: true,
-            status: true
+            status: true,
+            game: {
+              select: {
+                thumbnail: true,
+                image: true
+              }
+            }
           }
         }
       },

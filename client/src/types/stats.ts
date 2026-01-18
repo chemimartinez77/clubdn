@@ -48,9 +48,15 @@ export interface EventDetail {
   type: string;
   gameName: string | null;
   gameImage: string | null;
+  bggId: string | null;
   date: string;
   startHour: number | null;
   startMinute: number | null;
   location: string;
   status: string;
+  // Relación con la tabla Game (URLs actualizadas)
+  game?: {
+    thumbnail: string | null;
+    image: string | null;
+  } | null;
 }
