@@ -11,7 +11,7 @@ import type { EventsResponse, EventStatus } from '../types/event';
 import type { ApiResponse } from '../types/auth';
 
 type ViewMode = 'list' | 'calendar';
-type TypeFilter = 'PARTIDA' | 'OTROS' | '';
+type TypeFilter = 'PARTIDA' | 'EVENTOS' | '';
 
 export default function Events() {
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
@@ -36,10 +36,13 @@ export default function Events() {
   });
 
   // Filtrar eventos por tipo en el cliente
+  // "PARTIDA" = solo partidas, "EVENTOS" = torneos y otros (no partidas), "" = todos
   const allEvents = data?.events || [];
-  const events = typeFilter
-    ? allEvents.filter(event => event.type === typeFilter)
-    : allEvents;
+  const events = typeFilter === 'PARTIDA'
+    ? allEvents.filter(event => event.type === 'PARTIDA')
+    : typeFilter === 'EVENTOS'
+      ? allEvents.filter(event => event.type !== 'PARTIDA')
+      : allEvents;
 
   const handlePreviousMonth = () => {
     setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1));
@@ -109,7 +112,7 @@ export default function Events() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
                   <option value="PARTIDA">Partidas</option>
-                  <option value="OTROS">Eventos</option>
+                  <option value="EVENTOS">Eventos</option>
                   <option value="">Todos</option>
                 </select>
               </div>
