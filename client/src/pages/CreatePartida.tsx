@@ -172,7 +172,7 @@ export default function CreatePartida() {
                   required
                   minLength={3}
                   maxLength={100}
-                  defaultValue={selectedGame ? `Partida de ${selectedGame.name}` : ''}
+                  defaultValue={selectedGame ? `${selectedGame.name}` : ''}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   placeholder="Ej: Partida de Catan"
                 />
