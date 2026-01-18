@@ -81,12 +81,14 @@ export default function EventManagement() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
+    const locationValue = (formData.get('location') as string)?.trim();
+
     const data: CreateEventData = {
       title: formData.get('title') as string,
       description: formData.get('description') as string,
       type: (formData.get('type') as 'PARTIDA' | 'TORNEO' | 'OTROS') || 'OTROS',
       date: formData.get('date') as string,
-      location: formData.get('location') as string,
+      location: locationValue || 'Club DN',
       address: formData.get('address') as string || undefined,
       maxAttendees: parseInt(formData.get('maxAttendees') as string)
     };
@@ -378,12 +380,11 @@ export default function EventManagement() {
                   {/* Location */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ubicación *
+                      Ubicación (opcional)
                     </label>
                     <input
                       type="text"
                       name="location"
-                      required
                       defaultValue={editingEvent?.location}
                       minLength={3}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"

@@ -49,6 +49,7 @@ export default function CreatePartida() {
     const dateValue = formData.get('date') as string;
     const startHour = formData.get('startHour') as string;
     const startMinute = formData.get('startMinute') as string;
+    const locationValue = (formData.get('location') as string)?.trim();
 
     // Crear fecha completa con hora
     const eventDate = new Date(dateValue);
@@ -64,7 +65,7 @@ export default function CreatePartida() {
       startMinute: startMinute ? parseInt(startMinute) : undefined,
       durationHours: formData.get('durationHours') ? parseInt(formData.get('durationHours') as string) : undefined,
       durationMinutes: formData.get('durationMinutes') ? parseInt(formData.get('durationMinutes') as string) : undefined,
-      location: formData.get('location') as string,
+      location: locationValue || 'Club DN',
       address: (formData.get('address') as string) || undefined,
       maxAttendees: parseInt(formData.get('maxAttendees') as string),
       gameName: selectedGame?.name,
@@ -204,7 +205,7 @@ export default function CreatePartida() {
                     <input
                       type="date"
                       name="date"
-                      required
+                        required
                       min={today}
                       defaultValue={preselectedDate || ''}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
@@ -274,34 +275,6 @@ export default function CreatePartida() {
                 </div>
               </div>
 
-              {/* Ubicación */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ubicación *
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  required
-                  minLength={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-                  placeholder="Nombre del lugar"
-                />
-              </div>
-
-              {/* Dirección */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Dirección (opcional)
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-                  placeholder="Dirección completa"
-                />
-              </div>
-
               {/* Número de jugadores */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -319,6 +292,33 @@ export default function CreatePartida() {
                 <p className="text-xs text-gray-500 mt-1">
                   Incluye el organizador en este número
                 </p>
+              </div>
+
+              {/* Ubicación */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ubicación (opcional)
+                </label>
+                <input
+                  type="text"
+                  name="location"
+                  minLength={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  placeholder="Club DN"
+                />
+              </div>
+
+              {/* Dirección */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Dirección (opcional)
+                </label>
+                <input
+                  type="text"
+                  name="address"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  placeholder="Direccion completa"
+                />
               </div>
 
               {/* Submit Buttons */}
