@@ -1,10 +1,20 @@
 // client/src/components/events/EventCard.tsx
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Event } from '../../types/event';
 
 interface EventCardProps {
   event: Event;
 }
+
+// Placeholder SVG para cuando la imagen no carga
+const GamePlaceholder = ({ className }: { className?: string }) => (
+  <div className={`flex items-center justify-center bg-gray-100 rounded-lg ${className}`}>
+    <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
+    </svg>
+  </div>
+);
 
 const statusColors = {
   SCHEDULED: 'bg-blue-100 text-blue-800',
@@ -40,6 +50,7 @@ export default function EventCard({ event }: EventCardProps) {
   // Obtener miniatura del juego: primero de BD (game.thumbnail), luego de gameImage (BGG)
   const gameThumbnail = event.game?.thumbnail || event.gameImage || null;
   const isPartida = event.type === 'PARTIDA';
+  const [imageError, setImageError] = useState(false);
 
   return (
     <Link
@@ -49,13 +60,18 @@ export default function EventCard({ event }: EventCardProps) {
       <div className="p-6">
         <div className="flex gap-4">
           {/* Miniatura del juego (solo para partidas) */}
-          {isPartida && gameThumbnail && (
+          {isPartida && (
             <div className="flex-shrink-0">
-              <img
-                src={gameThumbnail}
-                alt={event.gameName || 'Juego'}
-                className="w-20 h-20 object-contain rounded-lg bg-gray-50"
-              />
+              {gameThumbnail && !imageError ? (
+                <img
+                  src={gameThumbnail}
+                  alt={event.gameName || 'Juego'}
+                  className="w-20 h-20 object-contain rounded-lg bg-gray-50"
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <GamePlaceholder className="w-20 h-20" />
+              )}
             </div>
           )}
 

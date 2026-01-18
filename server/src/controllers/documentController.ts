@@ -43,20 +43,20 @@ const isAdmin = (role: UserRole): boolean => {
  */
 export const getDocuments = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = (req as any).user;
+    const userRole = req.user?.role as UserRole;
     const { search, visibility } = req.query;
 
     // Construir filtro base según rol
     let visibilityFilter: DocumentVisibility[] = ['PUBLIC'];
 
-    if (user.role === 'ADMIN') {
+    if (userRole === 'ADMIN') {
       visibilityFilter = ['PUBLIC', 'ADMIN'];
-    } else if (user.role === 'SUPER_ADMIN') {
+    } else if (userRole === 'SUPER_ADMIN') {
       visibilityFilter = ['PUBLIC', 'ADMIN', 'SUPER_ADMIN'];
     }
 
     // Si el admin filtra por visibilidad específica
-    if (visibility && isAdmin(user.role) && visibilityFilter.includes(visibility as DocumentVisibility)) {
+    if (visibility && isAdmin(userRole) && visibilityFilter.includes(visibility as DocumentVisibility)) {
       visibilityFilter = [visibility as DocumentVisibility];
     }
 
@@ -109,7 +109,7 @@ export const getDocuments = async (req: Request, res: Response): Promise<void> =
  */
 export const downloadDocument = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = (req as any).user;
+    const userRole = req.user?.role as UserRole;
     const { id } = req.params;
 
     const document = await prisma.document.findUnique({
@@ -125,7 +125,7 @@ export const downloadDocument = async (req: Request, res: Response): Promise<voi
     }
 
     // Verificar permisos
-    if (!canAccessDocument(document.visibility, user.role)) {
+    if (!canAccessDocument(document.visibility, userRole)) {
       res.status(403).json({
         success: false,
         message: 'No tienes permiso para acceder a este documento'
@@ -152,12 +152,13 @@ export const downloadDocument = async (req: Request, res: Response): Promise<voi
  */
 export const uploadDocument = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = (req as any).user;
+    const userId = req.user?.userId;
+    const userRole = req.user?.role as UserRole;
     const file = req.file;
     const { title, visibility } = req.body;
 
     // Verificar que sea admin
-    if (!isAdmin(user.role)) {
+    if (!isAdmin(userRole)) {
       res.status(403).json({
         success: false,
         message: 'Solo los administradores pueden subir documentos'
@@ -222,7 +223,7 @@ export const uploadDocument = async (req: Request, res: Response): Promise<void>
         size: file.size,
         content: file.buffer,
         visibility: docVisibility,
-        uploadedById: user.id
+        uploadedById: userId!
       },
       select: {
         id: true,
@@ -260,11 +261,11 @@ export const uploadDocument = async (req: Request, res: Response): Promise<void>
  */
 export const deleteDocument = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = (req as any).user;
+    const userRole = req.user?.role as UserRole;
     const { id } = req.params;
 
     // Verificar que sea admin
-    if (!isAdmin(user.role)) {
+    if (!isAdmin(userRole)) {
       res.status(403).json({
         success: false,
         message: 'Solo los administradores pueden eliminar documentos'
@@ -308,9 +309,9 @@ export const deleteDocument = async (req: Request, res: Response): Promise<void>
  */
 export const getDocumentStats = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = (req as any).user;
+    const userRole = req.user?.role as UserRole;
 
-    if (!isAdmin(user.role)) {
+    if (!isAdmin(userRole)) {
       res.status(403).json({
         success: false,
         message: 'Solo los administradores pueden ver estadísticas'
