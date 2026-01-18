@@ -623,7 +623,7 @@ export const getEventAttendees = async (req: Request, res: Response): Promise<vo
  * Sincronizar bggId de eventos existentes con la tabla Game (Admin)
  * Busca eventos que tienen gameName pero no bggId y los vincula con juegos existentes
  */
-export const syncEventBggIds = async (req: Request, res: Response): Promise<void> => {
+export const syncEventBggIds = async (_req: Request, res: Response): Promise<void> => {
   try {
     // Buscar eventos con gameName pero sin bggId
     const eventsWithoutBggId = await prisma.event.findMany({
