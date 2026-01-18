@@ -56,7 +56,11 @@ export const getClubConfig = async (_req: Request, res: Response) => {
               description: 'Usuario dado de baja'
             }
           ],
-          defaultCurrency: 'EUR'
+          defaultCurrency: 'EUR',
+          inviteMaxActive: 5,
+          inviteMaxMonthly: 10,
+          inviteMaxGuestYear: 5,
+          inviteAllowSelfValidation: false
         }
       });
     }
@@ -85,7 +89,11 @@ export const updateClubConfig = async (req: Request, res: Response) => {
       clubPhone,
       clubAddress,
       membershipTypes,
-      defaultCurrency
+      defaultCurrency,
+      inviteMaxActive,
+      inviteMaxMonthly,
+      inviteMaxGuestYear,
+      inviteAllowSelfValidation
     } = req.body;
 
     const config = await prisma.clubConfig.upsert({
@@ -96,7 +104,11 @@ export const updateClubConfig = async (req: Request, res: Response) => {
         ...(clubPhone !== undefined && { clubPhone }),
         ...(clubAddress !== undefined && { clubAddress }),
         ...(membershipTypes && { membershipTypes }),
-        ...(defaultCurrency && { defaultCurrency })
+        ...(defaultCurrency && { defaultCurrency }),
+        ...(inviteMaxActive !== undefined && { inviteMaxActive }),
+        ...(inviteMaxMonthly !== undefined && { inviteMaxMonthly }),
+        ...(inviteMaxGuestYear !== undefined && { inviteMaxGuestYear }),
+        ...(inviteAllowSelfValidation !== undefined && { inviteAllowSelfValidation })
       },
       create: {
         id: 'club_config',
@@ -105,7 +117,11 @@ export const updateClubConfig = async (req: Request, res: Response) => {
         clubPhone,
         clubAddress,
         membershipTypes: membershipTypes || [],
-        defaultCurrency: defaultCurrency || 'EUR'
+        defaultCurrency: defaultCurrency || 'EUR',
+        inviteMaxActive: inviteMaxActive ?? 5,
+        inviteMaxMonthly: inviteMaxMonthly ?? 10,
+        inviteMaxGuestYear: inviteMaxGuestYear ?? 5,
+        inviteAllowSelfValidation: inviteAllowSelfValidation ?? false
       }
     });
 

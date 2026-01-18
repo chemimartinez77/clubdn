@@ -225,12 +225,15 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
+    const normalizedLocation =
+      typeof location === 'string' && location.trim().length > 0 ? location.trim() : 'Club DN';
+
     const event = await prisma.event.create({
       data: {
         title,
         description,
         date: eventDate,
-        location,
+        location: normalizedLocation,
         address,
         maxAttendees: parseInt(maxAttendees),
         type: eventType,
@@ -311,17 +314,23 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
       }
     }
 
+    const updateData: Record<string, unknown> = {
+      ...(title && { title }),
+      ...(description && { description }),
+      ...(date && { date: new Date(date) }),
+      ...(address !== undefined && { address }),
+      ...(maxAttendees && { maxAttendees: parseInt(maxAttendees) }),
+      ...(status && { status })
+    };
+
+    if (location !== undefined) {
+      updateData.location =
+        typeof location === 'string' && location.trim().length > 0 ? location.trim() : 'Club DN';
+    }
+
     const event = await prisma.event.update({
       where: { id },
-      data: {
-        ...(title && { title }),
-        ...(description && { description }),
-        ...(date && { date: new Date(date) }),
-        ...(location && { location }),
-        ...(address !== undefined && { address }),
-        ...(maxAttendees && { maxAttendees: parseInt(maxAttendees) }),
-        ...(status && { status })
-      },
+      data: updateData,
       include: {
         organizer: {
           select: {

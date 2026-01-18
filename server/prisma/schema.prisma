@@ -65,6 +65,8 @@ model User {
   eventRegistrations EventRegistration[]
   membership        Membership?
   payments          Payment[]
+  invitationsCreated  Invitation[]      @relation("InvitationsCreated")
+  invitationsValidated Invitation[]     @relation("InvitationsValidated")
   loginAttempts     LoginAttempt[]
   uploadedDocuments Document[]
 
@@ -157,6 +159,12 @@ enum RegistrationStatus {
   WAITLIST
 }
 
+enum InvitationStatus {
+  PENDING
+  USED
+  EXPIRED
+}
+
 // Modelo de Evento
 model Event {
   id              String   @id @default(cuid())
@@ -186,6 +194,7 @@ model Event {
   // Capacidad
   maxAttendees    Int
   registrations   EventRegistration[]
+  invitations     Invitation[]
 
   // Estado
   status          EventStatus @default(SCHEDULED)
@@ -201,6 +210,30 @@ model Event {
   @@index([status])
   @@index([createdBy])
   @@index([type])
+}
+
+model Invitation {
+  id                  String           @id @default(cuid())
+  tokenHash           String           @unique
+  memberId            String
+  member              User             @relation("InvitationsCreated", fields: [memberId], references: [id], onDelete: Cascade)
+  guestName           String
+  guestNameNormalized String
+  eventId             String
+  event               Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  validDate           DateTime
+  status              InvitationStatus @default(PENDING)
+  isExceptional       Boolean          @default(false)
+  validatedByUserId   String?
+  validatedBy         User?            @relation("InvitationsValidated", fields: [validatedByUserId], references: [id])
+  usedAt              DateTime?
+  createdAt           DateTime         @default(now())
+
+  @@index([eventId])
+  @@index([memberId])
+  @@index([status])
+  @@index([validDate])
+  @@index([guestNameNormalized])
 }
 
 // Registro a eventos
@@ -356,6 +389,10 @@ model ClubConfig {
 
   // Configuración de cuotas
   defaultCurrency String  @default("EUR")
+  inviteMaxActive Int     @default(5)
+  inviteMaxMonthly Int    @default(10)
+  inviteMaxGuestYear Int  @default(5)
+  inviteAllowSelfValidation Boolean @default(false)
 
   // Metadatos
   createdAt      DateTime @default(now())

@@ -11,6 +11,7 @@ import Profile from './pages/Profile';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
 import CreatePartida from './pages/CreatePartida';
+import InviteValidation from './pages/InviteValidation';
 import PendingApprovals from './pages/admin/PendingApprovals';
 import AdminDashboard from './pages/admin/Dashboard';
 import EventManagement from './pages/admin/EventManagement';
@@ -127,6 +128,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <EventDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/invite/:token"
+            element={
+              <ProtectedRoute>
+                <InviteValidation />
               </ProtectedRoute>
             }
           />

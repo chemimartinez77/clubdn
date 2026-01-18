@@ -1,4 +1,5 @@
 // client/src/pages/EventDetail.tsx
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
@@ -7,14 +8,20 @@ import Button from '../components/ui/Button';
 import { useToast } from '../hooks/useToast';
 import { api } from '../api/axios';
 import { GameImage } from '../components/events/EventCard';
+import { useAuth } from '../contexts/AuthContext';
 import type { Event } from '../types/event';
 import type { ApiResponse } from '../types/auth';
+import type { Invitation, InvitationCreateResponse } from '../types/invitation';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
+  const { isAdmin } = useAuth();
+  const [guestName, setGuestName] = useState('');
+  const [isExceptional, setIsExceptional] = useState(false);
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
 
   // Fetch event details
   const { data: event, isLoading } = useQuery({
@@ -55,6 +62,37 @@ export default function EventDetail() {
     },
     onError: (err: any) => {
       showError(err.response?.data?.message || 'Error al cancelar registro');
+    }
+  });
+
+  const { data: invitations = [], isLoading: isInvitesLoading, isError: isInvitesError } = useQuery({
+    queryKey: ['invitations', id],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<Invitation[]>>(`/api/invitations?eventId=${id}`);
+      return response.data.data || [];
+    },
+    enabled: !!id
+  });
+
+  const createInvitationMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        eventId: id,
+        guestName: guestName.trim(),
+        ...(isAdmin && isExceptional ? { isExceptional: true } : {})
+      };
+      const response = await api.post<ApiResponse<InvitationCreateResponse>>('/api/invitations', payload);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['invitations', id] });
+      setGuestName('');
+      setIsExceptional(false);
+      setQrUrl(data.data?.qrUrl || null);
+      success(data.message || 'Invitacion creada');
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || 'Error al crear invitacion');
     }
   });
 
@@ -110,6 +148,7 @@ export default function EventDetail() {
   const isPast = new Date(event.date) < new Date();
   const canRegister = event.status === 'SCHEDULED' && !isPast && !event.isUserRegistered;
   const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED';
+  const canInvite = event.status !== 'CANCELLED' && !isPast;
 
   const confirmed = event.registrations?.filter(r => r.status === 'CONFIRMED') || [];
   const waitlist = event.registrations?.filter(r => r.status === 'WAITLIST') || [];
@@ -117,6 +156,31 @@ export default function EventDetail() {
   // Obtener imagen del juego: primero de BD (game.image o game.thumbnail), luego de gameImage (BGG)
   const gameImageUrl = event.game?.image || event.game?.thumbnail || event.gameImage || null;
   const isPartida = event.type === 'PARTIDA';
+  const qrImageUrl = qrUrl
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrUrl)}`
+    : null;
+
+  const handleCreateInvitation = () => {
+    if (!guestName.trim()) {
+      showError('Nombre de invitado requerido');
+      return;
+    }
+    if (!id) {
+      showError('Evento no valido');
+      return;
+    }
+    createInvitationMutation.mutate();
+  };
+
+  const handleCopyQr = async () => {
+    if (!qrUrl) return;
+    try {
+      await navigator.clipboard.writeText(qrUrl);
+      success('Enlace copiado');
+    } catch (error) {
+      showError('No se pudo copiar el enlace');
+    }
+  };
 
   return (
     <Layout>
@@ -250,6 +314,126 @@ export default function EventDetail() {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Descripción</h3>
               <p className="text-gray-700 whitespace-pre-line">{event.description}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Invitaciones */}
+        <Card>
+          <CardHeader>
+            <h3 className="text-lg font-semibold text-gray-900">Invitados</h3>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Nombre y apellidos del invitado
+                </label>
+                <input
+                  type="text"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  minLength={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  placeholder="Nombre Apellidos"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Acciones
+                </label>
+                <div className="flex items-center gap-3">
+                  <Button
+                    onClick={handleCreateInvitation}
+                    disabled={!canInvite || !id || createInvitationMutation.isPending || guestName.trim().length < 3}
+                    variant="primary"
+                  >
+                    {createInvitationMutation.isPending ? 'Creando...' : 'Crear invitacion'}
+                  </Button>
+                  {isAdmin && (
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={isExceptional}
+                        onChange={(e) => setIsExceptional(e.target.checked)}
+                        className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                      />
+                      Invitacion excepcional
+                    </label>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {qrUrl && (
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div className="flex flex-col md:flex-row gap-4 items-center">
+                  {qrImageUrl && (
+                    <img
+                      src={qrImageUrl}
+                      alt="QR Invitacion"
+                      className="w-44 h-44"
+                    />
+                  )}
+                  <div className="flex-1 space-y-2">
+                    <p className="text-sm text-gray-600">Enlace del QR</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={qrUrl}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                      />
+                      <Button onClick={handleCopyQr} variant="outline">
+                        Copiar
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Comparte este QR con el invitado. Es de un solo uso y valido solo para hoy.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!canInvite && (
+              <p className="text-sm text-gray-500">
+                No se pueden crear invitaciones para eventos cancelados o pasados.
+              </p>
+            )}
+
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">Invitaciones creadas</h4>
+              {isInvitesLoading ? (
+                <p className="text-sm text-gray-500">Cargando invitaciones...</p>
+              ) : isInvitesError ? (
+                <p className="text-sm text-gray-500">No tienes permisos para ver invitaciones.</p>
+              ) : invitations.length === 0 ? (
+                <p className="text-sm text-gray-500">No hay invitaciones registradas.</p>
+              ) : (
+                <div className="space-y-2">
+                  {invitations.map((invite) => (
+                    <div key={invite.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{invite.guestName}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(invite.validDate).toLocaleDateString('es-ES')}
+                        </p>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        invite.status === 'USED'
+                          ? 'bg-green-100 text-green-800'
+                          : invite.status === 'EXPIRED'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {invite.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
