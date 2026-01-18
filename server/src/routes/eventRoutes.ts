@@ -8,7 +8,8 @@ import {
   deleteEvent,
   registerToEvent,
   unregisterFromEvent,
-  getEventAttendees
+  getEventAttendees,
+  syncEventBggIds
 } from '../controllers/eventController';
 import { authenticate, requireAdmin } from '../middleware/auth';
 
@@ -27,5 +28,8 @@ router.delete('/:id/register', authenticate, unregisterFromEvent);
 router.post('/', authenticate, createEvent); // Usuarios pueden crear PARTIDA, admins todo
 router.put('/:id', authenticate, updateEvent); // Validación de permisos en el controller
 router.delete('/:id', authenticate, requireAdmin, deleteEvent); // Solo admins pueden cancelar
+
+// Admin: Sincronizar bggIds de eventos existentes con juegos en BD
+router.post('/admin/sync-bgg-ids', authenticate, requireAdmin, syncEventBggIds);
 
 export default router;

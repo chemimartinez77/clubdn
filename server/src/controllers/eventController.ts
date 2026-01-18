@@ -618,3 +618,99 @@ export const getEventAttendees = async (req: Request, res: Response): Promise<vo
     });
   }
 };
+
+/**
+ * Sincronizar bggId de eventos existentes con la tabla Game (Admin)
+ * Busca eventos que tienen gameName pero no bggId y los vincula con juegos existentes
+ */
+export const syncEventBggIds = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Buscar eventos con gameName pero sin bggId
+    const eventsWithoutBggId = await prisma.event.findMany({
+      where: {
+        gameName: { not: null },
+        bggId: null,
+        type: 'PARTIDA'
+      },
+      select: {
+        id: true,
+        gameName: true,
+        gameImage: true
+      }
+    });
+
+    console.log(`[SYNC] Encontrados ${eventsWithoutBggId.length} eventos sin bggId`);
+
+    const results = {
+      updated: 0,
+      notFound: 0,
+      errors: 0,
+      details: [] as { eventId: string; gameName: string; status: string; bggId?: string }[]
+    };
+
+    for (const event of eventsWithoutBggId) {
+      try {
+        // Buscar el juego en la tabla Game por nombre (case insensitive)
+        const game = await prisma.game.findFirst({
+          where: {
+            name: {
+              equals: event.gameName!,
+              mode: 'insensitive'
+            }
+          },
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            thumbnail: true
+          }
+        });
+
+        if (game) {
+          // Actualizar el evento con el bggId
+          await prisma.event.update({
+            where: { id: event.id },
+            data: { bggId: game.id }
+          });
+
+          results.updated++;
+          results.details.push({
+            eventId: event.id,
+            gameName: event.gameName!,
+            status: 'updated',
+            bggId: game.id
+          });
+          console.log(`[SYNC] Evento ${event.id} actualizado con bggId ${game.id}`);
+        } else {
+          results.notFound++;
+          results.details.push({
+            eventId: event.id,
+            gameName: event.gameName!,
+            status: 'game_not_found'
+          });
+          console.log(`[SYNC] Juego no encontrado para evento ${event.id}: ${event.gameName}`);
+        }
+      } catch (err) {
+        results.errors++;
+        results.details.push({
+          eventId: event.id,
+          gameName: event.gameName!,
+          status: 'error'
+        });
+        console.error(`[SYNC] Error procesando evento ${event.id}:`, err);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Sincronización completada: ${results.updated} actualizados, ${results.notFound} juegos no encontrados, ${results.errors} errores`,
+      data: results
+    });
+  } catch (error) {
+    console.error('Error al sincronizar bggIds:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al sincronizar bggIds'
+    });
+  }
+};
