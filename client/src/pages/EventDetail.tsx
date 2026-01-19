@@ -407,7 +407,7 @@ export default function EventDetail() {
                         </span>
                       </div>
                       <span className="text-gray-900">{guest.guestFirstName} {guest.guestLastName}</span>
-                      <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">(Invitado)</span>
+                      <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Invitado</span>
                     </li>
                   ))}
                 </ul>
