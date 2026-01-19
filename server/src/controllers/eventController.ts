@@ -7,12 +7,11 @@ import { prisma } from '../config/database';
  */
 export const getEvents = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { status, search, page = '1', limit = '10' } = req.query;
+    const { status, search, participant, page = '1', limit = '10' } = req.query;
     const userId = req.user?.userId;
 
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
-    const skip = (pageNum - 1) * limitNum;
 
     const where: any = {};
 
@@ -28,27 +27,34 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
       ];
     }
 
-    const [events, total] = await Promise.all([
-      prisma.event.findMany({
-        where,
-        include: {
-          organizer: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          },
+    // Obtener eventos con relaciones necesarias para filtro de participante
+    let events = await prisma.event.findMany({
+      where,
+      include: {
+        organizer: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
         registrations: {
           select: {
             id: true,
             userId: true,
-            status: true
+            status: true,
+            user: {
+              select: {
+                name: true
+              }
+            }
           }
         },
         eventGuests: {
           select: {
-            id: true
+            id: true,
+            guestFirstName: true,
+            guestLastName: true
           }
         },
         game: {
@@ -56,14 +62,33 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
             thumbnail: true,
             image: true
           }
-          }
-        },
-        orderBy: { date: 'asc' },
-        skip,
-        take: limitNum
-      }),
-      prisma.event.count({ where })
-    ]);
+        }
+      },
+      orderBy: { date: 'asc' }
+    });
+
+    // Filtrar por participante si se especifica
+    if (participant && typeof participant === 'string' && participant.trim()) {
+      const searchTerm = participant.trim().toLowerCase();
+      events = events.filter(event => {
+        // Buscar en registrations (usuarios registrados)
+        const hasMatchingUser = event.registrations.some(reg =>
+          reg.user?.name?.toLowerCase().includes(searchTerm)
+        );
+        // Buscar en eventGuests (invitados)
+        const hasMatchingGuest = event.eventGuests.some(guest =>
+          guest.guestFirstName.toLowerCase().includes(searchTerm) ||
+          guest.guestLastName.toLowerCase().includes(searchTerm) ||
+          `${guest.guestFirstName} ${guest.guestLastName}`.toLowerCase().includes(searchTerm)
+        );
+        return hasMatchingUser || hasMatchingGuest;
+      });
+    }
+
+    // Paginación después del filtro de participante
+    const total = events.length;
+    const skip = (pageNum - 1) * limitNum;
+    events = events.slice(skip, skip + limitNum);
 
     // Calcular datos adicionales para cada evento
     const eventsWithStats = events.map(event => {

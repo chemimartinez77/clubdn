@@ -87,16 +87,27 @@ export default function EventCalendar({ events, currentMonth }: EventCalendarPro
 
         {hasEvents && (
           <div className="space-y-1">
-            {dayEvents.slice(0, 2).map(event => (
-              <Link
-                key={event.id}
-                to={`/events/${event.id}`}
-                onClick={(e) => e.stopPropagation()}
-                className="block text-xs p-1 rounded bg-[var(--color-primary-100)] text-[var(--color-primary-800)] hover:bg-[var(--color-primary-200)] truncate"
-              >
-                {event.title}
-              </Link>
-            ))}
+            {dayEvents.slice(0, 2).map(event => {
+              const registeredCount = event.registeredCount || 0;
+              const isFull = registeredCount >= event.maxAttendees;
+              return (
+                <Link
+                  key={event.id}
+                  to={`/events/${event.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className={`block text-xs p-1 rounded ${
+                    isFull
+                      ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      : 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)] hover:bg-[var(--color-primary-200)]'
+                  }`}
+                >
+                  <span className="truncate">{event.title}</span>
+                  <span className={`ml-1 font-medium ${isFull ? 'text-red-600' : 'text-green-700'}`}>
+                    ({registeredCount}/{event.maxAttendees})
+                  </span>
+                </Link>
+              );
+            })}
             {dayEvents.length > 2 && (
               <div className="text-xs text-gray-500 pl-1">
                 +{dayEvents.length - 2} más
@@ -144,7 +155,11 @@ export default function EventCalendar({ events, currentMonth }: EventCalendarPro
       <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-600">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-[var(--color-primary-100)]"></div>
-          <span>Evento programado</span>
+          <span>Con plazas</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded bg-gray-100"></div>
+          <span>Completo</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-[var(--color-primary-50)] border border-[var(--color-primary-300)]"></div>

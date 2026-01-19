@@ -12,20 +12,24 @@ import type { ApiResponse } from '../types/auth';
 
 type ViewMode = 'list' | 'calendar';
 type TypeFilter = 'PARTIDA' | 'EVENTOS' | '';
+type CapacityFilter = '' | 'available' | 'full';
 
 export default function Events() {
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [statusFilter, setStatusFilter] = useState<EventStatus | ''>('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('PARTIDA');
+  const [capacityFilter, setCapacityFilter] = useState<CapacityFilter>('');
   const [search, setSearch] = useState('');
+  const [participant, setParticipant] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['events', statusFilter, typeFilter, search],
+    queryKey: ['events', statusFilter, typeFilter, search, participant],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (statusFilter) params.append('status', statusFilter);
       if (search) params.append('search', search);
+      if (participant) params.append('participant', participant);
       params.append('limit', '100'); // Get all for calendar view
 
       const response = await api.get<ApiResponse<EventsResponse>>(
@@ -35,14 +39,23 @@ export default function Events() {
     }
   });
 
-  // Filtrar eventos por tipo en el cliente
-  // "PARTIDA" = solo partidas, "EVENTOS" = torneos y otros (no partidas), "" = todos
+  // Filtrar eventos por tipo y capacidad en el cliente
   const allEvents = data?.events || [];
-  const events = typeFilter === 'PARTIDA'
-    ? allEvents.filter(event => event.type === 'PARTIDA')
-    : typeFilter === 'EVENTOS'
-      ? allEvents.filter(event => event.type !== 'PARTIDA')
-      : allEvents;
+  const events = allEvents
+    // Filtro por tipo: "PARTIDA" = solo partidas, "EVENTOS" = torneos y otros, "" = todos
+    .filter(event => {
+      if (typeFilter === 'PARTIDA') return event.type === 'PARTIDA';
+      if (typeFilter === 'EVENTOS') return event.type !== 'PARTIDA';
+      return true;
+    })
+    // Filtro por capacidad: "available" = con plazas, "full" = completas, "" = todas
+    .filter(event => {
+      const registeredCount = event.registeredCount || 0;
+      const isFull = registeredCount >= event.maxAttendees;
+      if (capacityFilter === 'available') return !isFull;
+      if (capacityFilter === 'full') return isFull;
+      return true;
+    });
 
   const handlePreviousMonth = () => {
     setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1));
@@ -100,7 +113,7 @@ export default function Events() {
         {/* Filters */}
         <Card>
           <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {/* Type Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -114,6 +127,22 @@ export default function Events() {
                   <option value="PARTIDA">Partidas</option>
                   <option value="EVENTOS">Eventos</option>
                   <option value="">Todos</option>
+                </select>
+              </div>
+
+              {/* Capacity Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Plazas
+                </label>
+                <select
+                  value={capacityFilter}
+                  onChange={(e) => setCapacityFilter(e.target.value as CapacityFilter)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                >
+                  <option value="">Todas</option>
+                  <option value="available">Con plazas libres</option>
+                  <option value="full">Completas</option>
                 </select>
               </div>
 
@@ -138,13 +167,27 @@ export default function Events() {
               {/* Search */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Buscar
+                  Buscar evento
                 </label>
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar..."
+                  placeholder="Título, ubicación..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                />
+              </div>
+
+              {/* Participant Search */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Participante
+                </label>
+                <input
+                  type="text"
+                  value={participant}
+                  onChange={(e) => setParticipant(e.target.value)}
+                  placeholder="Nombre del jugador..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 />
               </div>
