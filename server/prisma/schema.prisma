@@ -69,6 +69,7 @@ model User {
   invitationsValidated Invitation[]     @relation("InvitationsValidated")
   loginAttempts     LoginAttempt[]
   uploadedDocuments Document[]
+  uploadedPhotos    EventPhoto[]
 
   @@index([email])
   @@index([status])
@@ -196,6 +197,7 @@ model Event {
   registrations   EventRegistration[]
   invitations     Invitation[]
   eventGuests     EventGuest[]
+  photos          EventPhoto[]
 
   // Estado
   status          EventStatus @default(SCHEDULED)
@@ -499,4 +501,26 @@ model Document {
   @@index([visibility])
   @@index([uploadedById])
   @@index([title])
+}
+
+// Fotos de eventos (almacenadas en Cloudinary)
+model EventPhoto {
+  id            String   @id @default(cuid())
+  eventId       String
+  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  // Datos de Cloudinary
+  cloudinaryId  String   // public_id de Cloudinary
+  url           String   // URL de la imagen
+  thumbnailUrl  String?  // URL de miniatura (transformación de Cloudinary)
+
+  // Metadatos
+  uploadedById  String
+  uploadedBy    User     @relation(fields: [uploadedById], references: [id])
+  caption       String?  // Descripción opcional de la foto
+
+  createdAt     DateTime @default(now())
+
+  @@index([eventId])
+  @@index([uploadedById])
 }

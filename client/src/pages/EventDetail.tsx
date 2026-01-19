@@ -9,6 +9,7 @@ import Button from '../components/ui/Button';
 import { useToast } from '../hooks/useToast';
 import { api } from '../api/axios';
 import { GameImage } from '../components/events/EventCard';
+import EventPhotoGallery from '../components/events/EventPhotoGallery';
 import { useAuth } from '../contexts/AuthContext';
 import type { Event } from '../types/event';
 import type { ApiResponse } from '../types/auth';
@@ -19,7 +20,7 @@ export default function EventDetail() {
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [guestFirstName, setGuestFirstName] = useState('');
   const [guestLastName, setGuestLastName] = useState('');
@@ -427,6 +428,18 @@ export default function EventDetail() {
             </Card>
           )}
         </div>
+
+        {/* Photo Gallery */}
+        <Card>
+          <CardContent className="p-6">
+            <EventPhotoGallery
+              eventId={id!}
+              canUpload={!!(event.isUserRegistered && event.userRegistrationStatus === 'CONFIRMED')}
+              currentUserId={user?.id}
+              isAdmin={isAdmin}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       <Modal
