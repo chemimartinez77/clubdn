@@ -157,6 +157,10 @@ export default function EventDetail() {
     COMPLETED: 'Completado',
     CANCELLED: 'Cancelado'
   };
+  const membershipLabels: Record<string, string> = {
+    SOCIO: 'Socio',
+    COLABORADOR: 'Colaborador'
+  };
 
   const isPast = new Date(event.date) < new Date();
   const canRegister = event.status === 'SCHEDULED' && !isPast && !event.isUserRegistered;
@@ -384,7 +388,15 @@ export default function EventDetail() {
                           {registration.user?.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <span className="text-gray-900">{registration.user?.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-900">{registration.user?.name}</span>
+                        {registration.user?.membership?.type &&
+                          membershipLabels[registration.user.membership.type] && (
+                            <span className="text-xs text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full">
+                              {membershipLabels[registration.user.membership.type]}
+                            </span>
+                          )}
+                      </div>
                     </li>
                   ))}
                   {event.eventGuests?.map((guest) => (
@@ -420,7 +432,15 @@ export default function EventDetail() {
                           {registration.user?.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <span className="text-gray-900">{registration.user?.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-900">{registration.user?.name}</span>
+                        {registration.user?.membership?.type &&
+                          membershipLabels[registration.user.membership.type] && (
+                            <span className="text-xs text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full">
+                              {membershipLabels[registration.user.membership.type]}
+                            </span>
+                          )}
+                      </div>
                     </li>
                   ))}
                 </ul>

@@ -73,6 +73,9 @@ export interface EventRegistration {
     id: string;
     name: string;
     email: string;
+    membership?: {
+      type: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA';
+    } | null;
   };
 }
 

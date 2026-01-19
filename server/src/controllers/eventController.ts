@@ -154,7 +154,12 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
               select: {
                 id: true,
                 name: true,
-                email: true
+                email: true,
+                membership: {
+                  select: {
+                    type: true
+                  }
+                }
               }
             }
           },
