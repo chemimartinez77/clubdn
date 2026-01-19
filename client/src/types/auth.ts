@@ -15,6 +15,12 @@ export interface User {
   status: UserStatus;
   createdAt?: string;
   lastLoginAt?: string | null;
+  membership?: {
+    type: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA';
+  } | null;
+  profile?: {
+    avatar?: string | null;
+  } | null;
 }
 
 export interface AuthContextType {

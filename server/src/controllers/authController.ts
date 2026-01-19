@@ -165,6 +165,16 @@ export const getCurrentUser = async (req: Request, res: Response) => {
         emailVerified: true,
         createdAt: true,
         lastLoginAt: true,
+        membership: {
+          select: {
+            type: true
+          }
+        },
+        profile: {
+          select: {
+            avatar: true
+          }
+        }
       },
     });
 
@@ -319,6 +329,18 @@ export const login = async (req: Request, res: Response) => {
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
+      include: {
+        membership: {
+          select: {
+            type: true
+          }
+        },
+        profile: {
+          select: {
+            avatar: true
+          }
+        }
+      }
     });
 
     // Registrar login exitoso
@@ -341,6 +363,8 @@ export const login = async (req: Request, res: Response) => {
           status: updatedUser.status,
           createdAt: updatedUser.createdAt.toISOString(),
           lastLoginAt: updatedUser.lastLoginAt?.toISOString() || null,
+          membership: updatedUser.membership,
+          profile: updatedUser.profile
         },
       },
     });

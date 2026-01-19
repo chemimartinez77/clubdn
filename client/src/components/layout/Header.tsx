@@ -1,7 +1,8 @@
 // client/src/components/layout/Header.tsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import Modal from '../ui/Modal';
 
 export default function Header() {
   const { user, logout, isAdmin } = useAuth();
@@ -9,6 +10,14 @@ export default function Header() {
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const [isGamesMenuOpen, setIsGamesMenuOpen] = useState(false);
   const [isMobileGamesOpen, setIsMobileGamesOpen] = useState(false);
+  const [isIdModalOpen, setIsIdModalOpen] = useState(false);
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    if (!isIdModalOpen) return;
+    const interval = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, [isIdModalOpen]);
 
   const handleLogout = () => {
     logout();
@@ -19,6 +28,13 @@ export default function Header() {
     setIsAdminMenuOpen(false);
     setIsGamesMenuOpen(false);
   };
+
+  const membershipLabel =
+    user?.membership?.type === 'SOCIO'
+      ? 'Socio'
+      : user?.membership?.type === 'COLABORADOR'
+      ? 'Colaborador'
+      : 'Miembro';
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -36,6 +52,21 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
+            {/* ID */}
+            {user && (
+              <button
+                onClick={() => {
+                  setIsIdModalOpen(true);
+                  setIsMenuOpen(false);
+                  setIsAdminMenuOpen(false);
+                  setIsGamesMenuOpen(false);
+                }}
+                className="text-gray-700 hover:text-primary transition-colors"
+              >
+                ID
+              </button>
+            )}
+
             {/* Inicio */}
             <Link
               to="/"
@@ -284,6 +315,19 @@ export default function Header() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200">
             <nav className="flex flex-col space-y-2">
+              {/* ID */}
+              {user && (
+                <button
+                  onClick={() => {
+                    closeAllMenus();
+                    setIsIdModalOpen(true);
+                  }}
+                  className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors text-left"
+                >
+                  ID
+                </button>
+              )}
+
               {/* Inicio */}
               <Link
                 to="/"
@@ -428,6 +472,49 @@ export default function Header() {
           </div>
         )}
       </div>
+
+      <Modal
+        isOpen={isIdModalOpen}
+        onClose={() => setIsIdModalOpen(false)}
+        title="ID"
+        size="sm"
+      >
+        <div className="flex flex-col items-center space-y-4 text-center">
+          {user?.profile?.avatar ? (
+            <img
+              src={user.profile.avatar}
+              alt={user.name}
+              className="w-24 h-24 rounded-full object-cover border border-gray-200"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border border-gray-200">
+              <span className="text-3xl font-semibold text-primary">
+                {user?.name?.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <p className="text-lg font-semibold text-gray-900">{user?.name}</p>
+            <p className="text-sm text-gray-600">{membershipLabel}</p>
+          </div>
+
+          <div className="w-full border-t border-gray-200 pt-4">
+            <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Hora en tiempo real</p>
+            <p className="text-base font-semibold text-gray-900">
+              {now.toLocaleString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+              })}
+            </p>
+          </div>
+        </div>
+      </Modal>
     </header>
   );
 }
