@@ -137,8 +137,11 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
         },
         eventGuests: {
           select: {
-            id: true
-          }
+            id: true,
+            guestFirstName: true,
+            guestLastName: true
+          },
+          orderBy: { createdAt: 'asc' }
         },
         game: {
           select: {
@@ -167,7 +170,6 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       data: {
         event: {
           ...event,
-          eventGuests: undefined,
           guestCount,
           registeredCount,
           waitlistCount,

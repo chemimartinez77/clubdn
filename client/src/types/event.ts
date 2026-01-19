@@ -52,6 +52,15 @@ export interface Event {
 
   // Registros completos (solo en detalle)
   registrations?: EventRegistration[];
+
+  // Invitados del evento (solo en detalle)
+  eventGuests?: EventGuest[];
+}
+
+export interface EventGuest {
+  id: string;
+  guestFirstName: string;
+  guestLastName: string;
 }
 
 export interface EventRegistration {

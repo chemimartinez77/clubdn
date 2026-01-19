@@ -368,11 +368,11 @@ export default function EventDetail() {
           <Card>
             <CardHeader>
               <h3 className="text-lg font-semibold text-gray-900">
-                Asistentes confirmados ({confirmed.length + (event.guestCount || 0)})
+                Asistentes confirmados ({confirmed.length + (event.eventGuests?.length || 0)})
               </h3>
             </CardHeader>
             <CardContent>
-              {confirmed.length === 0 ? (
+              {confirmed.length === 0 && (!event.eventGuests || event.eventGuests.length === 0) ? (
                 <p className="text-gray-500 text-sm">Aún no hay asistentes confirmados</p>
               ) : (
                 <ul className="space-y-2">
@@ -384,6 +384,17 @@ export default function EventDetail() {
                         </span>
                       </div>
                       <span className="text-gray-900">{registration.user?.name}</span>
+                    </li>
+                  ))}
+                  {event.eventGuests?.map((guest) => (
+                    <li key={guest.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                        <span className="text-purple-600 font-semibold text-sm">
+                          {guest.guestFirstName.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="text-gray-900">{guest.guestFirstName} {guest.guestLastName}</span>
+                      <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">(Invitado)</span>
                     </li>
                   ))}
                 </ul>
