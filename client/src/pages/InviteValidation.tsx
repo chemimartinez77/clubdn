@@ -110,7 +110,12 @@ export default function InviteValidation() {
           <CardContent className="space-y-4">
             <div>
               <p className="text-sm text-gray-500">Invitado</p>
-              <p className="text-lg font-semibold text-gray-900">{invitation.guestName}</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {invitation.guestFirstName} {invitation.guestLastName}
+              </p>
+              {invitation.guestDniMasked && (
+                <p className="text-sm text-gray-600">DNI {invitation.guestDniMasked}</p>
+              )}
             </div>
 
             {invitation.inviter && (

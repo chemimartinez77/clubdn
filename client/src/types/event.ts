@@ -31,6 +31,7 @@ export interface Event {
 
   // Capacidad
   maxAttendees: number;
+  guestCount?: number;
   status: EventStatus;
   createdBy: string;
   createdAt: string;

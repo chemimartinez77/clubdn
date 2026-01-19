@@ -195,6 +195,7 @@ model Event {
   maxAttendees    Int
   registrations   EventRegistration[]
   invitations     Invitation[]
+  eventGuests     EventGuest[]
 
   // Estado
   status          EventStatus @default(SCHEDULED)
@@ -214,11 +215,13 @@ model Event {
 
 model Invitation {
   id                  String           @id @default(cuid())
-  tokenHash           String           @unique
+  token               String           @unique
   memberId            String
   member              User             @relation("InvitationsCreated", fields: [memberId], references: [id], onDelete: Cascade)
-  guestName           String
-  guestNameNormalized String
+  guestFirstName      String
+  guestLastName       String
+  guestDni            String
+  guestDniNormalized  String
   eventId             String
   event               Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
   validDate           DateTime
@@ -228,12 +231,28 @@ model Invitation {
   validatedBy         User?            @relation("InvitationsValidated", fields: [validatedByUserId], references: [id])
   usedAt              DateTime?
   createdAt           DateTime         @default(now())
+  eventGuest          EventGuest?
 
   @@index([eventId])
   @@index([memberId])
   @@index([status])
   @@index([validDate])
-  @@index([guestNameNormalized])
+  @@index([guestDniNormalized])
+}
+
+model EventGuest {
+  id            String     @id @default(cuid())
+  eventId       String
+  event         Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  invitationId  String     @unique
+  invitation    Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  guestFirstName String
+  guestLastName  String
+  guestDni       String
+  createdAt     DateTime   @default(now())
+
+  @@index([eventId])
+  @@index([guestDni])
 }
 
 // Registro a eventos

@@ -39,18 +39,23 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
               email: true
             }
           },
-          registrations: {
-            select: {
-              id: true,
-              userId: true,
-              status: true
-            }
-          },
-          game: {
-            select: {
-              thumbnail: true,
-              image: true
-            }
+        registrations: {
+          select: {
+            id: true,
+            userId: true,
+            status: true
+          }
+        },
+        eventGuests: {
+          select: {
+            id: true
+          }
+        },
+        game: {
+          select: {
+            thumbnail: true,
+            image: true
+          }
           }
         },
         orderBy: { date: 'asc' },
@@ -62,13 +67,16 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
 
     // Calcular datos adicionales para cada evento
     const eventsWithStats = events.map(event => {
-      const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length;
+      const guestCount = event.eventGuests?.length || 0;
+      const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length + guestCount;
       const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST').length;
       const userRegistration = event.registrations.find(r => r.userId === userId);
 
       return {
         ...event,
         registrations: undefined, // No exponer lista completa en el listado
+        eventGuests: undefined,
+        guestCount,
         registeredCount,
         waitlistCount,
         isUserRegistered: !!userRegistration,
@@ -127,6 +135,11 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
           },
           orderBy: { createdAt: 'asc' }
         },
+        eventGuests: {
+          select: {
+            id: true
+          }
+        },
         game: {
           select: {
             thumbnail: true,
@@ -144,7 +157,8 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length;
+    const guestCount = event.eventGuests?.length || 0;
+    const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length + guestCount;
     const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST').length;
     const userRegistration = event.registrations.find(r => r.userId === userId);
 
@@ -153,6 +167,8 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       data: {
         event: {
           ...event,
+          eventGuests: undefined,
+          guestCount,
           registeredCount,
           waitlistCount,
           isUserRegistered: !!userRegistration,
@@ -415,6 +431,9 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
       include: {
         registrations: {
           where: { status: 'CONFIRMED' }
+        },
+        eventGuests: {
+          select: { id: true }
         }
       }
     });
@@ -466,7 +485,7 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
     }
 
     // Determinar estado: CONFIRMED o WAITLIST
-    const confirmedCount = event.registrations.length;
+    const confirmedCount = event.registrations.length + (event.eventGuests?.length || 0);
     const registrationStatus = confirmedCount >= event.maxAttendees ? 'WAITLIST' : 'CONFIRMED';
 
     const registration = await prisma.eventRegistration.create({
@@ -544,19 +563,40 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
 
     // Si era CONFIRMED, promover el primero de la waitlist
     if (wasConfirmed) {
-      const firstWaitlisted = await prisma.eventRegistration.findFirst({
-        where: {
-          eventId: id,
-          status: 'WAITLIST'
-        },
-        orderBy: { createdAt: 'asc' }
-      });
+      const [eventInfo, confirmedCount] = await Promise.all([
+        prisma.event.findUnique({
+          where: { id },
+          select: {
+            maxAttendees: true,
+            eventGuests: { select: { id: true } }
+          }
+        }),
+        prisma.eventRegistration.count({
+          where: {
+            eventId: id,
+            status: 'CONFIRMED'
+          }
+        })
+      ]);
 
-      if (firstWaitlisted) {
-        await prisma.eventRegistration.update({
-          where: { id: firstWaitlisted.id },
-          data: { status: 'CONFIRMED' }
-        });
+      if (eventInfo) {
+        const totalConfirmed = confirmedCount + (eventInfo.eventGuests?.length || 0);
+        if (totalConfirmed < eventInfo.maxAttendees) {
+          const firstWaitlisted = await prisma.eventRegistration.findFirst({
+            where: {
+              eventId: id,
+              status: 'WAITLIST'
+            },
+            orderBy: { createdAt: 'asc' }
+          });
+
+          if (firstWaitlisted) {
+            await prisma.eventRegistration.update({
+              where: { id: firstWaitlisted.id },
+              data: { status: 'CONFIRMED' }
+            });
+          }
+        }
       }
     }
 

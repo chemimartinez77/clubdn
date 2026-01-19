@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardHeader, CardContent } from '../components/ui/Card';
+import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
 import { useToast } from '../hooks/useToast';
 import { api } from '../api/axios';
@@ -19,9 +20,13 @@ export default function EventDetail() {
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const { isAdmin } = useAuth();
-  const [guestName, setGuestName] = useState('');
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [guestFirstName, setGuestFirstName] = useState('');
+  const [guestLastName, setGuestLastName] = useState('');
+  const [guestDni, setGuestDni] = useState('');
   const [isExceptional, setIsExceptional] = useState(false);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [expandedInviteId, setExpandedInviteId] = useState<string | null>(null);
 
   // Fetch event details
   const { data: event, isLoading } = useQuery({
@@ -78,7 +83,9 @@ export default function EventDetail() {
     mutationFn: async () => {
       const payload = {
         eventId: id,
-        guestName: guestName.trim(),
+        guestFirstName: guestFirstName.trim(),
+        guestLastName: guestLastName.trim(),
+        guestDni: guestDni.trim(),
         ...(isAdmin && isExceptional ? { isExceptional: true } : {})
       };
       const response = await api.post<ApiResponse<InvitationCreateResponse>>('/api/invitations', payload);
@@ -86,9 +93,14 @@ export default function EventDetail() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['invitations', id] });
-      setGuestName('');
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      setGuestFirstName('');
+      setGuestLastName('');
+      setGuestDni('');
       setIsExceptional(false);
       setQrUrl(data.data?.qrUrl || null);
+      setExpandedInviteId(data.data?.invitation.id || null);
       success(data.message || 'Invitacion creada');
     },
     onError: (err: any) => {
@@ -161,8 +173,16 @@ export default function EventDetail() {
     : null;
 
   const handleCreateInvitation = () => {
-    if (!guestName.trim()) {
-      showError('Nombre de invitado requerido');
+    if (!guestFirstName.trim()) {
+      showError('Nombre requerido');
+      return;
+    }
+    if (!guestLastName.trim()) {
+      showError('Apellidos requeridos');
+      return;
+    }
+    if (!guestDni.trim()) {
+      showError('DNI requerido');
       return;
     }
     if (!id) {
@@ -180,6 +200,23 @@ export default function EventDetail() {
     } catch (error) {
       showError('No se pudo copiar el enlace');
     }
+  };
+
+  const handleToggleInviteQr = (invite: Invitation) => {
+    if (!invite.qrUrl) return;
+    if (expandedInviteId === invite.id) {
+      setExpandedInviteId(null);
+      setQrUrl(null);
+      return;
+    }
+    setExpandedInviteId(invite.id);
+    setQrUrl(invite.qrUrl);
+  };
+
+  const handleCloseInviteModal = () => {
+    setIsInviteModalOpen(false);
+    setExpandedInviteId(null);
+    setQrUrl(null);
   };
 
   return (
@@ -246,6 +283,13 @@ export default function EventDetail() {
                       {unregisterMutation.isPending ? 'Cancelando...' : 'Cancelar registro'}
                     </Button>
                   )}
+                  <Button
+                    onClick={() => setIsInviteModalOpen(true)}
+                    disabled={!canInvite}
+                    variant="outline"
+                  >
+                    Añadir invitado
+                  </Button>
                 </div>
               </div>
             </div>
@@ -318,133 +362,13 @@ export default function EventDetail() {
           </CardContent>
         </Card>
 
-        {/* Invitaciones */}
-        <Card>
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-gray-900">Invitados</h3>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Nombre y apellidos del invitado
-                </label>
-                <input
-                  type="text"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                  minLength={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-                  placeholder="Nombre Apellidos"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Acciones
-                </label>
-                <div className="flex items-center gap-3">
-                  <Button
-                    onClick={handleCreateInvitation}
-                    disabled={!canInvite || !id || createInvitationMutation.isPending || guestName.trim().length < 3}
-                    variant="primary"
-                  >
-                    {createInvitationMutation.isPending ? 'Creando...' : 'Crear invitacion'}
-                  </Button>
-                  {isAdmin && (
-                    <label className="flex items-center gap-2 text-sm text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={isExceptional}
-                        onChange={(e) => setIsExceptional(e.target.checked)}
-                        className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
-                      />
-                      Invitacion excepcional
-                    </label>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {qrUrl && (
-              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <div className="flex flex-col md:flex-row gap-4 items-center">
-                  {qrImageUrl && (
-                    <img
-                      src={qrImageUrl}
-                      alt="QR Invitacion"
-                      className="w-44 h-44"
-                    />
-                  )}
-                  <div className="flex-1 space-y-2">
-                    <p className="text-sm text-gray-600">Enlace del QR</p>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={qrUrl}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
-                      />
-                      <Button onClick={handleCopyQr} variant="outline">
-                        Copiar
-                      </Button>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      Comparte este QR con el invitado. Es de un solo uso y valido solo para hoy.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {!canInvite && (
-              <p className="text-sm text-gray-500">
-                No se pueden crear invitaciones para eventos cancelados o pasados.
-              </p>
-            )}
-
-            <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">Invitaciones creadas</h4>
-              {isInvitesLoading ? (
-                <p className="text-sm text-gray-500">Cargando invitaciones...</p>
-              ) : isInvitesError ? (
-                <p className="text-sm text-gray-500">No tienes permisos para ver invitaciones.</p>
-              ) : invitations.length === 0 ? (
-                <p className="text-sm text-gray-500">No hay invitaciones registradas.</p>
-              ) : (
-                <div className="space-y-2">
-                  {invitations.map((invite) => (
-                    <div key={invite.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{invite.guestName}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(invite.validDate).toLocaleDateString('es-ES')}
-                        </p>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        invite.status === 'USED'
-                          ? 'bg-green-100 text-green-800'
-                          : invite.status === 'EXPIRED'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {invite.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Attendees */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Confirmed */}
           <Card>
             <CardHeader>
               <h3 className="text-lg font-semibold text-gray-900">
-                Asistentes confirmados ({confirmed.length})
+                Asistentes confirmados ({confirmed.length + (event.guestCount || 0)})
               </h3>
             </CardHeader>
             <CardContent>
@@ -493,6 +417,178 @@ export default function EventDetail() {
           )}
         </div>
       </div>
+
+      <Modal
+        isOpen={isInviteModalOpen}
+        onClose={handleCloseInviteModal}
+        title="Invitados"
+        size="lg"
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Nombre *
+              </label>
+              <input
+                type="text"
+                value={guestFirstName}
+                onChange={(e) => setGuestFirstName(e.target.value)}
+                minLength={2}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                placeholder="Nombre"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Apellidos *
+              </label>
+              <input
+                type="text"
+                value={guestLastName}
+                onChange={(e) => setGuestLastName(e.target.value)}
+                minLength={2}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                placeholder="Apellidos"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                DNI *
+              </label>
+              <input
+                type="text"
+                value={guestDni}
+                onChange={(e) => setGuestDni(e.target.value)}
+                minLength={5}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                placeholder="00000000A"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Acciones
+              </label>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={handleCreateInvitation}
+                  disabled={
+                    !canInvite ||
+                    !id ||
+                    createInvitationMutation.isPending ||
+                    guestFirstName.trim().length < 2 ||
+                    guestLastName.trim().length < 2 ||
+                    guestDni.trim().length < 5
+                  }
+                  variant="primary"
+                >
+                  {createInvitationMutation.isPending ? 'Creando...' : 'Crear invitacion'}
+                </Button>
+                {isAdmin && (
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={isExceptional}
+                      onChange={(e) => setIsExceptional(e.target.checked)}
+                      className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                    />
+                    Invitacion excepcional
+                  </label>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {qrUrl && (
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                {qrImageUrl && (
+                  <img
+                    src={qrImageUrl}
+                    alt="QR Invitacion"
+                    className="w-44 h-44"
+                  />
+                )}
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm text-gray-600">Enlace del QR</p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={qrUrl}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                    />
+                    <Button onClick={handleCopyQr} variant="outline">
+                      Copiar
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Comparte este QR con el invitado. Es de un solo uso y valido solo para hoy.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!canInvite && (
+            <p className="text-sm text-gray-500">
+              No se pueden crear invitaciones para eventos cancelados o pasados.
+            </p>
+          )}
+
+          <div>
+            <h4 className="text-sm font-semibold text-gray-700 mb-2">Invitaciones creadas</h4>
+            {isInvitesLoading ? (
+              <p className="text-sm text-gray-500">Cargando invitaciones...</p>
+            ) : isInvitesError ? (
+              <p className="text-sm text-gray-500">No tienes permisos para ver invitaciones.</p>
+            ) : invitations.length === 0 ? (
+              <p className="text-sm text-gray-500">No hay invitaciones registradas.</p>
+            ) : (
+              <div className="space-y-2">
+                {invitations.map((invite) => {
+                  const isExpanded = expandedInviteId === invite.id;
+                  return (
+                    <div
+                      key={invite.id}
+                      onClick={() => handleToggleInviteQr(invite)}
+                      className={`flex items-center justify-between p-3 border rounded-lg ${
+                        invite.qrUrl ? 'cursor-pointer hover:bg-gray-50' : ''
+                      } ${
+                        isExpanded ? 'border-[var(--color-primary-300)] bg-[var(--color-primary-50)]' : 'border-gray-200'
+                      }`}
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {invite.guestFirstName} {invite.guestLastName}
+                        </p>
+                        {invite.guestDniMasked && (
+                          <p className="text-xs text-gray-500">DNI {invite.guestDniMasked}</p>
+                        )}
+                        <p className="text-xs text-gray-500">
+                          {new Date(invite.validDate).toLocaleDateString('es-ES')}
+                        </p>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        invite.status === 'USED'
+                          ? 'bg-green-100 text-green-800'
+                          : invite.status === 'EXPIRED'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {invite.status}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
     </Layout>
   );
 }

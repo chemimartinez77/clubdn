@@ -14,11 +14,14 @@ export interface InvitationUserInfo {
 
 export interface Invitation {
   id: string;
-  guestName: string;
+  guestFirstName: string;
+  guestLastName: string;
+  guestDniMasked?: string;
   status: InvitationStatus;
   validDate: string;
   isExceptional?: boolean;
   usedAt?: string | null;
+  qrUrl?: string;
   event?: InvitationEventInfo;
   inviter?: InvitationUserInfo;
   validatedBy?: InvitationUserInfo;
@@ -26,7 +29,9 @@ export interface Invitation {
 
 export interface CreateInvitationPayload {
   eventId: string;
-  guestName: string;
+  guestFirstName: string;
+  guestLastName: string;
+  guestDni: string;
   isExceptional?: boolean;
 }
 
