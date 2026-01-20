@@ -19,9 +19,10 @@ export default function MembershipManagement() {
   const [membershipFilter, setMembershipFilter] = useState<'all' | MembershipType>('all');
   const [statusFilters, setStatusFilters] = useState({
     nuevo: true,
-    enTiempo: true,
     pendiente: true,
-    retraso: true
+    impagado: true,
+    pagado: true,
+    anoCompleto: true
   });
 
   const { data: response, isLoading } = useQuery({
@@ -52,7 +53,7 @@ export default function MembershipManagement() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['users-membership'] });
-      success(data.message || 'Año completo marcado');
+      success(data.message || 'A\u00f1o completo marcado');
     },
     onError: (err: any) => {
       error(err.response?.data?.message || 'Error al marcar año completo');
@@ -68,7 +69,7 @@ export default function MembershipManagement() {
   };
 
   const handleMarkFullYear = (userId: string) => {
-    if (confirm('¿Marcar todos los meses del año como pagados?')) {
+    if (confirm('\u00bfMarcar todos los meses del ciclo en curso como pagados?')) {
       markFullYearMutation.mutate({
         userId,
         year: selectedYear
@@ -78,15 +79,22 @@ export default function MembershipManagement() {
 
   const getStatusBadge = (status: PaymentStatus) => {
     const styles = {
-      'Nuevo': 'bg-blue-100 text-blue-800',
-      'En tiempo': 'bg-green-100 text-green-800',
-      'Pendiente': 'bg-yellow-100 text-yellow-800',
-      'Retraso': 'bg-red-100 text-red-800',
-      'Año completo': 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]'
+      NUEVO: 'bg-blue-100 text-blue-800',
+      PENDIENTE: 'bg-yellow-100 text-yellow-800',
+      IMPAGADO: 'bg-red-100 text-red-800',
+      PAGADO: 'bg-green-100 text-green-800',
+      ANO_COMPLETO: 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]'
+    };
+    const labels = {
+      NUEVO: 'Nuevo',
+      PENDIENTE: 'Pendiente',
+      IMPAGADO: 'Impagado',
+      PAGADO: 'Pagado',
+      ANO_COMPLETO: 'Año completo'
     };
     return (
       <span className={`px-2 py-1 text-xs font-semibold rounded ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
-        {status}
+        {labels[status] || status}
       </span>
     );
   };
@@ -115,11 +123,11 @@ export default function MembershipManagement() {
 
     // Filtro de estado
     const statusMap = {
-      'Nuevo': statusFilters.nuevo,
-      'En tiempo': statusFilters.enTiempo,
-      'Pendiente': statusFilters.pendiente,
-      'Retraso': statusFilters.retraso,
-      'Año completo': statusFilters.enTiempo // Año completo se considera "en tiempo"
+      NUEVO: statusFilters.nuevo,
+      PENDIENTE: statusFilters.pendiente,
+      IMPAGADO: statusFilters.impagado,
+      PAGADO: statusFilters.pagado,
+      ANO_COMPLETO: statusFilters.anoCompleto
     };
 
     return statusMap[user.status] !== false;
@@ -175,7 +183,7 @@ export default function MembershipManagement() {
                 </select>
 
                 {/* Checkboxes de estado */}
-                <div className="flex gap-4 items-center">
+                <div className="flex flex-wrap gap-4 items-center">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -184,16 +192,6 @@ export default function MembershipManagement() {
                       className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
                     />
                     <span className="text-sm text-gray-700">Nuevo</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={statusFilters.enTiempo}
-                      onChange={() => toggleStatusFilter('enTiempo')}
-                      className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
-                    />
-                    <span className="text-sm text-gray-700">En tiempo</span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -209,11 +207,31 @@ export default function MembershipManagement() {
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={statusFilters.retraso}
-                      onChange={() => toggleStatusFilter('retraso')}
+                      checked={statusFilters.impagado}
+                      onChange={() => toggleStatusFilter('impagado')}
                       className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
                     />
-                    <span className="text-sm text-gray-700">Retraso</span>
+                    <span className="text-sm text-gray-700">Impagado</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={statusFilters.pagado}
+                      onChange={() => toggleStatusFilter('pagado')}
+                      className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                    />
+                    <span className="text-sm text-gray-700">Pagado</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={statusFilters.anoCompleto}
+                      onChange={() => toggleStatusFilter('anoCompleto')}
+                      className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                    />
+                    <span className="text-sm text-gray-700">Año completo</span>
                   </label>
                 </div>
               </div>

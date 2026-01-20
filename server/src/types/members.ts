@@ -4,7 +4,7 @@ export interface MemberFilters {
   membershipType?: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA' | 'all';
   dateFrom?: string;
   dateTo?: string;
-  paymentStatus?: 'al_dia' | 'con_retrasos' | 'all';
+  paymentStatus?: 'NUEVO' | 'PENDIENTE' | 'IMPAGADO' | 'PAGADO' | 'ANO_COMPLETO' | 'all';
   page?: number;
   pageSize?: number;
 }
@@ -16,7 +16,7 @@ export interface MemberData {
   membershipType: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA' | null;
   startDate: string | null;
   fechaBaja: string | null;
-  paymentStatus: 'al_dia' | 'con_retrasos';
+  paymentStatus: 'NUEVO' | 'PENDIENTE' | 'IMPAGADO' | 'PAGADO' | 'ANO_COMPLETO';
   monthlyFee: number | null;
   phone: string | null;
   lastPaymentDate: string | null;

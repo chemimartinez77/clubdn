@@ -101,15 +101,21 @@ export default function Members() {
   };
 
   // Payment status badge helper
-  const getPaymentStatusBadge = (status: 'al_dia' | 'con_retrasos') => {
+  const getPaymentStatusBadge = (status: 'NUEVO' | 'PENDIENTE' | 'IMPAGADO' | 'PAGADO' | 'ANO_COMPLETO') => {
     const styles = {
-      al_dia: 'bg-green-100 text-green-800',
-      con_retrasos: 'bg-red-100 text-red-800',
+      NUEVO: 'bg-blue-100 text-blue-800',
+      PENDIENTE: 'bg-yellow-100 text-yellow-800',
+      IMPAGADO: 'bg-red-100 text-red-800',
+      PAGADO: 'bg-green-100 text-green-800',
+      ANO_COMPLETO: 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]',
     };
 
     const labels = {
-      al_dia: 'Al día',
-      con_retrasos: 'Con retrasos',
+      NUEVO: 'Nuevo',
+      PENDIENTE: 'Pendiente',
+      IMPAGADO: 'Impagado',
+      PAGADO: 'Pagado',
+      ANO_COMPLETO: 'Año completo',
     };
 
     return (
@@ -178,25 +184,11 @@ export default function Members() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
                 >
                   <option value="all">Todos</option>
-                  <option value="SOCIO">SOCIO</option>
-                  <option value="COLABORADOR">COLABORADOR</option>
-                  <option value="BAJA">BAJA</option>
-                </select>
-              </div>
-
-              {/* Payment Status */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estado de pago
-                </label>
-                <select
-                  value={filters.paymentStatus}
-                  onChange={(e) => updateFilter('paymentStatus', e.target.value as any)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
-                >
-                  <option value="all">Todos</option>
-                  <option value="al_dia">Al día</option>
-                  <option value="con_retrasos">Con retrasos</option>
+                  <option value="NUEVO">Nuevo</option>
+                  <option value="PENDIENTE">Pendiente</option>
+                  <option value="IMPAGADO">Impagado</option>
+                  <option value="PAGADO">Pagado</option>
+                  <option value="ANO_COMPLETO">Año completo</option>
                 </select>
               </div>
 

@@ -1,6 +1,7 @@
 // server/src/controllers/membershipController.ts
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
+import { getCycleMonths, getPaymentStatus } from '../utils/paymentStatus';
 
 /**
  * GET /api/membership/users?year=2025
@@ -20,10 +21,10 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
       include: {
         membership: true,
         payments: {
-          where: {
-            year
-          },
-          orderBy: { month: 'asc' }
+          select: {
+            month: true,
+            year: true
+          }
         }
       },
       orderBy: {
@@ -41,8 +42,8 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
         paymentsByMonth[i] = false;
       }
 
-      // Marcar meses pagados
-      user.payments.forEach(payment => {
+      // Marcar meses pagados del año seleccionado
+      user.payments.filter(payment => payment.year === year).forEach(payment => {
         paymentsByMonth[payment.month] = true;
       });
 
@@ -59,6 +60,11 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
 
       // Contar pagos del año
       const paidMonths = Object.values(paymentsByMonth).filter(paid => paid).length;
+      const paymentStatus = getPaymentStatus({
+        payments: user.payments,
+        startDate: user.membership?.startDate || null,
+        now
+      });
 
       return {
         id: user.id,
@@ -69,7 +75,7 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
         canBecomeSocio,
         paymentsByMonth,
         paidMonths,
-        status: paidMonths === 12 ? 'Año completo' : paidMonths > 0 ? 'En tiempo' : 'Nuevo'
+        status: paymentStatus
       };
     });
 
@@ -488,22 +494,22 @@ export const togglePayment = async (req: Request, res: Response): Promise<void> 
 
 /**
  * POST /api/membership/payment/year
- * Marcar todos los meses del año para un usuario
+ * Marcar todos los meses del ciclo actual (12 meses desde startDate)
  */
 export const markFullYear = async (req: Request, res: Response): Promise<void> => {
   try {
     const adminId = req.user?.userId;
-    const { userId, year } = req.body;
+    const { userId } = req.body;
 
-    if (!userId || !year) {
+    if (!userId) {
       res.status(400).json({
         success: false,
-        message: 'Faltan campos requeridos: userId, year'
+        message: 'Falta el campo requerido: userId'
       });
       return;
     }
 
-    // Verificar que el usuario existe y tiene membresía
+    // Verificar que el usuario existe y tiene membres?a
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { membership: true }
@@ -512,42 +518,53 @@ export const markFullYear = async (req: Request, res: Response): Promise<void> =
     if (!user || !user.membership) {
       res.status(404).json({
         success: false,
-        message: 'Usuario no encontrado o sin membresía activa'
+        message: 'Usuario no encontrado o sin membres?a activa'
       });
       return;
     }
 
-    // Obtener pagos existentes para este año
+    const now = new Date();
+    const cycleMonths = getCycleMonths(user.membership.startDate, now);
+    if (cycleMonths.length === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'No se pudo calcular el ciclo de pagos'
+      });
+      return;
+    }
+
     const existingPayments = await prisma.payment.findMany({
       where: {
         userId,
-        year: parseInt(year)
+        OR: cycleMonths.map(month => ({
+          month: month.month,
+          year: month.year
+        }))
+      },
+      select: {
+        month: true,
+        year: true
       }
     });
 
-    const existingMonths = new Set(existingPayments.map(p => p.month));
-    const monthsToCreate = [];
-
-    // Crear pagos para los meses que faltan
-    for (let month = 1; month <= 12; month++) {
-      if (!existingMonths.has(month)) {
-        monthsToCreate.push({
-          userId,
-          month,
-          year: parseInt(year),
-          amount: user.membership.monthlyFee,
-          paymentMethod: 'efectivo',
-          registeredBy: adminId!
-        });
-      }
-    }
+    const existingSet = new Set(existingPayments.map(p => `${p.year}-${p.month}`));
+    const monthsToCreate = cycleMonths
+      .filter(month => !existingSet.has(`${month.year}-${month.month}`))
+      .map(month => ({
+        userId,
+        month: month.month,
+        year: month.year,
+        amount: user.membership.monthlyFee,
+        paymentMethod: 'efectivo',
+        registeredBy: adminId!
+      }));
 
     if (monthsToCreate.length > 0) {
       await prisma.payment.createMany({
         data: monthsToCreate
       });
 
-      // Actualizar fecha del último pago en membership
+      // Actualizar fecha del ?ltimo pago en membership
       await prisma.membership.update({
         where: { userId },
         data: {
@@ -569,7 +586,7 @@ export const markFullYear = async (req: Request, res: Response): Promise<void> =
     console.error('Error marking full year:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al marcar año completo'
+      message: 'Error al marcar a?o completo'
     });
   }
 };

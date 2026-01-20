@@ -1,7 +1,7 @@
 // client/src/types/members.ts
 export type MembershipTypeFilter = 'SOCIO' | 'COLABORADOR' | 'BAJA' | 'all';
-export type PaymentStatusType = 'al_dia' | 'con_retrasos';
-export type PaymentStatusFilter = 'al_dia' | 'con_retrasos' | 'all';
+export type PaymentStatusType = 'NUEVO' | 'PENDIENTE' | 'IMPAGADO' | 'PAGADO' | 'ANO_COMPLETO';
+export type PaymentStatusFilter = PaymentStatusType | 'all';
 
 export interface MemberData {
   id: string;
