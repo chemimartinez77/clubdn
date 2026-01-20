@@ -305,11 +305,13 @@ export const uploadAvatar = async (req: Request, res: Response): Promise<void> =
       try {
         // Extraer public_id del URL de Cloudinary
         const urlParts = existingProfile.avatar.split('/');
-        const filenameWithExt = urlParts[urlParts.length - 1];
+        const filenameWithExt = urlParts[urlParts.length - 1] || '';
         const folderPath = urlParts.slice(-3, -1).join('/');
-        const filename = filenameWithExt.split('.')[0];
-        const publicId = `${folderPath}/${filename}`;
-        await cloudinary.uploader.destroy(publicId);
+        const filename = filenameWithExt.split('.')[0] || '';
+        if (filename) {
+          const publicId = `${folderPath}/${filename}`;
+          await cloudinary.uploader.destroy(publicId);
+        }
       } catch (deleteError) {
         console.error('Error al eliminar avatar anterior:', deleteError);
         // Continuar aunque falle la eliminación
