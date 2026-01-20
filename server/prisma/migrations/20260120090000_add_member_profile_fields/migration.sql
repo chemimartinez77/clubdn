@@ -1,4 +1,4 @@
-﻿-- Add admin-only member profile fields
+-- Add admin-only member profile fields
 ALTER TABLE "UserProfile"
   ADD COLUMN "firstName" TEXT,
   ADD COLUMN "lastName" TEXT,
