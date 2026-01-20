@@ -1,6 +1,18 @@
 // server/src/controllers/profileController.ts
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
+import { v2 as cloudinary } from 'cloudinary';
+
+// Configurar Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Tipos de imagen permitidos para avatar
+const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
 
 /**
  * Obtener el perfil del usuario autenticado
@@ -237,6 +249,130 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
     res.status(500).json({
       success: false,
       message: 'Error al actualizar perfil'
+    });
+  }
+};
+
+/**
+ * Subir avatar del usuario autenticado
+ */
+export const uploadAvatar = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+    const file = req.file;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+      return;
+    }
+
+    if (!file) {
+      res.status(400).json({
+        success: false,
+        message: 'No se proporcionó ninguna imagen'
+      });
+      return;
+    }
+
+    // Verificar tipo de archivo
+    if (!ALLOWED_AVATAR_TYPES.includes(file.mimetype)) {
+      res.status(400).json({
+        success: false,
+        message: 'Tipo de archivo no permitido. Solo se permiten: JPG, PNG, GIF, WebP'
+      });
+      return;
+    }
+
+    // Verificar tamaño
+    if (file.size > MAX_AVATAR_SIZE) {
+      res.status(400).json({
+        success: false,
+        message: 'La imagen excede el tamaño máximo permitido (5MB)'
+      });
+      return;
+    }
+
+    // Buscar perfil existente para obtener avatar anterior (si existe)
+    const existingProfile = await prisma.userProfile.findUnique({
+      where: { userId }
+    });
+
+    // Eliminar avatar anterior de Cloudinary si existe
+    if (existingProfile?.avatar) {
+      try {
+        // Extraer public_id del URL de Cloudinary
+        const urlParts = existingProfile.avatar.split('/');
+        const filenameWithExt = urlParts[urlParts.length - 1];
+        const folderPath = urlParts.slice(-3, -1).join('/');
+        const filename = filenameWithExt.split('.')[0];
+        const publicId = `${folderPath}/${filename}`;
+        await cloudinary.uploader.destroy(publicId);
+      } catch (deleteError) {
+        console.error('Error al eliminar avatar anterior:', deleteError);
+        // Continuar aunque falle la eliminación
+      }
+    }
+
+    // Subir a Cloudinary
+    const uploadResult = await new Promise<any>((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: `clubdn/avatars`,
+          public_id: userId, // Usar el userId como nombre para sobrescribir
+          transformation: [
+            { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+            { quality: 'auto:good' }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(file.buffer);
+    });
+
+    // Actualizar o crear perfil con la nueva URL del avatar
+    const profile = await prisma.userProfile.upsert({
+      where: { userId },
+      create: {
+        userId,
+        avatar: uploadResult.secure_url,
+        favoriteGames: [],
+        notifications: true,
+        emailUpdates: true
+      },
+      update: {
+        avatar: uploadResult.secure_url
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            status: true,
+            createdAt: true,
+            lastLoginAt: true
+          }
+        }
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { profile, avatarUrl: uploadResult.secure_url },
+      message: 'Avatar actualizado correctamente'
+    });
+  } catch (error) {
+    console.error('Error al subir avatar:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al subir avatar'
     });
   }
 };

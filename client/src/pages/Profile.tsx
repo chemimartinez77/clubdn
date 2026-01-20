@@ -1,5 +1,5 @@
 // client/src/pages/Profile.tsx
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardHeader, CardContent } from '../components/ui/Card';
@@ -14,6 +14,8 @@ export default function Profile() {
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch profile
   const { data: profile, isLoading } = useQuery({
@@ -41,6 +43,46 @@ export default function Profile() {
   });
 
   const [formData, setFormData] = useState<UpdateProfileData>({});
+
+  // Función para subir avatar
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      showError('Tipo de archivo no permitido. Solo JPG, PNG, GIF o WebP');
+      return;
+    }
+
+    // Validar tamaño (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showError('La imagen no puede superar 5MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      await api.post('/api/profile/me/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      success('Avatar actualizado correctamente');
+    } catch {
+      showError('Error al subir avatar');
+    } finally {
+      setIsUploadingAvatar(false);
+      // Limpiar input para permitir subir el mismo archivo
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   const handleEdit = () => {
     if (profile) {
@@ -125,17 +167,54 @@ export default function Profile() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-4">
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center"
-                style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
-              >
-                <span className="text-3xl font-bold text-white">
-                  {profile.user?.name.charAt(0).toUpperCase()}
-                </span>
+              {/* Avatar con opción de cambio */}
+              <div className="relative group">
+                {profile.avatar ? (
+                  <img
+                    src={profile.avatar}
+                    alt={profile.user?.name || 'Avatar'}
+                    className="w-20 h-20 rounded-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="w-20 h-20 rounded-full flex items-center justify-center"
+                    style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
+                  >
+                    <span className="text-3xl font-bold text-white">
+                      {profile.user?.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                {/* Overlay para cambiar foto */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  className="absolute inset-0 w-20 h-20 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                  title="Cambiar foto"
+                >
+                  {isUploadingAvatar ? (
+                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                  ) : (
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  )}
+                </button>
+                {/* Input oculto para selección de archivo */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{profile.user?.name}</h2>
                 <p className="text-gray-600">{profile.user?.email}</p>
+                <p className="text-xs text-gray-400 mt-1">Pasa el cursor sobre la foto para cambiarla</p>
               </div>
             </div>
           </CardHeader>
