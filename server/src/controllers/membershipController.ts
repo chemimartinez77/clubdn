@@ -1,7 +1,7 @@
 // server/src/controllers/membershipController.ts
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
-import { getCycleMonths, getPaymentStatus } from '../utils/paymentStatus';
+import { getCycleMonths, getPaymentStatus as calculatePaymentStatus } from '../utils/paymentStatus';
 
 /**
  * GET /api/membership/users?year=2025
@@ -60,7 +60,7 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
 
       // Contar pagos del año
       const paidMonths = Object.values(paymentsByMonth).filter(paid => paid).length;
-      const paymentStatus = getPaymentStatus({
+      const paymentStatus = calculatePaymentStatus({
         payments: user.payments,
         startDate: user.membership?.startDate || null,
         now
@@ -462,7 +462,7 @@ export const togglePayment = async (req: Request, res: Response): Promise<void> 
           userId,
           month: parseInt(month),
           year: parseInt(year),
-          amount: user.membership.monthlyFee,
+          amount: user.membership!.monthlyFee,
           paymentMethod: 'efectivo',
           registeredBy: adminId!
         }
@@ -554,7 +554,7 @@ export const markFullYear = async (req: Request, res: Response): Promise<void> =
         userId,
         month: month.month,
         year: month.year,
-        amount: user.membership.monthlyFee,
+        amount: user.membership!.monthlyFee,
         paymentMethod: 'efectivo',
         registeredBy: adminId!
       }));

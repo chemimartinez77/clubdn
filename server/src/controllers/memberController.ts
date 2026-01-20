@@ -186,7 +186,7 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
     if (!profile) {
       profile = await prisma.userProfile.create({
         data: {
-          userId: memberId,
+          userId: user.id,
           favoriteGames: [],
           notifications: true,
           emailUpdates: true
@@ -294,7 +294,7 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
 
     const [updatedUser, profile] = await prisma.$transaction([
       prisma.user.update({
-        where: { id: memberId },
+        where: { id: existingUser.id },
         data: {
           name: `${normalizedFirstName} ${normalizedLastName}`.trim()
         },
@@ -309,9 +309,9 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
         }
       }),
       prisma.userProfile.upsert({
-        where: { userId: memberId },
+        where: { userId: existingUser.id },
         create: {
-          userId: memberId,
+          userId: existingUser.id,
           avatar: avatar ?? null,
           firstName: normalizedFirstName,
           lastName: normalizedLastName,
