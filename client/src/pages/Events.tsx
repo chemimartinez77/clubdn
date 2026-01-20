@@ -13,6 +13,7 @@ import type { ApiResponse } from '../types/auth';
 type ViewMode = 'list' | 'calendar';
 type TypeFilter = 'PARTIDA' | 'EVENTOS' | '';
 type CapacityFilter = '' | 'available' | 'full';
+type SortOption = 'date_desc' | 'date_asc' | 'name_asc' | 'name_desc';
 
 export default function Events() {
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
@@ -22,6 +23,7 @@ export default function Events() {
   const [search, setSearch] = useState('');
   const [participant, setParticipant] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [sortOption, setSortOption] = useState<SortOption>('date_desc');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['events', statusFilter, typeFilter, search, participant],
@@ -55,6 +57,21 @@ export default function Events() {
       if (capacityFilter === 'available') return !isFull;
       if (capacityFilter === 'full') return isFull;
       return true;
+    })
+    .sort((a, b) => {
+      if (sortOption === 'name_asc') {
+        return a.title.localeCompare(b.title, 'es', { sensitivity: 'base' });
+      }
+      if (sortOption === 'name_desc') {
+        return b.title.localeCompare(a.title, 'es', { sensitivity: 'base' });
+      }
+
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      if (sortOption === 'date_asc') {
+        return dateA - dateB;
+      }
+      return dateB - dateA;
     });
 
   const handlePreviousMonth = () => {
@@ -113,7 +130,7 @@ export default function Events() {
         {/* Filters */}
         <Card>
           <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {/* Type Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -190,6 +207,23 @@ export default function Events() {
                   placeholder="Nombre del jugador..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 />
+              </div>
+
+              {/* Sort */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ordenar por
+                </label>
+                <select
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value as SortOption)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                >
+                  <option value="date_desc">Fecha (m\u00e1s recientes)</option>
+                  <option value="date_asc">Fecha (m\u00e1s antiguas)</option>
+                  <option value="name_asc">Nombre (A-Z)</option>
+                  <option value="name_desc">Nombre (Z-A)</option>
+                </select>
               </div>
             </div>
           </CardContent>
