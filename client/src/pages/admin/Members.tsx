@@ -1,15 +1,19 @@
 // client/src/pages/admin/Members.tsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../../components/layout/Layout';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import { useMembers } from '../../hooks/useMembers';
 import { useToast } from '../../hooks/useToast';
-import type { MemberData, MemberFilters } from '../../types/members';
+import { api } from '../../api/axios';
+import type { MemberData, MemberFilters, MemberProfileResponse } from '../../types/members';
+import type { ApiResponse } from '../../types/auth';
 
 export default function Members() {
   const { success, error } = useToast();
+  const queryClient = useQueryClient();
 
   // Filter state
   const [filters, setFilters] = useState<MemberFilters>({
@@ -26,9 +30,67 @@ export default function Members() {
   const [selectedMember, setSelectedMember] = useState<MemberData | null>(null);
   const [bajaModalOpen, setBajaModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    firstName: '',
+    lastName: '',
+    dni: '',
+    avatar: '',
+    imageConsentActivities: false,
+    imageConsentSocial: false
+  });
 
   // Fetch members data
   const { data, isLoading, refetch, markAsBaja, isMarkingBaja, exportCSV } = useMembers(filters);
+
+  const { data: memberProfile, isLoading: isProfileLoading, isError: isProfileError } = useQuery({
+    queryKey: ['memberProfile', selectedMember?.id],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<MemberProfileResponse>>(
+        `/api/admin/members/${selectedMember?.id}/profile`
+      );
+      return response.data.data || null;
+    },
+    enabled: !!selectedMember?.id && viewModalOpen
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedMember?.id) return null;
+      const payload = {
+        firstName: profileForm.firstName.trim(),
+        lastName: profileForm.lastName.trim(),
+        dni: profileForm.dni.trim(),
+        avatar: profileForm.avatar.trim() || null,
+        imageConsentActivities: profileForm.imageConsentActivities,
+        imageConsentSocial: profileForm.imageConsentSocial
+      };
+      const response = await api.put<ApiResponse<MemberProfileResponse>>(
+        `/api/admin/members/${selectedMember.id}/profile`,
+        payload
+      );
+      return response.data.data || null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+      queryClient.invalidateQueries({ queryKey: ['memberProfile', selectedMember?.id] });
+      success('Ficha actualizada');
+    },
+    onError: (err: any) => {
+      error(err.response?.data?.message || 'Error al guardar la ficha');
+    }
+  });
+
+  useEffect(() => {
+    if (!memberProfile?.member) return;
+    setProfileForm({
+      firstName: memberProfile.member.profile.firstName || '',
+      lastName: memberProfile.member.profile.lastName || '',
+      dni: memberProfile.member.profile.dni || '',
+      avatar: memberProfile.member.profile.avatar || '',
+      imageConsentActivities: memberProfile.member.profile.imageConsentActivities,
+      imageConsentSocial: memberProfile.member.profile.imageConsentSocial
+    });
+  }, [memberProfile]);
 
   // Update filter and reset to page 1
   const updateFilter = <K extends keyof MemberFilters>(key: K, value: MemberFilters[K]) => {
@@ -47,6 +109,14 @@ export default function Members() {
   // Action handlers
   const handleViewMember = (member: MemberData) => {
     setSelectedMember(member);
+    setProfileForm({
+      firstName: '',
+      lastName: '',
+      dni: '',
+      avatar: '',
+      imageConsentActivities: false,
+      imageConsentSocial: false
+    });
     setViewModalOpen(true);
   };
 
@@ -73,6 +143,22 @@ export default function Members() {
     );
   };
 
+  const handleSaveProfile = () => {
+    if (!profileForm.firstName.trim()) {
+      error('Nombre requerido');
+      return;
+    }
+    if (!profileForm.lastName.trim()) {
+      error('Apellidos requeridos');
+      return;
+    }
+    if (!profileForm.dni.trim()) {
+      error('DNI requerido');
+      return;
+    }
+    updateProfileMutation.mutate();
+  };
+
   // Format date helper
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
@@ -84,12 +170,16 @@ export default function Members() {
   };
 
   // Membership badge helper
-  const getMembershipBadge = (type: 'SOCIO' | 'COLABORADOR' | 'BAJA' | null) => {
+  const getMembershipBadge = (
+    type: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA' | null
+  ) => {
     if (!type) return <span className="text-gray-500">-</span>;
 
     const styles = {
       SOCIO: 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]',
       COLABORADOR: 'bg-blue-100 text-blue-800',
+      FAMILIAR: 'bg-purple-100 text-purple-800',
+      EN_PRUEBAS: 'bg-yellow-100 text-yellow-800',
       BAJA: 'bg-gray-200 text-gray-700',
     };
 
@@ -180,7 +270,30 @@ export default function Members() {
                 </label>
                 <select
                   value={filters.membershipType}
-                  onChange={(e) => updateFilter('membershipType', e.target.value as any)}
+                  onChange={(e) =>
+                    updateFilter('membershipType', e.target.value as MemberFilters['membershipType'])
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
+                >
+                  <option value="all">Todos</option>
+                  <option value="SOCIO">SOCIO</option>
+                  <option value="COLABORADOR">COLABORADOR</option>
+                  <option value="FAMILIAR">FAMILIAR</option>
+                  <option value="EN_PRUEBAS">EN PRUEBAS</option>
+                  <option value="BAJA">BAJA</option>
+                </select>
+              </div>
+
+              {/* Payment Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Estado de pago
+                </label>
+                <select
+                  value={filters.paymentStatus}
+                  onChange={(e) =>
+                    updateFilter('paymentStatus', e.target.value as MemberFilters['paymentStatus'])
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
                 >
                   <option value="all">Todos</option>
@@ -315,10 +428,20 @@ export default function Members() {
                       {data.members.map((member) => (
                         <tr key={member.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{member.name}</div>
+                            <button
+                              onClick={() => handleViewMember(member)}
+                              className="text-sm font-medium text-gray-900 hover:underline"
+                            >
+                              {member.name}
+                            </button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">{member.email}</div>
+                            <button
+                              onClick={() => handleViewMember(member)}
+                              className="text-sm text-gray-500 hover:underline"
+                            >
+                              {member.email}
+                            </button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {getMembershipBadge(member.membershipType)}
@@ -387,69 +510,155 @@ export default function Members() {
         </Card>
       </div>
 
-      {/* View Member Modal */}
+      {/* Member Profile Modal */}
       <Modal
         isOpen={viewModalOpen}
         onClose={() => {
           setViewModalOpen(false);
           setSelectedMember(null);
+          setProfileForm({
+            firstName: '',
+            lastName: '',
+            dni: '',
+            avatar: '',
+            imageConsentActivities: false,
+            imageConsentSocial: false
+          });
         }}
-        title="Detalles del Miembro"
+        title="Ficha del miembro"
         size="lg"
       >
         {selectedMember && (
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700">Nombre</label>
-              <p className="text-gray-900">{selectedMember.name}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Email</label>
-              <p className="text-gray-900">{selectedMember.email}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Teléfono</label>
-              <p className="text-gray-900">{selectedMember.phone || '-'}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Tipo de Membresía</label>
-              <div className="mt-1">{getMembershipBadge(selectedMember.membershipType)}</div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Cuota Mensual</label>
-              <p className="text-gray-900">
-                {selectedMember.monthlyFee ? `€${selectedMember.monthlyFee.toFixed(2)}` : '-'}
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Fecha de Incorporación</label>
-              <p className="text-gray-900">{formatDate(selectedMember.startDate)}</p>
-            </div>
-            {selectedMember.fechaBaja && (
-              <div>
-                <label className="text-sm font-medium text-gray-700">Fecha de Baja</label>
-                <p className="text-gray-900">{formatDate(selectedMember.fechaBaja)}</p>
-              </div>
+          <div className="space-y-6">
+            {isProfileLoading ? (
+              <div className="py-6 text-center text-gray-500">Cargando ficha...</div>
+            ) : isProfileError || !memberProfile?.member ? (
+              <div className="py-6 text-center text-gray-500">No se pudo cargar la ficha.</div>
+            ) : (
+              <>
+                <div className="flex items-start gap-4">
+                  {profileForm.avatar ? (
+                    <img
+                      src={profileForm.avatar}
+                      alt={memberProfile.member.name}
+                      className="w-20 h-20 rounded-full object-cover border border-gray-200"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-[var(--color-primary-100)] flex items-center justify-center border border-gray-200">
+                      <span className="text-2xl font-semibold text-[var(--color-primary)]">
+                        {memberProfile.member.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="text-lg font-semibold text-gray-900">{memberProfile.member.name}</p>
+                    <p className="text-sm text-gray-600">{memberProfile.member.email}</p>
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {getMembershipBadge(memberProfile.member.membershipType)}
+                      {getPaymentStatusBadge(memberProfile.member.paymentStatus)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                    <input
+                      type="text"
+                      value={profileForm.firstName}
+                      onChange={(e) => setProfileForm({ ...profileForm, firstName: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                    <input
+                      type="text"
+                      value={profileForm.lastName}
+                      onChange={(e) => setProfileForm({ ...profileForm, lastName: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">DNI</label>
+                    <input
+                      type="text"
+                      value={profileForm.dni}
+                      onChange={(e) => setProfileForm({ ...profileForm, dni: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Foto (URL)</label>
+                    <input
+                      type="text"
+                      value={profileForm.avatar}
+                      onChange={(e) => setProfileForm({ ...profileForm, avatar: e.target.value })}
+                      placeholder="https://..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={profileForm.imageConsentActivities}
+                      onChange={(e) =>
+                        setProfileForm({ ...profileForm, imageConsentActivities: e.target.checked })
+                      }
+                      className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)] mt-0.5"
+                    />
+                    <span className="text-sm text-gray-700">
+                      Autorización expresa para la captación y publicación de la imagen del colaborador en
+                      fotografías y videos tomados durante las actividades organizadas por la asociación.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={profileForm.imageConsentSocial}
+                      onChange={(e) =>
+                        setProfileForm({ ...profileForm, imageConsentSocial: e.target.checked })
+                      }
+                      className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)] mt-0.5"
+                    />
+                    <span className="text-sm text-gray-700">
+                      Autorización expresa para la publicación de la imagen del colaborador en las redes
+                      sociales de la asociación.
+                    </span>
+                  </label>
+                </div>
+
+                <div className="pt-4 flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setViewModalOpen(false);
+                      setSelectedMember(null);
+                      setProfileForm({
+                        firstName: '',
+                        lastName: '',
+                        dni: '',
+                        avatar: '',
+                        imageConsentActivities: false,
+                        imageConsentSocial: false
+                      });
+                    }}
+                  >
+                    Cerrar
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleSaveProfile}
+                    disabled={updateProfileMutation.isPending}
+                  >
+                    {updateProfileMutation.isPending ? 'Guardando...' : 'Guardar'}
+                  </Button>
+                </div>
+              </>
             )}
-            <div>
-              <label className="text-sm font-medium text-gray-700">Estado de Pago</label>
-              <div className="mt-1">{getPaymentStatusBadge(selectedMember.paymentStatus)}</div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Último Pago</label>
-              <p className="text-gray-900">{formatDate(selectedMember.lastPaymentDate)}</p>
-            </div>
-            <div className="pt-4 flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setViewModalOpen(false);
-                  setSelectedMember(null);
-                }}
-              >
-                Cerrar
-              </Button>
-            </div>
           </div>
         )}
       </Modal>

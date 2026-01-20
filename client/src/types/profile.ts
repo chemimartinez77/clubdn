@@ -5,6 +5,12 @@ export interface UserProfile {
   id: string;
   userId: string;
   avatar: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  dni?: string | null;
+  dniNormalized?: string | null;
+  imageConsentActivities?: boolean;
+  imageConsentSocial?: boolean;
   phone: string | null;
   birthDate: string | null;
   bio: string | null;

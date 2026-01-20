@@ -4,6 +4,10 @@ import { prisma } from '../config/database';
 import { MemberData, MembersResponse } from '../types/members';
 import { getPaymentStatus } from '../utils/paymentStatus';
 
+const normalizeText = (value: string) => value.trim().replace(/\s+/g, ' ');
+
+const normalizeDni = (value: string) => value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+
 /**
  * GET /api/admin/members
  * Get paginated members list with filters
@@ -144,6 +148,231 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
     res.status(500).json({
       success: false,
       message: 'Error al obtener miembros'
+    });
+  }
+};
+
+/**
+ * GET /api/admin/members/:memberId/profile
+ * Obtener ficha editable del miembro (solo admin)
+ */
+export const getMemberProfile = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { memberId } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { id: memberId },
+      include: {
+        membership: true,
+        profile: true,
+        payments: {
+          select: {
+            month: true,
+            year: true
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'Miembro no encontrado'
+      });
+      return;
+    }
+
+    let profile = user.profile;
+    if (!profile) {
+      profile = await prisma.userProfile.create({
+        data: {
+          userId: memberId,
+          favoriteGames: [],
+          notifications: true,
+          emailUpdates: true
+        }
+      });
+    }
+
+    const paymentStatus = getPaymentStatus({
+      payments: user.payments,
+      startDate: user.membership?.startDate || null
+    });
+
+    const membershipType = user.membership?.fechaBaja
+      ? 'BAJA'
+      : user.membership?.type || null;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        member: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          membershipType,
+          startDate: user.membership?.startDate?.toISOString() || null,
+          fechaBaja: user.membership?.fechaBaja?.toISOString() || null,
+          paymentStatus,
+          profile: {
+            id: profile.id,
+            avatar: profile.avatar,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            dni: profile.dni,
+            imageConsentActivities: profile.imageConsentActivities,
+            imageConsentSocial: profile.imageConsentSocial
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching member profile:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener ficha del miembro'
+    });
+  }
+};
+
+/**
+ * PUT /api/admin/members/:memberId/profile
+ * Actualizar ficha editable del miembro (solo admin)
+ */
+export const updateMemberProfile = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { memberId } = req.params;
+    const {
+      firstName,
+      lastName,
+      dni,
+      avatar,
+      imageConsentActivities,
+      imageConsentSocial
+    } = req.body;
+
+    if (!firstName || typeof firstName !== 'string' || firstName.trim().length < 2) {
+      res.status(400).json({
+        success: false,
+        message: 'Nombre requerido'
+      });
+      return;
+    }
+
+    if (!lastName || typeof lastName !== 'string' || lastName.trim().length < 2) {
+      res.status(400).json({
+        success: false,
+        message: 'Apellidos requeridos'
+      });
+      return;
+    }
+
+    if (!dni || typeof dni !== 'string' || normalizeDni(dni).length < 5) {
+      res.status(400).json({
+        success: false,
+        message: 'DNI requerido'
+      });
+      return;
+    }
+
+    const normalizedFirstName = normalizeText(firstName);
+    const normalizedLastName = normalizeText(lastName);
+    const normalizedDni = normalizeDni(dni);
+
+    const existingUser = await prisma.user.findUnique({
+      where: { id: memberId },
+      select: { id: true }
+    });
+
+    if (!existingUser) {
+      res.status(404).json({
+        success: false,
+        message: 'Miembro no encontrado'
+      });
+      return;
+    }
+
+    const [updatedUser, profile] = await prisma.$transaction([
+      prisma.user.update({
+        where: { id: memberId },
+        data: {
+          name: `${normalizedFirstName} ${normalizedLastName}`.trim()
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          membership: true,
+          payments: {
+            select: { month: true, year: true }
+          }
+        }
+      }),
+      prisma.userProfile.upsert({
+        where: { userId: memberId },
+        create: {
+          userId: memberId,
+          avatar: avatar ?? null,
+          firstName: normalizedFirstName,
+          lastName: normalizedLastName,
+          dni: normalizeText(dni),
+          dniNormalized: normalizedDni,
+          imageConsentActivities: !!imageConsentActivities,
+          imageConsentSocial: !!imageConsentSocial,
+          favoriteGames: [],
+          notifications: true,
+          emailUpdates: true
+        },
+        update: {
+          avatar: avatar ?? null,
+          firstName: normalizedFirstName,
+          lastName: normalizedLastName,
+          dni: normalizeText(dni),
+          dniNormalized: normalizedDni,
+          imageConsentActivities: !!imageConsentActivities,
+          imageConsentSocial: !!imageConsentSocial
+        }
+      })
+    ]);
+
+    const paymentStatus = getPaymentStatus({
+      payments: updatedUser.payments,
+      startDate: updatedUser.membership?.startDate || null
+    });
+
+    const membershipType = updatedUser.membership?.fechaBaja
+      ? 'BAJA'
+      : updatedUser.membership?.type || null;
+
+    res.status(200).json({
+      success: true,
+      message: 'Ficha del miembro actualizada',
+      data: {
+        member: {
+          id: updatedUser.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          membershipType,
+          startDate: updatedUser.membership?.startDate?.toISOString() || null,
+          fechaBaja: updatedUser.membership?.fechaBaja?.toISOString() || null,
+          paymentStatus,
+          profile: {
+            id: profile.id,
+            avatar: profile.avatar,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            dni: profile.dni,
+            imageConsentActivities: profile.imageConsentActivities,
+            imageConsentSocial: profile.imageConsentSocial
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error updating member profile:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al actualizar ficha del miembro'
     });
   }
 };

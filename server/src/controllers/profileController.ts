@@ -109,6 +109,12 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
     const sanitizedProfile = {
       ...profile,
       phone: isOwnProfile ? profile.phone : null,
+      firstName: isOwnProfile ? profile.firstName : null,
+      lastName: isOwnProfile ? profile.lastName : null,
+      dni: isOwnProfile ? profile.dni : null,
+      dniNormalized: isOwnProfile ? profile.dniNormalized : null,
+      imageConsentActivities: isOwnProfile ? profile.imageConsentActivities : undefined,
+      imageConsentSocial: isOwnProfile ? profile.imageConsentSocial : undefined,
       notifications: isOwnProfile ? profile.notifications : undefined,
       emailUpdates: isOwnProfile ? profile.emailUpdates : undefined
     };

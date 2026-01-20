@@ -84,6 +84,12 @@ model UserProfile {
 
   // Información personal
   avatar          String?  // URL o path del avatar
+  firstName       String?
+  lastName        String?
+  dni             String?
+  dniNormalized   String?
+  imageConsentActivities Boolean @default(false)
+  imageConsentSocial     Boolean @default(false)
   phone           String?
   birthDate       DateTime?
   bio             String?  @db.Text
@@ -104,6 +110,7 @@ model UserProfile {
   updatedAt       DateTime @updatedAt
 
   @@index([userId])
+  @@index([dniNormalized])
 }
 
 model EmailLog {

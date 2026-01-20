@@ -1,5 +1,5 @@
 // client/src/types/membership.ts
-export type MembershipType = 'COLABORADOR' | 'SOCIO';
+export type MembershipType = 'COLABORADOR' | 'SOCIO' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA';
 export type PaymentStatus = 'NUEVO' | 'PENDIENTE' | 'IMPAGADO' | 'PAGADO' | 'ANO_COMPLETO';
 
 export interface Membership {

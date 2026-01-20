@@ -100,9 +100,19 @@ export default function MembershipManagement() {
   };
 
   const getMembershipBadge = (type: MembershipType) => {
-    return type === 'SOCIO'
-      ? <span className="px-2 py-1 text-xs font-semibold bg-[var(--color-primary-100)] text-[var(--color-primary-800)] rounded">SOCIO</span>
-      : <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded">COLABORADOR</span>;
+    const styles = {
+      SOCIO: 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]',
+      COLABORADOR: 'bg-blue-100 text-blue-800',
+      FAMILIAR: 'bg-purple-100 text-purple-800',
+      EN_PRUEBAS: 'bg-yellow-100 text-yellow-800',
+      BAJA: 'bg-gray-200 text-gray-700'
+    };
+
+    return (
+      <span className={`px-2 py-1 text-xs font-semibold rounded ${styles[type]}`}>
+        {type}
+      </span>
+    );
   };
 
   const toggleStatusFilter = (status: keyof typeof statusFilters) => {
@@ -180,6 +190,9 @@ export default function MembershipManagement() {
                   <option value="all">Cualquier tipo de miembro</option>
                   <option value="COLABORADOR">COLABORADOR</option>
                   <option value="SOCIO">SOCIO</option>
+                  <option value="FAMILIAR">FAMILIAR</option>
+                  <option value="EN_PRUEBAS">EN PRUEBAS</option>
+                  <option value="BAJA">BAJA</option>
                 </select>
 
                 {/* Checkboxes de estado */}

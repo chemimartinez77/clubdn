@@ -8,6 +8,8 @@ import {
 } from '../controllers/adminController';
 import {
   getMembers,
+  getMemberProfile,
+  updateMemberProfile,
   markMemberAsBaja,
   exportMembersCSV
 } from '../controllers/memberController';
@@ -41,6 +43,18 @@ router.post('/reject/:userId', rejectUser);
  * Obtener listado de miembros con filtros y paginación
  */
 router.get('/members', getMembers);
+
+/**
+ * GET /api/admin/members/:memberId/profile
+ * Obtener ficha editable de miembro
+ */
+router.get('/members/:memberId/profile', getMemberProfile);
+
+/**
+ * PUT /api/admin/members/:memberId/profile
+ * Actualizar ficha editable de miembro
+ */
+router.put('/members/:memberId/profile', updateMemberProfile);
 
 /**
  * POST /api/admin/members/:memberId/mark-baja
