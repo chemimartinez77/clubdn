@@ -192,6 +192,7 @@ export default function EventDetail() {
     COLABORADOR: 'Colaborador'
   };
 
+  const isPartida = event.type === 'PARTIDA';
   const isPast = new Date(event.date) < new Date();
   const canRegister = event.status === 'SCHEDULED' && !isPast && !event.isUserRegistered;
   const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED';
@@ -203,7 +204,6 @@ export default function EventDetail() {
 
   // Obtener imagen del juego: primero de BD (game.image o game.thumbnail), luego de gameImage (BGG)
   const gameImageUrl = event.game?.image || event.game?.thumbnail || event.gameImage || null;
-  const isPartida = event.type === 'PARTIDA';
   const canShowGameDetails = isPartida && !!event.game;
   const gameTitle = event.gameName || event.title;
   const gameDescription = event.game?.description
