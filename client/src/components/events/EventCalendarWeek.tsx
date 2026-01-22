@@ -11,7 +11,7 @@ interface EventCalendarWeekProps {
 export default function EventCalendarWeek({ events, currentMonth }: EventCalendarWeekProps) {
   const navigate = useNavigate();
 
-  const { weekDays, weekStart, weekName } = useMemo(() => {
+  const { weekDays, weekName } = useMemo(() => {
     // Obtener el inicio de la semana (lunes) que contiene currentMonth
     const date = new Date(currentMonth);
     const dayOfWeek = date.getDay();

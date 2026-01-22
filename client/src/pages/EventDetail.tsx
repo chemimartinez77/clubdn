@@ -261,8 +261,9 @@ export default function EventDetail() {
         .filter(reg => reg.status === 'CONFIRMED')
         .forEach(reg => {
           message += `   • ${reg.user?.name || 'Usuario'}`;
-          if (reg.user?.membership) {
-            message += ` (${reg.user.membership === 'MEMBER' ? 'Socio' : 'Colaborador'})`;
+          if (reg.user?.membership?.type) {
+            const membershipLabel = reg.user.membership.type === 'SOCIO' ? 'Socio' : 'Colaborador';
+            message += ` (${membershipLabel})`;
           }
           message += '\n';
         });
