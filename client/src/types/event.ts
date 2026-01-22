@@ -16,6 +16,22 @@ export interface Event {
   game?: {
     thumbnail: string | null;
     image: string | null;
+    description?: string | null;
+    averageRating?: number | null;
+    bayesAverage?: number | null;
+    rank?: number | null;
+    complexityRating?: number | null;
+    minPlayers?: number | null;
+    maxPlayers?: number | null;
+    playingTime?: number | null;
+    minPlaytime?: number | null;
+    maxPlaytime?: number | null;
+    minAge?: number | null;
+    yearPublished?: number | null;
+    designers?: string[] | null;
+    publishers?: string[] | null;
+    categories?: string[] | null;
+    mechanics?: string[] | null;
   } | null;
 
   // Fecha y hora

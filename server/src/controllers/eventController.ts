@@ -175,14 +175,30 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
           },
           orderBy: { createdAt: 'asc' }
         },
-        game: {
-          select: {
-            thumbnail: true,
-            image: true
+          game: {
+            select: {
+              thumbnail: true,
+              image: true,
+              description: true,
+              averageRating: true,
+              bayesAverage: true,
+              rank: true,
+              complexityRating: true,
+              minPlayers: true,
+              maxPlayers: true,
+              playingTime: true,
+              minPlaytime: true,
+              maxPlaytime: true,
+              minAge: true,
+              yearPublished: true,
+              designers: true,
+              publishers: true,
+              categories: true,
+              mechanics: true
+            }
           }
         }
-      }
-    });
+      });
 
     if (!event) {
       res.status(404).json({

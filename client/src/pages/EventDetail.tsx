@@ -28,6 +28,7 @@ export default function EventDetail() {
   const [isExceptional, setIsExceptional] = useState(false);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [expandedInviteId, setExpandedInviteId] = useState<string | null>(null);
+  const [isGameModalOpen, setIsGameModalOpen] = useState(false);
 
   // Fetch event details
   const { data: event, isLoading } = useQuery({
@@ -158,6 +159,20 @@ export default function EventDetail() {
       minute: '2-digit'
     }).format(date);
   };
+  const formatNumber = (value?: number | null, digits = 2) =>
+    typeof value === 'number' ? value.toFixed(digits) : '—';
+  const formatRange = (min?: number | null, max?: number | null, suffix = '') => {
+    if (typeof min === 'number' && typeof max === 'number') {
+      return `${min}-${max}${suffix}`;
+    }
+    if (typeof min === 'number') {
+      return `${min}${suffix}`;
+    }
+    if (typeof max === 'number') {
+      return `${max}${suffix}`;
+    }
+    return '—';
+  };
 
   const statusColors = {
     SCHEDULED: 'bg-blue-100 text-blue-800',
@@ -189,6 +204,19 @@ export default function EventDetail() {
   // Obtener imagen del juego: primero de BD (game.image o game.thumbnail), luego de gameImage (BGG)
   const gameImageUrl = event.game?.image || event.game?.thumbnail || event.gameImage || null;
   const isPartida = event.type === 'PARTIDA';
+  const canShowGameDetails = isPartida && !!event.game;
+  const gameTitle = event.gameName || event.title;
+  const gameDescription = event.game?.description
+    ? event.game.description.replace(/<[^>]*>/g, '').trim()
+    : null;
+  const playersText = formatRange(event.game?.minPlayers, event.game?.maxPlayers);
+  const timeText = event.game?.minPlaytime || event.game?.maxPlaytime
+    ? formatRange(event.game?.minPlaytime, event.game?.maxPlaytime, ' min')
+    : event.game?.playingTime
+      ? `${event.game.playingTime} min`
+      : '—';
+  const minAgeText = typeof event.game?.minAge === 'number' ? `${event.game.minAge}+` : '—';
+  const yearText = typeof event.game?.yearPublished === 'number' ? event.game.yearPublished : '—';
   const qrImageUrl = qrUrl
     ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrUrl)}`
     : null;
@@ -238,6 +266,11 @@ export default function EventDetail() {
     setIsInviteModalOpen(false);
     setExpandedInviteId(null);
     setQrUrl(null);
+  };
+
+  const handleOpenGameModal = () => {
+    if (!canShowGameDetails) return;
+    setIsGameModalOpen(true);
   };
 
   const handleShareWhatsApp = () => {
@@ -322,18 +355,42 @@ export default function EventDetail() {
               {/* Imagen del juego (solo para partidas) */}
               {isPartida && (
                 <div className="flex-shrink-0 w-full sm:w-auto">
-                  <GameImage
-                    src={gameImageUrl}
-                    alt={event.gameName || 'Juego'}
-                    size="lg"
-                    className="w-full aspect-square sm:w-32 sm:h-32"
-                  />
+                  <button
+                    type="button"
+                    onClick={handleOpenGameModal}
+                    disabled={!canShowGameDetails}
+                    className={`relative w-full sm:w-32 sm:h-32 ${
+                      canShowGameDetails ? 'cursor-pointer' : 'cursor-default'
+                    }`}
+                    aria-label="Ver detalles del juego"
+                  >
+                    {gameImageUrl && (
+                      <div
+                        className="absolute inset-0 rounded-lg bg-center bg-cover opacity-20 sm:hidden"
+                        style={{ backgroundImage: `url(${gameImageUrl})` }}
+                        aria-hidden="true"
+                      />
+                    )}
+                    <GameImage
+                      src={gameImageUrl}
+                      alt={event.gameName || 'Juego'}
+                      size="lg"
+                      className="relative z-10 w-full aspect-square sm:w-32 sm:h-32 bg-transparent"
+                    />
+                  </button>
                 </div>
               )}
 
               <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{event.title}</h1>
+                  <h1
+                    className={`text-3xl font-bold text-gray-900 mb-2 ${
+                      canShowGameDetails ? 'cursor-pointer hover:underline' : ''
+                    }`}
+                    onClick={canShowGameDetails ? handleOpenGameModal : undefined}
+                  >
+                    {event.title}
+                  </h1>
                   <div className="flex flex-wrap items-center gap-3">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[event.status]}`}>
                       {statusLabels[event.status]}
@@ -576,6 +633,100 @@ export default function EventDetail() {
           </CardContent>
         </Card>
       </div>
+
+      <Modal
+        isOpen={isGameModalOpen}
+        onClose={() => setIsGameModalOpen(false)}
+        title={gameTitle}
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="flex flex-col gap-4 sm:flex-row">
+            {gameImageUrl && (
+              <img
+                src={gameImageUrl}
+                alt={gameTitle}
+                className="w-full sm:w-48 rounded-lg object-contain bg-gray-50"
+              />
+            )}
+            <div className="grid grid-cols-2 gap-3 text-sm text-gray-700">
+              <div>
+                <p className="text-xs text-gray-500">Nota BGG</p>
+                <p className="font-semibold">{formatNumber(event.game?.averageRating)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Bayes</p>
+                <p className="font-semibold">{formatNumber(event.game?.bayesAverage)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Peso</p>
+                <p className="font-semibold">{formatNumber(event.game?.complexityRating)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Ranking</p>
+                <p className="font-semibold">{event.game?.rank ?? '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Jugadores</p>
+                <p className="font-semibold">{playersText}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Duracion</p>
+                <p className="font-semibold">{timeText}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Edad</p>
+                <p className="font-semibold">{minAgeText}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Año</p>
+                <p className="font-semibold">{yearText}</p>
+              </div>
+            </div>
+          </div>
+
+          {gameDescription && (
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">Descripcion</h4>
+              <p className="text-sm text-gray-700 whitespace-pre-line">{gameDescription}</p>
+            </div>
+          )}
+
+          {(event.game?.categories?.length || event.game?.mechanics?.length) && (
+            <div className="space-y-2 text-sm text-gray-700">
+              {event.game?.categories?.length ? (
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Categorias</p>
+                  <p>{event.game.categories.join(', ')}</p>
+                </div>
+              ) : null}
+              {event.game?.mechanics?.length ? (
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Mecanicas</p>
+                  <p>{event.game.mechanics.join(', ')}</p>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {(event.game?.designers?.length || event.game?.publishers?.length) && (
+            <div className="space-y-2 text-sm text-gray-700">
+              {event.game?.designers?.length ? (
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Diseñadores</p>
+                  <p>{event.game.designers.join(', ')}</p>
+                </div>
+              ) : null}
+              {event.game?.publishers?.length ? (
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Editoriales</p>
+                  <p>{event.game.publishers.join(', ')}</p>
+                </div>
+              ) : null}
+            </div>
+          )}
+        </div>
+      </Modal>
 
       <Modal
         isOpen={isInviteModalOpen}
