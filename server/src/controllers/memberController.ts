@@ -648,10 +648,10 @@ export const uploadMemberAvatar = async (req: Request, res: Response): Promise<v
     });
 
     // Actualizar perfil con la nueva URL del avatar
-    const profile = await prisma.userProfile.upsert({
+    await prisma.userProfile.upsert({
       where: { userId: memberId },
       create: {
-        userId: memberId,
+        user: { connect: { id: memberId } },
         avatar: uploadResult.secure_url,
         favoriteGames: [],
         notifications: true,
