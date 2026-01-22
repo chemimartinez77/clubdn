@@ -302,7 +302,7 @@ export default function EventDetail() {
         {/* Event Details */}
         <Card>
           <CardHeader>
-            <div className="flex items-start gap-6">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
               {/* Imagen del juego (solo para partidas) */}
               {isPartida && (
                 <div className="flex-shrink-0">
@@ -310,10 +310,10 @@ export default function EventDetail() {
                 </div>
               )}
 
-              <div className="flex-1 flex items-start justify-between">
+              <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex-1">
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">{event.title}</h1>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[event.status]}`}>
                       {statusLabels[event.status]}
                     </span>
@@ -330,12 +330,13 @@ export default function EventDetail() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
                   {canRegister && (
                     <Button
                       onClick={() => registerMutation.mutate()}
                       disabled={registerMutation.isPending}
                       variant="primary"
+                      className="w-full sm:w-auto"
                     >
                       {registerMutation.isPending ? 'Registrando...' : 'Registrarse'}
                     </Button>
@@ -345,6 +346,7 @@ export default function EventDetail() {
                       onClick={() => unregisterMutation.mutate()}
                       disabled={unregisterMutation.isPending}
                       variant="outline"
+                      className="w-full sm:w-auto"
                     >
                       {unregisterMutation.isPending ? 'Cancelando...' : 'Cancelar registro'}
                     </Button>
@@ -353,12 +355,14 @@ export default function EventDetail() {
                     onClick={() => setIsInviteModalOpen(true)}
                     disabled={!canInvite}
                     variant="outline"
+                    className="w-full sm:w-auto"
                   >
                     Añadir invitado
                   </Button>
                   <Button
                     onClick={handleShareWhatsApp}
                     variant="outline"
+                    className="w-full sm:w-auto"
                     title="Compartir por WhatsApp"
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
