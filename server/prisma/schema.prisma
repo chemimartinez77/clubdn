@@ -62,6 +62,7 @@ model User {
 
   profile           UserProfile?
   organizedEvents   Event[]              @relation("EventOrganizer")
+  cancelledEvents   Event[]              @relation("EventCancelledBy")
   eventRegistrations EventRegistration[]
   membership        Membership?
   payments          Payment[]
@@ -208,6 +209,9 @@ model Event {
 
   // Estado
   status          EventStatus @default(SCHEDULED)
+  cancelledAt     DateTime?
+  cancelledById   String?
+  cancelledBy     User?     @relation("EventCancelledBy", fields: [cancelledById], references: [id])
 
   // Organizador
   createdBy       String
@@ -274,6 +278,7 @@ model EventRegistration {
 
   status      RegistrationStatus @default(CONFIRMED)
 
+  cancelledAt DateTime?
   createdAt   DateTime @default(now())
 
   @@unique([eventId, userId])

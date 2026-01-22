@@ -27,7 +27,7 @@ router.delete('/:id/register', authenticate, unregisterFromEvent);
 // CRUD
 router.post('/', authenticate, createEvent); // Usuarios pueden crear PARTIDA, admins todo
 router.put('/:id', authenticate, updateEvent); // Validación de permisos en el controller
-router.delete('/:id', authenticate, requireAdmin, deleteEvent); // Solo admins pueden cancelar
+router.delete('/:id', authenticate, deleteEvent); // Admins o creador pueden cancelar partidas futuras
 
 // Admin: Sincronizar bggIds de eventos existentes con juegos en BD
 router.post('/admin/sync-bgg-ids', authenticate, requireAdmin, syncEventBggIds);

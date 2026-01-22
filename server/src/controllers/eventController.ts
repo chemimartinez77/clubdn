@@ -2,6 +2,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 
+const REGISTRATION_COOLDOWN_MS = 3000;
+
 /**
  * GET /api/events - Listar eventos con filtros
  */
@@ -407,27 +409,74 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
 /**
  * DELETE /api/events/:id - Cancelar evento (solo admins)
  */
-export const deleteEvent = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
+  export const deleteEvent = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.userId;
+      const userRole = req.user?.role;
 
-    const event = await prisma.event.findUnique({
-      where: { id }
-    });
+      const event = await prisma.event.findUnique({
+        where: { id }
+      });
 
     if (!event) {
       res.status(404).json({
         success: false,
         message: 'Evento no encontrado'
       });
-      return;
-    }
+        return;
+      }
 
-    // Marcar como cancelado en lugar de eliminar
-    await prisma.event.update({
-      where: { id },
-      data: { status: 'CANCELLED' }
-    });
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Usuario no autenticado'
+        });
+        return;
+      }
+
+      if (event.type !== 'PARTIDA') {
+        res.status(400).json({
+          success: false,
+          message: 'Solo se pueden eliminar partidas'
+        });
+        return;
+      }
+
+      if (new Date(event.date) <= new Date()) {
+        res.status(400).json({
+          success: false,
+          message: 'Solo se pueden eliminar partidas futuras'
+        });
+        return;
+      }
+
+      const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+      if (!isAdmin && event.createdBy !== userId) {
+        res.status(403).json({
+          success: false,
+          message: 'No tienes permisos para eliminar esta partida'
+        });
+        return;
+      }
+
+      if (event.status === 'CANCELLED') {
+        res.status(400).json({
+          success: false,
+          message: 'La partida ya est\u00e1 cancelada'
+        });
+        return;
+      }
+
+      // Marcar como cancelado en lugar de eliminar
+      await prisma.event.update({
+        where: { id },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt: new Date(),
+          cancelledById: userId
+        }
+      });
 
     res.status(200).json({
       success: true,
@@ -449,6 +498,7 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
   try {
     const { id } = req.params;
     const userId = req.user?.userId;
+    const now = new Date();
 
     if (!id || !userId) {
       res.status(400).json({
@@ -488,7 +538,7 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
     }
 
     // Validar que el evento sea futuro
-    if (new Date(event.date) <= new Date()) {
+    if (new Date(event.date) <= now) {
       res.status(400).json({
         success: false,
         message: 'No puedes registrarte a un evento pasado'
@@ -507,11 +557,43 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
     });
 
     if (existingRegistration) {
+      if (existingRegistration.status === 'CANCELLED') {
+        if (existingRegistration.cancelledAt) {
+          const elapsedMs = now.getTime() - existingRegistration.cancelledAt.getTime();
+          if (elapsedMs < REGISTRATION_COOLDOWN_MS) {
+            const remainingSeconds = Math.ceil((REGISTRATION_COOLDOWN_MS - elapsedMs) / 1000);
+            res.status(400).json({
+              success: false,
+              message: `Debes esperar ${remainingSeconds} segundo${remainingSeconds !== 1 ? 's' : ''} para volver a registrarte`
+            });
+            return;
+          }
+        }
+
+        const confirmedCount = event.registrations.length + (event.eventGuests?.length || 0);
+        const registrationStatus = confirmedCount >= event.maxAttendees ? 'WAITLIST' : 'CONFIRMED';
+
+        const registration = await prisma.eventRegistration.update({
+          where: { id: existingRegistration.id },
+          data: {
+            status: registrationStatus,
+            cancelledAt: null
+          }
+        });
+
+        res.status(200).json({
+          success: true,
+          data: { registration },
+          message: registrationStatus === 'WAITLIST'
+            ? 'Te has registrado en lista de espera'
+            : 'Te has registrado correctamente al evento'
+        });
+        return;
+      }
+
       res.status(400).json({
         success: false,
-        message: existingRegistration.status === 'CANCELLED'
-          ? 'Ya cancelaste tu registro a este evento'
-          : 'Ya estás registrado a este evento'
+        message: 'Ya est?s registrado a este evento'
       });
       return;
     }
@@ -590,7 +672,7 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
     // Marcar como cancelado
     await prisma.eventRegistration.update({
       where: { id: registration.id },
-      data: { status: 'CANCELLED' }
+      data: { status: 'CANCELLED', cancelledAt: new Date() }
     });
 
     // Si era CONFIRMED, promover el primero de la waitlist

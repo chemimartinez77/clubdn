@@ -71,6 +71,21 @@ export default function EventDetail() {
     }
   });
 
+  const deleteEventMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.delete(`/api/events/${id}`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      success(data.message || 'Partida eliminada');
+      navigate('/events');
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || 'Error al eliminar partida');
+    }
+  });
   const { data: invitations = [], isLoading: isInvitesLoading, isError: isInvitesError } = useQuery({
     queryKey: ['invitations', id],
     queryFn: async () => {
@@ -166,6 +181,7 @@ export default function EventDetail() {
   const canRegister = event.status === 'SCHEDULED' && !isPast && !event.isUserRegistered;
   const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED';
   const canInvite = event.status !== 'CANCELLED' && !isPast;
+  const canDelete = isPartida && !isPast && event.status !== 'CANCELLED' && (isAdmin || user?.id === event.createdBy);
 
   const confirmed = event.registrations?.filter(r => r.status === 'CONFIRMED') || [];
   const waitlist = event.registrations?.filter(r => r.status === 'WAITLIST') || [];
@@ -377,6 +393,23 @@ export default function EventDetail() {
                       </svg>
                     </span>
                   </Button>
+                  {canDelete && (
+                    <Button
+                      onClick={() => {
+                        const confirmed = window.confirm(
+                          '¿Quieres eliminar esta partida? Se marcará como cancelada.'
+                        );
+                        if (confirmed) {
+                          deleteEventMutation.mutate();
+                        }
+                      }}
+                      disabled={deleteEventMutation.isPending}
+                      variant="danger"
+                      className="w-full sm:w-auto"
+                    >
+                      {deleteEventMutation.isPending ? 'Eliminando...' : 'Eliminar partida'}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
