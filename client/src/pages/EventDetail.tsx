@@ -243,10 +243,10 @@ export default function EventDetail() {
       ? `Plazas disponibles: ${spotsLeft} de ${event.maxAttendees}`
       : `COMPLETO (${registeredCount}/${event.maxAttendees})`;
 
-    let message = `🎲 *${event.title}*\n\n`;
-    message += `📅 ${formattedDate}\n`;
+    let message = `*${event.title}*\n\n`;
+    message += `Fecha: ${formattedDate}\n`;
     if (event.location) {
-      message += `📍 ${event.location}\n`;
+      message += `Lugar: ${event.location}\n`;
     }
     message += `\n${spotsText}\n`;
 
@@ -254,22 +254,32 @@ export default function EventDetail() {
       message += `\n${event.description}\n`;
     }
 
-    // Añadir participantes si los hay
-    if (event.registrations && event.registrations.length > 0) {
-      message += `\n👥 *Participantes confirmados:*\n`;
-      event.registrations
-        .filter(reg => reg.status === 'CONFIRMED')
-        .forEach(reg => {
-          message += `   • ${reg.user?.name || 'Usuario'}`;
-          if (reg.user?.membership?.type) {
-            const membershipLabel = reg.user.membership.type === 'SOCIO' ? 'Socio' : 'Colaborador';
-            message += ` (${membershipLabel})`;
-          }
-          message += '\n';
-        });
+    // Añadir participantes registrados
+    const confirmedRegistrations = event.registrations?.filter(reg => reg.status === 'CONFIRMED') || [];
+
+    // Obtener invitados confirmados (los que tienen status CONFIRMED)
+    const confirmedInvitations = invitations?.filter(inv => inv.status === 'CONFIRMED') || [];
+
+    if (confirmedRegistrations.length > 0 || confirmedInvitations.length > 0) {
+      message += `\n*Participantes confirmados:*\n`;
+
+      // Añadir usuarios registrados
+      confirmedRegistrations.forEach(reg => {
+        message += `- ${reg.user?.name || 'Usuario'}`;
+        if (reg.user?.membership?.type) {
+          const membershipLabel = reg.user.membership.type === 'SOCIO' ? 'Socio' : 'Colaborador';
+          message += ` (${membershipLabel})`;
+        }
+        message += '\n';
+      });
+
+      // Añadir invitados
+      confirmedInvitations.forEach(inv => {
+        message += `- ${inv.guestFirstName} ${inv.guestLastName} (Invitado)\n`;
+      });
     }
 
-    message += `\n🔗 Ver más detalles: ${window.location.href}`;
+    message += `\nVer mas detalles: ${window.location.href}`;
 
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
