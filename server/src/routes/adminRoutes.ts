@@ -1,5 +1,6 @@
 // server/src/routes/adminRoutes.ts
 import { Router } from 'express';
+import multer from 'multer';
 import { authenticate, requireAdmin } from '../middleware/auth';
 import {
   getPendingApprovals,
@@ -11,10 +12,17 @@ import {
   getMemberProfile,
   updateMemberProfile,
   markMemberAsBaja,
-  exportMembersCSV
+  exportMembersCSV,
+  uploadMemberAvatar
 } from '../controllers/memberController';
 
 const router = Router();
+
+// Configurar multer para subida de avatar
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+});
 
 // Todas las rutas requieren autenticaci�n y permisos de admin
 router.use(authenticate);
@@ -55,6 +63,12 @@ router.get('/members/:memberId/profile', getMemberProfile);
  * Actualizar ficha editable de miembro
  */
 router.put('/members/:memberId/profile', updateMemberProfile);
+
+/**
+ * POST /api/admin/members/:memberId/avatar
+ * Subir avatar de un miembro (admin)
+ */
+router.post('/members/:memberId/avatar', upload.single('avatar'), uploadMemberAvatar);
 
 /**
  * POST /api/admin/members/:memberId/mark-baja

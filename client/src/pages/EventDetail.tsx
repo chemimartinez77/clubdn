@@ -257,8 +257,8 @@ export default function EventDetail() {
     // Añadir participantes registrados
     const confirmedRegistrations = event.registrations?.filter(reg => reg.status === 'CONFIRMED') || [];
 
-    // Obtener invitados confirmados (los que tienen status CONFIRMED)
-    const confirmedInvitations = invitations?.filter(inv => inv.status === 'CONFIRMED') || [];
+    // Obtener invitados válidos (PENDING = invitación válida no usada aún, USED = ya asistió)
+    const confirmedInvitations = invitations?.filter(inv => inv.status === 'PENDING' || inv.status === 'USED') || [];
 
     if (confirmedRegistrations.length > 0 || confirmedInvitations.length > 0) {
       message += `\n*Participantes confirmados:*\n`;
