@@ -6,17 +6,21 @@ import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import EventCard from '../components/events/EventCard';
 import EventCalendar from '../components/events/EventCalendar';
+import EventCalendarWeek from '../components/events/EventCalendarWeek';
+import EventCalendarDay from '../components/events/EventCalendarDay';
 import { api } from '../api/axios';
 import type { EventsResponse, EventStatus } from '../types/event';
 import type { ApiResponse } from '../types/auth';
 
 type ViewMode = 'list' | 'calendar';
+type CalendarView = 'month' | 'week' | 'day';
 type TypeFilter = 'PARTIDA' | 'EVENTOS' | '';
 type CapacityFilter = '' | 'available' | 'full';
 type SortOption = 'date_desc' | 'date_asc' | 'name_asc' | 'name_desc';
 
 export default function Events() {
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
+  const [calendarView, setCalendarView] = useState<CalendarView>('month');
   const [statusFilter, setStatusFilter] = useState<EventStatus | ''>('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('PARTIDA');
   const [capacityFilter, setCapacityFilter] = useState<CapacityFilter>('');
@@ -127,9 +131,10 @@ export default function Events() {
           </div>
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardContent className="p-4">
+        {/* Filters - Solo en vista lista */}
+        {viewMode === 'list' && (
+          <Card>
+            <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {/* Type Filter */}
               <div>
@@ -228,6 +233,7 @@ export default function Events() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Content */}
         {isLoading ? (
@@ -282,25 +288,71 @@ export default function Events() {
               /* Calendar View */
               <div className="space-y-4">
                 {/* Calendar Controls */}
-                <div className="flex items-center justify-between">
-                  <Button variant="outline" onClick={handlePreviousMonth}>
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </Button>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  {/* Navigation */}
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={handlePreviousMonth}>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </Button>
 
-                  <Button variant="outline" onClick={handleToday}>
-                    Hoy
-                  </Button>
+                    <Button variant="outline" onClick={handleToday}>
+                      Hoy
+                    </Button>
 
-                  <Button variant="outline" onClick={handleNextMonth}>
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Button>
+                    <Button variant="outline" onClick={handleNextMonth}>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </Button>
+                  </div>
+
+                  {/* View Selector */}
+                  <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                    <button
+                      onClick={() => setCalendarView('month')}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        calendarView === 'month'
+                          ? 'bg-white text-[var(--color-primaryDark)] shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Mes
+                    </button>
+                    <button
+                      onClick={() => setCalendarView('week')}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        calendarView === 'week'
+                          ? 'bg-white text-[var(--color-primaryDark)] shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Semana
+                    </button>
+                    <button
+                      onClick={() => setCalendarView('day')}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        calendarView === 'day'
+                          ? 'bg-white text-[var(--color-primaryDark)] shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Día
+                    </button>
+                  </div>
                 </div>
 
-                <EventCalendar events={events} currentMonth={currentMonth} />
+                {/* Calendar Component based on view */}
+                {calendarView === 'month' && (
+                  <EventCalendar events={events} currentMonth={currentMonth} />
+                )}
+                {calendarView === 'week' && (
+                  <EventCalendarWeek events={events} currentMonth={currentMonth} />
+                )}
+                {calendarView === 'day' && (
+                  <EventCalendarDay events={events} currentMonth={currentMonth} />
+                )}
               </div>
             )}
           </>
