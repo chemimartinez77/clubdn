@@ -8,7 +8,7 @@ interface EventCardProps {
 }
 
 // Placeholder SVG para cuando la imagen no carga
-const GamePlaceholder = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) => {
+const GamePlaceholder = ({ size = 'md', className = '' }: { size?: 'sm' | 'md' | 'lg'; className?: string }) => {
   const sizeClasses = {
     sm: 'w-16 h-16',
     md: 'w-20 h-20',
@@ -20,7 +20,7 @@ const GamePlaceholder = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) => {
     lg: 'w-16 h-16'
   };
   return (
-    <div className={`flex items-center justify-center bg-gray-100 rounded-lg ${sizeClasses[size]}`}>
+    <div className={`flex items-center justify-center bg-gray-100 rounded-lg ${sizeClasses[size]} ${className}`}>
       <svg className={`${iconSizes[size]} text-gray-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
       </svg>
@@ -29,7 +29,17 @@ const GamePlaceholder = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) => {
 };
 
 // Componente de imagen con fallback a placeholder
-const GameImage = ({ src, alt, size = 'md' }: { src: string | null; alt: string; size?: 'sm' | 'md' | 'lg' }) => {
+const GameImage = ({
+  src,
+  alt,
+  size = 'md',
+  className = ''
+}: {
+  src: string | null;
+  alt: string;
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+}) => {
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -40,11 +50,11 @@ const GameImage = ({ src, alt, size = 'md' }: { src: string | null; alt: string;
   };
 
   if (!src || hasError) {
-    return <GamePlaceholder size={size} />;
+    return <GamePlaceholder size={size} className={className} />;
   }
 
   return (
-    <div className={`relative ${sizeClasses[size]}`}>
+    <div className={`relative ${sizeClasses[size]} ${className}`}>
       {isLoading && (
         <div className={`absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg`}>
           <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
@@ -53,7 +63,9 @@ const GameImage = ({ src, alt, size = 'md' }: { src: string | null; alt: string;
       <img
         src={src}
         alt={alt}
-        className={`${sizeClasses[size]} object-contain rounded-lg bg-gray-50 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+        className={`${sizeClasses[size]} object-contain rounded-lg bg-gray-50 ${className} ${
+          isLoading ? 'opacity-0' : 'opacity-100'
+        }`}
         onLoad={() => setIsLoading(false)}
         onError={() => {
           setHasError(true);
