@@ -3,8 +3,8 @@
 import nodemailer from 'nodemailer';
 import { prisma } from '../config/database';
 
-const smtpHost = process.env.SMTP_HOST || 'authsmtp.securemail.pro';
-const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
+const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
 const smtpSecure = process.env.SMTP_SECURE
   ? process.env.SMTP_SECURE === 'true'
   : smtpPort === 465;
@@ -40,7 +40,7 @@ interface EmailOptions {
 export const sendEmail = async (options: EmailOptions) => {
   try {
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || 'Club DN <onboarding@resend.dev>',
+      from: process.env.EMAIL_FROM || 'Club DN <yourgmail@gmail.com>',
       to: options.to,
       subject: options.subject,
       html: options.html
