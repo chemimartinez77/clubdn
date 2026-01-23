@@ -15,7 +15,11 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
 
-    const where: any = {};
+    const where: any = {
+      status: {
+        not: 'CANCELLED'
+      }
+    };
 
     if (status) {
       where.status = status;

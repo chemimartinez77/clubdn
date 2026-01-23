@@ -432,8 +432,7 @@ export default function EventDetail() {
                   <Button
                     onClick={() => setIsInviteModalOpen(true)}
                     disabled={!canInvite}
-                    variant="secondary"
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto !bg-indigo-500 hover:!bg-indigo-600 !text-white transition-colors"
                   >
                     Añadir invitado
                   </Button>

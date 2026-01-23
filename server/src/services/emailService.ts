@@ -1,10 +1,23 @@
 // server/src/services/emailService.ts
-// Servicio de emails usando Resend
-
-import { Resend } from 'resend';
+// Servicio de emails usando SMTP
+import nodemailer from 'nodemailer';
 import { prisma } from '../config/database';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const smtpHost = process.env.SMTP_HOST || 'authsmtp.securemail.pro';
+const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
+const smtpSecure = process.env.SMTP_SECURE
+  ? process.env.SMTP_SECURE === 'true'
+  : smtpPort === 465;
+
+const transporter = nodemailer.createTransport({
+  host: smtpHost,
+  port: smtpPort,
+  secure: smtpSecure,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+});
 
 interface EmailOptions {
   to: string;
@@ -18,16 +31,12 @@ interface EmailOptions {
  */
 export const sendEmail = async (options: EmailOptions) => {
   try {
-    const { data, error } = await resend.emails.send({
+    const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM || 'Club DN <onboarding@resend.dev>',
       to: options.to,
       subject: options.subject,
-      html: options.html,
+      html: options.html
     });
-
-    if (error) {
-      throw new Error(error.message);
-    }
 
     // Log exitoso
     await prisma.emailLog.create({
@@ -35,11 +44,11 @@ export const sendEmail = async (options: EmailOptions) => {
         to: options.to,
         subject: options.subject,
         template: options.template,
-        success: true,
+        success: true
       },
     });
 
-    return { success: true, messageId: data?.id };
+    return { success: true, messageId: info.messageId };
   } catch (error) {
     // Log con error
     await prisma.emailLog.create({
