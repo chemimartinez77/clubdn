@@ -12,6 +12,7 @@ export default function Register() {
   const { success: showSuccess, error: showError } = useToast();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
 
@@ -35,8 +36,9 @@ export default function Register() {
 
       if (response.data.success) {
         setRegisteredEmail(data.email);
+        setSuccessMessage(response.data.message || 'Registro exitoso. Verifica tu email para continuar.');
         setSuccess(true);
-        showSuccess('Registro exitoso! Verifica tu email para continuar');
+        showSuccess(response.data.message || 'Registro exitoso! Verifica tu email para continuar');
       } else {
         const errorMessage = response.data.message || 'Error al registrarse';
         setError(errorMessage);
@@ -83,7 +85,7 @@ export default function Register() {
               ¡Registro Exitoso!
             </h2>
             <p className="text-gray-600 mb-6">
-              Hemos enviado un email de verificación a{' '}
+              {(successMessage || 'Hemos enviado un email de verificaci?n a') + ' '}
               <strong>{registeredEmail}</strong>. Por favor, verifica tu email
               para continuar.
             </p>
