@@ -36,7 +36,9 @@
       "Bash(npx ts-node:*)",
       "Bash(node:*)",
       "Bash(del serverupdate-admin-password.ts)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(PORT=5000 npm run dev:*)",
+      "Bash(git restore:*)"
     ]
   }
 }
