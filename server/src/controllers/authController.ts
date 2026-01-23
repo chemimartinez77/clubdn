@@ -57,7 +57,7 @@ export const register = async (req: Request, res: Response) => {
       console.error('Error enviando email de verificaci?n:', mailError);
       return res.status(201).json({
         success: true,
-        message: 'Registro exitoso, pero no se pudo enviar el email de verificaci?n.',
+        message: 'Registro exitoso, pero no se pudo enviar el email de verificación.',
         data: {
           email: user.email,
         },
