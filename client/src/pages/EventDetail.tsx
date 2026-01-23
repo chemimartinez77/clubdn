@@ -29,6 +29,7 @@ export default function EventDetail() {
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [expandedInviteId, setExpandedInviteId] = useState<string | null>(null);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Fetch event details
   const { data: event, isLoading } = useQuery({
@@ -413,10 +414,9 @@ export default function EventDetail() {
                     <Button
                       onClick={() => registerMutation.mutate()}
                       disabled={registerMutation.isPending}
-                      variant="primary"
-                      className="w-full sm:w-auto"
+                      className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
                     >
-                      {registerMutation.isPending ? 'Registrando...' : 'Registrarse'}
+                      {registerMutation.isPending ? 'Apuntándote...' : 'Apuntarme'}
                     </Button>
                   )}
                   {canUnregister && (
@@ -432,15 +432,13 @@ export default function EventDetail() {
                   <Button
                     onClick={() => setIsInviteModalOpen(true)}
                     disabled={!canInvite}
-                    variant="outline"
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto bg-amber-400 hover:bg-amber-500 text-gray-900"
                   >
                     Añadir invitado
                   </Button>
                   <Button
                     onClick={handleShareWhatsApp}
-                    variant="outline"
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white"
                     title="Compartir por WhatsApp"
                   >
                     <span className="flex items-center justify-center gap-2">
@@ -452,14 +450,7 @@ export default function EventDetail() {
                   </Button>
                   {canDelete && (
                     <Button
-                      onClick={() => {
-                        const confirmed = window.confirm(
-                          '¿Quieres eliminar esta partida? Se marcará como cancelada.'
-                        );
-                        if (confirmed) {
-                          deleteEventMutation.mutate();
-                        }
-                      }}
+                      onClick={() => setIsDeleteModalOpen(true)}
                       disabled={deleteEventMutation.isPending}
                       variant="danger"
                       className="w-full sm:w-auto"
@@ -896,6 +887,37 @@ export default function EventDetail() {
                 })}
               </div>
             )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de confirmación de eliminación */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Eliminar partida"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            ¿Quieres eliminar esta partida? Se marcará como cancelada.
+          </p>
+          <div className="flex gap-3 justify-end">
+            <Button
+              onClick={() => setIsDeleteModalOpen(false)}
+              variant="outline"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                deleteEventMutation.mutate();
+                setIsDeleteModalOpen(false);
+              }}
+              disabled={deleteEventMutation.isPending}
+              variant="danger"
+            >
+              {deleteEventMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+            </Button>
           </div>
         </div>
       </Modal>
