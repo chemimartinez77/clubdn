@@ -1,6 +1,9 @@
--- AlterTable
+-- AlterTable Event
 ALTER TABLE "Event" ADD COLUMN IF NOT EXISTS "cancelledAt" TIMESTAMP(3),
 ADD COLUMN IF NOT EXISTS "cancelledById" TEXT;
+
+-- AlterTable EventRegistration
+ALTER TABLE "EventRegistration" ADD COLUMN IF NOT EXISTS "cancelledAt" TIMESTAMP(3);
 
 -- AddForeignKey
 DO $$
