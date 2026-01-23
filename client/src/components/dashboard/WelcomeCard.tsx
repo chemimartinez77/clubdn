@@ -41,10 +41,18 @@ export default function WelcomeCard({ user }: WelcomeCardProps) {
               Bienvenido al Club DN
             </p>
           </div>
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-            <span className="text-3xl font-bold">
-              {user.name.charAt(0).toUpperCase()}
-            </span>
+          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
+            {user.profile?.avatar ? (
+              <img
+                src={user.profile.avatar}
+                alt={user.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-3xl font-bold">
+                {user.name.charAt(0).toUpperCase()}
+              </span>
+            )}
           </div>
         </div>
 

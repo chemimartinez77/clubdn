@@ -568,10 +568,18 @@ export default function EventDetail() {
                 <ul className="space-y-2">
                   {confirmed.map((registration) => (
                     <li key={registration.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                      <div className="w-8 h-8 bg-[var(--color-primary-100)] rounded-full flex items-center justify-center">
-                        <span className="text-[var(--color-primary)] font-semibold text-sm">
-                          {registration.user?.name.charAt(0).toUpperCase()}
-                        </span>
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-[var(--color-primary-100)] flex items-center justify-center">
+                        {registration.user?.profile?.avatar ? (
+                          <img
+                            src={registration.user.profile.avatar}
+                            alt={registration.user?.name || 'Usuario'}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-[var(--color-primary)] font-semibold text-sm">
+                            {registration.user?.name?.charAt(0).toUpperCase() || '?'}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-gray-900">{registration.user?.name}</span>
@@ -612,10 +620,18 @@ export default function EventDetail() {
                 <ul className="space-y-2">
                   {waitlist.map((registration) => (
                     <li key={registration.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                      <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <span className="text-yellow-600 font-semibold text-sm">
-                          {registration.user?.name.charAt(0).toUpperCase()}
-                        </span>
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-yellow-100 flex items-center justify-center">
+                        {registration.user?.profile?.avatar ? (
+                          <img
+                            src={registration.user.profile.avatar}
+                            alt={registration.user?.name || 'Usuario'}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-yellow-600 font-semibold text-sm">
+                            {registration.user?.name?.charAt(0).toUpperCase() || '?'}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-gray-900">{registration.user?.name}</span>

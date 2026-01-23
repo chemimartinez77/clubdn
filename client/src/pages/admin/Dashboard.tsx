@@ -33,6 +33,9 @@ interface AdminStats {
     email: string;
     status: string;
     createdAt: string;
+    profile?: {
+      avatar?: string | null;
+    } | null;
   }>;
 }
 
@@ -213,10 +216,18 @@ export default function AdminDashboard() {
                 {stats.recentUsers.map((user) => (
                   <div key={user.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-[var(--color-primary-100)] rounded-full flex items-center justify-center">
-                        <span className="text-[var(--color-primary)] font-semibold">
-                          {user.name.charAt(0).toUpperCase()}
-                        </span>
+                      <div className="w-10 h-10 bg-[var(--color-primary-100)] rounded-full flex items-center justify-center overflow-hidden">
+                        {user.profile?.avatar ? (
+                          <img
+                            src={user.profile.avatar}
+                            alt={user.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-[var(--color-primary)] font-semibold">
+                            {user.name.charAt(0).toUpperCase()}
+                          </span>
+                        )}
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">{user.name}</p>

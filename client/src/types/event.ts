@@ -92,6 +92,9 @@ export interface EventRegistration {
     membership?: {
       type: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA';
     } | null;
+    profile?: {
+      avatar?: string | null;
+    } | null;
   };
 }
 

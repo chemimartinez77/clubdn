@@ -84,7 +84,12 @@ export const getAdminStats = async (_req: Request, res: Response): Promise<void>
         name: true,
         email: true,
         status: true,
-        createdAt: true
+        createdAt: true,
+        profile: {
+          select: {
+            avatar: true
+          }
+        }
       }
     });
 

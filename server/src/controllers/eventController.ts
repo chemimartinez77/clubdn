@@ -165,6 +165,11 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
                   select: {
                     type: true
                   }
+                },
+                profile: {
+                  select: {
+                    avatar: true
+                  }
                 }
               }
             }
