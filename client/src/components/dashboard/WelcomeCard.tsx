@@ -31,43 +31,40 @@ export default function WelcomeCard({ user }: WelcomeCardProps) {
       className="text-white"
       style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
     >
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold mb-1">
-              {getGreeting()}, {user.name}!
-            </h2>
-            <p className="text-white/80">
-              Bienvenido al Club DN
-            </p>
-          </div>
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
-            {user.profile?.avatar ? (
-              <img
-                src={user.profile.avatar}
-                alt={user.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-3xl font-bold">
-                {user.name.charAt(0).toUpperCase()}
-              </span>
-            )}
-          </div>
-        </div>
+      <CardContent className="p-6 relative overflow-visible">
+        <div className="flex items-stretch justify-between gap-[20px]">
+          <div className="flex-1">
+            <div>
+              <h2 className="text-2xl font-bold mb-1">
+                {getGreeting()}, {user.name}!
+              </h2>
+              <p className="text-white/80">
+                Bienvenido al Club DN
+              </p>
+            </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-4 pt-4 border-t border-white/20">
-          <div>
-            <p className="text-white/70 text-sm">Miembro desde</p>
-            <p className="font-medium text-sm">
-              {formatDate(user.createdAt)}
-            </p>
+            <div className="mt-6 grid grid-cols-2 gap-4 pt-4 border-t border-white/20">
+              <div>
+                <p className="text-white/70 text-sm">Miembro desde</p>
+                <p className="font-medium text-sm">
+                  {formatDate(user.createdAt)}
+                </p>
+              </div>
+              <div>
+                <p className="text-white/70 text-sm">Último acceso</p>
+                <p className="font-medium text-sm">
+                  {formatDate(user.lastLoginAt)}
+                </p>
+              </div>
+            </div>
           </div>
-          <div>
-            <p className="text-white/70 text-sm">Último acceso</p>
-            <p className="font-medium text-sm">
-              {formatDate(user.lastLoginAt)}
-            </p>
+
+          <div className="relative w-[140px]">
+            <img
+              src="/noughter.png"
+              alt="Noughter"
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-40 h-40 object-contain"
+            />
           </div>
         </div>
       </CardContent>
