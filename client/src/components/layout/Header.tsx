@@ -229,10 +229,18 @@ export default function Header() {
                 }}
                 className="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors cursor-pointer"
               >
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                  <span className="text-primary font-semibold text-sm">
-                    {user?.name.charAt(0).toUpperCase()}
-                  </span>
+                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
+                  {user?.profile?.avatar ? (
+                    <img
+                      src={user.profile.avatar}
+                      alt={user?.name || 'Usuario'}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-primary font-semibold text-sm">
+                      {user?.name?.charAt(0).toUpperCase() || '?'}
+                    </span>
+                  )}
                 </div>
                 <span className="font-medium">{user?.name}</span>
                 <svg
