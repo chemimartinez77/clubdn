@@ -8,11 +8,19 @@ const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
 const smtpSecure = process.env.SMTP_SECURE
   ? process.env.SMTP_SECURE === 'true'
   : smtpPort === 465;
+const smtpRequireTls = process.env.SMTP_REQUIRE_TLS === 'true';
+const connectionTimeout = parseInt(process.env.SMTP_CONNECTION_TIMEOUT || '15000', 10);
+const greetingTimeout = parseInt(process.env.SMTP_GREETING_TIMEOUT || '10000', 10);
+const socketTimeout = parseInt(process.env.SMTP_SOCKET_TIMEOUT || '20000', 10);
 
 const transporter = nodemailer.createTransport({
   host: smtpHost,
   port: smtpPort,
   secure: smtpSecure,
+  requireTLS: smtpRequireTls,
+  connectionTimeout,
+  greetingTimeout,
+  socketTimeout,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS

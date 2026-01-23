@@ -50,8 +50,19 @@ export const register = async (req: Request, res: Response) => {
       },
     });
 
-    // Enviar email de verificación
-    await sendVerificationEmail(email, name, verificationToken);
+    // Enviar email de verificaci?n
+    try {
+      await sendVerificationEmail(email, name, verificationToken);
+    } catch (mailError) {
+      console.error('Error enviando email de verificaci?n:', mailError);
+      return res.status(201).json({
+        success: true,
+        message: 'Registro exitoso, pero no se pudo enviar el email de verificaci?n.',
+        data: {
+          email: user.email,
+        },
+      });
+    }
 
     return res.status(201).json({
       success: true,
@@ -60,28 +71,7 @@ export const register = async (req: Request, res: Response) => {
         email: user.email,
       },
     });
-  } catch (error) {
-    console.error('Error en registro:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al procesar el registro',
-    });
-  }
-};
-
-/**
- * Verificación de email
- * GET /api/auth/verify-email?token=xxx
- */
-export const verifyEmail = async (req: Request, res: Response) => {
-  try {
-    const { token } = req.query;
-
-    if (!token || typeof token !== 'string') {
-      return res.status(400).json({
-        success: false,
-        message: 'Token de verificación no proporcionado',
-      });
+;
     }
 
     // Buscar usuario por token
