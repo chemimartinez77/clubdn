@@ -33,7 +33,7 @@ export const register = async (req: Request, res: Response) => {
     // Hash del password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generar token de verificación
+    // Generar token de verificaci?n
     const verificationToken = randomUUID();
     const tokenExpiry = new Date();
     tokenExpiry.setHours(tokenExpiry.getHours() + 24); // 24 horas
@@ -71,7 +71,28 @@ export const register = async (req: Request, res: Response) => {
         email: user.email,
       },
     });
-;
+  } catch (error) {
+    console.error('Error en registro:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al procesar el registro',
+    });
+  }
+};
+
+/**
+ * Verificaci?n de email
+ * GET /api/auth/verify-email?token=xxx
+ */
+export const verifyEmail = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.query;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Token de verificaci?n no proporcionado',
+      });
     }
 
     // Buscar usuario por token
@@ -84,7 +105,7 @@ export const register = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Token de verificación inválido',
+        message: 'Token de verificaci?n inv?lido',
       });
     }
 
@@ -92,7 +113,7 @@ export const register = async (req: Request, res: Response) => {
     if (user.tokenExpiry && user.tokenExpiry < new Date()) {
       return res.status(400).json({
         success: false,
-        message: 'El token de verificación ha expirado',
+        message: 'El token de verificaci?n ha expirado',
       });
     }
 
@@ -111,28 +132,23 @@ export const register = async (req: Request, res: Response) => {
     const defaultAdminEmail = process.env.DEFAULT_ADMIN_EMAIL;
 
     if (defaultAdminEmail) {
-      // Enviar notificación al admin
+      // Enviar notificaci?n al admin
       await sendAdminNotification(defaultAdminEmail, user.name, user.email);
     }
 
     return res.status(200).json({
       success: true,
       message:
-        'Email verificado exitosamente. Tu solicitud será revisada por un administrador.',
+        'Email verificado exitosamente. Tu solicitud ser? revisada por un administrador.',
     });
   } catch (error) {
-    console.error('Error en verificación de email:', error);
+    console.error('Error en verificaci?n de email:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al verificar el email',
     });
   }
 };
-
-/**
- * Obtener usuario actual
- * GET /api/auth/me
- */
 export const getCurrentUser = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.userId;
