@@ -30,6 +30,8 @@ export default function EventDetail() {
   const [expandedInviteId, setExpandedInviteId] = useState<string | null>(null);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<{ id: string; name?: string } | null>(null);
 
   // Fetch event details
   const { data: event, isLoading } = useQuery({
@@ -662,10 +664,15 @@ export default function EventDetail() {
                             </span>
                           )}
                       </div>
-                      {(isAdmin || user?.id === event.createdBy) && registration.id && (
+                      {(isAdmin || user?.id === event.createdBy) &&
+                        registration.id &&
+                        registration.user?.id !== event.createdBy && (
                         <button
-                          onClick={() => removeParticipantMutation.mutate(registration.id)}
-                          className="text-xs text-red-600 hover:text-red-700"
+                          onClick={() => {
+                            setRemoveTarget({ id: registration.id, name: registration.user?.name });
+                            setIsRemoveModalOpen(true);
+                          }}
+                          className="text-xs text-red-700 bg-red-100 px-2 py-0.5 rounded-full cursor-pointer hover:bg-red-200 hover:text-red-800"
                         >
                           Eliminar
                         </button>
@@ -684,7 +691,7 @@ export default function EventDetail() {
                       {(isAdmin || user?.id === event.createdBy || (guest.inviterId && user?.id === guest.inviterId)) && guest.invitationId && (
                         <button
                           onClick={() => cancelInvitationMutation.mutate(guest.invitationId!)}
-                          className="text-xs text-red-600 hover:text-red-700"
+                          className="text-xs text-red-700 bg-red-100 px-2 py-0.5 rounded-full cursor-pointer hover:bg-red-200 hover:text-red-800"
                         >
                           Eliminar
                         </button>
@@ -730,10 +737,15 @@ export default function EventDetail() {
                             </span>
                           )}
                       </div>
-                      {(isAdmin || user?.id === event.createdBy) && registration.id && (
+                      {(isAdmin || user?.id === event.createdBy) &&
+                        registration.id &&
+                        registration.user?.id !== event.createdBy && (
                         <button
-                          onClick={() => removeParticipantMutation.mutate(registration.id)}
-                          className="text-xs text-red-600 hover:text-red-700"
+                          onClick={() => {
+                            setRemoveTarget({ id: registration.id, name: registration.user?.name });
+                            setIsRemoveModalOpen(true);
+                          }}
+                          className="text-xs text-red-700 bg-red-100 px-2 py-0.5 rounded-full cursor-pointer hover:bg-red-200 hover:text-red-800"
                         >
                           Eliminar
                         </button>
@@ -758,6 +770,49 @@ export default function EventDetail() {
           </CardContent>
         </Card>
       </div>
+
+      <Modal
+        isOpen={isRemoveModalOpen}
+        onClose={() => {
+          setIsRemoveModalOpen(false);
+          setRemoveTarget(null);
+        }}
+        title="Eliminar asistente"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-700">
+            {removeTarget?.name
+              ? `¿Seguro que quieres eliminar a ${removeTarget.name} de la partida?`
+              : '¿Seguro que quieres eliminar a este asistente de la partida?'}
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsRemoveModalOpen(false);
+                setRemoveTarget(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="bg-red-500 hover:bg-red-400 text-black"
+              onClick={() => {
+                if (!removeTarget?.id) {
+                  return;
+                }
+                removeParticipantMutation.mutate(removeTarget.id);
+                setIsRemoveModalOpen(false);
+                setRemoveTarget(null);
+              }}
+              disabled={removeParticipantMutation.isPending}
+            >
+              {removeParticipantMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         isOpen={isGameModalOpen}
