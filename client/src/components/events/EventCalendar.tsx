@@ -80,7 +80,7 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
         className={`min-h-[72px] border border-gray-200 p-1 sm:p-2 ${dayBackground} ${
           isToday ? 'ring-2 ring-[var(--color-primary-300)]' : ''
         } cursor-pointer transition-colors hover:brightness-95`}
-        title="Toca un d?a para ver el detalle"
+        title="Toca un dia para ver el detalle"
       >
         <div className={`text-xs sm:text-sm font-semibold mb-1 ${dayText}`}>
           {day}
@@ -145,7 +145,7 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
           <div className="w-3 h-3 rounded bg-white border border-[var(--color-primary-300)]"></div>
           <span>Hoy</span>
         </div>
-        <span className="text-gray-500">Toca un día para ver el detalle</span>
+        <span className="text-gray-500">Toca un dia para ver el detalle</span>
       </div>
     </div>
   );
