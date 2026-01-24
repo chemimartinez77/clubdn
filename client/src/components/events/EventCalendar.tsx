@@ -1,6 +1,5 @@
 // client/src/components/events/EventCalendar.tsx
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import type { Event } from '../../types/event';
 
 interface EventCalendarProps {
@@ -68,11 +67,11 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
     };
 
     const dayBackground = hasSocio
-      ? 'bg-green-500'
+      ? 'bg-green-100'
       : hasEvents && hasColaborador
-      ? 'bg-yellow-200'
+      ? 'bg-yellow-100'
       : 'bg-white';
-    const dayText = hasSocio ? 'text-white' : 'text-gray-900';
+    const dayText = hasSocio ? 'text-green-900' : 'text-gray-900';
 
     return (
       <div
@@ -88,33 +87,8 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
         </div>
 
         {hasEvents && (
-          <div className="space-y-1">
-            {dayEvents.slice(0, 2).map(event => {
-              const registeredCount = event.registeredCount || 0;
-              const isFull = registeredCount >= event.maxAttendees;
-              return (
-                <Link
-                  key={event.id}
-                  to={`/events/${event.id}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className={`block text-xs p-1 rounded ${
-                    isFull
-                      ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      : 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)] hover:bg-[var(--color-primary-200)]'
-                  }`}
-                >
-                  <span className="truncate">{event.title}</span>
-                  <span className={`ml-1 font-medium ${isFull ? 'text-red-600' : 'text-green-700'}`}>
-                    ({registeredCount}/{event.maxAttendees})
-                  </span>
-                </Link>
-              );
-            })}
-            {dayEvents.length > 2 && (
-              <div className="text-xs text-gray-500 pl-1">
-                +{dayEvents.length - 2} m?s
-              </div>
-            )}
+          <div className="text-[10px] text-gray-600">
+            {dayEvents.length} {dayEvents.length === 1 ? 'partida' : 'partidas'}
           </div>
         )}
       </div>
@@ -137,7 +111,7 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-px bg-gray-200 w-full">
         {/* Day headers */}
-        {['Dom', 'Lun', 'Mar', 'Mi?', 'Jue', 'Vie', 'S?b'].map(day => (
+        {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
           <div
             key={day}
             className="bg-gray-100 p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-gray-700"
@@ -156,11 +130,11 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
       {/* Legend */}
       <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-600">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-green-500"></div>
+          <div className="w-3 h-3 rounded bg-green-100"></div>
           <span>D?a con socios</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-yellow-200"></div>
+          <div className="w-3 h-3 rounded bg-yellow-100"></div>
           <span>D?a con colaboradores</span>
         </div>
         <div className="flex items-center gap-2">
@@ -171,7 +145,7 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
           <div className="w-3 h-3 rounded bg-white border border-[var(--color-primary-300)]"></div>
           <span>Hoy</span>
         </div>
-        <span className="text-gray-500">Toca un d?a para ver el detalle</span>
+        <span className="text-gray-500">Toca un día para ver el detalle</span>
       </div>
     </div>
   );
