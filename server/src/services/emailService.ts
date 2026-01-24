@@ -1,31 +1,11 @@
 // server/src/services/emailService.ts
-// Servicio de emails usando SMTP
-import nodemailer from 'nodemailer';
+// Servicio de emails usando Resend
+import axios from 'axios';
 import { prisma } from '../config/database';
 
-const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
-const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
-const smtpSecure = process.env.SMTP_SECURE
-  ? process.env.SMTP_SECURE === 'true'
-  : smtpPort === 465;
-const smtpRequireTls = process.env.SMTP_REQUIRE_TLS === 'true';
-const connectionTimeout = parseInt(process.env.SMTP_CONNECTION_TIMEOUT || '15000', 10);
-const greetingTimeout = parseInt(process.env.SMTP_GREETING_TIMEOUT || '10000', 10);
-const socketTimeout = parseInt(process.env.SMTP_SOCKET_TIMEOUT || '20000', 10);
-
-const transporter = nodemailer.createTransport({
-  host: smtpHost,
-  port: smtpPort,
-  secure: smtpSecure,
-  requireTLS: smtpRequireTls,
-  connectionTimeout,
-  greetingTimeout,
-  socketTimeout,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
-});
+const resendApiKey = process.env.RESEND_API_KEY;
+const resendFrom = process.env.RESEND_FROM || process.env.EMAIL_FROM || 'Club DN <no-reply@clubdn.es>';
+const resendApiUrl = 'https://api.resend.com/emails';
 
 interface EmailOptions {
   to: string;
@@ -39,12 +19,26 @@ interface EmailOptions {
  */
 export const sendEmail = async (options: EmailOptions) => {
   try {
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || 'Club DN <yourgmail@gmail.com>',
-      to: options.to,
-      subject: options.subject,
-      html: options.html
-    });
+    if (!resendApiKey) {
+      throw new Error('RESEND_API_KEY no configurada');
+    }
+
+    const response = await axios.post(
+      resendApiUrl,
+      {
+        from: resendFrom,
+        to: options.to,
+        subject: options.subject,
+        html: options.html
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 15000
+      }
+    );
 
     // Log exitoso
     await prisma.emailLog.create({
@@ -56,7 +50,7 @@ export const sendEmail = async (options: EmailOptions) => {
       },
     });
 
-    return { success: true, messageId: info.messageId };
+    return { success: true, messageId: response.data?.id };
   } catch (error) {
     // Log con error
     await prisma.emailLog.create({
