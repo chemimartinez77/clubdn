@@ -106,6 +106,9 @@ export default function EventDetail() {
 
   const closeCapacityMutation = useMutation({
     mutationFn: async () => {
+      if (!event) {
+        throw new Error('Evento no disponible');
+      }
       const response = await api.put(`/api/events/${id}`, {
         maxAttendees: event.registeredCount
       });

@@ -510,7 +510,7 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
     if (newMaxAttendees !== null && newMaxAttendees < existingEvent.maxAttendees) {
       await prisma.eventAuditLog.create({
         data: {
-          eventId: id,
+          eventId: id!,
           actorId: userId!,
           action: 'CLOSE_CAPACITY',
           details: JSON.stringify({
