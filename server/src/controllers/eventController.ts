@@ -263,8 +263,12 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       const activeGuests = event.eventGuests.filter(guest =>
         guest.invitation?.status === 'PENDING' || guest.invitation?.status === 'USED'
       );
-      const guestCount = activeGuests.length;
-      const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length + guestCount;
+      const activeInvitationsCount = event.invitations.filter(inv =>
+        inv.status === 'PENDING' || inv.status === 'USED'
+      ).length;
+      const guestCount = activeInvitationsCount;
+      const registeredCount =
+        event.registrations.filter(r => r.status === 'CONFIRMED').length + activeInvitationsCount;
     const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST').length;
     const userRegistration = event.registrations.find(r => r.userId === userId);
 
