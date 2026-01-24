@@ -240,6 +240,18 @@ export default function EventDetail() {
     COMPLETED: 'Completado',
     CANCELLED: 'Cancelado'
   };
+  const invitationStatusLabels: Record<string, string> = {
+    PENDING: 'Pendiente',
+    USED: 'Usada',
+    EXPIRED: 'Expirada',
+    CANCELLED: 'Cancelada'
+  };
+  const invitationStatusStyles: Record<string, string> = {
+    PENDING: 'text-amber-700 bg-amber-100',
+    USED: 'text-emerald-700 bg-emerald-100',
+    EXPIRED: 'text-gray-600 bg-gray-100',
+    CANCELLED: 'text-red-700 bg-red-100'
+  };
   const membershipLabels: Record<string, string> = {
     SOCIO: 'Socio',
     COLABORADOR: 'Colaborador'
@@ -636,12 +648,12 @@ export default function EventDetail() {
           <Card>
             <CardHeader>
               <h3 className="text-lg font-semibold text-gray-900">
-                Asistentes confirmados ({confirmed.length + (event.eventGuests?.length || 0)})
+                Asistentes e invitados ({confirmed.length + (event.invitations?.length || 0)})
               </h3>
             </CardHeader>
             <CardContent>
-              {confirmed.length === 0 && (!event.eventGuests || event.eventGuests.length === 0) ? (
-                <p className="text-gray-500 text-sm">Aún no hay asistentes confirmados</p>
+              {confirmed.length === 0 && (!event.invitations || event.invitations.length === 0) ? (
+                <p className="text-gray-500 text-sm">Aún no hay asistentes ni invitados</p>
               ) : (
                 <ul className="space-y-2">
                   {confirmed.map((registration) => (
@@ -683,7 +695,7 @@ export default function EventDetail() {
                       )}
                     </li>
                   ))}
-                  {event.eventGuests?.map((guest) => (
+                  {event.invitations?.map((guest) => (
                     <li key={guest.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
                       <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                         <span className="text-purple-600 font-semibold text-sm">
@@ -692,9 +704,16 @@ export default function EventDetail() {
                       </div>
                       <span className="text-gray-900 flex-1">{guest.guestFirstName} {guest.guestLastName}</span>
                       <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Invitado</span>
-                      {(isAdmin || user?.id === event.createdBy || (guest.inviterId && user?.id === guest.inviterId)) && guest.invitationId && (
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${
+                          invitationStatusStyles[guest.status] || 'text-gray-600 bg-gray-100'
+                        }`}
+                      >
+                        {invitationStatusLabels[guest.status] || guest.status}
+                      </span>
+                      {(isAdmin || user?.id === event.createdBy || (guest.inviterId && user?.id === guest.inviterId)) && (
                         <button
-                          onClick={() => cancelInvitationMutation.mutate(guest.invitationId!)}
+                          onClick={() => cancelInvitationMutation.mutate(guest.id)}
                           className="text-xs text-red-700 bg-red-100 px-2 py-0.5 rounded-full cursor-pointer hover:bg-red-200 hover:text-red-800"
                         >
                           Eliminar

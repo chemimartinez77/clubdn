@@ -224,8 +224,12 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
           invitations: {
             select: {
               id: true,
-              status: true
-            }
+              status: true,
+              guestFirstName: true,
+              guestLastName: true,
+              memberId: true
+            },
+            orderBy: { createdAt: 'asc' }
           },
           game: {
             select: {
@@ -260,9 +264,6 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-      const activeGuests = event.eventGuests.filter(guest =>
-        guest.invitation?.status === 'PENDING' || guest.invitation?.status === 'USED'
-      );
       const activeInvitationsCount = event.invitations.filter(inv =>
         inv.status === 'PENDING' || inv.status === 'USED'
       ).length;
@@ -277,14 +278,14 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       data: {
           event: {
             ...event,
-            eventGuests: activeGuests.map(guest => ({
-              id: guest.id,
-              guestFirstName: guest.guestFirstName,
-              guestLastName: guest.guestLastName,
-              invitationId: guest.invitationId,
-              inviterId: guest.invitation?.memberId || null
+            eventGuests: undefined,
+            invitations: event.invitations.map(invitation => ({
+              id: invitation.id,
+              guestFirstName: invitation.guestFirstName,
+              guestLastName: invitation.guestLastName,
+              status: invitation.status,
+              inviterId: invitation.memberId
             })),
-            invitations: undefined,
             guestCount,
             registeredCount,
             waitlistCount,

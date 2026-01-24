@@ -71,7 +71,8 @@ export interface Event {
   // Registros completos (solo en detalle)
   registrations?: EventRegistration[];
 
-  // Invitados del evento (solo en detalle)
+  // Invitaciones del evento (solo en detalle)
+  invitations?: EventInvitation[];
   eventGuests?: EventGuest[];
 }
 
@@ -80,6 +81,14 @@ export interface EventGuest {
   guestFirstName: string;
   guestLastName: string;
   invitationId?: string | null;
+  inviterId?: string | null;
+}
+
+export interface EventInvitation {
+  id: string;
+  guestFirstName: string;
+  guestLastName: string;
+  status: 'PENDING' | 'USED' | 'EXPIRED' | 'CANCELLED';
   inviterId?: string | null;
 }
 
