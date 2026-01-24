@@ -71,6 +71,8 @@ model User {
   loginAttempts     LoginAttempt[]
   uploadedDocuments Document[]
   uploadedPhotos    EventPhoto[]
+  eventAuditLogs    EventAuditLog[] @relation("EventAuditActor")
+  eventAuditTargets EventAuditLog[] @relation("EventAuditTargetUser")
 
   @@index([email])
   @@index([status])
@@ -172,6 +174,7 @@ enum InvitationStatus {
   PENDING
   USED
   EXPIRED
+  CANCELLED
 }
 
 // Modelo de Evento
@@ -206,6 +209,7 @@ model Event {
   invitations     Invitation[]
   eventGuests     EventGuest[]
   photos          EventPhoto[]
+  auditLogs       EventAuditLog[]
 
   // Estado
   status          EventStatus @default(SCHEDULED)
@@ -263,6 +267,7 @@ model EventGuest {
   guestLastName  String
   guestDni       String
   createdAt     DateTime   @default(now())
+  auditLogs      EventAuditLog[]
 
   @@index([eventId])
   @@index([guestDni])
@@ -535,4 +540,32 @@ model EventPhoto {
 
   @@index([eventId])
   @@index([uploadedById])
+}
+
+enum EventAuditAction {
+  REGISTER
+  UNREGISTER
+  REMOVE_PARTICIPANT
+  INVITE
+  CANCEL_INVITE
+  CLOSE_CAPACITY
+}
+
+model EventAuditLog {
+  id            String           @id @default(cuid())
+  eventId       String
+  event         Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  actorId       String
+  actor         User             @relation("EventAuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+  action        EventAuditAction
+  targetUserId  String?
+  targetUser    User?            @relation("EventAuditTargetUser", fields: [targetUserId], references: [id])
+  targetGuestId String?
+  targetGuest   EventGuest?      @relation(fields: [targetGuestId], references: [id])
+  createdAt     DateTime         @default(now())
+  details       String?          @db.Text
+
+  @@index([eventId])
+  @@index([actorId])
+  @@index([action])
 }

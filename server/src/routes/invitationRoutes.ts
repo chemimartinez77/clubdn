@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { MembershipType } from '@prisma/client';
 import {
   createInvitation,
+  cancelInvitation,
   listInvitations,
   getInvitationByToken,
   validateInvitation,
@@ -17,6 +18,7 @@ const doorValidators = requireMembershipTypes([MembershipType.SOCIO, MembershipT
 router.post('/expire', authenticate, requireAdmin, expireInvitations);
 router.get('/', authenticate, doorValidators, listInvitations);
 router.post('/', authenticate, doorValidators, createInvitation);
+router.delete('/:id', authenticate, doorValidators, cancelInvitation);
 router.post('/:token/validate', authenticate, doorValidators, validateInvitation);
 router.get('/:token', authenticate, doorValidators, getInvitationByToken);
 

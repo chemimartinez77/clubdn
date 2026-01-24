@@ -73,6 +73,53 @@ export default function EventDetail() {
     }
   });
 
+  const removeParticipantMutation = useMutation({
+    mutationFn: async (registrationId: string) => {
+      const response = await api.delete(`/api/events/${id}/registrations/${registrationId}`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      success(data.message || 'Participante eliminado');
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || 'Error al eliminar participante');
+    }
+  });
+
+  const cancelInvitationMutation = useMutation({
+    mutationFn: async (invitationId: string) => {
+      const response = await api.delete(`/api/invitations/${invitationId}`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: ['invitations', id] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      success(data.message || 'Invitacion cancelada');
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || 'Error al cancelar invitacion');
+    }
+  });
+
+  const closeCapacityMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.put(`/api/events/${id}`, {
+        maxAttendees: event.registeredCount
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      success(data.message || 'Capacidad actualizada');
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || 'Error al cerrar plazas');
+    }
+  });
   const deleteEventMutation = useMutation({
     mutationFn: async () => {
       const response = await api.delete(`/api/events/${id}`);
@@ -195,10 +242,16 @@ export default function EventDetail() {
 
   const isPartida = event.type === 'PARTIDA';
   const isPast = new Date(event.date) < new Date();
-  const canRegister = event.status === 'SCHEDULED' && !isPast && !event.isUserRegistered;
+  const isFull = (event.registeredCount || 0) >= event.maxAttendees;
+  const canRegister = event.status === 'SCHEDULED' && !isPast && !event.isUserRegistered && !isFull;
   const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED';
-  const canInvite = event.status !== 'CANCELLED' && !isPast;
+  const canInvite = event.status !== 'CANCELLED' && !isPast && !isFull;
   const canDelete = isPartida && !isPast && event.status !== 'CANCELLED' && (isAdmin || user?.id === event.createdBy);
+  const canCloseCapacity = isPartida
+    && !isPast
+    && (isAdmin || user?.id === event.createdBy)
+    && !isFull
+    && (event.registeredCount || 0) > 0;
 
   const confirmed = event.registrations?.filter(r => r.status === 'CONFIRMED') || [];
   const waitlist = event.registrations?.filter(r => r.status === 'WAITLIST') || [];
@@ -465,6 +518,22 @@ export default function EventDetail() {
                       </svg>
                     </span>
                   </Button>
+                  {canCloseCapacity && (
+                    <Button
+                      onClick={() => {
+                        const confirmed = window.confirm(
+                          '¿Quieres cerrar la partida al número actual de asistentes?'
+                        );
+                        if (confirmed) {
+                          closeCapacityMutation.mutate();
+                        }
+                      }}
+                      disabled={closeCapacityMutation.isPending}
+                      className="w-full sm:w-auto bg-slate-200 hover:bg-slate-300 text-gray-900"
+                    >
+                      {closeCapacityMutation.isPending ? 'Cerrando...' : 'Cerrar plazas'}
+                    </Button>
+                  )}
 
                   {canDelete && (
                     <Button
@@ -581,7 +650,7 @@ export default function EventDetail() {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-1">
                         <span className="text-gray-900">{registration.user?.name}</span>
                         {registration.user?.membership?.type &&
                           membershipLabels[registration.user.membership.type] && (
@@ -590,6 +659,14 @@ export default function EventDetail() {
                             </span>
                           )}
                       </div>
+                      {(isAdmin || user?.id === event.createdBy) && registration.id && (
+                        <button
+                          onClick={() => removeParticipantMutation.mutate(registration.id)}
+                          className="text-xs text-red-600 hover:text-red-700"
+                        >
+                          Eliminar
+                        </button>
+                      )}
                     </li>
                   ))}
                   {event.eventGuests?.map((guest) => (
@@ -599,8 +676,16 @@ export default function EventDetail() {
                           {guest.guestFirstName.charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <span className="text-gray-900">{guest.guestFirstName} {guest.guestLastName}</span>
+                      <span className="text-gray-900 flex-1">{guest.guestFirstName} {guest.guestLastName}</span>
                       <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Invitado</span>
+                      {(isAdmin || user?.id === event.createdBy || (guest.inviterId && user?.id === guest.inviterId)) && guest.invitationId && (
+                        <button
+                          onClick={() => cancelInvitationMutation.mutate(guest.invitationId!)}
+                          className="text-xs text-red-600 hover:text-red-700"
+                        >
+                          Eliminar
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -633,7 +718,7 @@ export default function EventDetail() {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-1">
                         <span className="text-gray-900">{registration.user?.name}</span>
                         {registration.user?.membership?.type &&
                           membershipLabels[registration.user.membership.type] && (
@@ -642,6 +727,14 @@ export default function EventDetail() {
                             </span>
                           )}
                       </div>
+                      {(isAdmin || user?.id === event.createdBy) && registration.id && (
+                        <button
+                          onClick={() => removeParticipantMutation.mutate(registration.id)}
+                          className="text-xs text-red-600 hover:text-red-700"
+                        >
+                          Eliminar
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -914,7 +1007,7 @@ export default function EventDetail() {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         invite.status === 'USED'
                           ? 'bg-green-100 text-green-800'
-                          : invite.status === 'EXPIRED'
+                          : invite.status === 'EXPIRED' || invite.status === 'CANCELLED'
                           ? 'bg-red-100 text-red-800'
                           : 'bg-yellow-100 text-yellow-800'
                       }`}>

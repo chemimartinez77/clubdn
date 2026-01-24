@@ -129,23 +129,24 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
     }
 
     const normalizedDni = normalizeDni(guestDni);
-    const event = await prisma.event.findUnique({
-      where: { id: eventId },
-      select: {
-        id: true,
-        date: true,
-        status: true,
-        title: true,
-        maxAttendees: true,
-        registrations: {
-          where: { status: 'CONFIRMED' },
-          select: { id: true }
-        },
-        eventGuests: {
-          select: { id: true }
+      const event = await prisma.event.findUnique({
+        where: { id: eventId },
+        select: {
+          id: true,
+          date: true,
+          status: true,
+          title: true,
+          maxAttendees: true,
+          registrations: {
+            where: { status: 'CONFIRMED' },
+            select: { id: true }
+          },
+          invitations: {
+            where: { status: { in: [InvitationStatus.PENDING, InvitationStatus.USED] } },
+            select: { id: true }
+          }
         }
-      }
-    });
+      });
 
     if (!event) {
       res.status(404).json({ success: false, message: 'Evento no encontrado' });
@@ -165,7 +166,7 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const confirmedCount = event.registrations.length + event.eventGuests.length;
+      const confirmedCount = event.registrations.length + event.invitations.length;
     if (confirmedCount >= event.maxAttendees) {
       res.status(400).json({ success: false, message: 'Evento completo' });
       return;
@@ -220,9 +221,9 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
 
     const token = generateInvitationToken();
 
-    const invitation = await prisma.$transaction(async (tx) => {
-      const created = await tx.invitation.create({
-        data: {
+      const invitationResult = await prisma.$transaction(async (tx) => {
+        const created = await tx.invitation.create({
+          data: {
           token,
           memberId: userId,
           guestFirstName: normalizeText(guestFirstName),
@@ -234,30 +235,39 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
           status: InvitationStatus.PENDING,
           isExceptional: !!isExceptional
         },
-        include: {
-          event: { select: { id: true, title: true, date: true } },
-          member: { select: { id: true, name: true } }
-        }
+          include: {
+            event: { select: { id: true, title: true, date: true } },
+            member: { select: { id: true, name: true } }
+          }
+        });
+
+        const guest = await tx.eventGuest.create({
+          data: {
+            eventId: event.id,
+            invitationId: created.id,
+            guestFirstName: created.guestFirstName,
+            guestLastName: created.guestLastName,
+            guestDni: created.guestDni
+          }
+        });
+
+        return { created, guest };
       });
 
-      await tx.eventGuest.create({
+      await prisma.eventAuditLog.create({
         data: {
           eventId: event.id,
-          invitationId: created.id,
-          guestFirstName: created.guestFirstName,
-          guestLastName: created.guestLastName,
-          guestDni: created.guestDni
+          actorId: userId,
+          action: 'INVITE',
+          targetGuestId: invitationResult.guest.id
         }
       });
 
-      return created;
-    });
-
-    res.status(201).json({
-      success: true,
-      data: {
-        invitation: mapInvitation(invitation, { includeQr: true }),
-        qrUrl: buildQrUrl(token)
+      res.status(201).json({
+        success: true,
+        data: {
+          invitation: mapInvitation(invitationResult.created, { includeQr: true }),
+          qrUrl: buildQrUrl(token)
       },
       message: 'Invitacion creada'
     });
@@ -303,6 +313,65 @@ export const listInvitations = async (req: Request, res: Response): Promise<void
   } catch (error) {
     console.error('[INVITATION] Error al listar invitaciones:', error);
     res.status(500).json({ success: false, message: 'Error al listar invitaciones' });
+  }
+};
+
+export const cancelInvitation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+    const userRole = req.user?.role;
+    const { id } = req.params;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'No autenticado' });
+      return;
+    }
+
+    const invitation = await prisma.invitation.findUnique({
+      where: { id },
+      include: {
+        event: { select: { id: true, createdBy: true } },
+        eventGuest: { select: { id: true } }
+      }
+    });
+
+    if (!invitation) {
+      res.status(404).json({ success: false, message: 'Invitacion no encontrada' });
+      return;
+    }
+
+    const isAdmin = userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN;
+    const isOwner = invitation.memberId === userId;
+    const isOrganizer = invitation.event?.createdBy === userId;
+
+    if (!isAdmin && !isOwner && !isOrganizer) {
+      res.status(403).json({ success: false, message: 'No autorizado' });
+      return;
+    }
+
+    if (invitation.status !== InvitationStatus.PENDING) {
+      res.status(400).json({ success: false, message: 'Invitacion ya usada o expirada' });
+      return;
+    }
+
+    await prisma.invitation.update({
+      where: { id },
+      data: { status: InvitationStatus.CANCELLED }
+    });
+
+    await prisma.eventAuditLog.create({
+      data: {
+        eventId: invitation.eventId,
+        actorId: userId,
+        action: 'CANCEL_INVITE',
+        targetGuestId: invitation.eventGuest?.id || null
+      }
+    });
+
+    res.status(200).json({ success: true, message: 'Invitacion cancelada' });
+  } catch (error) {
+    console.error('Error al cancelar invitacion:', error);
+    res.status(500).json({ success: false, message: 'Error al cancelar invitacion' });
   }
 };
 

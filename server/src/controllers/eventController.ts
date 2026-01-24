@@ -61,13 +61,24 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
               }
             }
           },
-        eventGuests: {
-          select: {
-            id: true,
-            guestFirstName: true,
-            guestLastName: true
-          }
-        },
+          eventGuests: {
+            select: {
+              id: true,
+              guestFirstName: true,
+              guestLastName: true,
+              invitation: {
+                select: {
+                  status: true
+                }
+              }
+            }
+          },
+          invitations: {
+            select: {
+              id: true,
+              status: true
+            }
+          },
         game: {
           select: {
             thumbnail: true,
@@ -87,11 +98,13 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
           reg.user?.name?.toLowerCase().includes(searchTerm)
         );
         // Buscar en eventGuests (invitados)
-        const hasMatchingGuest = event.eventGuests.some(guest =>
-          guest.guestFirstName.toLowerCase().includes(searchTerm) ||
-          guest.guestLastName.toLowerCase().includes(searchTerm) ||
-          `${guest.guestFirstName} ${guest.guestLastName}`.toLowerCase().includes(searchTerm)
-        );
+          const hasMatchingGuest = event.eventGuests.some(guest =>
+            guest.invitation?.status !== 'CANCELLED' &&
+            guest.invitation?.status !== 'EXPIRED' &&
+            (guest.guestFirstName.toLowerCase().includes(searchTerm) ||
+              guest.guestLastName.toLowerCase().includes(searchTerm) ||
+              `${guest.guestFirstName} ${guest.guestLastName}`.toLowerCase().includes(searchTerm))
+          );
         return hasMatchingUser || hasMatchingGuest;
       });
     }
@@ -103,8 +116,10 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
 
     // Calcular datos adicionales para cada evento
       const eventsWithStats = events.map(event => {
-        const guestCount = event.eventGuests?.length || 0;
-        const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length + guestCount;
+        const activeGuestCount = event.invitations.filter(inv =>
+          inv.status === 'PENDING' || inv.status === 'USED'
+        ).length;
+        const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length + activeGuestCount;
         const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST').length;
         const userRegistration = event.registrations.find(r => r.userId === userId);
         const confirmedRegistrations = event.registrations.filter(r => r.status === 'CONFIRMED');
@@ -119,7 +134,8 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
           ...event,
           registrations: undefined, // No exponer lista completa en el listado
           eventGuests: undefined,
-          guestCount,
+          invitations: undefined,
+          guestCount: activeGuestCount,
           registeredCount,
           waitlistCount,
           isUserRegistered: !!userRegistration,
@@ -190,14 +206,27 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
           },
           orderBy: { createdAt: 'asc' }
         },
-        eventGuests: {
-          select: {
-            id: true,
-            guestFirstName: true,
-            guestLastName: true
+          eventGuests: {
+            select: {
+              id: true,
+              guestFirstName: true,
+              guestLastName: true,
+              invitationId: true,
+              invitation: {
+                select: {
+                  status: true,
+                  memberId: true
+                }
+              }
+            },
+            orderBy: { createdAt: 'asc' }
           },
-          orderBy: { createdAt: 'asc' }
-        },
+          invitations: {
+            select: {
+              id: true,
+              status: true
+            }
+          },
           game: {
             select: {
               thumbnail: true,
@@ -231,22 +260,33 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const guestCount = event.eventGuests?.length || 0;
-    const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length + guestCount;
+      const activeGuests = event.eventGuests.filter(guest =>
+        guest.invitation?.status === 'PENDING' || guest.invitation?.status === 'USED'
+      );
+      const guestCount = activeGuests.length;
+      const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length + guestCount;
     const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST').length;
     const userRegistration = event.registrations.find(r => r.userId === userId);
 
     res.status(200).json({
       success: true,
       data: {
-        event: {
-          ...event,
-          guestCount,
-          registeredCount,
-          waitlistCount,
-          isUserRegistered: !!userRegistration,
-          userRegistrationStatus: userRegistration?.status
-        }
+          event: {
+            ...event,
+            eventGuests: activeGuests.map(guest => ({
+              id: guest.id,
+              guestFirstName: guest.guestFirstName,
+              guestLastName: guest.guestLastName,
+              invitationId: guest.invitationId,
+              inviterId: guest.invitation?.memberId || null
+            })),
+            invitations: undefined,
+            guestCount,
+            registeredCount,
+            waitlistCount,
+            isUserRegistered: !!userRegistration,
+            userRegistrationStatus: userRegistration?.status
+          }
       }
     });
   } catch (error) {
@@ -403,12 +443,48 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
       }
     }
 
+    let newMaxAttendees: number | null = null;
+    if (maxAttendees !== undefined) {
+      newMaxAttendees = parseInt(maxAttendees);
+      if (Number.isNaN(newMaxAttendees) || newMaxAttendees < 1) {
+        res.status(400).json({
+          success: false,
+          message: 'Capacidad inválida'
+        });
+        return;
+      }
+
+      const [confirmedCount, activeInvitations] = await Promise.all([
+        prisma.eventRegistration.count({
+          where: {
+            eventId: id,
+            status: 'CONFIRMED'
+          }
+        }),
+        prisma.invitation.count({
+          where: {
+            eventId: id,
+            status: { in: ['PENDING', 'USED'] }
+          }
+        })
+      ]);
+
+      const currentCount = confirmedCount + activeInvitations;
+      if (newMaxAttendees < currentCount) {
+        res.status(400).json({
+          success: false,
+          message: 'La capacidad no puede ser menor que los asistentes actuales'
+        });
+        return;
+      }
+    }
+
     const updateData: Record<string, unknown> = {
       ...(title && { title }),
       ...(description && { description }),
       ...(date && { date: new Date(date) }),
       ...(address !== undefined && { address }),
-      ...(maxAttendees && { maxAttendees: parseInt(maxAttendees) }),
+      ...(newMaxAttendees !== null && { maxAttendees: newMaxAttendees }),
       ...(status && { status })
     };
 
@@ -430,6 +506,20 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
         }
       }
     });
+
+    if (newMaxAttendees !== null && newMaxAttendees < existingEvent.maxAttendees) {
+      await prisma.eventAuditLog.create({
+        data: {
+          eventId: id,
+          actorId: userId!,
+          action: 'CLOSE_CAPACITY',
+          details: JSON.stringify({
+            from: existingEvent.maxAttendees,
+            to: newMaxAttendees
+          })
+        }
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -549,15 +639,16 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
 
     const event = await prisma.event.findUnique({
       where: { id },
-      include: {
-        registrations: {
-          where: { status: 'CONFIRMED' }
-        },
-        eventGuests: {
-          select: { id: true }
+        include: {
+          registrations: {
+            where: { status: 'CONFIRMED' }
+          },
+          invitations: {
+            where: { status: { in: ['PENDING', 'USED'] } },
+            select: { id: true }
+          }
         }
-      }
-    });
+      });
 
     if (!event) {
       res.status(404).json({
@@ -595,7 +686,7 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
       }
     });
 
-    if (existingRegistration) {
+      if (existingRegistration) {
       if (existingRegistration.status === 'CANCELLED') {
         if (existingRegistration.cancelledAt) {
           const elapsedMs = now.getTime() - existingRegistration.cancelledAt.getTime();
@@ -609,53 +700,81 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
           }
         }
 
-        const confirmedCount = event.registrations.length + (event.eventGuests?.length || 0);
-        const registrationStatus = confirmedCount >= event.maxAttendees ? 'WAITLIST' : 'CONFIRMED';
-
-        const registration = await prisma.eventRegistration.update({
-          where: { id: existingRegistration.id },
-          data: {
-            status: registrationStatus,
-            cancelledAt: null
+          const confirmedCount = event.registrations.length + (event.invitations?.length || 0);
+          if (confirmedCount >= event.maxAttendees) {
+            res.status(400).json({
+              success: false,
+              message: 'Evento completo'
+            });
+            return;
           }
-        });
 
-        res.status(200).json({
-          success: true,
-          data: { registration },
-          message: registrationStatus === 'WAITLIST'
-            ? 'Te has registrado en lista de espera'
-            : 'Te has registrado correctamente al evento'
-        });
-        return;
-      }
+          const registration = await prisma.eventRegistration.update({
+            where: { id: existingRegistration.id },
+            data: {
+            status: 'CONFIRMED',
+            cancelledAt: null
+            }
+          });
+
+          await prisma.eventAuditLog.create({
+            data: {
+              eventId: id,
+              actorId: userId,
+              action: 'REGISTER',
+              targetUserId: userId
+            }
+          });
+
+          res.status(200).json({
+            success: true,
+            data: { registration },
+          message: 'Te has registrado correctamente al evento'
+          });
+          return;
+        }
 
       res.status(400).json({
         success: false,
         message: 'Ya est?s registrado a este evento'
       });
       return;
-    }
-
-    // Determinar estado: CONFIRMED o WAITLIST
-    const confirmedCount = event.registrations.length + (event.eventGuests?.length || 0);
-    const registrationStatus = confirmedCount >= event.maxAttendees ? 'WAITLIST' : 'CONFIRMED';
-
-    const registration = await prisma.eventRegistration.create({
-      data: {
-        eventId: id,
-        userId,
-        status: registrationStatus
       }
-    });
 
-    res.status(201).json({
-      success: true,
-      data: { registration },
-      message: registrationStatus === 'WAITLIST'
-        ? 'Te has registrado en lista de espera'
-        : 'Te has registrado correctamente al evento'
-    });
+      const confirmedCount = event.registrations.length + (event.invitations?.length || 0);
+      if (confirmedCount >= event.maxAttendees) {
+        res.status(400).json({
+          success: false,
+          message: 'Evento completo'
+        });
+        return;
+      }
+
+      // Determinar estado: CONFIRMED o WAITLIST
+      const registrationStatus = 'CONFIRMED';
+
+      const registration = await prisma.eventRegistration.create({
+        data: {
+          eventId: id,
+          userId,
+          status: registrationStatus
+        }
+      });
+
+      await prisma.eventAuditLog.create({
+        data: {
+          eventId: id,
+          actorId: userId,
+          action: 'REGISTER',
+          targetUserId: userId
+        }
+      });
+
+      res.status(201).json({
+        success: true,
+        data: { registration },
+      message: 'Te has registrado correctamente al evento'
+      });
   } catch (error) {
     console.error('Error al registrarse a evento:', error);
     res.status(500).json({
@@ -714,16 +833,28 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
       data: { status: 'CANCELLED', cancelledAt: new Date() }
     });
 
+    await prisma.eventAuditLog.create({
+      data: {
+        eventId: id,
+        actorId: userId,
+        action: 'UNREGISTER',
+        targetUserId: userId
+      }
+    });
+
     // Si era CONFIRMED, promover el primero de la waitlist
     if (wasConfirmed) {
       const [eventInfo, confirmedCount] = await Promise.all([
-        prisma.event.findUnique({
-          where: { id },
-          select: {
-            maxAttendees: true,
-            eventGuests: { select: { id: true } }
-          }
-        }),
+          prisma.event.findUnique({
+            where: { id },
+            select: {
+              maxAttendees: true,
+              invitations: {
+                where: { status: { in: ['PENDING', 'USED'] } },
+                select: { id: true }
+              }
+            }
+          }),
         prisma.eventRegistration.count({
           where: {
             eventId: id,
@@ -732,8 +863,8 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
         })
       ]);
 
-      if (eventInfo) {
-        const totalConfirmed = confirmedCount + (eventInfo.eventGuests?.length || 0);
+        if (eventInfo) {
+          const totalConfirmed = confirmedCount + (eventInfo.invitations?.length || 0);
         if (totalConfirmed < eventInfo.maxAttendees) {
           const firstWaitlisted = await prisma.eventRegistration.findFirst({
             where: {
@@ -762,6 +893,134 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
     res.status(500).json({
       success: false,
       message: 'Error al cancelar registro'
+    });
+  }
+};
+
+/**
+ * DELETE /api/events/:id/registrations/:registrationId - Eliminar participante (organizador o admin)
+ */
+export const removeParticipant = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id, registrationId } = req.params;
+    const userId = req.user?.userId;
+    const userRole = req.user?.role;
+
+    if (!id || !registrationId || !userId) {
+      res.status(400).json({
+        success: false,
+        message: 'Datos inválidos'
+      });
+      return;
+    }
+
+    const registration = await prisma.eventRegistration.findUnique({
+      where: { id: registrationId },
+      include: {
+        event: {
+          select: {
+            id: true,
+            createdBy: true,
+            maxAttendees: true,
+            eventGuests: { select: { id: true } }
+          }
+        }
+      }
+    });
+
+    if (!registration || registration.eventId !== id) {
+      res.status(404).json({
+        success: false,
+        message: 'Registro no encontrado'
+      });
+      return;
+    }
+
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+    const isOrganizer = registration.event?.createdBy === userId;
+
+    if (!isAdmin && !isOrganizer) {
+      res.status(403).json({
+        success: false,
+        message: 'No tienes permisos para eliminar participantes'
+      });
+      return;
+    }
+
+    if (registration.status === 'CANCELLED') {
+      res.status(400).json({
+        success: false,
+        message: 'El participante ya está cancelado'
+      });
+      return;
+    }
+
+    const wasConfirmed = registration.status === 'CONFIRMED';
+
+    await prisma.eventRegistration.update({
+      where: { id: registration.id },
+      data: { status: 'CANCELLED', cancelledAt: new Date() }
+    });
+
+    await prisma.eventAuditLog.create({
+      data: {
+        eventId: id,
+        actorId: userId,
+        action: 'REMOVE_PARTICIPANT',
+        targetUserId: registration.userId
+      }
+    });
+
+    if (wasConfirmed) {
+      const [eventInfo, confirmedCount] = await Promise.all([
+        prisma.event.findUnique({
+          where: { id },
+          select: {
+            maxAttendees: true,
+            invitations: {
+              where: { status: { in: ['PENDING', 'USED'] } },
+              select: { id: true }
+            }
+          }
+        }),
+        prisma.eventRegistration.count({
+          where: {
+            eventId: id,
+            status: 'CONFIRMED'
+          }
+        })
+      ]);
+
+      if (eventInfo) {
+        const totalConfirmed = confirmedCount + (eventInfo.invitations?.length || 0);
+        if (totalConfirmed < eventInfo.maxAttendees) {
+          const firstWaitlisted = await prisma.eventRegistration.findFirst({
+            where: {
+              eventId: id,
+              status: 'WAITLIST'
+            },
+            orderBy: { createdAt: 'asc' }
+          });
+
+          if (firstWaitlisted) {
+            await prisma.eventRegistration.update({
+              where: { id: firstWaitlisted.id },
+              data: { status: 'CONFIRMED' }
+            });
+          }
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Participante eliminado'
+    });
+  } catch (error) {
+    console.error('Error al eliminar participante:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al eliminar participante'
     });
   }
 };

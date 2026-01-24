@@ -79,6 +79,8 @@ export interface EventGuest {
   id: string;
   guestFirstName: string;
   guestLastName: string;
+  invitationId?: string | null;
+  inviterId?: string | null;
 }
 
 export interface EventRegistration {

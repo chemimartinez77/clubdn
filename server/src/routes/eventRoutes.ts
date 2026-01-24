@@ -8,6 +8,7 @@ import {
   deleteEvent,
   registerToEvent,
   unregisterFromEvent,
+  removeParticipant,
   getEventAttendees,
   syncEventBggIds
 } from '../controllers/eventController';
@@ -23,6 +24,7 @@ router.get('/:id/attendees', authenticate, getEventAttendees);
 // Registro/cancelación (usuarios autenticados)
 router.post('/:id/register', authenticate, registerToEvent);
 router.delete('/:id/register', authenticate, unregisterFromEvent);
+router.delete('/:id/registrations/:registrationId', authenticate, removeParticipant);
 
 // CRUD
 router.post('/', authenticate, createEvent); // Usuarios pueden crear PARTIDA, admins todo
