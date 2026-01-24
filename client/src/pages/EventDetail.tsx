@@ -246,7 +246,11 @@ export default function EventDetail() {
   };
 
   const isPartida = event.type === 'PARTIDA';
-  const isPast = new Date(event.date) < new Date();
+  const eventStart = new Date(event.date);
+  if (event.startHour !== null && event.startHour !== undefined) {
+    eventStart.setHours(event.startHour, event.startMinute ?? 0, 0, 0);
+  }
+  const isPast = eventStart < new Date();
   const isFull = (event.registeredCount || 0) >= event.maxAttendees;
   const canRegister = event.status === 'SCHEDULED' && !isPast && !event.isUserRegistered && !isFull;
   const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED';
