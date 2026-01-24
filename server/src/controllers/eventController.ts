@@ -44,18 +44,23 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
             email: true
           }
         },
-        registrations: {
-          select: {
-            id: true,
-            userId: true,
-            status: true,
-            user: {
-              select: {
-                name: true
+          registrations: {
+            select: {
+              id: true,
+              userId: true,
+              status: true,
+              user: {
+                select: {
+                  name: true,
+                  membership: {
+                    select: {
+                      type: true
+                    }
+                  }
+                }
               }
             }
-          }
-        },
+          },
         eventGuests: {
           select: {
             id: true,
@@ -97,23 +102,32 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
     events = events.slice(skip, skip + limitNum);
 
     // Calcular datos adicionales para cada evento
-    const eventsWithStats = events.map(event => {
-      const guestCount = event.eventGuests?.length || 0;
-      const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length + guestCount;
-      const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST').length;
-      const userRegistration = event.registrations.find(r => r.userId === userId);
+      const eventsWithStats = events.map(event => {
+        const guestCount = event.eventGuests?.length || 0;
+        const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length + guestCount;
+        const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST').length;
+        const userRegistration = event.registrations.find(r => r.userId === userId);
+        const confirmedRegistrations = event.registrations.filter(r => r.status === 'CONFIRMED');
+        const hasSocioRegistered = confirmedRegistrations.some(
+          r => r.user?.membership?.type === 'SOCIO'
+        );
+        const hasColaboradorRegistered = confirmedRegistrations.some(
+          r => r.user?.membership?.type === 'COLABORADOR'
+        );
 
-      return {
-        ...event,
-        registrations: undefined, // No exponer lista completa en el listado
-        eventGuests: undefined,
-        guestCount,
-        registeredCount,
-        waitlistCount,
-        isUserRegistered: !!userRegistration,
-        userRegistrationStatus: userRegistration?.status
-      };
-    });
+        return {
+          ...event,
+          registrations: undefined, // No exponer lista completa en el listado
+          eventGuests: undefined,
+          guestCount,
+          registeredCount,
+          waitlistCount,
+          isUserRegistered: !!userRegistration,
+          userRegistrationStatus: userRegistration?.status,
+          hasSocioRegistered,
+          hasColaboradorRegistered
+        };
+      });
 
     res.status(200).json({
       success: true,

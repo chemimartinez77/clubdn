@@ -78,16 +78,43 @@ export default function Events() {
       return dateB - dateA;
     });
 
-  const handlePreviousMonth = () => {
-    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1));
+  const shiftDate = (base: Date, days: number) => {
+    const next = new Date(base);
+    next.setDate(base.getDate() + days);
+    return next;
   };
 
-  const handleNextMonth = () => {
-    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1));
+  const handlePrevious = () => {
+    setCurrentMonth(prev => {
+      if (calendarView === 'month') {
+        return new Date(prev.getFullYear(), prev.getMonth() - 1, 1);
+      }
+      if (calendarView === 'week') {
+        return shiftDate(prev, -7);
+      }
+      return shiftDate(prev, -1);
+    });
+  };
+
+  const handleNext = () => {
+    setCurrentMonth(prev => {
+      if (calendarView === 'month') {
+        return new Date(prev.getFullYear(), prev.getMonth() + 1, 1);
+      }
+      if (calendarView === 'week') {
+        return shiftDate(prev, 7);
+      }
+      return shiftDate(prev, 1);
+    });
   };
 
   const handleToday = () => {
     setCurrentMonth(new Date());
+  };
+
+  const handleDaySelect = (date: Date) => {
+    setCurrentMonth(date);
+    setCalendarView('day');
   };
 
   return (
@@ -291,7 +318,7 @@ export default function Events() {
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   {/* Navigation */}
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={handlePreviousMonth}>
+                    <Button variant="outline" onClick={handlePrevious}>
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
@@ -301,7 +328,7 @@ export default function Events() {
                       Hoy
                     </Button>
 
-                    <Button variant="outline" onClick={handleNextMonth}>
+                    <Button variant="outline" onClick={handleNext}>
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
@@ -345,7 +372,11 @@ export default function Events() {
 
                 {/* Calendar Component based on view */}
                 {calendarView === 'month' && (
-                  <EventCalendar events={events} currentMonth={currentMonth} />
+                  <EventCalendar
+                    events={events}
+                    currentMonth={currentMonth}
+                    onDaySelect={handleDaySelect}
+                  />
                 )}
                 {calendarView === 'week' && (
                   <EventCalendarWeek events={events} currentMonth={currentMonth} />

@@ -65,6 +65,8 @@ export interface Event {
   waitlistCount?: number;
   isUserRegistered?: boolean;
   userRegistrationStatus?: RegistrationStatus;
+  hasSocioRegistered?: boolean;
+  hasColaboradorRegistered?: boolean;
 
   // Registros completos (solo en detalle)
   registrations?: EventRegistration[];
