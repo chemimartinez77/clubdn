@@ -96,7 +96,11 @@ export default function Profile() {
         discord: profile.discord || '',
         telegram: profile.telegram || '',
         notifications: profile.notifications,
-        emailUpdates: profile.emailUpdates
+        emailUpdates: profile.emailUpdates,
+        notifyNewEvents: profile.notifyNewEvents,
+        notifyEventChanges: profile.notifyEventChanges,
+        notifyEventCancelled: profile.notifyEventCancelled,
+        notifyInvitations: profile.notifyInvitations
       });
     }
     setIsEditing(true);
@@ -335,25 +339,84 @@ export default function Profile() {
                 {/* Notifications */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Notificaciones</h3>
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={formData.notifications ?? true}
-                        onChange={(e) => setFormData({ ...formData, notifications: e.target.checked })}
-                        className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
-                      />
-                      <span className="text-sm text-gray-700">Recibir notificaciones en la aplicación</span>
-                    </label>
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={formData.emailUpdates ?? true}
-                        onChange={(e) => setFormData({ ...formData, emailUpdates: e.target.checked })}
-                        className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
-                      />
-                      <span className="text-sm text-gray-700">Recibir actualizaciones por email</span>
-                    </label>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-3">Configuración General</p>
+                      <div className="space-y-3">
+                        <label className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={formData.notifications ?? true}
+                            onChange={(e) => setFormData({ ...formData, notifications: e.target.checked })}
+                            className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                          />
+                          <span className="text-sm text-gray-700">Recibir notificaciones en la aplicación</span>
+                        </label>
+                        <label className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={formData.emailUpdates ?? true}
+                            onChange={(e) => setFormData({ ...formData, emailUpdates: e.target.checked })}
+                            className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                          />
+                          <span className="text-sm text-gray-700">Recibir actualizaciones por email</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-gray-200 pt-4">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Preferencias de Notificaciones</p>
+                      <div className="space-y-3">
+                        <label className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={formData.notifyNewEvents ?? true}
+                            onChange={(e) => setFormData({ ...formData, notifyNewEvents: e.target.checked })}
+                            className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)] mt-0.5"
+                          />
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">Nuevas partidas creadas</span>
+                            <p className="text-xs text-gray-500">Recibir notificaciones cuando se cree una nueva partida</p>
+                          </div>
+                        </label>
+                        <label className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={formData.notifyEventChanges ?? true}
+                            onChange={(e) => setFormData({ ...formData, notifyEventChanges: e.target.checked })}
+                            className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)] mt-0.5"
+                          />
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">Cambios en eventos inscritos</span>
+                            <p className="text-xs text-gray-500">Notificar cuando se modifique una partida en la que estás inscrito</p>
+                          </div>
+                        </label>
+                        <label className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={formData.notifyEventCancelled ?? true}
+                            onChange={(e) => setFormData({ ...formData, notifyEventCancelled: e.target.checked })}
+                            className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)] mt-0.5"
+                          />
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">Eventos cancelados</span>
+                            <p className="text-xs text-gray-500">Notificar cuando se cancele una partida en la que estás inscrito</p>
+                          </div>
+                        </label>
+                        <label className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={formData.notifyInvitations ?? true}
+                            onChange={(e) => setFormData({ ...formData, notifyInvitations: e.target.checked })}
+                            className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)] mt-0.5"
+                          />
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">Estado de invitaciones</span>
+                            <p className="text-xs text-gray-500">Notificar cuando tus invitaciones sean validadas o rechazadas</p>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -440,16 +503,50 @@ export default function Profile() {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuración</h3>
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <span className={`w-5 h-5 rounded ${profile.notifications ? 'bg-green-500' : 'bg-gray-300'}`}></span>
-                        <span className="text-sm text-gray-700">Notificaciones en la aplicación</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`w-5 h-5 rounded ${profile.emailUpdates ? 'bg-green-500' : 'bg-gray-300'}`}></span>
-                        <span className="text-sm text-gray-700">Actualizaciones por email</span>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-3">General</p>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <span className={`w-5 h-5 rounded ${profile.notifications ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className="text-sm text-gray-700">Notificaciones en la aplicación</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`w-5 h-5 rounded ${profile.emailUpdates ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className="text-sm text-gray-700">Actualizaciones por email</span>
+                        </div>
                       </div>
                     </div>
+
+                    <div className="pt-4 border-t border-gray-200">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Preferencias de Notificaciones</p>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <span className={`w-5 h-5 rounded ${profile.notifyNewEvents ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <div>
+                            <span className="text-sm text-gray-700">Nuevas partidas creadas</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`w-5 h-5 rounded ${profile.notifyEventChanges ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <div>
+                            <span className="text-sm text-gray-700">Cambios en eventos inscritos</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`w-5 h-5 rounded ${profile.notifyEventCancelled ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <div>
+                            <span className="text-sm text-gray-700">Eventos cancelados</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`w-5 h-5 rounded ${profile.notifyInvitations ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <div>
+                            <span className="text-sm text-gray-700">Estado de invitaciones</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="pt-4 border-t border-gray-200">
                       <p className="text-sm font-medium text-gray-700 mb-3">Tema de la aplicación</p>
                       <ThemeSelector />

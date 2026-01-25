@@ -20,6 +20,10 @@ export interface UserProfile {
   telegram: string | null;
   notifications: boolean;
   emailUpdates: boolean;
+  notifyNewEvents: boolean;
+  notifyEventChanges: boolean;
+  notifyEventCancelled: boolean;
+  notifyInvitations: boolean;
   createdAt: string;
   updatedAt: string;
   user?: User;
@@ -36,4 +40,8 @@ export interface UpdateProfileData {
   telegram?: string;
   notifications?: boolean;
   emailUpdates?: boolean;
+  notifyNewEvents?: boolean;
+  notifyEventChanges?: boolean;
+  notifyEventCancelled?: boolean;
+  notifyInvitations?: boolean;
 }

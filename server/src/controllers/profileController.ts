@@ -54,7 +54,11 @@ export const getMyProfile = async (req: Request, res: Response): Promise<void> =
           userId,
           favoriteGames: [],
           notifications: true,
-          emailUpdates: true
+          emailUpdates: true,
+          notifyNewEvents: true,
+          notifyEventChanges: true,
+          notifyEventCancelled: true,
+          notifyInvitations: true
         },
         include: {
           user: {
@@ -169,7 +173,11 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
       discord,
       telegram,
       notifications,
-      emailUpdates
+      emailUpdates,
+      notifyNewEvents,
+      notifyEventChanges,
+      notifyEventCancelled,
+      notifyInvitations
     } = req.body;
 
     // Buscar o crear perfil
@@ -191,7 +199,11 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           discord,
           telegram,
           notifications: notifications ?? true,
-          emailUpdates: emailUpdates ?? true
+          emailUpdates: emailUpdates ?? true,
+          notifyNewEvents: notifyNewEvents ?? true,
+          notifyEventChanges: notifyEventChanges ?? true,
+          notifyEventCancelled: notifyEventCancelled ?? true,
+          notifyInvitations: notifyInvitations ?? true
         },
         include: {
           user: {
@@ -221,7 +233,11 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           ...(discord !== undefined && { discord }),
           ...(telegram !== undefined && { telegram }),
           ...(notifications !== undefined && { notifications }),
-          ...(emailUpdates !== undefined && { emailUpdates })
+          ...(emailUpdates !== undefined && { emailUpdates }),
+          ...(notifyNewEvents !== undefined && { notifyNewEvents }),
+          ...(notifyEventChanges !== undefined && { notifyEventChanges }),
+          ...(notifyEventCancelled !== undefined && { notifyEventCancelled }),
+          ...(notifyInvitations !== undefined && { notifyInvitations })
         },
         include: {
           user: {
