@@ -38,7 +38,8 @@
       "Bash(del serverupdate-admin-password.ts)",
       "Bash(ls:*)",
       "Bash(PORT=5000 npm run dev:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(git push:*)"
     ]
   }
 }
