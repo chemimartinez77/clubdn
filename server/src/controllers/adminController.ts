@@ -14,7 +14,9 @@ export const getPendingApprovals = async (_req: Request, res: Response) => {
   try {
     const pendingUsers = await prisma.user.findMany({
       where: {
-        status: 'PENDING_APPROVAL',
+        status: {
+          in: ['PENDING_APPROVAL', 'APPROVED', 'REJECTED'],
+        },
       },
       select: {
         id: true,
@@ -22,6 +24,16 @@ export const getPendingApprovals = async (_req: Request, res: Response) => {
         email: true,
         createdAt: true,
         status: true,
+        approvedBy: {
+          select: {
+            name: true,
+          },
+        },
+        rejectedBy: {
+          select: {
+            name: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -30,7 +42,15 @@ export const getPendingApprovals = async (_req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      data: pendingUsers,
+      data: pendingUsers.map((user) => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+        status: user.status,
+        approvedByName: user.approvedBy?.name || null,
+        rejectedByName: user.rejectedBy?.name || null,
+      })),
     });
   } catch (error) {
     console.error('Error al obtener solicitudes pendientes:', error);

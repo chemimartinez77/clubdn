@@ -8,6 +8,8 @@ interface PendingUser {
   email: string;
   createdAt: string;
   status: string;
+  approvedByName?: string | null;
+  rejectedByName?: string | null;
 }
 
 export const useAdminUsers = () => {

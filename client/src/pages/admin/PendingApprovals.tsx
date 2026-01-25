@@ -172,19 +172,31 @@ export default function PendingApprovals() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {pendingUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                    {pendingUsers.map((user) => {
+                      const isPending = user.status === 'PENDING_APPROVAL';
+                      const statusLabel = user.status === 'APPROVED' ? 'Aprobada' : 'Rechazada';
+                      const actorName =
+                        user.status === 'APPROVED' ? user.approvedByName : user.rejectedByName;
+                      return (
+                      <tr
+                        key={user.id}
+                        className={`hover:bg-gray-50 transition-colors ${isPending ? '' : 'bg-gray-50 text-gray-500'}`}
+                      >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-[var(--color-primary-100)] flex items-center justify-center">
-                                <span className="text-[var(--color-primary)] font-semibold text-sm">
+                              <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                                isPending ? 'bg-[var(--color-primary-100)]' : 'bg-gray-200'
+                              }`}>
+                                <span className={`font-semibold text-sm ${
+                                  isPending ? 'text-[var(--color-primary)]' : 'text-gray-500'
+                                }`}>
                                   {user.name.charAt(0).toUpperCase()}
                                 </span>
                               </div>
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
+                              <div className={`text-sm font-medium ${isPending ? 'text-gray-900' : 'text-gray-600'}`}>
                                 {user.name}
                               </div>
                               <div className="text-sm text-gray-500">
@@ -194,38 +206,47 @@ export default function PendingApprovals() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                          <div className={`text-sm ${isPending ? 'text-gray-900' : 'text-gray-500'}`}>
                             {formatDate(user.createdAt)}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end gap-2">
-                            <Button
-                              onClick={() => handleApprove({ id: user.id, name: user.name, email: user.email })}
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 focus:ring-green-500"
-                              disabled={isApproving || isRejecting}
-                            >
-                              <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                              Aprobar
-                            </Button>
-                            <Button
-                              onClick={() => handleReject({ id: user.id, name: user.name, email: user.email })}
-                              variant="danger"
-                              size="sm"
-                              disabled={isApproving || isRejecting}
-                            >
-                              <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                              Rechazar
-                            </Button>
+                            {isPending ? (
+                              <>
+                                <Button
+                                  onClick={() => handleApprove({ id: user.id, name: user.name, email: user.email })}
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 focus:ring-green-500"
+                                  disabled={isApproving || isRejecting}
+                                >
+                                  <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  Aprobar
+                                </Button>
+                                <Button
+                                  onClick={() => handleReject({ id: user.id, name: user.name, email: user.email })}
+                                  variant="danger"
+                                  size="sm"
+                                  disabled={isApproving || isRejecting}
+                                >
+                                  <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                  Rechazar
+                                </Button>
+                              </>
+                            ) : (
+                              <span className="text-sm text-gray-500">
+                                {statusLabel} por {actorName || 'Administrador'}
+                              </span>
+                            )}
                           </div>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
