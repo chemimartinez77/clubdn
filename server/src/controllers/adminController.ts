@@ -70,11 +70,11 @@ export const approveUser = async (req: Request, res: Response) => {
       });
     }
 
-    // Verificar que est� pendiente de aprobaci�n
+    // Verificar que está pendiente de aprobación
     if (user.status !== 'PENDING_APPROVAL') {
       return res.status(400).json({
         success: false,
-        message: 'Este usuario no est� pendiente de aprobaci�n',
+        message: 'Este usuario no está pendiente de aprobación',
       });
     }
 
@@ -126,6 +126,12 @@ export const rejectUser = async (req: Request, res: Response) => {
     const { userId } = req.params;
     const { reason, customMessage } = req.body;
     const adminId = req.user?.userId;
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId requerido',
+      });
+    }
 
     if (!adminId) {
       return res.status(401).json({
@@ -174,7 +180,7 @@ export const rejectUser = async (req: Request, res: Response) => {
     });
 
     // Enviar email de rechazo
-    const displayName = user.name || 'Usuario';
+    const displayName: string = user.name ?? 'Usuario';
     await sendRejectionEmail(userEmail, displayName, reason, customMessage);
 
     // Notificar al usuario
