@@ -1,13 +1,13 @@
 // server/src/services/notificationService.ts
 import { prisma } from '../config/database';
-import { NotificationType } from '@prisma/client';
+import { NotificationType, Prisma } from '@prisma/client';
 
 interface CreateNotificationParams {
   userId: string;
   type: NotificationType;
   title: string;
   message: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Prisma.InputJsonValue;
 }
 
 interface CreateBulkNotificationsParams {
@@ -15,7 +15,7 @@ interface CreateBulkNotificationsParams {
   type: NotificationType;
   title: string;
   message: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Prisma.InputJsonValue;
 }
 
 /**
@@ -125,14 +125,15 @@ export const notifyUserRejected = async (
   userName: string,
   reason?: string
 ) => {
+  const metadata = reason ? { userName, reason } : { userName };
   return await createNotification({
     userId,
     type: 'USER_REJECTED',
     title: 'Solicitud rechazada',
     message: reason
       ? `Tu solicitud ha sido rechazada. Motivo: ${reason}`
-      : 'Tu solicitud ha sido rechazada. Contacta al administrador para más información.',
-    metadata: { userName, reason },
+      : 'Tu solicitud ha sido rechazada. Contacta al administrador para mas informacion.',
+    metadata,
   });
 };
 
@@ -205,7 +206,7 @@ export const notifyNewEvent = async (
       type: 'EVENT_CREATED',
       title: 'Nueva partida disponible',
       message: `Se ha creado una nueva partida: "${eventTitle}". Fecha: ${new Date(eventDate).toLocaleDateString('es-ES')}`,
-      metadata: { eventId, eventTitle, eventDate },
+      metadata: { eventId, eventTitle, eventDate: eventDate.toISOString() },
     });
   } catch (error) {
     console.error('Error notificando nueva partida:', error);

@@ -78,6 +78,14 @@ export const approveUser = async (req: Request, res: Response) => {
       });
     }
 
+    const userEmail = user.email;
+    if (!userEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'El usuario no tiene email'
+      });
+    }
+
     // Actualizar usuario
     await prisma.user.update({
       where: { id: userId },
@@ -90,7 +98,7 @@ export const approveUser = async (req: Request, res: Response) => {
 
     // Enviar email de aprobaci�n
     const displayName = user.name || 'Usuario';
-    await sendApprovalEmail(user.email, displayName, customMessage);
+    await sendApprovalEmail(userEmail, displayName, customMessage);
 
     // Notificar al usuario
     const { notifyUserApproved } = await import('../services/notificationService');
@@ -146,6 +154,14 @@ export const rejectUser = async (req: Request, res: Response) => {
       });
     }
 
+    const userEmail = user.email;
+    if (!userEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'El usuario no tiene email'
+      });
+    }
+
     // Actualizar usuario
     await prisma.user.update({
       where: { id: userId },
@@ -159,7 +175,7 @@ export const rejectUser = async (req: Request, res: Response) => {
 
     // Enviar email de rechazo
     const displayName = user.name || 'Usuario';
-    await sendRejectionEmail(user.email, displayName, reason, customMessage);
+    await sendRejectionEmail(userEmail, displayName, reason, customMessage);
 
     // Notificar al usuario
     const { notifyUserRejected } = await import('../services/notificationService');
