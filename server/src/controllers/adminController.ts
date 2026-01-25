@@ -51,6 +51,13 @@ export const approveUser = async (req: Request, res: Response) => {
     const { customMessage } = req.body;
     const adminId = req.user?.userId;
 
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId requerido',
+      });
+    }
+
     if (!adminId) {
       return res.status(401).json({
         success: false,
@@ -97,7 +104,7 @@ export const approveUser = async (req: Request, res: Response) => {
     });
 
     // Enviar email de aprobaci�n
-    const displayName = user.name || 'Usuario';
+    const displayName: string = user.name ?? 'Usuario';
     await sendApprovalEmail(userEmail, displayName, customMessage);
 
     // Notificar al usuario
