@@ -85,9 +85,14 @@ export default function Register() {
               ¡Registro Exitoso!
             </h2>
             <p className="text-gray-600 mb-6">
-              {(successMessage || 'Hemos enviado un email de verificaci?n a') + ' '}
-              <strong>{registeredEmail}</strong>. Por favor, verifica tu email
-              para continuar.
+              {successMessage ? (
+                successMessage
+              ) : (
+                <>
+                  Hemos enviado un email de verificaci?n a <strong>{registeredEmail}</strong>. Por favor,
+                  verifica tu email para continuar.
+                </>
+              )}
             </p>
             <Link
               to="/login"
