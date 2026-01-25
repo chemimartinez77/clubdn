@@ -33,7 +33,7 @@ export const register = async (req: Request, res: Response) => {
     // Hash del password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generar token de verificaci?n
+    // Generar token de verificación
     const verificationToken = randomUUID();
     const tokenExpiry = new Date();
     tokenExpiry.setHours(tokenExpiry.getHours() + 24); // 24 horas
@@ -91,7 +91,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
     if (!token || typeof token !== 'string') {
       return res.status(400).json({
         success: false,
-        message: 'Token de verificaci?n no proporcionado',
+        message: 'Token de verificación no proporcionado',
       });
     }
 
@@ -105,7 +105,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Token de verificaci?n inv?lido',
+        message: 'Token de verificación inválido',
       });
     }
 
@@ -113,7 +113,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
     if (user.tokenExpiry && user.tokenExpiry < new Date()) {
       return res.status(400).json({
         success: false,
-        message: 'El token de verificaci?n ha expirado',
+        message: 'El token de verificación ha expirado',
       });
     }
 
@@ -139,10 +139,10 @@ export const verifyEmail = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       message:
-        'Email verificado exitosamente. Tu solicitud ser? revisada por un administrador.',
+        'Email verificado exitosamente. Tu solicitud será revisada por un administrador.',
     });
   } catch (error) {
-    console.error('Error en verificaci?n de email:', error);
+    console.error('Error en verificación de email:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al verificar el email',
