@@ -1,6 +1,14 @@
 // client/src/components/notifications/NotificationBell.tsx
 import { useEffect, useState, useRef } from 'react';
-import { getNotifications, getUnreadCount, markAsRead, markAllAsRead, deleteNotification, type Notification } from '../../api/notifications';
+import { useNavigate } from 'react-router-dom';
+import {
+  getNotifications,
+  getUnreadCount,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification,
+  type Notification,
+} from '../../api/notifications';
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -8,22 +16,20 @@ export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
-  // Fetch unread count on mount and every 30 seconds
   useEffect(() => {
     fetchUnreadCount();
     const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch notifications when dropdown opens
   useEffect(() => {
     if (isOpen) {
       fetchNotifications();
     }
   }, [isOpen]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -63,7 +69,9 @@ export default function NotificationBell() {
   const handleMarkAsRead = async (id: string) => {
     try {
       await markAsRead(id);
-      setNotifications(notifications.map(n => n.id === id ? { ...n, read: true, readAt: new Date().toISOString() } : n));
+      setNotifications(
+        notifications.map(n => n.id === id ? { ...n, read: true, readAt: new Date().toISOString() } : n)
+      );
       setUnreadCount(Math.max(0, unreadCount - 1));
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -93,30 +101,51 @@ export default function NotificationBell() {
     }
   };
 
+  const handleNotificationClick = async (notification: Notification) => {
+    if (notification.type !== 'ADMIN_NEW_USER') {
+      return;
+    }
+
+    if (!notification.read) {
+      try {
+        await markAsRead(notification.id);
+        setNotifications(
+          notifications.map(n => n.id === notification.id ? { ...n, read: true, readAt: new Date().toISOString() } : n)
+        );
+        setUnreadCount(Math.max(0, unreadCount - 1));
+      } catch (error) {
+        console.error('Error marking notification as read:', error);
+      }
+    }
+
+    setIsOpen(false);
+    navigate('/admin/pending-approvals', { state: { refreshPending: true } });
+  };
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'EVENT_CANCELLED':
-        return '❌';
+        return String.fromCodePoint(0x1F6AB);
       case 'EVENT_MODIFIED':
-        return '✏️';
+        return String.fromCodePoint(0x1F527);
       case 'EVENT_CREATED':
-        return '🎲';
+        return String.fromCodePoint(0x1F4C5);
       case 'EVENT_REMINDER':
-        return '⏰';
+        return String.fromCodePoint(0x23F0);
       case 'USER_APPROVED':
-        return '✅';
+        return String.fromCodePoint(0x2705);
       case 'USER_REJECTED':
-        return '⛔';
+        return String.fromCodePoint(0x274C);
       case 'ADMIN_NEW_USER':
-        return '👤';
+        return String.fromCodePoint(0x1F464);
       case 'INVITATION_VALIDATED':
-        return '✅';
+        return String.fromCodePoint(0x1F4E9);
       case 'INVITATION_REJECTED':
-        return '⛔';
+        return String.fromCodePoint(0x1F4E4);
       case 'WAITLIST_SPOT_AVAILABLE':
-        return '🎯';
+        return String.fromCodePoint(0x1F6AA);
       default:
-        return '📢';
+        return String.fromCodePoint(0x1F514);
     }
   };
 
@@ -156,7 +185,6 @@ export default function NotificationBell() {
         <>
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-20 max-h-[32rem] overflow-hidden flex flex-col">
-            {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Notificaciones</h3>
               {notifications.length > 0 && unreadCount > 0 && (
@@ -164,12 +192,11 @@ export default function NotificationBell() {
                   onClick={handleMarkAllAsRead}
                   className="text-xs text-primary hover:text-primary/80 font-medium"
                 >
-                  Marcar todas como leídas
+                  {'Marcar todas como leida'}
                 </button>
               )}
             </div>
 
-            {/* Notifications List */}
             <div className="overflow-y-auto flex-1">
               {loading ? (
                 <div className="flex items-center justify-center p-8">
@@ -186,6 +213,8 @@ export default function NotificationBell() {
                 notifications.map((notification) => (
                   <div
                     key={notification.id}
+                    onClick={() => handleNotificationClick(notification)}
+                    role={notification.type === 'ADMIN_NEW_USER' ? 'button' : undefined}
                     className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
                       !notification.read ? 'bg-blue-50/50' : ''
                     }`}
@@ -198,7 +227,10 @@ export default function NotificationBell() {
                             {notification.title}
                           </h4>
                           <button
-                            onClick={() => handleDelete(notification.id)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleDelete(notification.id);
+                            }}
                             className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
                             aria-label="Eliminar"
                           >
@@ -214,10 +246,13 @@ export default function NotificationBell() {
                           </span>
                           {!notification.read && (
                             <button
-                              onClick={() => handleMarkAsRead(notification.id)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleMarkAsRead(notification.id);
+                              }}
                               className="text-xs text-primary hover:text-primary/80 font-medium"
                             >
-                              Marcar como leída
+                              {'Marcar como leida'}
                             </button>
                           )}
                         </div>

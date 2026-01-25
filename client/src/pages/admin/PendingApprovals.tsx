@@ -1,5 +1,6 @@
 // client/src/pages/admin/PendingApprovals.tsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -17,9 +18,16 @@ interface SelectedUser {
 export default function PendingApprovals() {
   const { pendingUsers, isLoading, error, refetch, approveUser, rejectUser, isApproving, isRejecting } = useAdminUsers();
   const { success, error: showError } = useToast();
+  const location = useLocation();
   const [selectedUser, setSelectedUser] = useState<SelectedUser | null>(null);
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (location.state && typeof location.state === 'object' && 'refreshPending' in location.state) {
+      refetch();
+    }
+  }, [location.state, refetch]);
 
   const handleApprove = (user: SelectedUser) => {
     setSelectedUser(user);
