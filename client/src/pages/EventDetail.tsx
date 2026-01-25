@@ -43,6 +43,17 @@ export default function EventDetail() {
     enabled: !!id
   });
 
+  const getErrorMessage = (err: unknown, fallback: string) => {
+    if (typeof err !== 'object' || err === null) {
+      return fallback;
+    }
+    if (!('response' in err)) {
+      return fallback;
+    }
+    const response = (err as { response?: { data?: { message?: string } } }).response;
+    return response?.data?.message || fallback;
+  };
+
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: async () => {
@@ -54,8 +65,8 @@ export default function EventDetail() {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       success(data.message || 'Registrado correctamente');
     },
-    onError: (err: any) => {
-      showError(err.response?.data?.message || 'Error al registrarse');
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, 'Error al registrarse'));
     }
   });
 
@@ -70,8 +81,8 @@ export default function EventDetail() {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       success(data.message || 'Registro cancelado');
     },
-    onError: (err: any) => {
-      showError(err.response?.data?.message || 'Error al cancelar registro');
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, 'Error al cancelar registro'));
     }
   });
 
@@ -85,8 +96,8 @@ export default function EventDetail() {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       success(data.message || 'Participante eliminado');
     },
-    onError: (err: any) => {
-      showError(err.response?.data?.message || 'Error al eliminar participante');
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, 'Error al eliminar participante'));
     }
   });
 
@@ -101,8 +112,8 @@ export default function EventDetail() {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       success(data.message || 'Invitacion cancelada');
     },
-    onError: (err: any) => {
-      showError(err.response?.data?.message || 'Error al cancelar invitacion');
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, 'Error al cancelar invitacion'));
     }
   });
 
@@ -121,8 +132,8 @@ export default function EventDetail() {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       success(data.message || 'Capacidad actualizada');
     },
-    onError: (err: any) => {
-      showError(err.response?.data?.message || 'Error al cerrar plazas');
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, 'Error al cerrar plazas'));
     }
   });
   const deleteEventMutation = useMutation({
@@ -136,8 +147,8 @@ export default function EventDetail() {
       success(data.message || 'Partida eliminada');
       navigate('/events');
     },
-    onError: (err: any) => {
-      showError(err.response?.data?.message || 'Error al eliminar partida');
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, 'Error al eliminar partida'));
     }
   });
   const { data: invitations = [], isLoading: isInvitesLoading, isError: isInvitesError } = useQuery({
@@ -173,8 +184,8 @@ export default function EventDetail() {
       setExpandedInviteId(data.data?.invitation.id || null);
       success(data.message || 'Invitacion creada');
     },
-    onError: (err: any) => {
-      showError(err.response?.data?.message || 'Error al crear invitacion');
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, 'Error al crear invitacion'));
     }
   });
 
@@ -321,7 +332,7 @@ export default function EventDetail() {
     try {
       await navigator.clipboard.writeText(qrUrl);
       success('Enlace copiado');
-    } catch (error) {
+    } catch {
       showError('No se pudo copiar el enlace');
     }
   };

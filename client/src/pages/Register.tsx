@@ -15,6 +15,20 @@ export default function Register() {
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
+  const getRegisterErrorMessage = (err: unknown) => {
+    if (typeof err !== 'object' || err === null || !('response' in err)) {
+      return undefined;
+    }
+    const response = (err as { response?: { data?: { message?: string; errors?: { msg?: string }[] } } }).response;
+    const errors = response?.data?.errors;
+    if (Array.isArray(errors)) {
+      const messages = errors.map((e) => e?.msg).filter(Boolean);
+      if (messages.length) {
+        return messages.join(', ');
+      }
+    }
+    return response?.data?.message;
+  };
 
   const {
     register,
@@ -44,13 +58,8 @@ export default function Register() {
         setError(errorMessage);
         showError(errorMessage);
       }
-    } catch (err: any) {
-      let errorMessage;
-      if (err.response?.data?.errors) {
-        errorMessage = err.response.data.errors.map((e: any) => e.msg).join(', ');
-      } else {
-        errorMessage = err.response?.data?.message || 'Error al registrarse';
-      }
+    } catch (err: unknown) {
+      const errorMessage = getRegisterErrorMessage(err) || 'Error al registrarse';
       setError(errorMessage);
       showError(errorMessage);
     } finally {
