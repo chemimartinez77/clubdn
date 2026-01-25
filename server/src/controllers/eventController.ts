@@ -553,6 +553,14 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
       const userId = req.user?.userId;
       const userRole = req.user?.role;
 
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          message: 'Datos invalidos'
+        });
+        return;
+      }
+
       const event = await prisma.event.findUnique({
         where: { id }
       });

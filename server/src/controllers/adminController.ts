@@ -89,11 +89,12 @@ export const approveUser = async (req: Request, res: Response) => {
     });
 
     // Enviar email de aprobaci�n
-    await sendApprovalEmail(user.email, user.name, customMessage);
+    const displayName = user.name || 'Usuario';
+    await sendApprovalEmail(user.email, displayName, customMessage);
 
     // Notificar al usuario
     const { notifyUserApproved } = await import('../services/notificationService');
-    await notifyUserApproved(userId, user.name);
+    await notifyUserApproved(userId, displayName);
 
     return res.status(200).json({
       success: true,
@@ -157,11 +158,12 @@ export const rejectUser = async (req: Request, res: Response) => {
     });
 
     // Enviar email de rechazo
-    await sendRejectionEmail(user.email, user.name, reason, customMessage);
+    const displayName = user.name || 'Usuario';
+    await sendRejectionEmail(user.email, displayName, reason, customMessage);
 
     // Notificar al usuario
     const { notifyUserRejected } = await import('../services/notificationService');
-    await notifyUserRejected(userId, user.name, reason);
+    await notifyUserRejected(userId, displayName, reason);
 
     return res.status(200).json({
       success: true,

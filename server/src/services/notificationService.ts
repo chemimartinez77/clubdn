@@ -7,7 +7,7 @@ interface CreateNotificationParams {
   type: NotificationType;
   title: string;
   message: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface CreateBulkNotificationsParams {
@@ -15,7 +15,7 @@ interface CreateBulkNotificationsParams {
   type: NotificationType;
   title: string;
   message: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -29,7 +29,7 @@ export const createNotification = async (params: CreateNotificationParams) => {
         type: params.type,
         title: params.title,
         message: params.message,
-        metadata: params.metadata || null,
+        metadata: params.metadata ?? undefined,
       },
     });
 
@@ -51,7 +51,7 @@ export const createBulkNotifications = async (params: CreateBulkNotificationsPar
         type: params.type,
         title: params.title,
         message: params.message,
-        metadata: params.metadata || null,
+        metadata: params.metadata ?? undefined,
       })),
     });
 
