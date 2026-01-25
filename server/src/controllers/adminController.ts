@@ -24,12 +24,12 @@ export const getPendingApprovals = async (_req: Request, res: Response) => {
         email: true,
         createdAt: true,
         status: true,
-        approvedBy: {
+        approvedByAdmin: {
           select: {
             name: true,
           },
         },
-        rejectedBy: {
+        rejectedByAdmin: {
           select: {
             name: true,
           },
@@ -48,8 +48,8 @@ export const getPendingApprovals = async (_req: Request, res: Response) => {
         email: user.email,
         createdAt: user.createdAt,
         status: user.status,
-        approvedByName: user.approvedBy?.name || null,
-        rejectedByName: user.rejectedBy?.name || null,
+        approvedByName: user.approvedByAdmin?.name || null,
+        rejectedByName: user.rejectedByAdmin?.name || null,
       })),
     });
   } catch (error) {
