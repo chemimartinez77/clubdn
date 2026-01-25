@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../ui/Modal';
+import NotificationBell from '../notifications/NotificationBell';
 
 export default function Header() {
   const { user, logout, isAdmin } = useAuth();
@@ -137,6 +138,9 @@ export default function Header() {
             >
               Documentos
             </Link>
+
+            {/* Notification Bell */}
+            <NotificationBell />
 
             {/* Menú Administración - Solo admin */}
             {isAdmin && (
@@ -295,28 +299,31 @@ export default function Header() {
             </div>
           </nav>
 
-          {/* Mobile menu button */}
-          <button
-            onClick={() => {
-              setIsMenuOpen(!isMenuOpen);
-              setIsMobileGamesOpen(false);
-            }}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          {/* Mobile notification bell and menu button */}
+          <div className="md:hidden flex items-center gap-2">
+            <NotificationBell />
+            <button
+              onClick={() => {
+                setIsMenuOpen(!isMenuOpen);
+                setIsMobileGamesOpen(false);
+              }}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d={isMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
-              />
-            </svg>
-          </button>
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d={isMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
