@@ -82,23 +82,21 @@ export default function Register() {
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              ¡Registro Exitoso!
+              {'\u00a1Registro Exitoso!'}
             </h2>
-            <p className="text-gray-600 mb-6">
-              {successMessage ? (
-                successMessage
-              ) : (
-                <>
-                  Hemos enviado un email de verificaci?n a <strong>{registeredEmail}</strong>. Por favor,
-                  verifica tu email para continuar.
-                </>
-              )}
+            <p className="text-gray-600 mb-4">
+              {successMessage || 'Registro exitoso. Verifica tu email para continuar.'}
             </p>
+            {registeredEmail && (
+              <p className="text-sm text-gray-500 mb-6">
+                Email: <strong>{registeredEmail}</strong>
+              </p>
+            )}
             <Link
               to="/login"
               className="inline-block bg-[var(--color-primary)] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[var(--color-primaryDark)] transition-colors"
             >
-              Ir al inicio de sesión
+              {'Ir al inicio de sesi\u00f3n'}
             </Link>
           </div>
         </div>
@@ -114,7 +112,7 @@ export default function Register() {
       <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Únete al Club DN
+            {'\u00danete al Club DN'}
           </h1>
           <p className="text-gray-600">Crea tu cuenta para empezar</p>
         </div>

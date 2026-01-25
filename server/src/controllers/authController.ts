@@ -50,7 +50,7 @@ export const register = async (req: Request, res: Response) => {
       },
     });
 
-    // Enviar email de verificaci?n
+    // Enviar email de verificación
     try {
       await sendVerificationEmail(email, name, verificationToken);
     } catch (mailError) {
