@@ -127,21 +127,26 @@ export const verifyEmail = async (req: Request, res: Response) => {
         tokenExpiry: null,
       },
     });
-
     // Obtener email del admin por defecto
     const defaultAdminEmail = process.env.DEFAULT_ADMIN_EMAIL;
+    const displayName = user.name || 'Usuario';
+    const displayEmail = user.email || 'Email no disponible';
 
     if (defaultAdminEmail) {
       try {
         // Enviar notificacion al admin sin bloquear la verificacion
-        await sendAdminNotification(defaultAdminEmail, user.name, user.email);
-
-        // Notificar a admins en la aplicación
-        const { notifyAdminsNewUser } = await import('../services/notificationService');
-        await notifyAdminsNewUser(user.name, user.email);
+        await sendAdminNotification(defaultAdminEmail, displayName, displayEmail);
       } catch (notifyError) {
         console.error('Error enviando notificacion al admin:', notifyError);
       }
+    }
+
+    try {
+      // Notificar a admins en la aplicacion
+      const { notifyAdminsNewUser } = await import('../services/notificationService');
+      await notifyAdminsNewUser(displayName, displayEmail);
+    } catch (notifyError) {
+      console.error('Error creando notificacion en la app:', notifyError);
     }
 
     return res.status(200).json({
