@@ -135,6 +135,10 @@ export const verifyEmail = async (req: Request, res: Response) => {
       try {
         // Enviar notificacion al admin sin bloquear la verificacion
         await sendAdminNotification(defaultAdminEmail, user.name, user.email);
+
+        // Notificar a admins en la aplicación
+        const { notifyAdminsNewUser } = await import('../services/notificationService');
+        await notifyAdminsNewUser(user.name, user.email);
       } catch (notifyError) {
         console.error('Error enviando notificacion al admin:', notifyError);
       }

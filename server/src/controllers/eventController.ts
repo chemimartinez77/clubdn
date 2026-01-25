@@ -391,6 +391,10 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
       }
     });
 
+    // Notificar a usuarios con preferencia activada
+    const { notifyNewEvent } = await import('../services/notificationService');
+    await notifyNewEvent(event.id, event.title, event.date);
+
     res.status(201).json({
       success: true,
       data: { event },
@@ -611,6 +615,10 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
           cancelledById: userId
         }
       });
+
+      // Notificar a los usuarios inscritos
+      const { notifyEventCancelled } = await import('../services/notificationService');
+      await notifyEventCancelled(id, event.title);
 
     res.status(200).json({
       success: true,

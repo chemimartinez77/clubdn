@@ -16,6 +16,7 @@ import ludotecaRoutes from './routes/ludotecaRoutes';
 import documentRoutes from './routes/documentRoutes';
 import invitationRoutes from './routes/invitationRoutes';
 import eventPhotoRoutes from './routes/eventPhotoRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -63,6 +64,7 @@ app.use('/api/ludoteca', ludotecaRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/events', eventPhotoRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Ruta 404
 app.use((_req, res) => {

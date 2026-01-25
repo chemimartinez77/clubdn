@@ -73,6 +73,7 @@ model User {
   uploadedPhotos    EventPhoto[]
   eventAuditLogs    EventAuditLog[] @relation("EventAuditActor")
   eventAuditTargets EventAuditLog[] @relation("EventAuditTargetUser")
+  notifications     Notification[]
 
   @@index([email])
   @@index([status])
@@ -108,6 +109,12 @@ model UserProfile {
   // Configuración
   notifications   Boolean  @default(true)
   emailUpdates    Boolean  @default(true)
+
+  // Preferencias de notificaciones
+  notifyNewEvents       Boolean @default(true)   // Notificar nuevas partidas
+  notifyEventChanges    Boolean @default(true)   // Cambios en eventos inscritos
+  notifyEventCancelled  Boolean @default(true)   // Eventos cancelados
+  notifyInvitations     Boolean @default(true)   // Estado de invitaciones
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -568,4 +575,42 @@ model EventAuditLog {
   @@index([eventId])
   @@index([actorId])
   @@index([action])
+}
+
+// Tipos de notificaciones
+enum NotificationType {
+  EVENT_CANCELLED         // Partida cancelada
+  EVENT_MODIFIED          // Partida modificada (fecha/hora/ubicación)
+  EVENT_CREATED           // Nueva partida creada (si tiene habilitadas las notificaciones)
+  EVENT_REMINDER          // Recordatorio 24h antes
+  USER_APPROVED           // Tu solicitud fue aprobada
+  USER_REJECTED           // Tu solicitud fue rechazada
+  ADMIN_NEW_USER          // Nuevo usuario pendiente de aprobación (para admins)
+  INVITATION_VALIDATED    // Tu invitación fue validada
+  INVITATION_REJECTED     // Tu invitación fue rechazada
+  WAITLIST_SPOT_AVAILABLE // Plaza disponible desde waitlist
+}
+
+// Notificaciones del sistema
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+
+  // Datos adicionales (JSON)
+  metadata  Json?            // { eventId, eventTitle, etc. }
+
+  // Estado
+  read      Boolean          @default(false)
+  readAt    DateTime?
+
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
 }
