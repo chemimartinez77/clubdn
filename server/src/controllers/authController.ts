@@ -81,7 +81,7 @@ export const register = async (req: Request, res: Response) => {
 };
 
 /**
- * Verificaci?n de email
+ * Verificacion de email
  * GET /api/auth/verify-email?token=xxx
  */
 export const verifyEmail = async (req: Request, res: Response) => {
@@ -91,7 +91,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
     if (!token || typeof token !== 'string') {
       return res.status(400).json({
         success: false,
-        message: 'Token de verificación no proporcionado',
+        message: 'Token de verificaci\u00f3n no proporcionado',
       });
     }
 
@@ -105,7 +105,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Token de verificación inválido',
+        message: 'Token de verificaci\u00f3n inv\u00e1lido o ya utilizado',
       });
     }
 
@@ -113,7 +113,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
     if (user.tokenExpiry && user.tokenExpiry < new Date()) {
       return res.status(400).json({
         success: false,
-        message: 'El token de verificación ha expirado',
+        message: 'El token de verificaci\u00f3n ha expirado',
       });
     }
 
@@ -132,8 +132,12 @@ export const verifyEmail = async (req: Request, res: Response) => {
     const defaultAdminEmail = process.env.DEFAULT_ADMIN_EMAIL;
 
     if (defaultAdminEmail) {
-      // Enviar notificaci?n al admin
-      await sendAdminNotification(defaultAdminEmail, user.name, user.email);
+      try {
+        // Enviar notificacion al admin sin bloquear la verificacion
+        await sendAdminNotification(defaultAdminEmail, user.name, user.email);
+      } catch (notifyError) {
+        console.error('Error enviando notificacion al admin:', notifyError);
+      }
     }
 
     return res.status(200).json({
@@ -142,13 +146,14 @@ export const verifyEmail = async (req: Request, res: Response) => {
         'Email verificado exitosamente. Tu solicitud será revisada por un administrador.',
     });
   } catch (error) {
-    console.error('Error en verificación de email:', error);
+    console.error('Error en verificacion de email:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error al verificar el email',
+      message: 'Error al verificar el email. Inténtalo de nuevo en unos minutos.',
     });
   }
 };
+
 export const getCurrentUser = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.userId;

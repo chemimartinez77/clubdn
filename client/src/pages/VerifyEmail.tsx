@@ -13,18 +13,18 @@ export default function VerifyEmail() {
 
   useEffect(() => {
     const verifyEmail = async () => {
-      // Evitar múltiples ejecuciones (React StrictMode hace double-render)
+      // Evitar multiples ejecuciones (React StrictMode hace double-render)
       if (hasVerified.current) {
         return;
       }
 
       if (!token) {
         setStatus('error');
-        setMessage('Token de verificación no proporcionado');
+        setMessage('Token de verificaci\u00f3n no proporcionado');
         return;
       }
 
-      // Marcar como verificado antes de hacer la petición
+      // Marcar como verificado antes de hacer la peticion
       hasVerified.current = true;
 
       try {
@@ -36,7 +36,7 @@ export default function VerifyEmail() {
           setStatus('success');
           setMessage(
             response.data.message ||
-              'Email verificado. Tu solicitud será revisada por un administrador.'
+              'Email verificado. Tu solicitud ser\u00e1 revisada por un administrador.'
           );
         } else {
           setStatus('error');
@@ -88,14 +88,14 @@ export default function VerifyEmail() {
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                ¡Email Verificado!
+                {'\u00a1Email verificado!'}
               </h2>
               <p className="text-gray-600 mb-6">{message}</p>
               <Link
                 to="/login"
                 className="inline-block bg-[var(--color-primary)] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[var(--color-primaryDark)] transition-colors"
               >
-                Ir al inicio de sesión
+                {'Ir al inicio de sesi\u00f3n'}
               </Link>
             </>
           )}
@@ -118,9 +118,12 @@ export default function VerifyEmail() {
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                Error de Verificación
+                {'Error de verificaci\u00f3n'}
               </h2>
-              <p className="text-gray-600 mb-6">{message}</p>
+              <p className="text-gray-600">{message}</p>
+              <p className="text-sm text-gray-500 mt-2 mb-6">
+                {'Si ya verificaste el email, prueba a iniciar sesi\u00f3n. Si el enlace caduc\u00f3, solicita uno nuevo.'}
+              </p>
               <Link
                 to="/register"
                 className="inline-block bg-[var(--color-primary)] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[var(--color-primaryDark)] transition-colors"
