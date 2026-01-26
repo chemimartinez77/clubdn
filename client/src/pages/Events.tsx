@@ -33,14 +33,22 @@ export default function Events() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [sortOption, setSortOption] = useState<SortOption>('date_desc');
 
+  const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+  const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+  const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59, 999);
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['events', statusFilter, typeFilter, search, participant],
+    queryKey: ['events', statusFilter, typeFilter, search, participant, viewMode, monthKey],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (statusFilter) params.append('status', statusFilter);
       if (search) params.append('search', search);
       if (participant) params.append('participant', participant);
-      params.append('limit', '1000'); // Get all for calendar view
+      if (viewMode === 'calendar') {
+        params.append('startDate', monthStart.toISOString());
+        params.append('endDate', monthEnd.toISOString());
+      }
+      params.append('limit', '1000'); // Get all for current range
 
       const response = await api.get<ApiResponse<EventsResponse>>(
         `/api/events?${params.toString()}`

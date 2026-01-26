@@ -9,7 +9,7 @@ const REGISTRATION_COOLDOWN_MS = 3000;
  */
 export const getEvents = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { status, search, participant, page = '1', limit = '10' } = req.query;
+    const { status, search, participant, startDate, endDate, page = '1', limit = '10' } = req.query;
     const userId = req.user?.userId;
 
     const pageNum = parseInt(page as string);
@@ -31,6 +31,33 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
         { description: { contains: search as string, mode: 'insensitive' } },
         { location: { contains: search as string, mode: 'insensitive' } }
       ];
+    }
+
+    const dateFilter: { gte?: Date; lte?: Date } = {};
+    if (startDate && typeof startDate === 'string') {
+      const parsedStart = new Date(startDate);
+      if (Number.isNaN(parsedStart.getTime())) {
+        res.status(400).json({
+          success: false,
+          message: 'Fecha de inicio invalida'
+        });
+        return;
+      }
+      dateFilter.gte = parsedStart;
+    }
+    if (endDate && typeof endDate === 'string') {
+      const parsedEnd = new Date(endDate);
+      if (Number.isNaN(parsedEnd.getTime())) {
+        res.status(400).json({
+          success: false,
+          message: 'Fecha de fin invalida'
+        });
+        return;
+      }
+      dateFilter.lte = parsedEnd;
+    }
+    if (dateFilter.gte || dateFilter.lte) {
+      where.date = dateFilter;
     }
 
     // Obtener eventos con relaciones necesarias para filtro de participante
