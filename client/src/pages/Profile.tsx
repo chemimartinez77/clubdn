@@ -16,6 +16,7 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [favoriteGamesInput, setFavoriteGamesInput] = useState('');
 
   // Fetch profile
   const { data: profile, isLoading } = useQuery({
@@ -86,6 +87,7 @@ export default function Profile() {
 
   const handleEdit = () => {
     if (profile) {
+      setFavoriteGamesInput((profile.favoriteGames || []).join(', '));
       setFormData({
         avatar: profile.avatar || '',
         phone: profile.phone || '',
@@ -109,6 +111,7 @@ export default function Profile() {
   const handleCancel = () => {
     setIsEditing(false);
     setFormData({});
+    setFavoriteGamesInput('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -117,7 +120,8 @@ export default function Profile() {
   };
 
   const handleFavoriteGamesChange = (value: string) => {
-    const games = value.split(',').map(g => g.trim()).filter(g => g);
+    setFavoriteGamesInput(value);
+    const games = value.split(/[;,]/).map(g => g.trim()).filter(g => g);
     setFormData({ ...formData, favoriteGames: games });
   };
 
@@ -278,12 +282,12 @@ export default function Profile() {
                       </label>
                       <input
                         type="text"
-                        value={formData.favoriteGames?.join(', ') || ''}
+                        value={favoriteGamesInput}
                         onChange={(e) => handleFavoriteGamesChange(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                         placeholder="Catan, Ticket to Ride, Pandemic"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Separados por comas</p>
+                      <p className="text-xs text-gray-500 mt-1">Separados por comas o punto y coma</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
