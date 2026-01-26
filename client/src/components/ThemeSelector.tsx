@@ -6,9 +6,9 @@ export default function ThemeSelector() {
   const { themeName, setTheme } = useTheme();
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-col items-start gap-3">
       <span className="text-sm text-gray-300">Tema:</span>
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 w-full">
         {(Object.keys(themes) as ThemeName[]).map((name) => {
           const theme = themes[name];
           const isActive = themeName === name;
@@ -18,7 +18,7 @@ export default function ThemeSelector() {
               key={name}
               onClick={() => setTheme(name)}
               className={`
-                px-4 py-2 rounded-lg text-sm font-medium transition-all
+                w-full px-4 py-2 rounded-lg text-left text-sm font-medium transition-all
                 ${
                   isActive
                     ? 'bg-[var(--color-primary)] text-white shadow-lg shadow-purple-500/50'
