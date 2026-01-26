@@ -393,7 +393,7 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
 
     // Notificar a usuarios con preferencia activada
     const { notifyNewEvent } = await import('../services/notificationService');
-    await notifyNewEvent(event.id, event.title, event.date);
+    await notifyNewEvent(event.id, event.title, event.date, userId);
 
     res.status(201).json({
       success: true,

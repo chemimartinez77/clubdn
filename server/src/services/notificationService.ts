@@ -179,13 +179,15 @@ export const notifyAdminsNewUser = async (newUserName: string, newUserEmail: str
 export const notifyNewEvent = async (
   eventId: string,
   eventTitle: string,
-  eventDate: Date
+  eventDate: Date,
+  createdById?: string
 ) => {
   try {
     // Obtener usuarios con notificaciones de nuevos eventos habilitadas
     const users = await prisma.user.findMany({
       where: {
         status: 'APPROVED',
+        ...(createdById ? { id: { not: createdById } } : {}),
         profile: {
           notifyNewEvents: true,
         },
