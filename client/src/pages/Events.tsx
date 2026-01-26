@@ -40,7 +40,7 @@ export default function Events() {
       if (statusFilter) params.append('status', statusFilter);
       if (search) params.append('search', search);
       if (participant) params.append('participant', participant);
-      params.append('limit', '100'); // Get all for calendar view
+      params.append('limit', '1000'); // Get all for calendar view
 
       const response = await api.get<ApiResponse<EventsResponse>>(
         `/api/events?${params.toString()}`
