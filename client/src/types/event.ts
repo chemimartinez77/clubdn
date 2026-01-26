@@ -134,6 +134,7 @@ export interface CreateEventData {
 
   // Capacidad
   maxAttendees: number;
+  attend?: boolean;
 }
 
 export interface UpdateEventData {

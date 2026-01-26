@@ -353,7 +353,8 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
       startHour,
       startMinute,
       durationHours,
-      durationMinutes
+      durationMinutes,
+      attend
     } = req.body;
 
     if (!userId) {
@@ -417,6 +418,18 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
         }
       }
     });
+
+    const shouldAttend =
+      attend === undefined ? true : attend === true || attend === 'true' || attend === 'on';
+    if (shouldAttend) {
+      await prisma.eventRegistration.create({
+        data: {
+          eventId: event.id,
+          userId,
+          status: 'CONFIRMED'
+        }
+      });
+    }
 
     // Notificar a usuarios con preferencia activada
     const { notifyNewEvent } = await import('../services/notificationService');

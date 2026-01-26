@@ -50,6 +50,7 @@ export default function CreatePartida() {
     const startHour = formData.get('startHour') as string;
     const startMinute = formData.get('startMinute') as string;
     const locationValue = (formData.get('location') as string)?.trim();
+    const attend = formData.get('attend') === 'on';
 
     // Crear fecha completa con hora
     const eventDate = new Date(dateValue);
@@ -68,6 +69,7 @@ export default function CreatePartida() {
       location: locationValue || 'Club DN',
       address: (formData.get('address') as string) || undefined,
       maxAttendees: parseInt(formData.get('maxAttendees') as string),
+      attend,
       gameName: selectedGame?.name,
       gameImage: selectedGame?.image,
       bggId: selectedGame?.id
@@ -160,6 +162,20 @@ export default function CreatePartida() {
                     Buscar juego en BoardGameGeek
                   </button>
                 )}
+              </div>
+
+              {/* Asistencia */}
+              <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <input
+                  id="attend"
+                  name="attend"
+                  type="checkbox"
+                  defaultChecked
+                  className="h-4 w-4 rounded border-gray-300 text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                />
+                <label htmlFor="attend" className="text-sm text-gray-700">
+                  Asistire a la partida
+                </label>
               </div>
 
               {/* Título */}
