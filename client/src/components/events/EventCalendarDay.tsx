@@ -1,6 +1,7 @@
 // client/src/components/events/EventCalendarDay.tsx
 import { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { GameImage } from './EventCard';
 import type { Event } from '../../types/event';
 
 interface EventCalendarDayProps {
@@ -119,6 +120,7 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
             const registeredCount = event.registeredCount || 0;
             const isFull = registeredCount >= event.maxAttendees;
             const spotsLeft = event.maxAttendees - registeredCount;
+            const gameThumbnail = event.game?.thumbnail || event.game?.image || event.gameImage || null;
 
             return (
               <Link
@@ -129,6 +131,13 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
+                      {gameThumbnail && (
+                        <GameImage
+                          src={gameThumbnail}
+                          alt={event.gameName || event.title}
+                          size="sm"
+                        />
+                      )}
                       <div className="flex items-center justify-center w-12 h-12 bg-[var(--color-primary-100)] text-[var(--color-primary-800)] rounded-lg font-bold text-lg">
                         {time.split(':')[0]}
                       </div>
