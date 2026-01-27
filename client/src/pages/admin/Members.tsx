@@ -32,6 +32,9 @@ export default function Members() {
   const [bajaModalOpen, setBajaModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [membershipChangeModalOpen, setMembershipChangeModalOpen] = useState(false);
+  const [membershipChangeReason, setMembershipChangeReason] = useState('');
+  const [originalMembershipType, setOriginalMembershipType] = useState('');
   const [profileForm, setProfileForm] = useState({
     firstName: '',
     lastName: '',
@@ -67,6 +70,7 @@ export default function Members() {
         imageConsentActivities: boolean;
         imageConsentSocial: boolean;
         membershipType?: string;
+        membershipChangeReason?: string;
       } = {
         firstName: profileForm.firstName.trim(),
         lastName: profileForm.lastName.trim(),
@@ -75,9 +79,13 @@ export default function Members() {
         imageConsentActivities: profileForm.imageConsentActivities,
         imageConsentSocial: profileForm.imageConsentSocial
       };
-      // Solo incluir membershipType si el usuario no tiene uno asignado y se proporcionó uno nuevo
-      if (!memberProfile?.member.membershipType && profileForm.membershipType) {
+      // Incluir membershipType si hay cambio o es nuevo
+      if (profileForm.membershipType) {
         payload.membershipType = profileForm.membershipType;
+        // Si es un cambio de tipo, incluir el motivo
+        if (originalMembershipType && originalMembershipType !== profileForm.membershipType) {
+          payload.membershipChangeReason = membershipChangeReason;
+        }
       }
       const response = await api.put<ApiResponse<MemberProfileResponse>>(
         `/api/admin/members/${selectedMember.id}/profile`,
@@ -106,6 +114,7 @@ export default function Members() {
       imageConsentSocial: memberProfile.member.profile.imageConsentSocial,
       membershipType: memberProfile.member.membershipType || ''
     });
+    setOriginalMembershipType(memberProfile.member.membershipType || '');
   }, [memberProfile]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -220,6 +229,13 @@ export default function Members() {
       error('Tipo de membresía requerido');
       return;
     }
+
+    // Si hay cambio de tipo de membresía, mostrar modal para pedir motivo
+    if (originalMembershipType && profileForm.membershipType && originalMembershipType !== profileForm.membershipType) {
+      setMembershipChangeModalOpen(true);
+      return;
+    }
+
     updateProfileMutation.mutate();
   };
 
@@ -652,27 +668,31 @@ export default function Members() {
                   </div>
                 </div>
 
-                {/* Selector de tipo de membresía si el miembro no tiene uno asignado */}
-                {!memberProfile.member.membershipType && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tipo de Membresía <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={profileForm.membershipType}
-                      onChange={(e) => setProfileForm({ ...profileForm, membershipType: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
-                      required
-                    >
-                      <option value="" disabled>Elige un tipo</option>
-                      <option value="SOCIO">SOCIO</option>
-                      <option value="COLABORADOR">COLABORADOR</option>
-                    </select>
-                    <p className="text-xs text-gray-600 mt-1">
-                      Este miembro no tiene un tipo de membresía asignado. Selecciona uno antes de guardar.
-                    </p>
-                  </div>
-                )}
+                {/* Selector de tipo de membresía */}
+                <div className={`rounded-lg p-4 ${!memberProfile.member.membershipType ? 'bg-yellow-50 border border-yellow-200' : 'bg-blue-50 border border-blue-200'}`}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de Membresía {!memberProfile.member.membershipType && <span className="text-red-500">*</span>}
+                  </label>
+                  <select
+                    value={profileForm.membershipType}
+                    onChange={(e) => setProfileForm({ ...profileForm, membershipType: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
+                    required={!memberProfile.member.membershipType}
+                  >
+                    <option value="" disabled>Elige un tipo</option>
+                    <option value="SOCIO">SOCIO</option>
+                    <option value="COLABORADOR">COLABORADOR</option>
+                    <option value="FAMILIAR">FAMILIAR</option>
+                    <option value="EN_PRUEBAS">EN PRUEBAS</option>
+                  </select>
+                  <p className="text-xs text-gray-600 mt-1">
+                    {!memberProfile.member.membershipType
+                      ? 'Este miembro no tiene un tipo de membresía asignado. Selecciona uno antes de guardar.'
+                      : originalMembershipType !== profileForm.membershipType
+                        ? '⚠️ Has cambiado el tipo de membresía. Se te pedirá el motivo al guardar.'
+                        : 'Puedes cambiar el tipo de membresía si es necesario.'}
+                  </p>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -819,6 +839,73 @@ export default function Members() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Modal de confirmación de cambio de membresía */}
+      <Modal
+        isOpen={membershipChangeModalOpen}
+        onClose={() => {
+          setMembershipChangeModalOpen(false);
+          setMembershipChangeReason('');
+        }}
+        title="Confirmar Cambio de Tipo de Membresía"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            Estás a punto de cambiar el tipo de membresía de:
+          </p>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold">{originalMembershipType}</span>
+              <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+              <span className="font-semibold text-[var(--color-primary)]">{profileForm.membershipType}</span>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Motivo del cambio <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={membershipChangeReason}
+              onChange={(e) => setMembershipChangeReason(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] min-h-[100px]"
+              placeholder="Explica brevemente por qué se cambia el tipo de membresía..."
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Este cambio quedará registrado en el historial del miembro
+            </p>
+          </div>
+
+          <div className="pt-4 flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMembershipChangeModalOpen(false);
+                setMembershipChangeReason('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (!membershipChangeReason.trim()) {
+                  error('El motivo del cambio es obligatorio');
+                  return;
+                }
+                setMembershipChangeModalOpen(false);
+                updateProfileMutation.mutate();
+              }}
+              disabled={!membershipChangeReason.trim()}
+            >
+              Confirmar Cambio
+            </Button>
+          </div>
+        </div>
       </Modal>
     </Layout>
   );
