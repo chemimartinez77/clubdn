@@ -5,21 +5,21 @@
   --color-primary: #9333ea;
   --color-primaryDark: #7e22ce;
   --color-primaryLight: #a855f7;
-  --color-background: #0f0515;
-  --color-surface: #1a0b2e;
-  --color-cardBackground: #1a0b2e;
-  --color-cardBorder: #4c1d95;
-  --color-inputBackground: #12071c;
-  --color-inputBorder: #4c1d95;
-  --color-inputText: #ffffff;
-  --color-modalBackground: #1a0b2e;
-  --color-tableHeader: #241042;
-  --color-tableRow: #1a0b2e;
-  --color-tableRowHover: #241042;
-  --color-text: #ffffff;
-  --color-textSecondary: #d1d5db;
-  --color-border: #4c1d95;
-  --color-hover: #6b21a8;
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-cardBackground: #ffffff;
+  --color-cardBorder: #e5e7eb;
+  --color-inputBackground: #ffffff;
+  --color-inputBorder: #d1d5db;
+  --color-inputText: #111827;
+  --color-modalBackground: #ffffff;
+  --color-tableHeader: #f3f4f6;
+  --color-tableRow: #ffffff;
+  --color-tableRowHover: #f9fafb;
+  --color-text: #111827;
+  --color-textSecondary: #4b5563;
+  --color-border: #e5e7eb;
+  --color-hover: #f3f4f6;
   --color-accent: #c084fc;
 }
 

@@ -1,12 +1,14 @@
 import { createContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { themes, defaultTheme } from '../config/themes';
-import type { ThemeName, Theme } from '../config/themes';
+import { themes, defaultTheme, defaultThemeMode } from '../config/themes';
+import type { ThemeName, Theme, ThemeMode } from '../config/themes';
 
 interface ThemeContextType {
   theme: Theme;
   themeName: ThemeName;
   setTheme: (themeName: ThemeName) => void;
+  themeMode: ThemeMode;
+  setThemeMode: (mode: ThemeMode) => void;
 }
 
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -20,19 +22,24 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     const saved = localStorage.getItem('theme');
     return (saved as ThemeName) || defaultTheme;
   });
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    const saved = localStorage.getItem('themeMode');
+    return (saved as ThemeMode) || defaultThemeMode;
+  });
 
   const theme = themes[themeName];
+  const activeColors = theme.colors[themeMode];
 
   useEffect(() => {
     // Aplicar variables CSS al root
     const root = document.documentElement;
-    Object.entries(theme.colors).forEach(([key, value]) => {
+    Object.entries(activeColors).forEach(([key, value]) => {
       root.style.setProperty(`--color-${key}`, value);
     });
 
     // Generar variantes de color para compatibilidad con Tailwind
-    const primary = theme.colors.primary;
-    const primaryDark = theme.colors.primaryDark;
+    const primary = activeColors.primary;
+    const primaryDark = activeColors.primaryDark;
 
     // Función helper para mezclar colores (aproximación simple)
     const lighten = (color: string, amount: number) => {
@@ -74,14 +81,23 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
     // Guardar en localStorage
     localStorage.setItem('theme', themeName);
-  }, [theme, themeName]);
+    localStorage.setItem('themeMode', themeMode);
+  }, [activeColors, themeName, themeMode]);
 
   const handleSetTheme = (newTheme: ThemeName) => {
     setThemeName(newTheme);
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, themeName, setTheme: handleSetTheme }}>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        themeName,
+        setTheme: handleSetTheme,
+        themeMode,
+        setThemeMode
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );
