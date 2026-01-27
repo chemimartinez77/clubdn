@@ -1,4 +1,5 @@
 // client/src/components/profile/NoughterColorSelector.tsx
+import { useTheme } from '../../hooks/useTheme';
 import type { ThemeName } from '../../config/themes';
 
 interface NoughterColorSelectorProps {
@@ -16,6 +17,11 @@ const colorOptions: Array<{ value: ThemeName | null; label: string; preview: str
 ];
 
 export default function NoughterColorSelector({ selectedColor, onChange }: NoughterColorSelectorProps) {
+  const { themeName } = useTheme();
+
+  // Determinar el color real que se mostrará: preferencia del usuario o tema actual
+  const effectiveColor = selectedColor || themeName;
+
   return (
     <div className="space-y-4">
       <div>
@@ -82,15 +88,15 @@ export default function NoughterColorSelector({ selectedColor, onChange }: Nough
         <p className="text-xs font-medium text-gray-600 mb-3">Vista previa</p>
         <div className="flex items-center justify-center">
           <img
-            src={selectedColor ? `/noughter.${selectedColor}.png` : '/noughter.purple.png'}
+            src={`/noughter.${effectiveColor}.png`}
             alt="Vista previa de Noughter"
             className="w-24 h-24 object-contain"
           />
         </div>
         <p className="text-xs text-gray-500 text-center mt-2">
-          {selectedColor
-            ? `Noughter ${colorOptions.find(o => o.value === selectedColor)?.label}`
-            : 'Se usará el color de tu tema actual'}
+          {selectedColor === null
+            ? `Se usará el color de tu tema actual (${colorOptions.find(o => o.value === themeName)?.label})`
+            : `Noughter ${colorOptions.find(o => o.value === selectedColor)?.label}`}
         </p>
       </div>
     </div>
