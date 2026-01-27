@@ -431,7 +431,7 @@ export default function Profile() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Personalización</h3>
                   <NoughterColorSelector
                     selectedColor={formData.noughterColor ?? null}
-                    onChange={(color) => setFormData({ ...formData, noughterColor: color ?? undefined })}
+                    onChange={(color) => setFormData({ ...formData, noughterColor: color === null ? null : (color || undefined) })}
                   />
                 </div>
 

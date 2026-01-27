@@ -45,5 +45,5 @@ export interface UpdateProfileData {
   notifyEventChanges?: boolean;
   notifyEventCancelled?: boolean;
   notifyInvitations?: boolean;
-  noughterColor?: string;
+  noughterColor?: string | null;
 }
