@@ -127,6 +127,18 @@ export default function Profile() {
     setFormData({ ...formData, favoriteGames: games });
   };
 
+  const handleNoughterChange = (color: string | null) => {
+    if (updateMutation.isPending) return;
+    const nextColor = color ?? null;
+
+    queryClient.setQueryData(['myProfile'], (current?: UserProfile) => {
+      if (!current) return current;
+      return { ...current, noughterColor: nextColor };
+    });
+
+    updateMutation.mutate({ noughterColor: nextColor });
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -571,7 +583,7 @@ export default function Profile() {
                       <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Personalización</p>
                       <NoughterColorSelector
                         selectedColor={profile.noughterColor}
-                        onChange={() => {}}
+                        onChange={handleNoughterChange}
                       />
                     </div>
                   </div>
