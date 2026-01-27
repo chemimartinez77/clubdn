@@ -395,7 +395,7 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
               userId: existingUser.id,
               previousType: null,
               newType: newMembershipType,
-              reason: req.body.membershipChangeReason || 'Creación inicial de membresía',
+              reason: membershipChangeReason || 'Creación inicial de membresía',
               changedBy: adminId
             }
           })
@@ -424,7 +424,7 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
               userId: existingUser.id,
               previousType: existingMembership.type,
               newType: newMembershipType,
-              reason: req.body.membershipChangeReason || 'Cambio de tipo de membresía',
+              reason: membershipChangeReason || 'Cambio de tipo de membresía',
               changedBy: adminId
             }
           })
