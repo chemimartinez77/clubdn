@@ -13,7 +13,8 @@ import {
   updateMemberProfile,
   markMemberAsBaja,
   exportMembersCSV,
-  uploadMemberAvatar
+  uploadMemberAvatar,
+  getMembershipHistory
 } from '../controllers/memberController';
 
 const router = Router();
@@ -63,6 +64,12 @@ router.get('/members/:memberId/profile', getMemberProfile);
  * Actualizar ficha editable de miembro
  */
 router.put('/members/:memberId/profile', updateMemberProfile);
+
+/**
+ * GET /api/admin/members/:memberId/membership-history
+ * Obtener historial de cambios de membresía
+ */
+router.get('/members/:memberId/membership-history', getMembershipHistory);
 
 /**
  * POST /api/admin/members/:memberId/avatar

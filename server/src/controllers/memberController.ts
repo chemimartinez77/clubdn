@@ -650,6 +650,47 @@ export const exportMembersCSV = async (req: Request, res: Response): Promise<voi
 };
 
 /**
+ * GET /api/admin/members/:memberId/membership-history
+ * Get membership change history for a member
+ */
+export const getMembershipHistory = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { memberId } = req.params;
+
+    // Verificar que el usuario existe
+    const user = await prisma.user.findUnique({
+      where: { id: memberId },
+      select: { id: true }
+    });
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+      return;
+    }
+
+    // Obtener historial de cambios ordenado por fecha descendente
+    const changeLog = await prisma.membershipChangeLog.findMany({
+      where: { userId: memberId },
+      orderBy: { changedAt: 'desc' }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: changeLog
+    });
+  } catch (error) {
+    console.error('Error al obtener historial de membresía:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener historial de membresía'
+    });
+  }
+};
+
+/**
  * POST /api/admin/members/:memberId/avatar
  * Upload avatar for a member (admin only)
  */
