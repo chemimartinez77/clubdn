@@ -257,7 +257,8 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
       dni,
       avatar,
       imageConsentActivities,
-      imageConsentSocial
+      imageConsentSocial,
+      membershipType: newMembershipType
     } = req.body;
 
     if (!firstName || typeof firstName !== 'string' || firstName.trim().length < 2) {
@@ -301,7 +302,23 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const [updatedUser, profile] = await prisma.$transaction([
+    // Verificar si el usuario ya tiene membresía antes de la transacción
+    const existingMembership = await prisma.membership.findUnique({
+      where: { userId: existingUser.id }
+    });
+
+    // Validar tipo de membresía si se proporciona
+    if (newMembershipType && !existingMembership) {
+      if (!['SOCIO', 'COLABORADOR'].includes(newMembershipType)) {
+        res.status(400).json({
+          success: false,
+          message: 'Tipo de membresía inválido. Debe ser SOCIO o COLABORADOR'
+        });
+        return;
+      }
+    }
+
+    const transactionOperations: any[] = [
       prisma.user.update({
         where: { id: existingUser.id },
         data: {
@@ -342,7 +359,24 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
           imageConsentSocial: !!imageConsentSocial
         }
       })
-    ]);
+    ];
+
+    // Si se proporciona tipo de membresía y el usuario no tiene una, crear membership
+    if (newMembershipType && !existingMembership) {
+      transactionOperations.push(
+        prisma.membership.create({
+          data: {
+            userId: existingUser.id,
+            type: newMembershipType,
+            startDate: new Date(),
+            monthlyFee: newMembershipType === 'SOCIO' ? 10 : 0, // Ajustar según necesites
+            isActive: true
+          }
+        })
+      );
+    }
+
+    const [updatedUser, profile] = await prisma.$transaction(transactionOperations);
 
     const paymentStatus = getPaymentStatus({
       payments: updatedUser.payments,
