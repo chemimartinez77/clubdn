@@ -205,7 +205,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           notifyEventChanges: notifyEventChanges ?? true,
           notifyEventCancelled: notifyEventCancelled ?? true,
           notifyInvitations: notifyInvitations ?? true,
-          noughterColor: noughterColor || null
+          noughterColor: noughterColor ?? null
         },
         include: {
           user: {

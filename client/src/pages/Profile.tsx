@@ -104,7 +104,7 @@ export default function Profile() {
         notifyEventChanges: profile.notifyEventChanges,
         notifyEventCancelled: profile.notifyEventCancelled,
         notifyInvitations: profile.notifyInvitations,
-        noughterColor: profile.noughterColor || undefined
+        noughterColor: profile.noughterColor ?? undefined
       });
     }
     setIsEditing(true);
@@ -430,8 +430,8 @@ export default function Profile() {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Personalización</h3>
                   <NoughterColorSelector
-                    selectedColor={formData.noughterColor || null}
-                    onChange={(color) => setFormData({ ...formData, noughterColor: color || undefined })}
+                    selectedColor={formData.noughterColor ?? null}
+                    onChange={(color) => setFormData({ ...formData, noughterColor: color ?? undefined })}
                   />
                 </div>
 
