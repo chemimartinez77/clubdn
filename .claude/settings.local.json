@@ -40,7 +40,8 @@
       "Bash(PORT=5000 npm run dev:*)",
       "Bash(git restore:*)",
       "Bash(git push:*)",
-      "Bash(npm run type-check:*)"
+      "Bash(npm run type-check:*)",
+      "Bash(dir /B c:proyectosclubdnclientpublicnoughter*.png)"
     ]
   }
 }

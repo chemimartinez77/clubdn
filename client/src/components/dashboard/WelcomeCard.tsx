@@ -1,12 +1,33 @@
 // client/src/components/dashboard/WelcomeCard.tsx
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '../ui/Card';
+import { useTheme } from '../../hooks/useTheme';
+import { api } from '../../api/axios';
 import type { User } from '../../types/auth';
+import type { UserProfile } from '../../types/profile';
+import type { ApiResponse } from '../../types/auth';
 
 interface WelcomeCardProps {
   user: User;
 }
 
 export default function WelcomeCard({ user }: WelcomeCardProps) {
+  const { themeName } = useTheme();
+
+  // Obtener perfil del usuario para conocer su preferencia de color de Noughter
+  const { data: profile } = useQuery({
+    queryKey: ['myProfile'],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<{ profile: UserProfile }>>('/api/profile/me');
+      return response.data.data?.profile;
+    },
+    staleTime: 5 * 60 * 1000 // 5 minutos
+  });
+
+  // Determinar el color de Noughter: usar preferencia del usuario o el tema actual
+  const noughterColor = profile?.noughterColor || themeName;
+  const noughterImageSrc = `/noughter.${noughterColor}.png`;
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Buenos días';
@@ -39,7 +60,7 @@ export default function WelcomeCard({ user }: WelcomeCardProps) {
                 {getGreeting()}, {user.name}!
               </h2>
               <p className="text-white/80">
-                Bienvenido al Club DN
+                Bienvenido al Club Dreadnought
               </p>
             </div>
 
@@ -61,7 +82,7 @@ export default function WelcomeCard({ user }: WelcomeCardProps) {
 
           <div className="relative w-[140px]">
             <img
-              src="/noughter.png"
+              src={noughterImageSrc}
               alt="Noughter"
               className="absolute right-0 top-1/2 -translate-y-1/2 w-40 h-40 object-contain"
             />

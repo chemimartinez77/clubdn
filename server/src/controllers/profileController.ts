@@ -177,7 +177,8 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
       notifyNewEvents,
       notifyEventChanges,
       notifyEventCancelled,
-      notifyInvitations
+      notifyInvitations,
+      noughterColor
     } = req.body;
 
     // Buscar o crear perfil
@@ -203,7 +204,8 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           notifyNewEvents: notifyNewEvents ?? true,
           notifyEventChanges: notifyEventChanges ?? true,
           notifyEventCancelled: notifyEventCancelled ?? true,
-          notifyInvitations: notifyInvitations ?? true
+          notifyInvitations: notifyInvitations ?? true,
+          noughterColor: noughterColor || null
         },
         include: {
           user: {
@@ -237,7 +239,8 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           ...(notifyNewEvents !== undefined && { notifyNewEvents }),
           ...(notifyEventChanges !== undefined && { notifyEventChanges }),
           ...(notifyEventCancelled !== undefined && { notifyEventCancelled }),
-          ...(notifyInvitations !== undefined && { notifyInvitations })
+          ...(notifyInvitations !== undefined && { notifyInvitations }),
+          ...(noughterColor !== undefined && { noughterColor })
         },
         include: {
           user: {

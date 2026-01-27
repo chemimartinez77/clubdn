@@ -278,7 +278,7 @@ export const sendApprovalEmail = async (
 
   return sendEmail({
     to: email,
-    subject: '🎉 ¡Bienvenido al Club DN!',
+    subject: '🎉 ¡Bienvenido al Club Dreadnought!',
     html,
     template: 'approval',
   });

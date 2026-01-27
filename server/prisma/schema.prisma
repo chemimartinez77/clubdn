@@ -116,6 +116,9 @@ model UserProfile {
   notifyEventCancelled  Boolean @default(true)   // Eventos cancelados
   notifyInvitations     Boolean @default(true)   // Estado de invitaciones
 
+  // Personalización
+  noughterColor   String?  // Color de Noughter: purple, blue, green, red, brown (null = usar tema activo)
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

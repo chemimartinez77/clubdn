@@ -47,7 +47,7 @@ export default function Login() {
       <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Bienvenido al Club DN
+            Bienvenido al Club Dreadnought
           </h1>
           <p className="text-gray-600">Inicia sesión en tu cuenta</p>
         </div>

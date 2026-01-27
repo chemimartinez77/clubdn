@@ -5,6 +5,7 @@ import Layout from '../components/layout/Layout';
 import { Card, CardHeader, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import ThemeSelector from '../components/ThemeSelector';
+import NoughterColorSelector from '../components/profile/NoughterColorSelector';
 import { useToast } from '../hooks/useToast';
 import { api } from '../api/axios';
 import type { UserProfile, UpdateProfileData } from '../types/profile';
@@ -102,7 +103,8 @@ export default function Profile() {
         notifyNewEvents: profile.notifyNewEvents,
         notifyEventChanges: profile.notifyEventChanges,
         notifyEventCancelled: profile.notifyEventCancelled,
-        notifyInvitations: profile.notifyInvitations
+        notifyInvitations: profile.notifyInvitations,
+        noughterColor: profile.noughterColor || undefined
       });
     }
     setIsEditing(true);
@@ -424,6 +426,15 @@ export default function Profile() {
                   </div>
                 </div>
 
+                {/* Personalización */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Personalización</h3>
+                  <NoughterColorSelector
+                    selectedColor={formData.noughterColor || null}
+                    onChange={(color) => setFormData({ ...formData, noughterColor: color || undefined })}
+                  />
+                </div>
+
                 {/* Actions */}
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
                   <Button type="submit" variant="primary" disabled={updateMutation.isPending}>
@@ -554,6 +565,14 @@ export default function Profile() {
                     <div className="pt-4 border-t border-gray-200">
                       <p className="text-sm font-medium text-gray-700 mb-3">Tema de la aplicación</p>
                       <ThemeSelector />
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-200">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Personalización</p>
+                      <NoughterColorSelector
+                        selectedColor={profile.noughterColor}
+                        onChange={() => {}}
+                      />
                     </div>
                   </div>
                 </div>
