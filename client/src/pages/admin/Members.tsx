@@ -63,6 +63,7 @@ export default function Members() {
         firstName: string;
         lastName: string;
         dni: string;
+        avatar: string;
         imageConsentActivities: boolean;
         imageConsentSocial: boolean;
         membershipType?: string;
@@ -70,6 +71,7 @@ export default function Members() {
         firstName: profileForm.firstName.trim(),
         lastName: profileForm.lastName.trim(),
         dni: profileForm.dni.trim(),
+        avatar: profileForm.avatar,
         imageConsentActivities: profileForm.imageConsentActivities,
         imageConsentSocial: profileForm.imageConsentSocial
       };
