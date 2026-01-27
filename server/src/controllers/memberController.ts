@@ -258,8 +258,19 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
       avatar,
       imageConsentActivities,
       imageConsentSocial,
-      membershipType: newMembershipType
+      membershipType: newMembershipType,
+      membershipChangeReason
     } = req.body;
+
+    // Obtener ID del admin que hace el cambio
+    const adminId = req.user?.userId;
+    if (!adminId) {
+      res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+      return;
+    }
 
     if (!firstName || typeof firstName !== 'string' || firstName.trim().length < 2) {
       res.status(400).json({
@@ -308,11 +319,11 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
     });
 
     // Validar tipo de membresía si se proporciona
-    if (newMembershipType && !existingMembership) {
-      if (!['SOCIO', 'COLABORADOR'].includes(newMembershipType)) {
+    if (newMembershipType) {
+      if (!['SOCIO', 'COLABORADOR', 'FAMILIAR', 'EN_PRUEBAS'].includes(newMembershipType)) {
         res.status(400).json({
           success: false,
-          message: 'Tipo de membresía inválido. Debe ser SOCIO o COLABORADOR'
+          message: 'Tipo de membresía inválido'
         });
         return;
       }
@@ -361,19 +372,64 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
       })
     ];
 
-    // Si se proporciona tipo de membresía y el usuario no tiene una, crear membership
-    if (newMembershipType && !existingMembership) {
-      transactionOperations.push(
-        prisma.membership.create({
-          data: {
-            userId: existingUser.id,
-            type: newMembershipType,
-            startDate: new Date(),
-            monthlyFee: newMembershipType === 'SOCIO' ? 10 : 0, // Ajustar según necesites
-            isActive: true
-          }
-        })
-      );
+    // Manejar cambios de tipo de membresía
+    if (newMembershipType) {
+      if (!existingMembership) {
+        // Crear nueva membresía
+        transactionOperations.push(
+          prisma.membership.create({
+            data: {
+              userId: existingUser.id,
+              type: newMembershipType,
+              startDate: new Date(),
+              monthlyFee: newMembershipType === 'SOCIO' ? 10 : 0,
+              isActive: true
+            }
+          })
+        );
+
+        // Registrar en el log
+        transactionOperations.push(
+          prisma.membershipChangeLog.create({
+            data: {
+              userId: existingUser.id,
+              previousType: null,
+              newType: newMembershipType,
+              reason: req.body.membershipChangeReason || 'Creación inicial de membresía',
+              changedBy: adminId
+            }
+          })
+        );
+      } else if (existingMembership.type !== newMembershipType) {
+        // Actualizar tipo de membresía existente
+        const newMonthlyFee = newMembershipType === 'SOCIO' ? 10 : newMembershipType === 'COLABORADOR' ? 0 : existingMembership.monthlyFee;
+
+        transactionOperations.push(
+          prisma.membership.update({
+            where: { userId: existingUser.id },
+            data: {
+              type: newMembershipType,
+              monthlyFee: newMonthlyFee,
+              becameSocioAt: newMembershipType === 'SOCIO' && existingMembership.type !== 'SOCIO'
+                ? new Date()
+                : existingMembership.becameSocioAt
+            }
+          })
+        );
+
+        // Registrar cambio en el log
+        transactionOperations.push(
+          prisma.membershipChangeLog.create({
+            data: {
+              userId: existingUser.id,
+              previousType: existingMembership.type,
+              newType: newMembershipType,
+              reason: req.body.membershipChangeReason || 'Cambio de tipo de membresía',
+              changedBy: adminId
+            }
+          })
+        );
+      }
     }
 
     const [updatedUser, profile] = await prisma.$transaction(transactionOperations);

@@ -326,6 +326,27 @@ model Membership {
   @@index([fechaBaja])
 }
 
+// Historial de cambios de tipo de membresía
+model MembershipChangeLog {
+  id            String         @id @default(cuid())
+  userId        String
+
+  // Cambio realizado
+  previousType  MembershipType?  // null si es la primera membresía
+  newType       MembershipType
+  reason        String?          @db.Text  // Motivo del cambio
+
+  // Auditoría
+  changedBy     String           // ID del admin que hizo el cambio
+  changedAt     DateTime         @default(now())
+
+  createdAt     DateTime         @default(now())
+
+  @@index([userId])
+  @@index([changedAt])
+  @@index([changedBy])
+}
+
 // Registro de pagos
 model Payment {
   id              String   @id @default(cuid())
