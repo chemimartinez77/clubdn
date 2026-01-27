@@ -38,7 +38,8 @@ export default function Members() {
     dni: '',
     avatar: '',
     imageConsentActivities: false,
-    imageConsentSocial: false
+    imageConsentSocial: false,
+    membershipType: ''
   });
 
   // Fetch members data
@@ -58,13 +59,24 @@ export default function Members() {
   const updateProfileMutation = useMutation({
     mutationFn: async () => {
       if (!selectedMember?.id) return null;
-      const payload = {
+      const payload: {
+        firstName: string;
+        lastName: string;
+        dni: string;
+        imageConsentActivities: boolean;
+        imageConsentSocial: boolean;
+        membershipType?: string;
+      } = {
         firstName: profileForm.firstName.trim(),
         lastName: profileForm.lastName.trim(),
         dni: profileForm.dni.trim(),
         imageConsentActivities: profileForm.imageConsentActivities,
         imageConsentSocial: profileForm.imageConsentSocial
       };
+      // Solo incluir membershipType si el usuario no tiene uno asignado y se proporcionó uno nuevo
+      if (!memberProfile?.member.membershipType && profileForm.membershipType) {
+        payload.membershipType = profileForm.membershipType;
+      }
       const response = await api.put<ApiResponse<MemberProfileResponse>>(
         `/api/admin/members/${selectedMember.id}/profile`,
         payload
@@ -89,7 +101,8 @@ export default function Members() {
       dni: memberProfile.member.profile.dni || '',
       avatar: memberProfile.member.profile.avatar || '',
       imageConsentActivities: memberProfile.member.profile.imageConsentActivities,
-      imageConsentSocial: memberProfile.member.profile.imageConsentSocial
+      imageConsentSocial: memberProfile.member.profile.imageConsentSocial,
+      membershipType: memberProfile.member.membershipType || ''
     });
   }, [memberProfile]);
 
@@ -158,7 +171,8 @@ export default function Members() {
       dni: '',
       avatar: '',
       imageConsentActivities: false,
-      imageConsentSocial: false
+      imageConsentSocial: false,
+      membershipType: ''
     });
     setViewModalOpen(true);
   };
@@ -197,6 +211,11 @@ export default function Members() {
     }
     if (!profileForm.dni.trim()) {
       error('DNI requerido');
+      return;
+    }
+    // Validar membershipType si el miembro no tiene uno asignado
+    if (!memberProfile?.member.membershipType && !profileForm.membershipType) {
+      error('Tipo de membresía requerido');
       return;
     }
     updateProfileMutation.mutate();
@@ -565,7 +584,8 @@ export default function Members() {
             dni: '',
             avatar: '',
             imageConsentActivities: false,
-            imageConsentSocial: false
+            imageConsentSocial: false,
+            membershipType: ''
           });
         }}
         title="Ficha del miembro"
@@ -629,6 +649,28 @@ export default function Members() {
                     </div>
                   </div>
                 </div>
+
+                {/* Selector de tipo de membresía si el miembro no tiene uno asignado */}
+                {!memberProfile.member.membershipType && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tipo de Membresía <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={profileForm.membershipType}
+                      onChange={(e) => setProfileForm({ ...profileForm, membershipType: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
+                      required
+                    >
+                      <option value="" disabled>Elige un tipo</option>
+                      <option value="SOCIO">SOCIO</option>
+                      <option value="COLABORADOR">COLABORADOR</option>
+                    </select>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Este miembro no tiene un tipo de membresía asignado. Selecciona uno antes de guardar.
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -707,7 +749,8 @@ export default function Members() {
                         dni: '',
                         avatar: '',
                         imageConsentActivities: false,
-                        imageConsentSocial: false
+                        imageConsentSocial: false,
+                        membershipType: ''
                       });
                     }}
                   >
