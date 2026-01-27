@@ -75,10 +75,8 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
     // Apply membership filter
     if (Object.keys(membershipFilter).length > 0) {
       where.membership = membershipFilter;
-    } else {
-      // For 'all' with no date filter, we want users with membership (active or inactive)
-      where.membership = { isNot: null };
     }
+    // Si no hay filtro específico, mostrar TODOS los usuarios (con o sin membresía)
 
     // Get users with pagination
     const [users, totalCount] = await Promise.all([
@@ -486,10 +484,8 @@ export const exportMembersCSV = async (req: Request, res: Response): Promise<voi
     // Apply membership filter
     if (Object.keys(membershipFilterExport).length > 0) {
       where.membership = membershipFilterExport;
-    } else {
-      // For 'all' with no date filter, we want users with membership (active or inactive)
-      where.membership = { isNot: null };
     }
+    // Si no hay filtro específico, mostrar TODOS los usuarios (con o sin membresía)
 
     const users = await prisma.user.findMany({
       where,
