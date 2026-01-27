@@ -73,7 +73,7 @@ export default function Register() {
         className="min-h-screen flex items-center justify-center p-4"
         style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
       >
-        <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
+        <div className="bg-[var(--color-cardBackground)] rounded-lg shadow-2xl p-8 max-w-md w-full">
           <div className="text-center">
             <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
               <svg
@@ -90,14 +90,14 @@ export default function Register() {
                 />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            <h2 className="text-2xl font-bold text-[var(--color-text)] mb-4">
               {'\u00a1Registro Exitoso!'}
             </h2>
-            <p className="text-gray-600 mb-4">
+            <p className="text-[var(--color-textSecondary)] mb-4">
               {successMessage || 'Registro exitoso. Verifica tu email para continuar.'}
             </p>
             {registeredEmail && (
-              <p className="text-sm text-gray-500 mb-6">
+              <p className="text-sm text-[var(--color-textSecondary)] mb-6">
                 Email: <strong>{registeredEmail}</strong>
               </p>
             )}
@@ -118,12 +118,12 @@ export default function Register() {
       className="min-h-screen flex items-center justify-center p-4"
       style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
     >
-      <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
+      <div className="bg-[var(--color-cardBackground)] rounded-lg shadow-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          <h1 className="text-3xl font-bold text-[var(--color-text)] mb-2">
             {'\u00danete al Club DN'}
           </h1>
-          <p className="text-gray-600">Crea tu cuenta para empezar</p>
+          <p className="text-[var(--color-textSecondary)]">Crea tu cuenta para empezar</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -136,7 +136,7 @@ export default function Register() {
           <div>
             <label
               htmlFor="name"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2"
             >
               Nombre completo
             </label>
@@ -145,7 +145,7 @@ export default function Register() {
               type="text"
               {...register('name')}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
+                errors.name ? 'border-red-500' : 'border-[var(--color-inputBorder)]'
               }`}
             />
             {errors.name && (
@@ -156,7 +156,7 @@ export default function Register() {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2"
             >
               Email
             </label>
@@ -165,7 +165,7 @@ export default function Register() {
               type="email"
               {...register('email')}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
+                errors.email ? 'border-red-500' : 'border-[var(--color-inputBorder)]'
               }`}
             />
             {errors.email && (
@@ -176,7 +176,7 @@ export default function Register() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2"
             >
               Contraseña
             </label>
@@ -185,13 +185,13 @@ export default function Register() {
               type="password"
               {...register('password')}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent ${
-                errors.password ? 'border-red-500' : 'border-gray-300'
+                errors.password ? 'border-red-500' : 'border-[var(--color-inputBorder)]'
               }`}
             />
             {errors.password && (
               <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-[var(--color-textSecondary)] mt-1">
               Mínimo 8 caracteres, debe incluir mayúscula, minúscula y número
             </p>
           </div>
@@ -204,7 +204,7 @@ export default function Register() {
             {loading ? 'Registrando...' : 'Registrarse'}
           </button>
 
-          <p className="text-center text-gray-600">
+          <p className="text-center text-[var(--color-textSecondary)]">
             ¿Ya tienes cuenta?{' '}
             <Link to="/login" className="text-[var(--color-primary)] hover:underline font-semibold">
               Inicia sesión
@@ -215,3 +215,4 @@ export default function Register() {
     </div>
   );
 }
+

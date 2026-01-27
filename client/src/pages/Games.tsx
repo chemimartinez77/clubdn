@@ -43,8 +43,8 @@ export default function Games() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Juegos Jugados</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-[var(--color-text)]">Juegos Jugados</h1>
+          <p className="text-[var(--color-textSecondary)] mt-1">
             Explora todos los juegos que se han buscado en el club
           </p>
         </div>
@@ -59,10 +59,10 @@ export default function Games() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Buscar por nombre del juego..."
-                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-4 py-2 pl-10 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 />
                 <svg
-                  className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"
+                  className="w-5 h-5 text-[var(--color-textSecondary)] absolute left-3 top-1/2 transform -translate-y-1/2"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -88,7 +88,7 @@ export default function Games() {
         {/* Stats Summary and BGG Logo */}
         <div className="flex items-center justify-between">
           {pagination && (
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-[var(--color-textSecondary)]">
               Mostrando {games.length} de {pagination.totalGames} juegos
             </div>
           )}
@@ -111,14 +111,14 @@ export default function Games() {
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)] mx-auto mb-4"></div>
-              <p className="text-gray-600">Cargando juegos...</p>
+              <p className="text-[var(--color-textSecondary)]">Cargando juegos...</p>
             </div>
           </div>
         ) : games.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <svg
-                className="w-16 h-16 mx-auto text-gray-400 mb-4"
+                className="w-16 h-16 mx-auto text-[var(--color-textSecondary)] mb-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -130,12 +130,12 @@ export default function Games() {
                   d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
                 />
               </svg>
-              <p className="text-gray-600 text-lg">
+              <p className="text-[var(--color-textSecondary)] text-lg">
                 {searchQuery
                   ? 'No se encontraron juegos con ese nombre'
                   : 'Aún no hay juegos en la base de datos'}
               </p>
-              <p className="text-gray-500 text-sm mt-2">
+              <p className="text-[var(--color-textSecondary)] text-sm mt-2">
                 {!searchQuery && 'Los juegos se añaden automáticamente cuando se crean partidas'}
               </p>
             </CardContent>
@@ -146,7 +146,7 @@ export default function Games() {
               <button
                 key={game.id}
                 onClick={() => setSelectedGameId(game.id)}
-                className="group relative bg-white rounded-lg shadow hover:shadow-xl transition-all duration-200 overflow-hidden border border-gray-200 hover:border-[var(--color-primary)] cursor-pointer"
+                className="group relative bg-[var(--color-cardBackground)] rounded-lg shadow hover:shadow-xl transition-all duration-200 overflow-hidden border border-[var(--color-cardBorder)] hover:border-[var(--color-primary)] cursor-pointer"
               >
                 {/* Game Image */}
                 <div className="relative aspect-square">
@@ -157,8 +157,8 @@ export default function Games() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                      <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="w-full h-full bg-[var(--color-cardBorder)] flex items-center justify-center">
+                      <svg className="w-12 h-12 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -179,11 +179,11 @@ export default function Games() {
 
                 {/* Info */}
                 <div className="p-3">
-                  <h3 className="font-semibold text-sm text-gray-900 line-clamp-2 mb-2 text-left">
+                  <h3 className="font-semibold text-sm text-[var(--color-text)] line-clamp-2 mb-2 text-left">
                     {game.name}
                   </h3>
 
-                  <div className="flex items-center justify-between text-xs text-gray-600">
+                  <div className="flex items-center justify-between text-xs text-[var(--color-textSecondary)]">
                     {game.yearPublished && (
                       <span>{game.yearPublished}</span>
                     )}
@@ -198,7 +198,7 @@ export default function Games() {
                   </div>
 
                   {/* Players and Time */}
-                  <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
+                  <div className="flex items-center justify-between text-xs text-[var(--color-textSecondary)] mt-2">
                     {(game.minPlayers || game.maxPlayers) && (
                       <div className="flex items-center gap-1">
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -231,7 +231,7 @@ export default function Games() {
                             className={`h-1 flex-1 rounded ${
                               level <= Math.round(game.complexityRating!)
                                 ? 'bg-[var(--color-primary)]'
-                                : 'bg-gray-200'
+                                : 'bg-[var(--color-cardBorder)]'
                             }`}
                           />
                         ))}
@@ -250,7 +250,7 @@ export default function Games() {
             <button
               onClick={() => setPage(Math.max(1, page - 1))}
               disabled={page === 1}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Anterior
             </button>
@@ -274,7 +274,7 @@ export default function Games() {
                     className={`w-10 h-10 rounded-lg ${
                       page === pageNum
                         ? 'bg-[var(--color-primary)] text-white'
-                        : 'border border-gray-300 hover:bg-gray-50'
+                        : 'border border-[var(--color-inputBorder)] hover:bg-[var(--color-tableRowHover)]'
                     }`}
                   >
                     {pageNum}
@@ -285,7 +285,7 @@ export default function Games() {
             <button
               onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
               disabled={page === pagination.totalPages}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Siguiente
             </button>
@@ -302,3 +302,4 @@ export default function Games() {
     </Layout>
   );
 }
+

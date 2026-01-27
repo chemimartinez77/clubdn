@@ -13,14 +13,14 @@ interface QuickActionProps {
 function QuickAction({ to, title, description, icon, enabled = true }: QuickActionProps) {
   if (!enabled) {
     return (
-      <div className="p-4 rounded-lg border border-gray-200 bg-gray-50 opacity-60">
+      <div className="p-4 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] opacity-60">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-gray-200 text-gray-400">
+          <div className="p-2 rounded-lg bg-[var(--color-cardBorder)] text-[var(--color-textSecondary)]">
             {icon}
           </div>
           <div className="flex-1">
-            <p className="font-medium text-gray-500">{title}</p>
-            <p className="text-sm text-gray-400">{description}</p>
+            <p className="font-medium text-[var(--color-textSecondary)]">{title}</p>
+            <p className="text-sm text-[var(--color-textSecondary)]">{description}</p>
           </div>
         </div>
       </div>
@@ -56,7 +56,7 @@ export default function QuickActionsCard({ isAdmin }: QuickActionsCardProps) {
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-lg font-semibold text-gray-900">Acciones rápidas</h3>
+        <h3 className="text-lg font-semibold text-[var(--color-text)]">Acciones rápidas</h3>
       </CardHeader>
       <CardContent className="space-y-3">
         {isAdmin && (
@@ -151,3 +151,4 @@ export default function QuickActionsCard({ isAdmin }: QuickActionsCardProps) {
     </Card>
   );
 }
+

@@ -93,7 +93,7 @@ export default function MembershipManagement() {
       ANO_COMPLETO: 'Año completo'
     };
     return (
-      <span className={`px-2 py-1 text-xs font-semibold rounded ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
+      <span className={`px-2 py-1 text-xs font-semibold rounded ${styles[status] || 'bg-[var(--color-tableRowHover)] text-[var(--color-text)]'}`}>
         {labels[status] || status}
       </span>
     );
@@ -105,7 +105,7 @@ export default function MembershipManagement() {
       COLABORADOR: 'bg-blue-100 text-blue-800',
       FAMILIAR: 'bg-purple-100 text-purple-800',
       EN_PRUEBAS: 'bg-yellow-100 text-yellow-800',
-      BAJA: 'bg-gray-200 text-gray-700'
+      BAJA: 'bg-[var(--color-cardBorder)] text-[var(--color-textSecondary)]'
     };
 
     return (
@@ -148,8 +148,8 @@ export default function MembershipManagement() {
       <div className="max-w-full mx-auto space-y-6 px-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Pagos</h1>
-            <p className="text-gray-600 mt-1">Control de pagos mensuales de membresías</p>
+            <h1 className="text-3xl font-bold text-[var(--color-text)]">Pagos</h1>
+            <p className="text-[var(--color-textSecondary)] mt-1">Control de pagos mensuales de membresías</p>
           </div>
         </div>
 
@@ -158,11 +158,11 @@ export default function MembershipManagement() {
             <div className="flex flex-col gap-4">
               {/* Selector de año */}
               <div className="flex items-center gap-4">
-                <label className="text-sm font-medium text-gray-700">Año:</label>
+                <label className="text-sm font-medium text-[var(--color-textSecondary)]">Año:</label>
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
+                  className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)]"
                 >
                   {[selectedYear - 1, selectedYear, selectedYear + 1].map(year => (
                     <option key={year} value={year}>{year}</option>
@@ -178,14 +178,14 @@ export default function MembershipManagement() {
                     placeholder="Buscar por nombre..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                    className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
                   />
                 </div>
 
                 <select
                   value={membershipFilter}
                   onChange={(e) => setMembershipFilter(e.target.value as 'all' | MembershipType)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
+                  className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)]"
                 >
                   <option value="all">Cualquier tipo de miembro</option>
                   <option value="COLABORADOR">COLABORADOR</option>
@@ -202,9 +202,9 @@ export default function MembershipManagement() {
                       type="checkbox"
                       checked={statusFilters.nuevo}
                       onChange={() => toggleStatusFilter('nuevo')}
-                      className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                      className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)]"
                     />
-                    <span className="text-sm text-gray-700">Nuevo</span>
+                    <span className="text-sm text-[var(--color-textSecondary)]">Nuevo</span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -212,9 +212,9 @@ export default function MembershipManagement() {
                       type="checkbox"
                       checked={statusFilters.pendiente}
                       onChange={() => toggleStatusFilter('pendiente')}
-                      className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                      className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)]"
                     />
-                    <span className="text-sm text-gray-700">Pendiente</span>
+                    <span className="text-sm text-[var(--color-textSecondary)]">Pendiente</span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -222,9 +222,9 @@ export default function MembershipManagement() {
                       type="checkbox"
                       checked={statusFilters.impagado}
                       onChange={() => toggleStatusFilter('impagado')}
-                      className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                      className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)]"
                     />
-                    <span className="text-sm text-gray-700">Impagado</span>
+                    <span className="text-sm text-[var(--color-textSecondary)]">Impagado</span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -232,9 +232,9 @@ export default function MembershipManagement() {
                       type="checkbox"
                       checked={statusFilters.pagado}
                       onChange={() => toggleStatusFilter('pagado')}
-                      className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                      className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)]"
                     />
-                    <span className="text-sm text-gray-700">Pagado</span>
+                    <span className="text-sm text-[var(--color-textSecondary)]">Pagado</span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -242,9 +242,9 @@ export default function MembershipManagement() {
                       type="checkbox"
                       checked={statusFilters.anoCompleto}
                       onChange={() => toggleStatusFilter('anoCompleto')}
-                      className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                      className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)]"
                     />
-                    <span className="text-sm text-gray-700">Año completo</span>
+                    <span className="text-sm text-[var(--color-textSecondary)]">Año completo</span>
                   </label>
                 </div>
               </div>
@@ -253,37 +253,37 @@ export default function MembershipManagement() {
 
           <CardContent>
             {isLoading ? (
-              <div className="p-8 text-center text-gray-600">
+              <div className="p-8 text-center text-[var(--color-textSecondary)]">
                 Cargando usuarios...
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-[var(--color-tableRowHover)]">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Nombre
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Estado
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-center text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Acciones
                       </th>
                       {MONTHS.map((month) => (
-                        <th key={month} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th key={month} className="px-2 py-3 text-center text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                           {month}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-[var(--color-cardBackground)] divide-y divide-gray-200">
                     {filteredUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
+                      <tr key={user.id} className="hover:bg-[var(--color-tableRowHover)]">
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-sm font-medium text-[var(--color-text)]">{user.name}</div>
+                            <div className="text-xs text-[var(--color-textSecondary)]">
                               {user.membership ? getMembershipBadge(user.membership.type) : '-'}
                             </div>
                           </div>
@@ -313,7 +313,7 @@ export default function MembershipManagement() {
                                 checked={isPaid}
                                 onChange={() => handleTogglePayment(user.id, month)}
                                 disabled={togglePaymentMutation.isPending}
-                                className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)] cursor-pointer disabled:opacity-50"
+                                className="w-5 h-5 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] cursor-pointer disabled:opacity-50"
                               />
                             </td>
                           );
@@ -324,7 +324,7 @@ export default function MembershipManagement() {
                 </table>
 
                 {filteredUsers.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-[var(--color-textSecondary)]">
                     No se encontraron usuarios con los filtros seleccionados
                   </div>
                 )}
@@ -336,3 +336,4 @@ export default function MembershipManagement() {
     </Layout>
   );
 }
+

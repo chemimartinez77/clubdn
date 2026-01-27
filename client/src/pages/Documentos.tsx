@@ -95,8 +95,8 @@ const getFileIcon = (mimeType: string) => {
     );
   }
   return (
-    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-      <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className="w-10 h-10 bg-[var(--color-tableRowHover)] rounded-lg flex items-center justify-center flex-shrink-0">
+      <svg className="w-5 h-5 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
       </svg>
     </div>
@@ -247,8 +247,8 @@ export default function Documentos() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Documentos del Club</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-3xl font-bold text-[var(--color-text)]">Documentos del Club</h1>
+            <p className="text-[var(--color-textSecondary)] mt-1">
               {isAdmin
                 ? 'Gestiona los documentos compartidos con los miembros del club'
                 : 'Documentos y recursos disponibles para los miembros del club'
@@ -275,8 +275,8 @@ export default function Documentos() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Total Documentos</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">Total Documentos</p>
+                    <p className="text-3xl font-bold text-[var(--color-text)]">{stats.total}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -291,7 +291,7 @@ export default function Documentos() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Documentos Públicos</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">Documentos Públicos</p>
                     <p className="text-3xl font-bold text-green-600">{stats.byVisibility.public}</p>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -307,7 +307,7 @@ export default function Documentos() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Solo Admins</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">Solo Admins</p>
                     <p className="text-3xl font-bold text-yellow-600">{stats.byVisibility.admin}</p>
                   </div>
                   <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -323,7 +323,7 @@ export default function Documentos() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Espacio Usado</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">Espacio Usado</p>
                     <p className="text-3xl font-bold text-purple-600">{stats.totalSizeMB} MB</p>
                   </div>
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -347,10 +347,10 @@ export default function Documentos() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Buscar documentos..."
-                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-4 py-2 pl-10 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 />
                 <svg
-                  className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"
+                  className="w-5 h-5 text-[var(--color-textSecondary)] absolute left-3 top-1/2 transform -translate-y-1/2"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -363,7 +363,7 @@ export default function Documentos() {
                 <select
                   value={selectedVisibility}
                   onChange={(e) => setSelectedVisibility(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
                   <option value="all">Todas las visibilidades</option>
                   <option value="PUBLIC">Todos los miembros</option>
@@ -383,12 +383,12 @@ export default function Documentos() {
         ) : documents.length === 0 ? (
           <Card>
             <CardContent className="p-12">
-              <div className="text-center text-gray-500">
-                <svg className="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="text-center text-[var(--color-textSecondary)]">
+                <svg className="w-20 h-20 mx-auto mb-4 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay documentos</h3>
-                <p className="text-gray-600 mb-6">
+                <h3 className="text-xl font-semibold text-[var(--color-text)] mb-2">No hay documentos</h3>
+                <p className="text-[var(--color-textSecondary)] mb-6">
                   {isAdmin
                     ? 'Aún no se han subido documentos. Sube el primero.'
                     : 'No hay documentos disponibles en este momento.'
@@ -413,12 +413,12 @@ export default function Documentos() {
             <CardContent>
               <div className="divide-y divide-gray-200">
                 {documents.map((doc) => (
-                  <div key={doc.id} className="py-4 flex items-center gap-4 hover:bg-gray-50 -mx-6 px-6 transition-colors">
+                  <div key={doc.id} className="py-4 flex items-center gap-4 hover:bg-[var(--color-tableRowHover)] -mx-6 px-6 transition-colors">
                     {getFileIcon(doc.mimeType)}
 
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-gray-900 truncate">{doc.title}</h4>
-                      <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                      <h4 className="font-medium text-[var(--color-text)] truncate">{doc.title}</h4>
+                      <div className="flex items-center gap-3 text-sm text-[var(--color-textSecondary)] mt-1">
                         <span>{doc.filename}</span>
                         <span>{formatFileSize(doc.size)}</span>
                         <span>{new Date(doc.createdAt).toLocaleDateString('es-ES')}</span>
@@ -434,7 +434,7 @@ export default function Documentos() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleDownload(doc)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                        className="p-2 hover:bg-[var(--color-tableRowHover)] rounded-lg transition-colors cursor-pointer"
                         title="Descargar"
                       >
                         <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -486,12 +486,12 @@ export default function Documentos() {
       {/* Modal de subida */}
       {isUploadModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-lg w-full p-6">
+          <div className="bg-[var(--color-cardBackground)] rounded-lg max-w-lg w-full p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Subir Documento</h2>
+              <h2 className="text-xl font-bold text-[var(--color-text)]">Subir Documento</h2>
               <button
                 onClick={closeUploadModal}
-                className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                className="text-[var(--color-textSecondary)] hover:text-[var(--color-textSecondary)] cursor-pointer"
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -509,7 +509,7 @@ export default function Documentos() {
                 className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
                   isDragging
                     ? 'border-[var(--color-primary)] bg-[var(--color-primary-50)]'
-                    : 'border-gray-300 hover:border-gray-400'
+                    : 'border-[var(--color-inputBorder)] hover:border-[var(--color-cardBorder)]'
                 }`}
               >
                 <input
@@ -523,24 +523,24 @@ export default function Documentos() {
                   <div className="flex items-center justify-center gap-3">
                     {getFileIcon(selectedFile.type)}
                     <div className="text-left">
-                      <p className="font-medium text-gray-900">{selectedFile.name}</p>
-                      <p className="text-sm text-gray-500">{formatFileSize(selectedFile.size)}</p>
+                      <p className="font-medium text-[var(--color-text)]">{selectedFile.name}</p>
+                      <p className="text-sm text-[var(--color-textSecondary)]">{formatFileSize(selectedFile.size)}</p>
                     </div>
                   </div>
                 ) : (
                   <>
-                    <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-12 h-12 mx-auto text-[var(--color-textSecondary)] mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
-                    <p className="text-gray-600">Arrastra un archivo aquí o haz clic para seleccionar</p>
-                    <p className="text-sm text-gray-400 mt-1">PDF, Word, Excel, JPG, PNG, GIF (max 20MB)</p>
+                    <p className="text-[var(--color-textSecondary)]">Arrastra un archivo aquí o haz clic para seleccionar</p>
+                    <p className="text-sm text-[var(--color-textSecondary)] mt-1">PDF, Word, Excel, JPG, PNG, GIF (max 20MB)</p>
                   </>
                 )}
               </div>
 
               {/* Título */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                   Título del documento *
                 </label>
                 <input
@@ -548,25 +548,25 @@ export default function Documentos() {
                   value={uploadTitle}
                   onChange={(e) => setUploadTitle(e.target.value)}
                   placeholder="Ej: Estatutos del Club 2024"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 />
               </div>
 
               {/* Visibilidad */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                   Visibilidad
                 </label>
                 <select
                   value={uploadVisibility}
                   onChange={(e) => setUploadVisibility(e.target.value as DocumentVisibility)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
                   <option value="PUBLIC">Todos los miembros</option>
                   <option value="ADMIN">Solo administradores</option>
                   <option value="SUPER_ADMIN">Solo super admins</option>
                 </select>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-[var(--color-textSecondary)] mt-1">
                   {uploadVisibility === 'PUBLIC' && 'Visible para todos los miembros del club'}
                   {uploadVisibility === 'ADMIN' && 'Solo visible para administradores'}
                   {uploadVisibility === 'SUPER_ADMIN' && 'Solo visible para super administradores'}
@@ -598,3 +598,4 @@ export default function Documentos() {
     </Layout>
   );
 }
+

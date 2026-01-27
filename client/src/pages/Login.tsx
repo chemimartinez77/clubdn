@@ -178,7 +178,7 @@ export default function Login() {
       />
 
       {/* Contenido principal */}
-      <div className="relative z-10 bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 max-w-md w-full">
+      <div className="relative z-10 bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] backdrop-blur-sm rounded-2xl shadow-2xl p-8 max-w-md w-full">
         {/* Logo y título */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
@@ -188,10 +188,10 @@ export default function Login() {
               className="h-20 w-auto"
             />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          <h1 className="text-3xl font-bold text-[var(--color-text)] mb-2">
             Bienvenido al Club DN
           </h1>
-          <p className="text-gray-600">Inicia sesión en tu cuenta</p>
+          <p className="text-[var(--color-textSecondary)]">Inicia sesión en tu cuenta</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -204,7 +204,7 @@ export default function Login() {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2"
             >
               Email
             </label>
@@ -213,7 +213,7 @@ export default function Login() {
               type="email"
               {...register('email')}
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
+                errors.email ? 'border-red-500' : 'border-[var(--color-inputBorder)]'
               }`}
               placeholder="tu@email.com"
             />
@@ -225,7 +225,7 @@ export default function Login() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2"
             >
               Contraseña
             </label>
@@ -234,7 +234,7 @@ export default function Login() {
               type="password"
               {...register('password')}
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all ${
-                errors.password ? 'border-red-500' : 'border-gray-300'
+                errors.password ? 'border-red-500' : 'border-[var(--color-inputBorder)]'
               }`}
               placeholder="••••••••"
             />
@@ -263,10 +263,10 @@ export default function Login() {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-[var(--color-inputBorder)]"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">¿Primera vez aquí?</span>
+              <span className="px-2 bg-[var(--color-cardBackground)] text-[var(--color-textSecondary)]">¿Primera vez aquí?</span>
             </div>
           </div>
 
@@ -291,3 +291,4 @@ export default function Login() {
     </div>
   );
 }
+

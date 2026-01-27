@@ -104,8 +104,8 @@ export default function ClubConfigPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Configuración del Club</h1>
-            <p className="text-gray-600 mt-1">Gestiona los ajustes generales y tipos de membresía</p>
+            <h1 className="text-3xl font-bold text-[var(--color-text)]">Configuración del Club</h1>
+            <p className="text-[var(--color-textSecondary)] mt-1">Gestiona los ajustes generales y tipos de membresía</p>
           </div>
           {!isEditing ? (
             <Button onClick={() => setIsEditing(true)} variant="primary">
@@ -131,7 +131,7 @@ export default function ClubConfigPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                   Nombre del Club
                 </label>
                 {isEditing ? (
@@ -139,15 +139,15 @@ export default function ClubConfigPage() {
                     type="text"
                     value={formData.clubName || ''}
                     onChange={(e) => setFormData({ ...formData, clubName: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                    className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   />
                 ) : (
-                  <p className="text-gray-900 py-2">{config?.clubName}</p>
+                  <p className="text-[var(--color-text)] py-2">{config?.clubName}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                   Email de Contacto
                 </label>
                 {isEditing ? (
@@ -155,16 +155,16 @@ export default function ClubConfigPage() {
                     type="email"
                     value={formData.clubEmail || ''}
                     onChange={(e) => setFormData({ ...formData, clubEmail: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                    className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     placeholder="email@clubdn.com"
                   />
                 ) : (
-                  <p className="text-gray-900 py-2">{config?.clubEmail || '-'}</p>
+                  <p className="text-[var(--color-text)] py-2">{config?.clubEmail || '-'}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                   Teléfono
                 </label>
                 {isEditing ? (
@@ -172,35 +172,35 @@ export default function ClubConfigPage() {
                     type="tel"
                     value={formData.clubPhone || ''}
                     onChange={(e) => setFormData({ ...formData, clubPhone: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                    className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     placeholder="+34 XXX XXX XXX"
                   />
                 ) : (
-                  <p className="text-gray-900 py-2">{config?.clubPhone || '-'}</p>
+                  <p className="text-[var(--color-text)] py-2">{config?.clubPhone || '-'}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                   Moneda
                 </label>
                 {isEditing ? (
                   <select
                     value={formData.defaultCurrency || 'EUR'}
                     onChange={(e) => setFormData({ ...formData, defaultCurrency: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                    className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   >
                     <option value="EUR">EUR (€)</option>
                     <option value="USD">USD ($)</option>
                     <option value="GBP">GBP (£)</option>
                   </select>
                 ) : (
-                  <p className="text-gray-900 py-2">{config?.defaultCurrency}</p>
+                  <p className="text-[var(--color-text)] py-2">{config?.defaultCurrency}</p>
                 )}
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                   Dirección
                 </label>
                 {isEditing ? (
@@ -208,11 +208,11 @@ export default function ClubConfigPage() {
                     value={formData.clubAddress || ''}
                     onChange={(e) => setFormData({ ...formData, clubAddress: e.target.value })}
                     rows={2}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none"
+                    className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none"
                     placeholder="Dirección completa del club"
                   />
                 ) : (
-                  <p className="text-gray-900 py-2">{config?.clubAddress || '-'}</p>
+                  <p className="text-[var(--color-text)] py-2">{config?.clubAddress || '-'}</p>
                 )}
               </div>
             </div>
@@ -240,7 +240,7 @@ export default function ClubConfigPage() {
           <CardContent>
             <div className="space-y-4">
               {membershipTypes.map((type, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 relative">
+                <div key={index} className="border border-[var(--color-cardBorder)] rounded-lg p-4 relative">
                   {isEditing && (
                     <button
                       onClick={() => handleRemoveMembershipType(index)}
@@ -254,7 +254,7 @@ export default function ClubConfigPage() {
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                         Tipo
                       </label>
                       {isEditing ? (
@@ -262,16 +262,16 @@ export default function ClubConfigPage() {
                           type="text"
                           value={type.type}
                           onChange={(e) => handleMembershipTypeChange(index, 'type', e.target.value as any)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                          className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                           placeholder="SOCIO, COLABORADOR, etc."
                         />
                       ) : (
-                        <p className="text-gray-900 py-2 font-medium">{type.type}</p>
+                        <p className="text-[var(--color-text)] py-2 font-medium">{type.type}</p>
                       )}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                         Nombre a Mostrar
                       </label>
                       {isEditing ? (
@@ -279,15 +279,15 @@ export default function ClubConfigPage() {
                           type="text"
                           value={type.displayName}
                           onChange={(e) => handleMembershipTypeChange(index, 'displayName', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                          className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                         />
                       ) : (
-                        <p className="text-gray-900 py-2">{type.displayName}</p>
+                        <p className="text-[var(--color-text)] py-2">{type.displayName}</p>
                       )}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                         Precio Mensual (€)
                       </label>
                       {isEditing ? (
@@ -297,15 +297,15 @@ export default function ClubConfigPage() {
                           step="0.01"
                           value={type.price}
                           onChange={(e) => handleMembershipTypeChange(index, 'price', parseFloat(e.target.value))}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                          className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                         />
                       ) : (
-                        <p className="text-gray-900 py-2">{type.price}€</p>
+                        <p className="text-[var(--color-text)] py-2">{type.price}€</p>
                       )}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                         Tiene Llave
                       </label>
                       {isEditing ? (
@@ -314,17 +314,17 @@ export default function ClubConfigPage() {
                             type="checkbox"
                             checked={type.hasKey}
                             onChange={(e) => handleMembershipTypeChange(index, 'hasKey', e.target.checked)}
-                            className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                            className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)]"
                           />
-                          <span className="ml-2 text-gray-900">Sí</span>
+                          <span className="ml-2 text-[var(--color-text)]">Sí</span>
                         </label>
                       ) : (
-                        <p className="text-gray-900 py-2">{type.hasKey ? 'Sí' : 'No'}</p>
+                        <p className="text-[var(--color-text)] py-2">{type.hasKey ? 'Sí' : 'No'}</p>
                       )}
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                         Descripción
                       </label>
                       {isEditing ? (
@@ -332,10 +332,10 @@ export default function ClubConfigPage() {
                           value={type.description}
                           onChange={(e) => handleMembershipTypeChange(index, 'description', e.target.value)}
                           rows={2}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none"
+                          className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none"
                         />
                       ) : (
-                        <p className="text-gray-700 py-2">{type.description}</p>
+                        <p className="text-[var(--color-textSecondary)] py-2">{type.description}</p>
                       )}
                     </div>
                   </div>
@@ -348,3 +348,4 @@ export default function ClubConfigPage() {
     </Layout>
   );
 }
+

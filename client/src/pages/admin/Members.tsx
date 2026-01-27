@@ -253,14 +253,14 @@ export default function Members() {
   const getMembershipBadge = (
     type: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA' | null
   ) => {
-    if (!type) return <span className="text-gray-500">-</span>;
+    if (!type) return <span className="text-[var(--color-textSecondary)]">-</span>;
 
     const styles = {
       SOCIO: 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]',
       COLABORADOR: 'bg-blue-100 text-blue-800',
       FAMILIAR: 'bg-purple-100 text-purple-800',
       EN_PRUEBAS: 'bg-yellow-100 text-yellow-800',
-      BAJA: 'bg-gray-200 text-gray-700',
+      BAJA: 'bg-[var(--color-cardBorder)] text-[var(--color-textSecondary)]',
     };
 
     return (
@@ -301,8 +301,8 @@ export default function Members() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Directorio de Miembros</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-3xl font-bold text-[var(--color-text)]">Directorio de Miembros</h1>
+            <p className="text-[var(--color-textSecondary)] mt-1">
               Gestiona y consulta la información de todos los miembros del club
             </p>
           </div>
@@ -325,13 +325,13 @@ export default function Members() {
         {/* Filters Card */}
         <Card>
           <CardHeader>
-            <h2 className="text-xl font-semibold text-gray-900">Filtros</h2>
+            <h2 className="text-xl font-semibold text-[var(--color-text)]">Filtros</h2>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Search */}
               <div className="lg:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                   Buscar por nombre o email
                 </label>
                 <input
@@ -339,13 +339,13 @@ export default function Members() {
                   value={filters.search}
                   onChange={(e) => updateFilter('search', e.target.value)}
                   placeholder="Buscar..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                  className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
                 />
               </div>
 
               {/* Membership Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                   Tipo de membresía
                 </label>
                 <select
@@ -353,7 +353,7 @@ export default function Members() {
                   onChange={(e) =>
                     updateFilter('membershipType', e.target.value as MemberFilters['membershipType'])
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
+                  className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)]"
                 >
                   <option value="all">Todos</option>
                   <option value="SOCIO">SOCIO</option>
@@ -366,7 +366,7 @@ export default function Members() {
 
               {/* Payment Status */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                   Estado de pago
                 </label>
                 <select
@@ -374,7 +374,7 @@ export default function Members() {
                   onChange={(e) =>
                     updateFilter('paymentStatus', e.target.value as MemberFilters['paymentStatus'])
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
+                  className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)]"
                 >
                   <option value="all">Todos</option>
                   <option value="NUEVO">Nuevo</option>
@@ -387,39 +387,39 @@ export default function Members() {
 
               {/* Date From */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                   Fecha desde
                 </label>
                 <input
                   type="date"
                   value={filters.dateFrom}
                   onChange={(e) => updateFilter('dateFrom', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                  className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
                 />
               </div>
 
               {/* Date To */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                   Fecha hasta
                 </label>
                 <input
                   type="date"
                   value={filters.dateTo}
                   onChange={(e) => updateFilter('dateTo', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                  className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
                 />
               </div>
 
               {/* Page Size */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
                   Registros por página
                 </label>
                 <select
                   value={filters.pageSize}
                   onChange={(e) => changePageSize(parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
+                  className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)]"
                 >
                   <option value="10">10</option>
                   <option value="25">25</option>
@@ -457,9 +457,9 @@ export default function Members() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Miembros</h2>
+              <h2 className="text-xl font-semibold text-[var(--color-text)]">Miembros</h2>
               {data && (
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-[var(--color-textSecondary)]">
                   Mostrando {data.members.length} de {data.pagination.totalMembers} miembros
                 </span>
               )}
@@ -469,11 +469,11 @@ export default function Members() {
             {isLoading ? (
               <div className="p-8 text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)] mx-auto"></div>
-                <p className="text-gray-600 mt-4">Cargando miembros...</p>
+                <p className="text-[var(--color-textSecondary)] mt-4">Cargando miembros...</p>
               </div>
             ) : !data || data.members.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="p-8 text-center text-[var(--color-textSecondary)]">
+                <svg className="mx-auto h-12 w-12 text-[var(--color-textSecondary)] mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
                 No se encontraron miembros con los filtros seleccionados
@@ -482,35 +482,35 @@ export default function Members() {
               <>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-[var(--color-tableRowHover)]">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                           Nombre
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                           Email
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                           Tipo
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                           Fecha Incorporación
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                           Estado de Pago
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-right text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                           Acciones
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-[var(--color-cardBackground)] divide-y divide-gray-200">
                       {data.members.map((member) => (
-                        <tr key={member.id} className="hover:bg-gray-50 transition-colors">
+                        <tr key={member.id} className="hover:bg-[var(--color-tableRowHover)] transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <button
                               onClick={() => handleViewMember(member)}
-                              className="text-sm font-medium text-gray-900 hover:underline"
+                              className="text-sm font-medium text-[var(--color-text)] hover:underline"
                             >
                               {member.name}
                             </button>
@@ -518,7 +518,7 @@ export default function Members() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <button
                               onClick={() => handleViewMember(member)}
-                              className="text-sm text-gray-500 hover:underline"
+                              className="text-sm text-[var(--color-textSecondary)] hover:underline"
                             >
                               {member.email}
                             </button>
@@ -526,7 +526,7 @@ export default function Members() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             {getMembershipBadge(member.membershipType)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--color-textSecondary)]">
                             {formatDate(member.startDate)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -560,8 +560,8 @@ export default function Members() {
 
                 {/* Pagination */}
                 {data.pagination.totalPages > 1 && (
-                  <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                    <div className="text-sm text-gray-700">
+                  <div className="px-6 py-4 border-t border-[var(--color-cardBorder)] flex items-center justify-between">
+                    <div className="text-sm text-[var(--color-textSecondary)]">
                       Página {data.pagination.currentPage} de {data.pagination.totalPages}
                     </div>
                     <div className="flex gap-2">
@@ -612,9 +612,9 @@ export default function Members() {
         {selectedMember && (
           <div className="space-y-6">
             {isProfileLoading ? (
-              <div className="py-6 text-center text-gray-500">Cargando ficha...</div>
+              <div className="py-6 text-center text-[var(--color-textSecondary)]">Cargando ficha...</div>
             ) : isProfileError || !memberProfile?.member ? (
-              <div className="py-6 text-center text-gray-500">No se pudo cargar la ficha.</div>
+              <div className="py-6 text-center text-[var(--color-textSecondary)]">No se pudo cargar la ficha.</div>
             ) : (
               <>
                 <div className="flex items-start gap-4">
@@ -623,10 +623,10 @@ export default function Members() {
                       <img
                         src={profileForm.avatar}
                         alt={memberProfile.member.name}
-                        className="w-20 h-20 rounded-full object-cover border border-gray-200"
+                        className="w-20 h-20 rounded-full object-cover border border-[var(--color-cardBorder)]"
                       />
                     ) : (
-                      <div className="w-20 h-20 rounded-full bg-[var(--color-primary-100)] flex items-center justify-center border border-gray-200">
+                      <div className="w-20 h-20 rounded-full bg-[var(--color-primary-100)] flex items-center justify-center border border-[var(--color-cardBorder)]">
                         <span className="text-2xl font-semibold text-[var(--color-primary)]">
                           {memberProfile.member.name.charAt(0).toUpperCase()}
                         </span>
@@ -659,8 +659,8 @@ export default function Members() {
                     />
                   </div>
                   <div className="flex-1">
-                    <p className="text-lg font-semibold text-gray-900">{memberProfile.member.name}</p>
-                    <p className="text-sm text-gray-600">{memberProfile.member.email}</p>
+                    <p className="text-lg font-semibold text-[var(--color-text)]">{memberProfile.member.name}</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">{memberProfile.member.email}</p>
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                       {getMembershipBadge(memberProfile.member.membershipType)}
                       {getPaymentStatusBadge(memberProfile.member.paymentStatus)}
@@ -670,13 +670,13 @@ export default function Members() {
 
                 {/* Selector de tipo de membresía */}
                 <div className={`rounded-lg p-4 ${!memberProfile.member.membershipType ? 'bg-yellow-50 border border-yellow-200' : 'bg-blue-50 border border-blue-200'}`}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                     Tipo de Membresía {!memberProfile.member.membershipType && <span className="text-red-500">*</span>}
                   </label>
                   <select
                     value={profileForm.membershipType}
                     onChange={(e) => setProfileForm({ ...profileForm, membershipType: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-white"
+                    className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)]"
                     required={!memberProfile.member.membershipType}
                   >
                     <option value="" disabled>Elige un tipo</option>
@@ -685,7 +685,7 @@ export default function Members() {
                     <option value="FAMILIAR">FAMILIAR</option>
                     <option value="EN_PRUEBAS">EN PRUEBAS</option>
                   </select>
-                  <p className="text-xs text-gray-600 mt-1">
+                  <p className="text-xs text-[var(--color-textSecondary)] mt-1">
                     {!memberProfile.member.membershipType
                       ? 'Este miembro no tiene un tipo de membresía asignado. Selecciona uno antes de guardar.'
                       : originalMembershipType !== profileForm.membershipType
@@ -696,35 +696,35 @@ export default function Members() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Nombre</label>
                     <input
                       type="text"
                       value={profileForm.firstName}
                       onChange={(e) => setProfileForm({ ...profileForm, firstName: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Apellidos</label>
                     <input
                       type="text"
                       value={profileForm.lastName}
                       onChange={(e) => setProfileForm({ ...profileForm, lastName: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">DNI</label>
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">DNI</label>
                     <input
                       type="text"
                       value={profileForm.dni}
                       onChange={(e) => setProfileForm({ ...profileForm, dni: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
                     />
                   </div>
                 </div>
 
-                <div className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="text-sm text-[var(--color-textSecondary)] bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <strong>Cambiar foto:</strong> Pasa el cursor sobre el avatar y haz clic en el icono de cámara para subir una nueva imagen desde tu dispositivo.
                 </div>
 
@@ -736,9 +736,9 @@ export default function Members() {
                       onChange={(e) =>
                         setProfileForm({ ...profileForm, imageConsentActivities: e.target.checked })
                       }
-                      className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)] mt-0.5"
+                      className="w-5 h-5 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] mt-0.5"
                     />
-                    <span className="text-sm text-gray-700">
+                    <span className="text-sm text-[var(--color-textSecondary)]">
                       Autorización expresa para la captación y publicación de la imagen del colaborador en
                       fotografías y videos tomados durante las actividades organizadas por la asociación.
                     </span>
@@ -750,9 +750,9 @@ export default function Members() {
                       onChange={(e) =>
                         setProfileForm({ ...profileForm, imageConsentSocial: e.target.checked })
                       }
-                      className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)] mt-0.5"
+                      className="w-5 h-5 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] mt-0.5"
                     />
-                    <span className="text-sm text-gray-700">
+                    <span className="text-sm text-[var(--color-textSecondary)]">
                       Autorización expresa para la publicación de la imagen del colaborador en las redes
                       sociales de la asociación.
                     </span>
@@ -803,13 +803,13 @@ export default function Members() {
       >
         {selectedMember && (
           <div className="space-y-4">
-            <p className="text-gray-700">
+            <p className="text-[var(--color-textSecondary)]">
               ¿Estás seguro que deseas dar de baja al siguiente miembro?
             </p>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="font-medium text-gray-900">{selectedMember.name}</p>
-              <p className="text-sm text-gray-600">{selectedMember.email}</p>
-              <p className="text-sm text-gray-600 mt-2">
+            <div className="bg-[var(--color-tableRowHover)] p-4 rounded-lg">
+              <p className="font-medium text-[var(--color-text)]">{selectedMember.name}</p>
+              <p className="text-sm text-[var(--color-textSecondary)]">{selectedMember.email}</p>
+              <p className="text-sm text-[var(--color-textSecondary)] mt-2">
                 Tipo: {getMembershipBadge(selectedMember.membershipType)}
               </p>
             </div>
@@ -851,13 +851,13 @@ export default function Members() {
         title="Confirmar Cambio de Tipo de Membresía"
       >
         <div className="space-y-4">
-          <p className="text-gray-700">
+          <p className="text-[var(--color-textSecondary)]">
             Estás a punto de cambiar el tipo de membresía de:
           </p>
-          <div className="bg-gray-50 p-4 rounded-lg">
+          <div className="bg-[var(--color-tableRowHover)] p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <span className="font-semibold">{originalMembershipType}</span>
-              <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-6 h-6 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
               <span className="font-semibold text-[var(--color-primary)]">{profileForm.membershipType}</span>
@@ -865,17 +865,17 @@ export default function Members() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
               Motivo del cambio <span className="text-red-500">*</span>
             </label>
             <textarea
               value={membershipChangeReason}
               onChange={(e) => setMembershipChangeReason(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] min-h-[100px]"
+              className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] min-h-[100px]"
               placeholder="Explica brevemente por qué se cambia el tipo de membresía..."
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-[var(--color-textSecondary)] mt-1">
               Este cambio quedará registrado en el historial del miembro
             </p>
           </div>
@@ -910,3 +910,4 @@ export default function Members() {
     </Layout>
   );
 }
+

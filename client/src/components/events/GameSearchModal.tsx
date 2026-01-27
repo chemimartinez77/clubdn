@@ -70,14 +70,14 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+      <div className="bg-[var(--color-cardBackground)] rounded-lg max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-[var(--color-cardBorder)]">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Buscar Juego</h2>
+            <h2 className="text-2xl font-bold text-[var(--color-text)]">Buscar Juego</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-[var(--color-textSecondary)] hover:text-[var(--color-textSecondary)]"
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -94,11 +94,11 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Escribe el nombre del juego..."
-                className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                className="w-full px-4 py-3 pl-10 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 autoFocus
               />
               <svg
-                className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"
+                className="w-5 h-5 text-[var(--color-textSecondary)] absolute left-3 top-1/2 transform -translate-y-1/2"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -127,13 +127,13 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)] mx-auto mb-4"></div>
-                <p className="text-gray-600">Buscando juegos en BoardGameGeek...</p>
+                <p className="text-[var(--color-textSecondary)]">Buscando juegos en BoardGameGeek...</p>
               </div>
             </div>
           ) : !searchTrigger ? (
             <div className="text-center py-12">
               <svg
-                className="w-16 h-16 mx-auto text-gray-400 mb-4"
+                className="w-16 h-16 mx-auto text-[var(--color-textSecondary)] mb-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -145,13 +145,13 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-              <p className="text-gray-600">Escribe el nombre del juego y haz click en Buscar</p>
-              <p className="text-gray-500 text-sm mt-2">O presiona Enter para buscar</p>
+              <p className="text-[var(--color-textSecondary)]">Escribe el nombre del juego y haz click en Buscar</p>
+              <p className="text-[var(--color-textSecondary)] text-sm mt-2">O presiona Enter para buscar</p>
             </div>
           ) : searchResult.games.length === 0 ? (
             <div className="text-center py-12">
               <svg
-                className="w-16 h-16 mx-auto text-gray-400 mb-4"
+                className="w-16 h-16 mx-auto text-[var(--color-textSecondary)] mb-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -163,7 +163,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                   d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <p className="text-gray-600">No se encontraron juegos</p>
+              <p className="text-[var(--color-textSecondary)]">No se encontraron juegos</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3">
@@ -171,7 +171,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                 <button
                   key={game.id}
                   onClick={() => handleSelectGame(game)}
-                  className="flex items-center gap-4 p-3 rounded-lg border border-gray-200 hover:bg-[var(--color-primary-50)] hover:border-[var(--color-primary-300)] transition-colors text-left"
+                  className="flex items-center gap-4 p-3 rounded-lg border border-[var(--color-cardBorder)] hover:bg-[var(--color-primary-50)] hover:border-[var(--color-primary-300)] transition-colors text-left"
                 >
                   {game.thumbnail ? (
                     <img
@@ -180,8 +180,8 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                       className="w-16 h-16 object-cover rounded"
                     />
                   ) : (
-                    <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="w-16 h-16 bg-[var(--color-cardBorder)] rounded flex items-center justify-center">
+                      <svg className="w-8 h-8 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -192,9 +192,9 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                     </div>
                   )}
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{game.name}</h3>
+                    <h3 className="font-medium text-[var(--color-text)]">{game.name}</h3>
                     {game.yearPublished && (
-                      <p className="text-sm text-gray-600">{game.yearPublished}</p>
+                      <p className="text-sm text-[var(--color-textSecondary)]">{game.yearPublished}</p>
                     )}
                   </div>
                   <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -207,9 +207,9 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-200 space-y-3">
+        <div className="p-6 border-t border-[var(--color-cardBorder)] space-y-3">
           {searchTrigger && searchResult.totalPages > 1 && (
-            <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center justify-between text-sm text-[var(--color-textSecondary)]">
               <span>
                 Página {searchResult.page} de {searchResult.totalPages} · {searchResult.total} resultados
               </span>
@@ -239,3 +239,4 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
     </div>
   );
 }
+

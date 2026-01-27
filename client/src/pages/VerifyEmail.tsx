@@ -58,15 +58,15 @@ export default function VerifyEmail() {
       className="min-h-screen flex items-center justify-center p-4"
       style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
     >
-      <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
+      <div className="bg-[var(--color-cardBackground)] rounded-lg shadow-2xl p-8 max-w-md w-full">
         <div className="text-center">
           {status === 'loading' && (
             <>
               <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[var(--color-primary)] mx-auto mb-4"></div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              <h2 className="text-2xl font-bold text-[var(--color-text)] mb-2">
                 Verificando email...
               </h2>
-              <p className="text-gray-600">Por favor espera un momento</p>
+              <p className="text-[var(--color-textSecondary)]">Por favor espera un momento</p>
             </>
           )}
 
@@ -87,10 +87,10 @@ export default function VerifyEmail() {
                   />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              <h2 className="text-2xl font-bold text-[var(--color-text)] mb-4">
                 {'\u00a1Email verificado!'}
               </h2>
-              <p className="text-gray-600 mb-6">{message}</p>
+              <p className="text-[var(--color-textSecondary)] mb-6">{message}</p>
               <Link
                 to="/login"
                 className="inline-block bg-[var(--color-primary)] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[var(--color-primaryDark)] transition-colors"
@@ -117,11 +117,11 @@ export default function VerifyEmail() {
                   />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              <h2 className="text-2xl font-bold text-[var(--color-text)] mb-4">
                 {'Error de verificaci\u00f3n'}
               </h2>
-              <p className="text-gray-600">{message}</p>
-              <p className="text-sm text-gray-500 mt-2 mb-6">
+              <p className="text-[var(--color-textSecondary)]">{message}</p>
+              <p className="text-sm text-[var(--color-textSecondary)] mt-2 mb-6">
                 {'Si ya verificaste el email, prueba a iniciar sesi\u00f3n. Si el enlace caduc\u00f3, solicita uno nuevo.'}
               </p>
               <Link
@@ -137,3 +137,4 @@ export default function VerifyEmail() {
     </div>
   );
 }
+

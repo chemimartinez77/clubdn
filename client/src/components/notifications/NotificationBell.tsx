@@ -168,7 +168,7 @@ export default function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-700 hover:text-primary transition-colors rounded-lg hover:bg-gray-100"
+        className="relative p-2 text-[var(--color-textSecondary)] hover:text-primary transition-colors rounded-lg hover:bg-[var(--color-tableRowHover)]"
         aria-label="Notificaciones"
       >
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -184,9 +184,9 @@ export default function NotificationBell() {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-20 max-h-[32rem] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Notificaciones</h3>
+          <div className="absolute right-0 mt-2 w-80 bg-[var(--color-cardBackground)] rounded-lg shadow-lg border border-[var(--color-cardBorder)] z-20 max-h-[32rem] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-[var(--color-cardBorder)]">
+              <h3 className="text-lg font-semibold text-[var(--color-text)]">Notificaciones</h3>
               {notifications.length > 0 && unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
@@ -204,10 +204,10 @@ export default function NotificationBell() {
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-8 text-center">
-                  <svg className="w-16 h-16 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-16 h-16 text-[var(--color-textSecondary)] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
-                  <p className="text-gray-500">No tienes notificaciones</p>
+                  <p className="text-[var(--color-textSecondary)]">No tienes notificaciones</p>
                 </div>
               ) : (
                 notifications.map((notification) => (
@@ -215,15 +215,15 @@ export default function NotificationBell() {
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
                     role={notification.type === 'ADMIN_NEW_USER' ? 'button' : undefined}
-                    className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                      !notification.read ? 'bg-blue-50/50' : ''
+                    className={`p-4 border-b border-[var(--color-cardBorder)] hover:bg-[var(--color-tableRowHover)] transition-colors ${
+                      !notification.read ? 'bg-[var(--color-tableRowHover)]' : ''
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       <span className="text-2xl flex-shrink-0">{getNotificationIcon(notification.type)}</span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <h4 className="text-sm font-semibold text-gray-900 truncate">
+                          <h4 className="text-sm font-semibold text-[var(--color-text)] truncate">
                             {notification.title}
                           </h4>
                           <button
@@ -231,7 +231,7 @@ export default function NotificationBell() {
                               event.stopPropagation();
                               handleDelete(notification.id);
                             }}
-                            className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                            className="text-[var(--color-textSecondary)] hover:text-red-500 transition-colors flex-shrink-0"
                             aria-label="Eliminar"
                           >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -239,9 +239,9 @@ export default function NotificationBell() {
                             </svg>
                           </button>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                        <p className="text-sm text-[var(--color-textSecondary)] mt-1">{notification.message}</p>
                         <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-[var(--color-textSecondary)]">
                             {formatRelativeTime(notification.createdAt)}
                           </span>
                           {!notification.read && (
@@ -268,3 +268,4 @@ export default function NotificationBell() {
     </div>
   );
 }
+

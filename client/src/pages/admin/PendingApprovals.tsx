@@ -78,10 +78,10 @@ export default function PendingApprovals() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-[var(--color-text)]">
               Solicitudes Pendientes
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-[var(--color-textSecondary)] mt-1">
               Gestiona las solicitudes de registro de nuevos usuarios
             </p>
           </div>
@@ -103,7 +103,7 @@ export default function PendingApprovals() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-xl font-semibold text-[var(--color-text)]">
                 Usuarios Pendientes de Aprobación
               </h2>
               {!isLoading && (
@@ -119,7 +119,7 @@ export default function PendingApprovals() {
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)] mx-auto mb-4"></div>
-                  <p className="text-gray-600">Cargando solicitudes...</p>
+                  <p className="text-[var(--color-textSecondary)]">Cargando solicitudes...</p>
                 </div>
               </div>
             ) : error ? (
@@ -130,10 +130,10 @@ export default function PendingApprovals() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">
                     Error al cargar solicitudes
                   </h3>
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-[var(--color-textSecondary)] mb-4">
                     No se pudieron cargar las solicitudes pendientes. Por favor, intenta de nuevo.
                   </p>
                   <Button onClick={() => refetch()} variant="primary">
@@ -144,13 +144,13 @@ export default function PendingApprovals() {
             ) : pendingUsers.length === 0 ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
-                  <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-16 h-16 text-[var(--color-textSecondary)] mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">
                     No hay solicitudes pendientes
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-[var(--color-textSecondary)]">
                     Todas las solicitudes han sido procesadas
                   </p>
                 </div>
@@ -158,20 +158,20 @@ export default function PendingApprovals() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-[var(--color-tableRowHover)]">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Usuario
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Fecha de Registro
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-right text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Acciones
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-[var(--color-cardBackground)] divide-y divide-gray-200">
                     {pendingUsers.map((user) => {
                       const isPending = user.status === 'PENDING_APPROVAL';
                       const statusLabel = user.status === 'APPROVED' ? 'Aprobada' : 'Rechazada';
@@ -180,33 +180,33 @@ export default function PendingApprovals() {
                       return (
                       <tr
                         key={user.id}
-                        className={`hover:bg-gray-50 transition-colors ${isPending ? '' : 'bg-gray-50 text-gray-500'}`}
+                        className={`hover:bg-[var(--color-tableRowHover)] transition-colors ${isPending ? '' : 'bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)]'}`}
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
                               <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                                isPending ? 'bg-[var(--color-primary-100)]' : 'bg-gray-200'
+                                isPending ? 'bg-[var(--color-primary-100)]' : 'bg-[var(--color-cardBorder)]'
                               }`}>
                                 <span className={`font-semibold text-sm ${
-                                  isPending ? 'text-[var(--color-primary)]' : 'text-gray-500'
+                                  isPending ? 'text-[var(--color-primary)]' : 'text-[var(--color-textSecondary)]'
                                 }`}>
                                   {user.name.charAt(0).toUpperCase()}
                                 </span>
                               </div>
                             </div>
                             <div className="ml-4">
-                              <div className={`text-sm font-medium ${isPending ? 'text-gray-900' : 'text-gray-600'}`}>
+                              <div className={`text-sm font-medium ${isPending ? 'text-[var(--color-text)]' : 'text-[var(--color-textSecondary)]'}`}>
                                 {user.name}
                               </div>
-                              <div className="text-sm text-gray-500">
+                              <div className="text-sm text-[var(--color-textSecondary)]">
                                 {user.email}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className={`text-sm ${isPending ? 'text-gray-900' : 'text-gray-500'}`}>
+                          <div className={`text-sm ${isPending ? 'text-[var(--color-text)]' : 'text-[var(--color-textSecondary)]'}`}>
                             {formatDate(user.createdAt)}
                           </div>
                         </td>
@@ -238,7 +238,7 @@ export default function PendingApprovals() {
                                 </Button>
                               </>
                             ) : (
-                              <span className="text-sm text-gray-500">
+                              <span className="text-sm text-[var(--color-textSecondary)]">
                                 {statusLabel} por {actorName || 'Administrador'}
                               </span>
                             )}
@@ -280,3 +280,4 @@ export default function PendingApprovals() {
     </Layout>
   );
 }
+

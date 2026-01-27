@@ -143,7 +143,7 @@ export default function EventPhotoGallery({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-[var(--color-text)]">
           Fotos ({photos.length}/{MAX_PHOTOS})
         </h3>
         {canUploadMore && (
@@ -184,19 +184,19 @@ export default function EventPhotoGallery({
       </div>
 
       {!canUpload && photos.length === 0 && (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-[var(--color-textSecondary)]">
           Solo los socios o colaboradores inscritos en el evento pueden subir fotos.
         </p>
       )}
 
       {photos.length === 0 ? (
-        <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-          <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="text-center py-8 bg-[var(--color-tableRowHover)] rounded-lg border-2 border-dashed border-[var(--color-cardBorder)]">
+          <svg className="w-12 h-12 mx-auto text-[var(--color-textSecondary)] mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <p className="text-gray-500">No hay fotos del evento</p>
+          <p className="text-[var(--color-textSecondary)]">No hay fotos del evento</p>
           {canUploadMore && (
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-[var(--color-textSecondary)] mt-1">
               Sube la primera foto
             </p>
           )}
@@ -207,7 +207,7 @@ export default function EventPhotoGallery({
             <div
               key={photo.id}
               onClick={() => setSelectedPhoto(photo)}
-              className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group bg-gray-100"
+              className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group bg-[var(--color-tableRowHover)]"
             >
               <img
                 src={photo.thumbnailUrl || photo.url}
@@ -241,9 +241,9 @@ export default function EventPhotoGallery({
             <div className="flex items-center justify-between">
               <div>
                 {selectedPhoto.caption && (
-                  <p className="text-gray-700 mb-1">{selectedPhoto.caption}</p>
+                  <p className="text-[var(--color-textSecondary)] mb-1">{selectedPhoto.caption}</p>
                 )}
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-[var(--color-textSecondary)]">
                   Por {selectedPhoto.uploadedBy.name} • {formatDate(selectedPhoto.createdAt)}
                 </p>
               </div>
@@ -265,3 +265,4 @@ export default function EventPhotoGallery({
     </div>
   );
 }
+

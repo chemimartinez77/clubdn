@@ -105,15 +105,15 @@ export default function CreatePartida() {
         <div>
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+            className="flex items-center gap-2 text-[var(--color-textSecondary)] hover:text-[var(--color-text)] mb-4"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Volver
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">Organizar una Partida</h1>
-          <p className="text-gray-600 mt-1">Crea una partida para jugar con otros miembros del club</p>
+          <h1 className="text-3xl font-bold text-[var(--color-text)]">Organizar una Partida</h1>
+          <p className="text-[var(--color-textSecondary)] mt-1">Crea una partida para jugar con otros miembros del club</p>
         </div>
 
         {/* Form */}
@@ -122,7 +122,7 @@ export default function CreatePartida() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Juego */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Elige un juego (opcional)
                 </label>
                 {selectedGame ? (
@@ -135,9 +135,9 @@ export default function CreatePartida() {
                       />
                     )}
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{selectedGame.name}</h3>
+                      <h3 className="font-medium text-[var(--color-text)]">{selectedGame.name}</h3>
                       {selectedGame.yearPublished && (
-                        <p className="text-sm text-gray-600">{selectedGame.yearPublished}</p>
+                        <p className="text-sm text-[var(--color-textSecondary)]">{selectedGame.yearPublished}</p>
                       )}
                     </div>
                     <button
@@ -154,7 +154,7 @@ export default function CreatePartida() {
                   <button
                     type="button"
                     onClick={() => setIsGameModalOpen(true)}
-                    className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-[var(--color-primary-400)] hover:bg-[var(--color-primary-50)] transition-colors text-gray-600 hover:text-[var(--color-primaryDark)]"
+                    className="w-full px-4 py-3 border-2 border-dashed border-[var(--color-inputBorder)] rounded-lg hover:border-[var(--color-primary-400)] hover:bg-[var(--color-primary-50)] transition-colors text-[var(--color-textSecondary)] hover:text-[var(--color-primaryDark)]"
                   >
                     <svg className="w-6 h-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -165,22 +165,22 @@ export default function CreatePartida() {
               </div>
 
               {/* Asistencia */}
-              <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+              <div className="flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] px-4 py-3">
                 <input
                   id="attend"
                   name="attend"
                   type="checkbox"
                   defaultChecked
-                  className="h-4 w-4 rounded border-gray-300 text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                  className="h-4 w-4 rounded border-[var(--color-inputBorder)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                 />
-                <label htmlFor="attend" className="text-sm text-gray-700">
+                <label htmlFor="attend" className="text-sm text-[var(--color-textSecondary)]">
                   Asistire a la partida
                 </label>
               </div>
 
               {/* Título */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Título de la partida *
                 </label>
                 <input
@@ -190,14 +190,14 @@ export default function CreatePartida() {
                   minLength={3}
                   maxLength={100}
                   defaultValue={selectedGame ? `${selectedGame.name}` : ''}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   placeholder="Ej: Partida de Catan"
                 />
               </div>
 
               {/* Descripción */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Descripción de la partida *
                 </label>
                 <textarea
@@ -205,33 +205,33 @@ export default function CreatePartida() {
                   required
                   minLength={10}
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none"
                   placeholder="Dale a los jugadores más información acerca de la partida..."
                 />
               </div>
 
               {/* Fecha y Hora */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   ¿Cuándo será la partida? *
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Fecha de inicio</label>
+                    <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Fecha de inicio</label>
                     <input
                       type="date"
                       name="date"
                         required
                       min={today}
                       defaultValue={preselectedDate || ''}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                      className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Hora</label>
+                    <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Hora</label>
                     <select
                       name="startHour"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                      className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     >
                       <option value="">--</option>
                       {hours.map(hour => (
@@ -242,10 +242,10 @@ export default function CreatePartida() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Minutos</label>
+                    <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Minutos</label>
                     <select
                       name="startMinute"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                      className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     >
                       <option value="">--</option>
                       {minutes.map(minute => (
@@ -260,15 +260,15 @@ export default function CreatePartida() {
 
               {/* Duración estimada */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Duración estimada (opcional)
                 </label>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Horas</label>
+                    <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Horas</label>
                     <select
                       name="durationHours"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                      className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     >
                       <option value="">--</option>
                       {Array.from({ length: 13 }, (_, i) => i).map(hour => (
@@ -277,10 +277,10 @@ export default function CreatePartida() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Minutos</label>
+                    <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Minutos</label>
                     <select
                       name="durationMinutes"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                      className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     >
                       <option value="">--</option>
                       {minutes.map(minute => (
@@ -293,7 +293,7 @@ export default function CreatePartida() {
 
               {/* Número de jugadores */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   ¿Cuántos necesitáis para la partida? *
                 </label>
                 <input
@@ -303,36 +303,36 @@ export default function CreatePartida() {
                   min={1}
                   max={100}
                   defaultValue={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-[var(--color-textSecondary)] mt-1">
                   Incluye el organizador en este número
                 </p>
               </div>
 
               {/* Ubicación */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Ubicación (opcional)
                 </label>
                 <input
                   type="text"
                   name="location"
                   minLength={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   placeholder="Club DN"
                 />
               </div>
 
               {/* Dirección */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Dirección (opcional)
                 </label>
                 <input
                   type="text"
                   name="address"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   placeholder="Direccion completa"
                 />
               </div>
@@ -370,3 +370,4 @@ export default function CreatePartida() {
     </Layout>
   );
 }
+

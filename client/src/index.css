@@ -7,11 +7,38 @@
   --color-primaryLight: #a855f7;
   --color-background: #0f0515;
   --color-surface: #1a0b2e;
+  --color-cardBackground: #1a0b2e;
+  --color-cardBorder: #4c1d95;
+  --color-inputBackground: #12071c;
+  --color-inputBorder: #4c1d95;
+  --color-inputText: #ffffff;
+  --color-modalBackground: #1a0b2e;
+  --color-tableHeader: #241042;
+  --color-tableRow: #1a0b2e;
+  --color-tableRowHover: #241042;
   --color-text: #ffffff;
   --color-textSecondary: #d1d5db;
   --color-border: #4c1d95;
   --color-hover: #6b21a8;
   --color-accent: #c084fc;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+}
+
+input,
+textarea,
+select {
+  background-color: var(--color-inputBackground);
+  color: var(--color-inputText);
+  border-color: var(--color-inputBorder);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-textSecondary);
 }
 
 /* Toast Animations */

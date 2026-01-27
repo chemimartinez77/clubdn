@@ -70,14 +70,14 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
       ? 'bg-green-100'
       : hasEvents && hasColaborador
       ? 'bg-yellow-100'
-      : 'bg-white';
-    const dayText = hasSocio ? 'text-green-900' : 'text-gray-900';
+      : 'bg-[var(--color-cardBackground)]';
+    const dayText = hasSocio ? 'text-green-900' : 'text-[var(--color-text)]';
 
     return (
       <div
         key={day}
         onClick={handleDayClick}
-        className={`min-h-[72px] border border-gray-200 p-1 sm:p-2 ${dayBackground} ${
+        className={`min-h-[72px] border border-[var(--color-cardBorder)] p-1 sm:p-2 ${dayBackground} ${
           isToday ? 'ring-2 ring-[var(--color-primary-300)]' : ''
         } cursor-pointer transition-colors hover:brightness-95`}
         title="Toca un dia para ver el detalle"
@@ -87,7 +87,7 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
         </div>
 
         {hasEvents && (
-          <div className="text-[10px] text-gray-600">
+          <div className="text-[10px] text-[var(--color-textSecondary)]">
             {dayEvents.length} {dayEvents.length === 1 ? 'partida' : 'partidas'}
           </div>
         )}
@@ -96,25 +96,25 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
   };
 
   const renderEmptyDay = (index: number) => (
-    <div key={`empty-${index}`} className="min-h-[72px] border border-gray-200 bg-gray-50" />
+    <div key={`empty-${index}`} className="min-h-[72px] border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)]" />
   );
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
+    <div className="bg-[var(--color-cardBackground)] rounded-lg border border-[var(--color-cardBorder)] p-3 sm:p-4">
       {/* Header */}
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 capitalize">
+        <h3 className="text-lg font-semibold text-[var(--color-text)] capitalize">
           {monthName}
         </h3>
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-px bg-gray-200 w-full">
+      <div className="grid grid-cols-7 gap-px bg-[var(--color-cardBorder)] w-full">
         {/* Day headers */}
         {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
           <div
             key={day}
-            className="bg-gray-100 p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-gray-700"
+            className="bg-[var(--color-tableRowHover)] p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-[var(--color-textSecondary)]"
           >
             {day}
           </div>
@@ -128,7 +128,7 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
       </div>
 
       {/* Legend */}
-      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-600">
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-[var(--color-textSecondary)]">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-green-100"></div>
           <span>D?a con socios</span>
@@ -138,15 +138,16 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
           <span>D?a con colaboradores</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-white border border-gray-200"></div>
+          <div className="w-3 h-3 rounded bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)]"></div>
           <span>Sin partidas</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-white border border-[var(--color-primary-300)]"></div>
+          <div className="w-3 h-3 rounded bg-[var(--color-cardBackground)] border border-[var(--color-primary-300)]"></div>
           <span>Hoy</span>
         </div>
-        <span className="text-gray-500">Toca un dia para ver el detalle</span>
+        <span className="text-[var(--color-textSecondary)]">Toca un dia para ver el detalle</span>
       </div>
     </div>
   );
 }
+

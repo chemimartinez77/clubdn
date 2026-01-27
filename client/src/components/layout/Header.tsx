@@ -38,7 +38,7 @@ export default function Header() {
       : 'Miembro';
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-[var(--color-cardBackground)] shadow-sm border-b border-[var(--color-cardBorder)]">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -48,7 +48,7 @@ export default function Header() {
               alt="Club DN Logo"
               className="w-32 h-16 rounded-lg"
             />
-            <span className="text-xl font-bold text-gray-900">Club DN</span>
+            <span className="text-xl font-bold text-[var(--color-text)]">Club DN</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -62,7 +62,7 @@ export default function Header() {
                   setIsAdminMenuOpen(false);
                   setIsGamesMenuOpen(false);
                 }}
-                className="text-gray-700 hover:text-primary transition-colors"
+                className="text-[var(--color-textSecondary)] hover:text-primary transition-colors"
               >
                 ID
               </button>
@@ -71,7 +71,7 @@ export default function Header() {
             {/* Inicio */}
             <Link
               to="/"
-              className="text-gray-700 hover:text-primary transition-colors"
+              className="text-[var(--color-textSecondary)] hover:text-primary transition-colors"
             >
               Inicio
             </Link>
@@ -79,7 +79,7 @@ export default function Header() {
             {/* Calendario (antes Eventos) */}
             <Link
               to="/events"
-              className="text-gray-700 hover:text-primary transition-colors"
+              className="text-[var(--color-textSecondary)] hover:text-primary transition-colors"
             >
               Calendario
             </Link>
@@ -92,7 +92,7 @@ export default function Header() {
                   setIsAdminMenuOpen(false);
                   setIsMenuOpen(false);
                 }}
-                className="text-gray-700 hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
+                className="text-[var(--color-textSecondary)] hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
               >
                 Juegos
                 <svg
@@ -111,17 +111,17 @@ export default function Header() {
                     className="fixed inset-0 z-10"
                     onClick={() => setIsGamesMenuOpen(false)}
                   />
-                  <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                  <div className="absolute left-0 mt-2 w-48 bg-[var(--color-cardBackground)] rounded-lg shadow-lg border border-[var(--color-cardBorder)] py-1 z-20">
                     <Link
                       to="/ludoteca"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                       onClick={() => setIsGamesMenuOpen(false)}
                     >
                       Ludoteca
                     </Link>
                     <Link
                       to="/games"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                       onClick={() => setIsGamesMenuOpen(false)}
                     >
                       Buscados
@@ -134,7 +134,7 @@ export default function Header() {
             {/* Documentos - Accesible a todos */}
             <Link
               to="/documentos"
-              className="text-gray-700 hover:text-primary transition-colors"
+              className="text-[var(--color-textSecondary)] hover:text-primary transition-colors"
             >
               Documentos
             </Link>
@@ -151,7 +151,7 @@ export default function Header() {
                     setIsGamesMenuOpen(false);
                     setIsMenuOpen(false);
                   }}
-                  className="text-gray-700 hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
+                  className="text-[var(--color-textSecondary)] hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -173,46 +173,46 @@ export default function Header() {
                       className="fixed inset-0 z-10"
                       onClick={() => setIsAdminMenuOpen(false)}
                     />
-                    <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                    <div className="absolute left-0 mt-2 w-56 bg-[var(--color-cardBackground)] rounded-lg shadow-lg border border-[var(--color-cardBorder)] py-1 z-20">
                       <Link
                         to="/admin/pending-approvals"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                         onClick={() => setIsAdminMenuOpen(false)}
                       >
                         Aprobaciones Pendientes
                       </Link>
                       <Link
                         to="/admin/members"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                         onClick={() => setIsAdminMenuOpen(false)}
                       >
                         Directorio de Miembros
                       </Link>
                       <Link
                         to="/admin/membership"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                         onClick={() => setIsAdminMenuOpen(false)}
                       >
                         Gestión de Pagos
                       </Link>
                       <Link
                         to="/admin/events"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                         onClick={() => setIsAdminMenuOpen(false)}
                       >
                         Gestión de Eventos
                       </Link>
                       <Link
                         to="/financiero"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                         onClick={() => setIsAdminMenuOpen(false)}
                       >
                         Gestión Financiera
                       </Link>
-                      <div className="border-t border-gray-200 my-1"></div>
+                      <div className="border-t border-[var(--color-cardBorder)] my-1"></div>
                       <Link
                         to="/admin/config"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                         onClick={() => setIsAdminMenuOpen(false)}
                       >
                         Configuración del Club
@@ -231,7 +231,7 @@ export default function Header() {
                   setIsAdminMenuOpen(false);
                   setIsGamesMenuOpen(false);
                 }}
-                className="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors cursor-pointer"
+                className="flex items-center space-x-2 text-[var(--color-textSecondary)] hover:text-primary transition-colors cursor-pointer"
               >
                 <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
                   {user?.profile?.avatar ? (
@@ -264,10 +264,10 @@ export default function Header() {
                     className="fixed inset-0 z-10"
                     onClick={() => setIsMenuOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                    <div className="px-4 py-2 border-b border-gray-200">
-                      <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                      <p className="text-xs text-gray-500">{user?.email}</p>
+                  <div className="absolute right-0 mt-2 w-48 bg-[var(--color-cardBackground)] rounded-lg shadow-lg border border-[var(--color-cardBorder)] py-1 z-20">
+                    <div className="px-4 py-2 border-b border-[var(--color-cardBorder)]">
+                      <p className="text-sm font-medium text-[var(--color-text)]">{user?.name}</p>
+                      <p className="text-xs text-[var(--color-textSecondary)]">{user?.email}</p>
                       <p className="text-xs text-primary mt-1 font-medium">
                         {user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' ? 'Administrador' : 'Usuario'}
                       </p>
@@ -275,7 +275,7 @@ export default function Header() {
 
                     <Link
                       to="/profile"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
+                      className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors flex items-center gap-2"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -307,7 +307,7 @@ export default function Header() {
                 setIsMenuOpen(!isMenuOpen);
                 setIsMobileGamesOpen(false);
               }}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+              className="p-2 rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer"
             >
               <svg
                 className="w-6 h-6"
@@ -328,7 +328,7 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200">
+          <div className="md:hidden py-4 border-t border-[var(--color-cardBorder)]">
             <nav className="flex flex-col space-y-2">
               {/* ID */}
               {user && (
@@ -337,7 +337,7 @@ export default function Header() {
                     closeAllMenus();
                     setIsIdModalOpen(true);
                   }}
-                  className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors text-left"
+                  className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors text-left"
                 >
                   ID
                 </button>
@@ -346,7 +346,7 @@ export default function Header() {
               {/* Inicio */}
               <Link
                 to="/"
-                className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                 onClick={closeAllMenus}
               >
                 Inicio
@@ -355,7 +355,7 @@ export default function Header() {
               {/* Calendario */}
               <Link
                 to="/events"
-                className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                 onClick={closeAllMenus}
               >
                 Calendario
@@ -365,7 +365,7 @@ export default function Header() {
               <div>
                 <button
                   onClick={() => setIsMobileGamesOpen(!isMobileGamesOpen)}
-                  className="w-full px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors flex items-center justify-between cursor-pointer"
+                  className="w-full px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors flex items-center justify-between cursor-pointer"
                 >
                   <span>Juegos</span>
                   <svg
@@ -381,14 +381,14 @@ export default function Header() {
                   <div className="ml-4 mt-1 space-y-1">
                     <Link
                       to="/ludoteca"
-                      className="block px-4 py-2 text-gray-600 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                      className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                       onClick={closeAllMenus}
                     >
                       Ludoteca
                     </Link>
                     <Link
                       to="/games"
-                      className="block px-4 py-2 text-gray-600 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                      className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                       onClick={closeAllMenus}
                     >
                       Buscados
@@ -400,7 +400,7 @@ export default function Header() {
               {/* Documentos */}
               <Link
                 to="/documentos"
-                className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                 onClick={closeAllMenus}
               >
                 Documentos
@@ -410,48 +410,48 @@ export default function Header() {
               {isAdmin && (
                 <>
                   <div className="px-4 py-2">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    <p className="text-xs font-semibold text-[var(--color-textSecondary)] uppercase tracking-wider mb-2">
                       Administración
                     </p>
                   </div>
                   <Link
                     to="/admin/pending-approvals"
-                    className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                    className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                     onClick={closeAllMenus}
                   >
                     Aprobaciones Pendientes
                   </Link>
                   <Link
                     to="/admin/members"
-                    className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                    className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                     onClick={closeAllMenus}
                   >
                     Directorio de Miembros
                   </Link>
                   <Link
                     to="/admin/membership"
-                    className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                    className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                     onClick={closeAllMenus}
                   >
                     Gestión de Pagos
                   </Link>
                   <Link
                     to="/admin/events"
-                    className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                    className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                     onClick={closeAllMenus}
                   >
                     Gestión de Eventos
                   </Link>
                   <Link
                     to="/financiero"
-                    className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                    className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                     onClick={closeAllMenus}
                   >
                     Gestión Financiera
                   </Link>
                   <Link
                     to="/admin/config"
-                    className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                    className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                     onClick={closeAllMenus}
                   >
                     Configuración del Club
@@ -459,12 +459,12 @@ export default function Header() {
                 </>
               )}
 
-              <div className="border-t border-gray-200 my-2" />
+              <div className="border-t border-[var(--color-cardBorder)] my-2" />
 
               {/* Perfil */}
               <Link
                 to="/profile"
-                className="px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors flex items-center gap-2"
+                className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors flex items-center gap-2"
                 onClick={closeAllMenus}
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -499,10 +499,10 @@ export default function Header() {
             <img
               src={user.profile.avatar}
               alt={user.name}
-              className="w-24 h-24 rounded-full object-cover border border-gray-200"
+              className="w-24 h-24 rounded-full object-cover border border-[var(--color-cardBorder)]"
             />
           ) : (
-            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border border-gray-200">
+            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border border-[var(--color-cardBorder)]">
               <span className="text-3xl font-semibold text-primary">
                 {user?.name?.charAt(0).toUpperCase()}
               </span>
@@ -510,13 +510,13 @@ export default function Header() {
           )}
 
           <div className="space-y-1">
-            <p className="text-lg font-semibold text-gray-900">{user?.name}</p>
-            <p className="text-sm text-gray-600">{membershipLabel}</p>
+            <p className="text-lg font-semibold text-[var(--color-text)]">{user?.name}</p>
+            <p className="text-sm text-[var(--color-textSecondary)]">{membershipLabel}</p>
           </div>
 
-          <div className="w-full border-t border-gray-200 pt-4">
-            <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Hora en tiempo real</p>
-            <p className="text-base font-semibold text-gray-900">
+          <div className="w-full border-t border-[var(--color-cardBorder)] pt-4">
+            <p className="text-xs uppercase tracking-wide text-[var(--color-textSecondary)] mb-1">Hora en tiempo real</p>
+            <p className="text-base font-semibold text-[var(--color-text)]">
               {now.toLocaleString('es-ES', {
                 weekday: 'long',
                 year: 'numeric',
@@ -533,3 +533,4 @@ export default function Header() {
     </header>
   );
 }
+

@@ -217,18 +217,18 @@ export default function Events() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Eventos</h1>
-            <p className="text-gray-600 mt-1">Descubre y regístrate a eventos del club</p>
+            <h1 className="text-3xl font-bold text-[var(--color-text)]">Eventos</h1>
+            <p className="text-[var(--color-textSecondary)] mt-1">Descubre y regístrate a eventos del club</p>
           </div>
 
           {/* View Toggle */}
-          <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+          <div className="flex gap-2 bg-[var(--color-tableRowHover)] p-1 rounded-lg">
             <button
               onClick={() => setViewMode('list')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 viewMode === 'list'
-                  ? 'bg-white text-[var(--color-primaryDark)] shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-[var(--color-cardBackground)] text-[var(--color-primaryDark)] shadow-sm'
+                  : 'text-[var(--color-textSecondary)] hover:text-[var(--color-text)]'
               }`}
             >
               <svg className="w-5 h-5 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -240,8 +240,8 @@ export default function Events() {
               onClick={() => setViewMode('calendar')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 viewMode === 'calendar'
-                  ? 'bg-white text-[var(--color-primaryDark)] shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-[var(--color-cardBackground)] text-[var(--color-primaryDark)] shadow-sm'
+                  : 'text-[var(--color-textSecondary)] hover:text-[var(--color-text)]'
               }`}
             >
               <svg className="w-5 h-5 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -259,13 +259,13 @@ export default function Events() {
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {/* Type Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Tipo
                 </label>
                 <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
                   <option value="PARTIDA">Partidas</option>
                   <option value="EVENTOS">Eventos</option>
@@ -275,13 +275,13 @@ export default function Events() {
 
               {/* Capacity Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Plazas
                 </label>
                 <select
                   value={capacityFilter}
                   onChange={(e) => setCapacityFilter(e.target.value as CapacityFilter)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
                   <option value="">Todas</option>
                   <option value="available">Con plazas libres</option>
@@ -291,13 +291,13 @@ export default function Events() {
 
               {/* Status Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Estado
                 </label>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as EventStatus | '')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
                   <option value="">Todos los estados</option>
                   <option value="SCHEDULED">Programados</option>
@@ -309,7 +309,7 @@ export default function Events() {
 
               {/* Search */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Buscar evento
                 </label>
                 <input
@@ -317,13 +317,13 @@ export default function Events() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Título, ubicación..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 />
               </div>
 
               {/* Participant Search */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Participante
                 </label>
                 <input
@@ -331,19 +331,19 @@ export default function Events() {
                   value={participant}
                   onChange={(e) => setParticipant(e.target.value)}
                   placeholder="Nombre del jugador..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 />
               </div>
 
               {/* Sort */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Ordenar por
                 </label>
                 <select
                   value={sortOption}
                   onChange={(e) => setSortOption(e.target.value as SortOption)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
                   <option value="date_desc">Fecha (más recientes)</option>
                   <option value="date_asc">Fecha (más antiguas)</option>
@@ -361,7 +361,7 @@ export default function Events() {
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)] mx-auto mb-4"></div>
-              <p className="text-gray-600">Cargando eventos...</p>
+              <p className="text-[var(--color-textSecondary)]">Cargando eventos...</p>
             </div>
           </div>
         ) : error ? (
@@ -376,7 +376,7 @@ export default function Events() {
                 <Card>
                   <CardContent className="p-12 text-center">
                     <svg
-                      className="w-16 h-16 mx-auto text-gray-400 mb-4"
+                      className="w-16 h-16 mx-auto text-[var(--color-textSecondary)] mb-4"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -388,10 +388,10 @@ export default function Events() {
                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                       />
                     </svg>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    <h3 className="text-lg font-medium text-[var(--color-text)] mb-2">
                       No hay eventos
                     </h3>
-                    <p className="text-gray-600">
+                    <p className="text-[var(--color-textSecondary)]">
                       {search || statusFilter
                         ? 'No se encontraron eventos con los filtros aplicados'
                         : 'Aún no hay eventos programados'}
@@ -439,13 +439,13 @@ export default function Events() {
                         Compartir prevision semanal
                       </Button>
                     )}
-                    <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                    <div className="flex gap-2 bg-[var(--color-tableRowHover)] p-1 rounded-lg">
                       <button
                         onClick={() => setCalendarView('month')}
                         className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                           calendarView === 'month'
-                            ? 'bg-white text-[var(--color-primaryDark)] shadow-sm'
-                            : 'text-gray-600 hover:text-gray-900'
+                            ? 'bg-[var(--color-cardBackground)] text-[var(--color-primaryDark)] shadow-sm'
+                            : 'text-[var(--color-textSecondary)] hover:text-[var(--color-text)]'
                         }`}
                       >
                         Mes
@@ -454,8 +454,8 @@ export default function Events() {
                         onClick={() => setCalendarView('week')}
                         className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                           calendarView === 'week'
-                            ? 'bg-white text-[var(--color-primaryDark)] shadow-sm'
-                            : 'text-gray-600 hover:text-gray-900'
+                            ? 'bg-[var(--color-cardBackground)] text-[var(--color-primaryDark)] shadow-sm'
+                            : 'text-[var(--color-textSecondary)] hover:text-[var(--color-text)]'
                         }`}
                       >
                         Semana
@@ -464,8 +464,8 @@ export default function Events() {
                         onClick={() => setCalendarView('day')}
                         className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                           calendarView === 'day'
-                            ? 'bg-white text-[var(--color-primaryDark)] shadow-sm'
-                            : 'text-gray-600 hover:text-gray-900'
+                            ? 'bg-[var(--color-cardBackground)] text-[var(--color-primaryDark)] shadow-sm'
+                            : 'text-[var(--color-textSecondary)] hover:text-[var(--color-text)]'
                         }`}
                       >
                         Dia
@@ -496,3 +496,4 @@ export default function Events() {
     </Layout>
   );
 }
+

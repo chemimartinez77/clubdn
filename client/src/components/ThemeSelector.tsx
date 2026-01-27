@@ -7,7 +7,7 @@ export default function ThemeSelector() {
 
   return (
     <div className="flex flex-col items-start gap-3">
-      <span className="text-sm text-gray-300">Tema:</span>
+      <span className="text-sm text-[var(--color-textSecondary)]">Tema:</span>
       <div className="flex flex-col gap-2 w-full">
         {(Object.keys(themes) as ThemeName[]).map((name) => {
           const theme = themes[name];
@@ -22,7 +22,7 @@ export default function ThemeSelector() {
                 ${
                   isActive
                     ? 'bg-[var(--color-primary)] text-white shadow-lg shadow-purple-500/50'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    : 'bg-[var(--color-cardBackground)] text-[var(--color-textSecondary)] border border-[var(--color-cardBorder)] hover:bg-[var(--color-tableRowHover)]'
                 }
               `}
               style={

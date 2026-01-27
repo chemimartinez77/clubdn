@@ -193,8 +193,8 @@ export default function Ludoteca() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Ludoteca del Club</h1>
-            <p className="text-gray-600 mt-1">Catálogo de juegos disponibles en el club</p>
+            <h1 className="text-3xl font-bold text-[var(--color-text)]">Ludoteca del Club</h1>
+            <p className="text-[var(--color-textSecondary)] mt-1">Catálogo de juegos disponibles en el club</p>
           </div>
         </div>
 
@@ -205,8 +205,8 @@ export default function Ludoteca() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Total Juegos</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">Total Juegos</p>
+                    <p className="text-3xl font-bold text-[var(--color-text)]">{stats.total}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -221,7 +221,7 @@ export default function Ludoteca() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Del Club</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">Del Club</p>
                     <p className="text-3xl font-bold text-green-600">{stats.clubItems}</p>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -235,7 +235,7 @@ export default function Ludoteca() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">De Socios</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">De Socios</p>
                     <p className="text-3xl font-bold text-purple-600">{stats.memberItems}</p>
                   </div>
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -251,7 +251,7 @@ export default function Ludoteca() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Propietarios</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">Propietarios</p>
                     <p className="text-3xl font-bold text-orange-600">{stats.uniqueOwners + 1}</p>
                   </div>
                   <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -277,10 +277,10 @@ export default function Ludoteca() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Buscar por nombre, descripción o ID..."
-                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                    className="w-full px-4 py-2 pl-10 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   />
                   <svg
-                    className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"
+                    className="w-5 h-5 text-[var(--color-textSecondary)] absolute left-3 top-1/2 transform -translate-y-1/2"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -293,7 +293,7 @@ export default function Ludoteca() {
                 <select
                   value={selectedType}
                   onChange={(e) => { setSelectedType(e.target.value); setCurrentPage(1); }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
                   <option value="all">Todos los tipos</option>
                   {filters?.gameTypes.map(type => (
@@ -305,7 +305,7 @@ export default function Ludoteca() {
                 <select
                   value={selectedCondition}
                   onChange={(e) => { setSelectedCondition(e.target.value); setCurrentPage(1); }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
                   <option value="all">Todas las condiciones</option>
                   {filters?.conditions.map(condition => (
@@ -317,7 +317,7 @@ export default function Ludoteca() {
                 <select
                   value={selectedOwner}
                   onChange={(e) => { setSelectedOwner(e.target.value); setCurrentPage(1); }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
                   <option value="all">Todos los propietarios</option>
                   {filters?.owners.map(owner => (
@@ -329,16 +329,16 @@ export default function Ludoteca() {
               </div>
 
               {/* Selector de items por página */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-between pt-4 border-t border-[var(--color-cardBorder)]">
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Mostrar:</label>
+                  <label className="text-sm text-[var(--color-textSecondary)]">Mostrar:</label>
                   <select
                     value={itemsPerPage}
                     onChange={(e) => {
                       setItemsPerPage(Number(e.target.value));
                       setCurrentPage(1);
                     }}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                    className="px-3 py-1 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   >
                     <option value={10}>10 por página</option>
                     <option value={25}>25 por página</option>
@@ -348,7 +348,7 @@ export default function Ludoteca() {
                   </select>
                 </div>
                 {totalItems > 0 && (
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-[var(--color-textSecondary)]">
                     Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalItems)} de {totalItems} juegos
                   </div>
                 )}
@@ -365,12 +365,12 @@ export default function Ludoteca() {
         ) : items.length === 0 ? (
           <Card>
             <CardContent className="p-6">
-              <div className="text-center py-12 text-gray-500">
-                <svg className="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="text-center py-12 text-[var(--color-textSecondary)]">
+                <svg className="w-20 h-20 mx-auto mb-4 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No se encontraron juegos</h3>
-                <p className="text-gray-600">Intenta ajustar los filtros de búsqueda</p>
+                <h3 className="text-xl font-semibold text-[var(--color-text)] mb-2">No se encontraron juegos</h3>
+                <p className="text-[var(--color-textSecondary)]">Intenta ajustar los filtros de búsqueda</p>
               </div>
             </CardContent>
           </Card>
@@ -387,10 +387,10 @@ export default function Ludoteca() {
                           <img
                             src={item.gameThumbnail}
                             alt={item.name}
-                            className="w-24 h-24 object-contain rounded-md border border-gray-200 bg-white"
+                            className="w-24 h-24 object-contain rounded-md border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)]"
                           />
                         ) : (
-                          <div className="w-24 h-24 flex items-center justify-center rounded-md border border-gray-200 bg-gray-50">
+                          <div className="w-24 h-24 flex items-center justify-center rounded-md border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)]">
                             <span className="text-4xl">{gameTypeIcons[item.gameType]}</span>
                           </div>
                         )}
@@ -400,19 +400,19 @@ export default function Ludoteca() {
                       <div className="flex-1 min-w-0 flex flex-col">
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <div className="min-w-0">
-                            <p className="text-xs text-gray-500">{item.internalId}</p>
-                            <p className="text-xs text-gray-500">{gameTypeLabels[item.gameType]}</p>
+                            <p className="text-xs text-[var(--color-textSecondary)]">{item.internalId}</p>
+                            <p className="text-xs text-[var(--color-textSecondary)]">{gameTypeLabels[item.gameType]}</p>
                           </div>
                           <span className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${conditionColors[item.condition]}`}>
                             {conditionLabels[item.condition]}
                           </span>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{item.name}</h3>
+                        <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2 line-clamp-2">{item.name}</h3>
                       </div>
                     </div>
 
                     {item.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
+                      <p className="text-sm text-[var(--color-textSecondary)] mb-3 line-clamp-2">{item.description}</p>
                     )}
 
                     {item.notes && (
@@ -421,8 +421,8 @@ export default function Ludoteca() {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center justify-between pt-3 border-t border-[var(--color-cardBorder)]">
+                      <div className="flex items-center gap-2 text-sm text-[var(--color-textSecondary)]">
                         <span className="text-lg">🏛️</span>
                         <span className="text-xs font-medium">{getOwnerDisplayName(item.ownerEmail)}</span>
                       </div>
@@ -450,17 +450,17 @@ export default function Ludoteca() {
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   Anterior
                 </button>
-                <span className="px-4 py-2 text-gray-700">
+                <span className="px-4 py-2 text-[var(--color-textSecondary)]">
                   Página {currentPage} de {totalPages}
                 </span>
                 <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   Siguiente
                 </button>
@@ -502,3 +502,4 @@ export default function Ludoteca() {
     </Layout>
   );
 }
+

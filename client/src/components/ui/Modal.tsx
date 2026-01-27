@@ -60,16 +60,16 @@ export default function Modal({
       {/* Modal container */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className={`relative bg-white rounded-lg shadow-xl w-full ${sizeStyles[size]} transform transition-all`}
+          className={`relative bg-[var(--color-modalBackground)] border border-[var(--color-cardBorder)] rounded-lg shadow-xl w-full ${sizeStyles[size]} transform transition-all`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           {title && (
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-cardBorder)]">
+              <h3 className="text-lg font-semibold text-[var(--color-text)]">{title}</h3>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-500 transition-colors"
+                className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors"
                 aria-label="Cerrar"
               >
                 <svg
@@ -104,7 +104,7 @@ interface ModalFooterProps {
 
 export function ModalFooter({ children, className = '' }: ModalFooterProps) {
   return (
-    <div className={`flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 ${className}`}>
+    <div className={`flex items-center justify-end gap-3 px-6 py-4 bg-[var(--color-cardBackground)] border-t border-[var(--color-cardBorder)] ${className}`}>
       {children}
     </div>
   );

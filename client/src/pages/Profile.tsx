@@ -163,8 +163,8 @@ export default function Profile() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Mi Perfil</h1>
-            <p className="text-gray-600 mt-1">Gestiona tu información personal</p>
+            <h1 className="text-3xl font-bold text-[var(--color-text)]">Mi Perfil</h1>
+            <p className="text-[var(--color-textSecondary)] mt-1">Gestiona tu información personal</p>
           </div>
           {!isEditing && (
             <Button onClick={handleEdit} variant="primary">
@@ -222,9 +222,9 @@ export default function Profile() {
                 />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">{profile.user?.name}</h2>
-                <p className="text-gray-600">{profile.user?.email}</p>
-                <p className="text-xs text-gray-400 mt-1">Pasa el cursor sobre la foto para cambiarla</p>
+                <h2 className="text-2xl font-bold text-[var(--color-text)]">{profile.user?.name}</h2>
+                <p className="text-[var(--color-textSecondary)]">{profile.user?.email}</p>
+                <p className="text-xs text-[var(--color-textSecondary)] mt-1">Pasa el cursor sobre la foto para cambiarla</p>
               </div>
             </div>
           </CardHeader>
@@ -234,41 +234,41 @@ export default function Profile() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Personal Information */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Personal</h3>
+                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Información Personal</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                         Teléfono
                       </label>
                       <input
                         type="tel"
                         value={formData.phone || ''}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                         placeholder="+34 600 000 000"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                         Fecha de Nacimiento
                       </label>
                       <input
                         type="date"
                         value={formData.birthDate || ''}
                         onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       />
                     </div>
                   </div>
                   <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                       Biografía
                     </label>
                     <textarea
                       value={formData.bio || ''}
                       onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                       rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                      className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       placeholder="Cuéntanos sobre ti..."
                     />
                   </div>
@@ -276,29 +276,29 @@ export default function Profile() {
 
                 {/* Gaming Preferences */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Preferencias de Juego</h3>
+                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Preferencias de Juego</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                         Juegos Favoritos
                       </label>
                       <input
                         type="text"
                         value={favoriteGamesInput}
                         onChange={(e) => handleFavoriteGamesChange(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                         placeholder="Catan, Ticket to Ride, Pandemic"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Separados por comas o punto y coma</p>
+                      <p className="text-xs text-[var(--color-textSecondary)] mt-1">Separados por comas o punto y coma</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                         Estilo de Juego
                       </label>
                       <select
                         value={formData.playStyle || ''}
                         onChange={(e) => setFormData({ ...formData, playStyle: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       >
                         <option value="">Selecciona...</option>
                         <option value="Competitivo">Competitivo</option>
@@ -313,29 +313,29 @@ export default function Profile() {
 
                 {/* Social */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Redes Sociales</h3>
+                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Redes Sociales</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                         Discord
                       </label>
                       <input
                         type="text"
                         value={formData.discord || ''}
                         onChange={(e) => setFormData({ ...formData, discord: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                         placeholder="usuario#1234"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                         Telegram
                       </label>
                       <input
                         type="text"
                         value={formData.telegram || ''}
                         onChange={(e) => setFormData({ ...formData, telegram: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                         placeholder="@usuario"
                       />
                     </div>
@@ -344,45 +344,45 @@ export default function Profile() {
 
                 {/* Notifications */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Notificaciones</h3>
+                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Notificaciones</h3>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-3">Configuración General</p>
+                      <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Configuración General</p>
                       <div className="space-y-3">
                         <label className="flex items-center gap-3">
                           <input
                             type="checkbox"
                             checked={formData.notifications ?? true}
                             onChange={(e) => setFormData({ ...formData, notifications: e.target.checked })}
-                            className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                            className="w-5 h-5 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)]"
                           />
-                          <span className="text-sm text-gray-700">Recibir notificaciones en la aplicación</span>
+                          <span className="text-sm text-[var(--color-textSecondary)]">Recibir notificaciones en la aplicación</span>
                         </label>
                         <label className="flex items-center gap-3">
                           <input
                             type="checkbox"
                             checked={formData.emailUpdates ?? true}
                             onChange={(e) => setFormData({ ...formData, emailUpdates: e.target.checked })}
-                            className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                            className="w-5 h-5 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)]"
                           />
-                          <span className="text-sm text-gray-700">Recibir actualizaciones por email</span>
+                          <span className="text-sm text-[var(--color-textSecondary)]">Recibir actualizaciones por email</span>
                         </label>
                       </div>
                     </div>
 
-                    <div className="border-t border-gray-200 pt-4">
-                      <p className="text-sm font-medium text-gray-700 mb-3">Preferencias de Notificaciones</p>
+                    <div className="border-t border-[var(--color-cardBorder)] pt-4">
+                      <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Preferencias de Notificaciones</p>
                       <div className="space-y-3">
                         <label className="flex items-start gap-3">
                           <input
                             type="checkbox"
                             checked={formData.notifyNewEvents ?? true}
                             onChange={(e) => setFormData({ ...formData, notifyNewEvents: e.target.checked })}
-                            className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)] mt-0.5"
+                            className="w-5 h-5 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] mt-0.5"
                           />
                           <div>
-                            <span className="text-sm font-medium text-gray-700">Nuevas partidas creadas</span>
-                            <p className="text-xs text-gray-500">Recibir notificaciones cuando se cree una nueva partida</p>
+                            <span className="text-sm font-medium text-[var(--color-textSecondary)]">Nuevas partidas creadas</span>
+                            <p className="text-xs text-[var(--color-textSecondary)]">Recibir notificaciones cuando se cree una nueva partida</p>
                           </div>
                         </label>
                         <label className="flex items-start gap-3">
@@ -390,11 +390,11 @@ export default function Profile() {
                             type="checkbox"
                             checked={formData.notifyEventChanges ?? true}
                             onChange={(e) => setFormData({ ...formData, notifyEventChanges: e.target.checked })}
-                            className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)] mt-0.5"
+                            className="w-5 h-5 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] mt-0.5"
                           />
                           <div>
-                            <span className="text-sm font-medium text-gray-700">Cambios en eventos inscritos</span>
-                            <p className="text-xs text-gray-500">Notificar cuando se modifique una partida en la que estás inscrito</p>
+                            <span className="text-sm font-medium text-[var(--color-textSecondary)]">Cambios en eventos inscritos</span>
+                            <p className="text-xs text-[var(--color-textSecondary)]">Notificar cuando se modifique una partida en la que estás inscrito</p>
                           </div>
                         </label>
                         <label className="flex items-start gap-3">
@@ -402,11 +402,11 @@ export default function Profile() {
                             type="checkbox"
                             checked={formData.notifyEventCancelled ?? true}
                             onChange={(e) => setFormData({ ...formData, notifyEventCancelled: e.target.checked })}
-                            className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)] mt-0.5"
+                            className="w-5 h-5 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] mt-0.5"
                           />
                           <div>
-                            <span className="text-sm font-medium text-gray-700">Eventos cancelados</span>
-                            <p className="text-xs text-gray-500">Notificar cuando se cancele una partida en la que estás inscrito</p>
+                            <span className="text-sm font-medium text-[var(--color-textSecondary)]">Eventos cancelados</span>
+                            <p className="text-xs text-[var(--color-textSecondary)]">Notificar cuando se cancele una partida en la que estás inscrito</p>
                           </div>
                         </label>
                         <label className="flex items-start gap-3">
@@ -414,11 +414,11 @@ export default function Profile() {
                             type="checkbox"
                             checked={formData.notifyInvitations ?? true}
                             onChange={(e) => setFormData({ ...formData, notifyInvitations: e.target.checked })}
-                            className="w-5 h-5 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)] mt-0.5"
+                            className="w-5 h-5 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] mt-0.5"
                           />
                           <div>
-                            <span className="text-sm font-medium text-gray-700">Estado de invitaciones</span>
-                            <p className="text-xs text-gray-500">Notificar cuando tus invitaciones sean validadas o rechazadas</p>
+                            <span className="text-sm font-medium text-[var(--color-textSecondary)]">Estado de invitaciones</span>
+                            <p className="text-xs text-[var(--color-textSecondary)]">Notificar cuando tus invitaciones sean validadas o rechazadas</p>
                           </div>
                         </label>
                       </div>
@@ -428,7 +428,7 @@ export default function Profile() {
 
                 {/* Personalización */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Personalización</h3>
+                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Personalización</h3>
                   <NoughterColorSelector
                     selectedColor={formData.noughterColor ?? null}
                     onChange={(color) => setFormData({ ...formData, noughterColor: color === null ? null : (color || undefined) })}
@@ -436,7 +436,7 @@ export default function Profile() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <div className="flex gap-3 pt-4 border-t border-[var(--color-cardBorder)]">
                   <Button type="submit" variant="primary" disabled={updateMutation.isPending}>
                     {updateMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
                   </Button>
@@ -449,31 +449,31 @@ export default function Profile() {
               <div className="space-y-6">
                 {/* Personal Information */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Personal</h3>
+                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Información Personal</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">Teléfono</p>
-                      <p className="font-medium text-gray-900">{profile.phone || 'No especificado'}</p>
+                      <p className="text-sm text-[var(--color-textSecondary)]">Teléfono</p>
+                      <p className="font-medium text-[var(--color-text)]">{profile.phone || 'No especificado'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Fecha de Nacimiento</p>
-                      <p className="font-medium text-gray-900">{formatDate(profile.birthDate)}</p>
+                      <p className="text-sm text-[var(--color-textSecondary)]">Fecha de Nacimiento</p>
+                      <p className="font-medium text-[var(--color-text)]">{formatDate(profile.birthDate)}</p>
                     </div>
                   </div>
                   {profile.bio && (
                     <div className="mt-4">
-                      <p className="text-sm text-gray-500">Biografía</p>
-                      <p className="font-medium text-gray-900 mt-1">{profile.bio}</p>
+                      <p className="text-sm text-[var(--color-textSecondary)]">Biografía</p>
+                      <p className="font-medium text-[var(--color-text)] mt-1">{profile.bio}</p>
                     </div>
                   )}
                 </div>
 
                 {/* Gaming Preferences */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Preferencias de Juego</h3>
+                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Preferencias de Juego</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">Juegos Favoritos</p>
+                      <p className="text-sm text-[var(--color-textSecondary)]">Juegos Favoritos</p>
                       {profile.favoriteGames.length > 0 ? (
                         <div className="flex flex-wrap gap-2 mt-2">
                           {profile.favoriteGames.map((game, idx) => (
@@ -483,12 +483,12 @@ export default function Profile() {
                           ))}
                         </div>
                       ) : (
-                        <p className="font-medium text-gray-900">No especificado</p>
+                        <p className="font-medium text-[var(--color-text)]">No especificado</p>
                       )}
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Estilo de Juego</p>
-                      <p className="font-medium text-gray-900">{profile.playStyle || 'No especificado'}</p>
+                      <p className="text-sm text-[var(--color-textSecondary)]">Estilo de Juego</p>
+                      <p className="font-medium text-[var(--color-text)]">{profile.playStyle || 'No especificado'}</p>
                     </div>
                   </div>
                 </div>
@@ -496,18 +496,18 @@ export default function Profile() {
                 {/* Social */}
                 {(profile.discord || profile.telegram) && (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Redes Sociales</h3>
+                    <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Redes Sociales</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {profile.discord && (
                         <div>
-                          <p className="text-sm text-gray-500">Discord</p>
-                          <p className="font-medium text-gray-900">{profile.discord}</p>
+                          <p className="text-sm text-[var(--color-textSecondary)]">Discord</p>
+                          <p className="font-medium text-[var(--color-text)]">{profile.discord}</p>
                         </div>
                       )}
                       {profile.telegram && (
                         <div>
-                          <p className="text-sm text-gray-500">Telegram</p>
-                          <p className="font-medium text-gray-900">{profile.telegram}</p>
+                          <p className="text-sm text-[var(--color-textSecondary)]">Telegram</p>
+                          <p className="font-medium text-[var(--color-text)]">{profile.telegram}</p>
                         </div>
                       )}
                     </div>
@@ -516,59 +516,59 @@ export default function Profile() {
 
                 {/* Settings */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuración</h3>
+                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Configuración</h3>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-3">General</p>
+                      <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">General</p>
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
-                          <span className={`w-5 h-5 rounded ${profile.notifications ? 'bg-green-500' : 'bg-gray-300'}`}></span>
-                          <span className="text-sm text-gray-700">Notificaciones en la aplicación</span>
+                          <span className={`w-5 h-5 rounded ${profile.notifications ? 'bg-green-500' : 'bg-[var(--color-cardBorder)]'}`}></span>
+                          <span className="text-sm text-[var(--color-textSecondary)]">Notificaciones en la aplicación</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className={`w-5 h-5 rounded ${profile.emailUpdates ? 'bg-green-500' : 'bg-gray-300'}`}></span>
-                          <span className="text-sm text-gray-700">Actualizaciones por email</span>
+                          <span className={`w-5 h-5 rounded ${profile.emailUpdates ? 'bg-green-500' : 'bg-[var(--color-cardBorder)]'}`}></span>
+                          <span className="text-sm text-[var(--color-textSecondary)]">Actualizaciones por email</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-gray-200">
-                      <p className="text-sm font-medium text-gray-700 mb-3">Preferencias de Notificaciones</p>
+                    <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                      <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Preferencias de Notificaciones</p>
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
-                          <span className={`w-5 h-5 rounded ${profile.notifyNewEvents ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className={`w-5 h-5 rounded ${profile.notifyNewEvents ? 'bg-green-500' : 'bg-[var(--color-cardBorder)]'}`}></span>
                           <div>
-                            <span className="text-sm text-gray-700">Nuevas partidas creadas</span>
+                            <span className="text-sm text-[var(--color-textSecondary)]">Nuevas partidas creadas</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className={`w-5 h-5 rounded ${profile.notifyEventChanges ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className={`w-5 h-5 rounded ${profile.notifyEventChanges ? 'bg-green-500' : 'bg-[var(--color-cardBorder)]'}`}></span>
                           <div>
-                            <span className="text-sm text-gray-700">Cambios en eventos inscritos</span>
+                            <span className="text-sm text-[var(--color-textSecondary)]">Cambios en eventos inscritos</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className={`w-5 h-5 rounded ${profile.notifyEventCancelled ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className={`w-5 h-5 rounded ${profile.notifyEventCancelled ? 'bg-green-500' : 'bg-[var(--color-cardBorder)]'}`}></span>
                           <div>
-                            <span className="text-sm text-gray-700">Eventos cancelados</span>
+                            <span className="text-sm text-[var(--color-textSecondary)]">Eventos cancelados</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className={`w-5 h-5 rounded ${profile.notifyInvitations ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className={`w-5 h-5 rounded ${profile.notifyInvitations ? 'bg-green-500' : 'bg-[var(--color-cardBorder)]'}`}></span>
                           <div>
-                            <span className="text-sm text-gray-700">Estado de invitaciones</span>
+                            <span className="text-sm text-[var(--color-textSecondary)]">Estado de invitaciones</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-gray-200">
-                      <p className="text-sm font-medium text-gray-700 mb-3">Tema de la aplicación</p>
+                    <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                      <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Tema de la aplicación</p>
                       <ThemeSelector />
                     </div>
 
-                    <div className="pt-4 border-t border-gray-200">
-                      <p className="text-sm font-medium text-gray-700 mb-3">Personalización</p>
+                    <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                      <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Personalización</p>
                       <NoughterColorSelector
                         selectedColor={profile.noughterColor}
                         onChange={() => {}}
@@ -584,3 +584,4 @@ export default function Profile() {
     </Layout>
   );
 }
+

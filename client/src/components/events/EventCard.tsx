@@ -20,8 +20,8 @@ const GamePlaceholder = ({ size = 'md', className = '' }: { size?: 'sm' | 'md' |
     lg: 'w-16 h-16'
   };
   return (
-    <div className={`flex items-center justify-center bg-gray-100 rounded-lg ${sizeClasses[size]} ${className}`}>
-      <svg className={`${iconSizes[size]} text-gray-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className={`flex items-center justify-center bg-[var(--color-tableRowHover)] rounded-lg ${sizeClasses[size]} ${className}`}>
+      <svg className={`${iconSizes[size]} text-[var(--color-textSecondary)]`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
       </svg>
     </div>
@@ -56,14 +56,14 @@ const GameImage = ({
   return (
     <div className={`relative ${sizeClasses[size]} ${className}`}>
       {isLoading && (
-        <div className={`absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg`}>
-          <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+        <div className={`absolute inset-0 flex items-center justify-center bg-[var(--color-tableRowHover)] rounded-lg`}>
+          <div className="w-6 h-6 border-2 border-[var(--color-inputBorder)] border-t-gray-600 rounded-full animate-spin" />
         </div>
       )}
       <img
         src={src}
         alt={alt}
-        className={`${sizeClasses[size]} object-contain rounded-lg bg-gray-50 ${className} ${
+        className={`${sizeClasses[size]} object-contain rounded-lg bg-[var(--color-tableRowHover)] ${className} ${
           isLoading ? 'opacity-0' : 'opacity-100'
         }`}
         onLoad={() => setIsLoading(false)}
@@ -81,7 +81,7 @@ export { GameImage, GamePlaceholder };
 const statusColors = {
   SCHEDULED: 'bg-blue-100 text-blue-800',
   ONGOING: 'bg-green-100 text-green-800',
-  COMPLETED: 'bg-gray-100 text-gray-800',
+  COMPLETED: 'bg-[var(--color-tableRowHover)] text-[var(--color-text)]',
   CANCELLED: 'bg-red-100 text-red-800'
 };
 
@@ -116,7 +116,7 @@ export default function EventCard({ event }: EventCardProps) {
   return (
     <Link
       to={`/events/${event.id}`}
-      className="block bg-white rounded-lg border border-gray-200 hover:border-[var(--color-primary-300)] hover:shadow-md transition-all"
+      className="block bg-[var(--color-cardBackground)] rounded-lg border border-[var(--color-cardBorder)] hover:border-[var(--color-primary-300)] hover:shadow-md transition-all"
     >
       <div className="p-6">
         <div className="flex gap-4">
@@ -130,7 +130,7 @@ export default function EventCard({ event }: EventCardProps) {
           <div className="flex-1 min-w-0">
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
-              <h3 className="text-xl font-bold text-gray-900 flex-1 pr-4">
+              <h3 className="text-xl font-bold text-[var(--color-text)] flex-1 pr-4">
                 {event.title}
               </h3>
               <span className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${statusColors[event.status]}`}>
@@ -140,13 +140,13 @@ export default function EventCard({ event }: EventCardProps) {
 
             {/* Date & Location */}
             <div className="space-y-2 mb-4">
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-[var(--color-textSecondary)]">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <span className="text-sm">{formatDate(event.date)}</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-[var(--color-textSecondary)]">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -156,20 +156,20 @@ export default function EventCard({ event }: EventCardProps) {
             </div>
 
             {/* Description Preview */}
-            <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+            <p className="text-[var(--color-textSecondary)] text-sm mb-4 line-clamp-2">
               {event.description}
             </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+        <div className="flex items-center justify-between pt-4 border-t border-[var(--color-cardBorder)]">
           {/* Attendees */}
           <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-[var(--color-textSecondary)]">
               {event.registeredCount || 0} / {event.maxAttendees}
             </span>
             {isFull && !isPast && (
@@ -178,7 +178,7 @@ export default function EventCard({ event }: EventCardProps) {
               </span>
             )}
             {event.waitlistCount && event.waitlistCount > 0 && (
-              <span className="ml-2 text-xs text-gray-500">
+              <span className="ml-2 text-xs text-[var(--color-textSecondary)]">
                 +{event.waitlistCount} en espera
               </span>
             )}
@@ -204,3 +204,5 @@ export default function EventCard({ event }: EventCardProps) {
     </Link>
   );
 }
+
+

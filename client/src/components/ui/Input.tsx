@@ -10,20 +10,20 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, helperText, className = '', ...props }, ref) => {
     const inputClasses = `
-      w-full px-4 py-2 rounded-lg border transition-colors
+      w-full px-4 py-2 rounded-lg border bg-[var(--color-inputBackground)] text-[var(--color-inputText)] transition-colors
       ${error
         ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-        : 'border-gray-300 focus:border-[var(--color-primary-50)]0 focus:ring-[var(--color-primary)]'
+        : 'border-[var(--color-inputBorder)] focus:border-[var(--color-primary)] focus:ring-[var(--color-primary)]'
       }
       focus:outline-none focus:ring-2 focus:ring-offset-0
-      disabled:bg-gray-100 disabled:cursor-not-allowed
+      disabled:bg-[var(--color-tableRowHover)] disabled:cursor-not-allowed
       ${className}
     `.trim();
 
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
             {label}
             {props.required && <span className="text-red-500 ml-1">*</span>}
           </label>
@@ -53,7 +53,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
 
         {helperText && !error && (
-          <p className="mt-1 text-sm text-gray-500">{helperText}</p>
+          <p className="mt-1 text-sm text-[var(--color-textSecondary)]">{helperText}</p>
         )}
       </div>
     );
@@ -63,3 +63,4 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 Input.displayName = 'Input';
 
 export default Input;
+

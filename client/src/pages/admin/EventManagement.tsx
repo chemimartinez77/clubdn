@@ -134,7 +134,7 @@ export default function EventManagement() {
   const statusColors = {
     SCHEDULED: 'bg-blue-100 text-blue-800',
     ONGOING: 'bg-green-100 text-green-800',
-    COMPLETED: 'bg-gray-100 text-gray-800',
+    COMPLETED: 'bg-[var(--color-tableRowHover)] text-[var(--color-text)]',
     CANCELLED: 'bg-red-100 text-red-800'
   };
 
@@ -144,8 +144,8 @@ export default function EventManagement() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestión de Eventos</h1>
-            <p className="text-gray-600 mt-1">Administra todos los eventos del club</p>
+            <h1 className="text-3xl font-bold text-[var(--color-text)]">Gestión de Eventos</h1>
+            <p className="text-[var(--color-textSecondary)] mt-1">Administra todos los eventos del club</p>
           </div>
           <Button onClick={() => setIsModalOpen(true)} variant="primary">
             <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -165,7 +165,7 @@ export default function EventManagement() {
             ) : events.length === 0 ? (
               <div className="text-center py-12">
                 <svg
-                  className="w-16 h-16 mx-auto text-gray-400 mb-4"
+                  className="w-16 h-16 mx-auto text-[var(--color-textSecondary)] mb-4"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -177,8 +177,8 @@ export default function EventManagement() {
                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                   />
                 </svg>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No hay eventos</h3>
-                <p className="text-gray-600 mb-4">Comienza creando tu primer evento</p>
+                <h3 className="text-lg font-medium text-[var(--color-text)] mb-2">No hay eventos</h3>
+                <p className="text-[var(--color-textSecondary)] mb-4">Comienza creando tu primer evento</p>
                 <Button onClick={() => setIsModalOpen(true)} variant="primary">
                   Crear Evento
                 </Button>
@@ -186,49 +186,49 @@ export default function EventManagement() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+                  <thead className="bg-[var(--color-tableRowHover)] border-b border-[var(--color-cardBorder)]">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Evento
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Fecha
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Ubicación
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Asistentes
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Estado
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Acciones
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-[var(--color-cardBackground)] divide-y divide-gray-200">
                     {events.map((event) => (
-                      <tr key={event.id} className="hover:bg-gray-50">
+                      <tr key={event.id} className="hover:bg-[var(--color-tableRowHover)]">
                         <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900">{event.title}</div>
-                          <div className="text-sm text-gray-500 truncate max-w-xs">
+                          <div className="text-sm font-medium text-[var(--color-text)]">{event.title}</div>
+                          <div className="text-sm text-[var(--color-textSecondary)] truncate max-w-xs">
                             {event.description.substring(0, 60)}
                             {event.description.length > 60 ? '...' : ''}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{formatDate(event.date)}</div>
+                          <div className="text-sm text-[var(--color-text)]">{formatDate(event.date)}</div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">{event.location}</div>
+                          <div className="text-sm text-[var(--color-text)]">{event.location}</div>
                           {event.address && (
-                            <div className="text-sm text-gray-500">{event.address}</div>
+                            <div className="text-sm text-[var(--color-textSecondary)]">{event.address}</div>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                          <div className="text-sm text-[var(--color-text)]">
                             {event.registeredCount || 0} / {event.maxAttendees}
                           </div>
                           {(event.waitlistCount || 0) > 0 && (
@@ -296,15 +296,15 @@ export default function EventManagement() {
         {/* Create/Edit Modal */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-[var(--color-cardBackground)] rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
+                  <h2 className="text-2xl font-bold text-[var(--color-text)]">
                     {editingEvent ? 'Editar Evento' : 'Crear Evento'}
                   </h2>
                   <button
                     onClick={handleCloseModal}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-[var(--color-textSecondary)] hover:text-[var(--color-textSecondary)]"
                   >
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -315,14 +315,14 @@ export default function EventManagement() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Type */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                       Tipo de Evento *
                     </label>
                     <select
                       name="type"
                       required
                       defaultValue={editingEvent?.type || 'OTROS'}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                      className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     >
                       <option value="PARTIDA">Partida</option>
                       <option value="TORNEO">Torneo</option>
@@ -332,7 +332,7 @@ export default function EventManagement() {
 
                   {/* Title */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                       Título *
                     </label>
                     <input
@@ -342,14 +342,14 @@ export default function EventManagement() {
                       defaultValue={editingEvent?.title}
                       minLength={3}
                       maxLength={100}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                      className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       placeholder="Nombre del evento"
                     />
                   </div>
 
                   {/* Description */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                       Descripción *
                     </label>
                     <textarea
@@ -358,14 +358,14 @@ export default function EventManagement() {
                       defaultValue={editingEvent?.description}
                       minLength={10}
                       rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none"
+                      className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none"
                       placeholder="Describe el evento..."
                     />
                   </div>
 
                   {/* Date */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                       Fecha y Hora *
                     </label>
                     <input
@@ -373,13 +373,13 @@ export default function EventManagement() {
                       name="date"
                       required
                       defaultValue={editingEvent?.date ? new Date(editingEvent.date).toISOString().slice(0, 16) : ''}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                      className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     />
                   </div>
 
                   {/* Location */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                       Ubicación (opcional)
                     </label>
                     <input
@@ -387,28 +387,28 @@ export default function EventManagement() {
                       name="location"
                       defaultValue={editingEvent?.location}
                       minLength={3}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                      className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       placeholder="Nombre del lugar"
                     />
                   </div>
 
                   {/* Address */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                       Dirección (opcional)
                     </label>
                     <input
                       type="text"
                       name="address"
                       defaultValue={editingEvent?.address || ''}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                      className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       placeholder="Dirección completa"
                     />
                   </div>
 
                   {/* Max Attendees */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                       Capacidad Máxima *
                     </label>
                     <input
@@ -418,7 +418,7 @@ export default function EventManagement() {
                       defaultValue={editingEvent?.maxAttendees}
                       min={1}
                       max={1000}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                      className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       placeholder="Número de asistentes"
                     />
                   </div>
@@ -455,3 +455,4 @@ export default function EventManagement() {
     </Layout>
   );
 }
+

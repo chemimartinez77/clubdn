@@ -37,15 +37,15 @@ export default function Financiero() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestión Financiera</h1>
-            <p className="text-gray-600 mt-1">Control de ingresos y gastos del club</p>
+            <h1 className="text-3xl font-bold text-[var(--color-text)]">Gestión Financiera</h1>
+            <p className="text-[var(--color-textSecondary)] mt-1">Control de ingresos y gastos del club</p>
           </div>
 
           {/* Selector de año */}
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+            className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
           >
             {years.map(year => (
               <option key={year} value={year}>{year}</option>
@@ -54,14 +54,14 @@ export default function Financiero() {
         </div>
 
         {/* Tabs de navegación */}
-        <div className="border-b border-gray-200">
+        <div className="border-b border-[var(--color-cardBorder)]">
           <nav className="flex space-x-8">
             <button
               onClick={() => setViewMode('balance')}
               className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 viewMode === 'balance'
                   ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-[var(--color-textSecondary)] hover:text-[var(--color-textSecondary)] hover:border-[var(--color-inputBorder)]'
               }`}
             >
               Balance Anual
@@ -71,7 +71,7 @@ export default function Financiero() {
               className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 viewMode === 'movements'
                   ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-[var(--color-textSecondary)] hover:text-[var(--color-textSecondary)] hover:border-[var(--color-inputBorder)]'
               }`}
             >
               Movimientos
@@ -81,7 +81,7 @@ export default function Financiero() {
               className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 viewMode === 'categories'
                   ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-[var(--color-textSecondary)] hover:text-[var(--color-textSecondary)] hover:border-[var(--color-inputBorder)]'
               }`}
             >
               Categorías
@@ -95,7 +95,7 @@ export default function Financiero() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Ingresos Totales</p>
+                  <p className="text-sm text-[var(--color-textSecondary)]">Ingresos Totales</p>
                   <p className="text-2xl font-bold text-green-600">0,00 €</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -111,7 +111,7 @@ export default function Financiero() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Gastos Totales</p>
+                  <p className="text-sm text-[var(--color-textSecondary)]">Gastos Totales</p>
                   <p className="text-2xl font-bold text-red-600">0,00 €</p>
                 </div>
                 <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
@@ -127,8 +127,8 @@ export default function Financiero() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Balance</p>
-                  <p className="text-2xl font-bold text-gray-900">0,00 €</p>
+                  <p className="text-sm text-[var(--color-textSecondary)]">Balance</p>
+                  <p className="text-2xl font-bold text-[var(--color-text)]">0,00 €</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -143,8 +143,8 @@ export default function Financiero() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Transacciones</p>
-                  <p className="text-2xl font-bold text-gray-900">0</p>
+                  <p className="text-sm text-[var(--color-textSecondary)]">Transacciones</p>
+                  <p className="text-2xl font-bold text-[var(--color-text)]">0</p>
                 </div>
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                   <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -166,17 +166,17 @@ export default function Financiero() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Categoría</th>
+                    <tr className="border-b border-[var(--color-cardBorder)]">
+                      <th className="text-left py-3 px-4 font-semibold text-[var(--color-textSecondary)]">Categoría</th>
                       {months.map(month => (
-                        <th key={month} className="text-center py-3 px-2 font-semibold text-gray-700 text-sm">{month}</th>
+                        <th key={month} className="text-center py-3 px-2 font-semibold text-[var(--color-textSecondary)] text-sm">{month}</th>
                       ))}
-                      <th className="text-right py-3 px-4 font-semibold text-gray-700">Total</th>
+                      <th className="text-right py-3 px-4 font-semibold text-[var(--color-textSecondary)]">Total</th>
                     </tr>
                   </thead>
                   <tbody>
                     {categories.map((category, idx) => (
-                      <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                      <tr key={idx} className={idx % 2 === 0 ? 'bg-[var(--color-tableRowHover)]' : 'bg-[var(--color-cardBackground)]'}>
                         <td className="py-3 px-4">
                           <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${category.color}`}>
                             <span>{category.icon}</span>
@@ -184,19 +184,19 @@ export default function Financiero() {
                           </span>
                         </td>
                         {months.map((_, monthIdx) => (
-                          <td key={monthIdx} className="text-center py-3 px-2 text-gray-500 text-sm">-</td>
+                          <td key={monthIdx} className="text-center py-3 px-2 text-[var(--color-textSecondary)] text-sm">-</td>
                         ))}
-                        <td className="text-right py-3 px-4 font-medium text-gray-900">0,00 €</td>
+                        <td className="text-right py-3 px-4 font-medium text-[var(--color-text)]">0,00 €</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="border-t-2 border-gray-300 bg-gray-100">
-                      <td className="py-3 px-4 font-bold text-gray-900">TOTAL</td>
+                    <tr className="border-t-2 border-[var(--color-inputBorder)] bg-[var(--color-tableRowHover)]">
+                      <td className="py-3 px-4 font-bold text-[var(--color-text)]">TOTAL</td>
                       {months.map((_, idx) => (
-                        <td key={idx} className="text-center py-3 px-2 font-bold text-gray-900 text-sm">0€</td>
+                        <td key={idx} className="text-center py-3 px-2 font-bold text-[var(--color-text)] text-sm">0€</td>
                       ))}
-                      <td className="text-right py-3 px-4 font-bold text-gray-900">0,00 €</td>
+                      <td className="text-right py-3 px-4 font-bold text-[var(--color-text)]">0,00 €</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -216,8 +216,8 @@ export default function Financiero() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-gray-500">
-                <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="text-center py-12 text-[var(--color-textSecondary)]">
+                <svg className="w-16 h-16 mx-auto mb-4 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
                 <p className="text-lg">No hay movimientos registrados</p>
@@ -240,20 +240,20 @@ export default function Financiero() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {categories.map((category, idx) => (
-                  <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div key={idx} className="border border-[var(--color-cardBorder)] rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-2">
                       <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${category.color}`}>
                         <span className="text-lg">{category.icon}</span>
                         {category.name}
                       </span>
-                      <button className="text-gray-400 hover:text-gray-600">
+                      <button className="text-[var(--color-textSecondary)] hover:text-[var(--color-textSecondary)]">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                         </svg>
                       </button>
                     </div>
-                    <div className="text-sm text-gray-600">
-                      <p>Total {selectedYear}: <span className="font-semibold text-gray-900">0,00 €</span></p>
+                    <div className="text-sm text-[var(--color-textSecondary)]">
+                      <p>Total {selectedYear}: <span className="font-semibold text-[var(--color-text)]">0,00 €</span></p>
                       <p className="mt-1">0 transacciones</p>
                     </div>
                   </div>
@@ -266,3 +266,4 @@ export default function Financiero() {
     </Layout>
   );
 }
+

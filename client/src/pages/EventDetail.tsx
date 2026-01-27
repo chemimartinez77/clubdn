@@ -241,7 +241,7 @@ export default function EventDetail() {
   const statusColors = {
     SCHEDULED: 'bg-blue-100 text-blue-800',
     ONGOING: 'bg-green-100 text-green-800',
-    COMPLETED: 'bg-gray-100 text-gray-800',
+    COMPLETED: 'bg-[var(--color-tableRowHover)] text-[var(--color-text)]',
     CANCELLED: 'bg-red-100 text-red-800'
   };
 
@@ -260,7 +260,7 @@ export default function EventDetail() {
   const invitationStatusStyles: Record<string, string> = {
     PENDING: 'text-amber-700 bg-amber-100',
     USED: 'text-emerald-700 bg-emerald-100',
-    EXPIRED: 'text-gray-600 bg-gray-100',
+    EXPIRED: 'text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)]',
     CANCELLED: 'text-red-700 bg-red-100'
   };
   const membershipLabels: Record<string, string> = {
@@ -426,7 +426,7 @@ export default function EventDetail() {
         {/* Back Button */}
         <button
           onClick={() => navigate('/events')}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+          className="flex items-center gap-2 text-[var(--color-textSecondary)] hover:text-[var(--color-text)]"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -470,7 +470,7 @@ export default function EventDetail() {
               <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex-1">
                   <h1
-                    className={`text-3xl font-bold text-gray-900 mb-2 ${
+                    className={`text-3xl font-bold text-[var(--color-text)] mb-2 ${
                       canShowGameDetails ? 'cursor-pointer hover:underline' : ''
                     }`}
                     onClick={canShowGameDetails ? handleOpenGameModal : undefined}
@@ -561,7 +561,7 @@ export default function EventDetail() {
                         }
                       }}
                       disabled={closeCapacityMutation.isPending}
-                      className="w-full sm:w-auto bg-slate-200 hover:bg-slate-300 text-gray-900"
+                      className="w-full sm:w-auto bg-slate-200 hover:bg-slate-300 text-[var(--color-text)]"
                     >
                       {closeCapacityMutation.isPending ? 'Cerrando...' : 'Cerrar plazas'}
                     </Button>
@@ -595,8 +595,8 @@ export default function EventDetail() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <div>
-                    <p className="text-sm text-gray-500">Fecha y hora</p>
-                    <p className="font-medium text-gray-900 capitalize">{formatDate(event.date)}</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">Fecha y hora</p>
+                    <p className="font-medium text-[var(--color-text)] capitalize">{formatDate(event.date)}</p>
                   </div>
                 </div>
 
@@ -606,10 +606,10 @@ export default function EventDetail() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   <div>
-                    <p className="text-sm text-gray-500">Ubicación</p>
-                    <p className="font-medium text-gray-900">{event.location}</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">Ubicación</p>
+                    <p className="font-medium text-[var(--color-text)]">{event.location}</p>
                     {event.address && (
-                      <p className="text-sm text-gray-600">{event.address}</p>
+                      <p className="text-sm text-[var(--color-textSecondary)]">{event.address}</p>
                     )}
                   </div>
                 </div>
@@ -621,12 +621,12 @@ export default function EventDetail() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                   <div>
-                    <p className="text-sm text-gray-500">Capacidad</p>
-                    <p className="font-medium text-gray-900">
+                    <p className="text-sm text-[var(--color-textSecondary)]">Capacidad</p>
+                    <p className="font-medium text-[var(--color-text)]">
                       {event.registeredCount} / {event.maxAttendees} asistentes
                     </p>
                     {(event.waitlistCount || 0) > 0 && (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-[var(--color-textSecondary)]">
                         +{event.waitlistCount} en lista de espera
                       </p>
                     )}
@@ -638,8 +638,8 @@ export default function EventDetail() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                   <div>
-                    <p className="text-sm text-gray-500">Organizador</p>
-                    <p className="font-medium text-gray-900">{event.organizer?.name}</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">Organizador</p>
+                    <p className="font-medium text-[var(--color-text)]">{event.organizer?.name}</p>
                   </div>
                 </div>
               </div>
@@ -647,8 +647,8 @@ export default function EventDetail() {
 
             {/* Description */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Descripción</h3>
-              <p className="text-gray-700 whitespace-pre-line">{event.description}</p>
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Descripción</h3>
+              <p className="text-[var(--color-textSecondary)] whitespace-pre-line">{event.description}</p>
             </div>
           </CardContent>
         </Card>
@@ -658,17 +658,17 @@ export default function EventDetail() {
           {/* Confirmed */}
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-[var(--color-text)]">
                 Asistentes e invitados ({confirmed.length + (event.invitations?.length || 0)})
               </h3>
             </CardHeader>
             <CardContent>
               {confirmed.length === 0 && (!event.invitations || event.invitations.length === 0) ? (
-                <p className="text-gray-500 text-sm">Aún no hay asistentes ni invitados</p>
+                <p className="text-[var(--color-textSecondary)] text-sm">Aún no hay asistentes ni invitados</p>
               ) : (
                 <ul className="space-y-2">
                   {confirmed.map((registration) => (
-                    <li key={registration.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                    <li key={registration.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-tableRowHover)]">
                       <div className="w-8 h-8 rounded-full overflow-hidden bg-[var(--color-primary-100)] flex items-center justify-center">
                         {registration.user?.profile?.avatar ? (
                           <img
@@ -683,10 +683,10 @@ export default function EventDetail() {
                         )}
                       </div>
                       <div className="flex items-center gap-2 flex-1">
-                        <span className="text-gray-900">{registration.user?.name}</span>
+                        <span className="text-[var(--color-text)]">{registration.user?.name}</span>
                         {registration.user?.membership?.type &&
                           membershipLabels[registration.user.membership.type] && (
-                            <span className="text-xs text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full">
+                            <span className="text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
                               {membershipLabels[registration.user.membership.type]}
                             </span>
                           )}
@@ -707,17 +707,17 @@ export default function EventDetail() {
                     </li>
                   ))}
                   {event.invitations?.map((guest) => (
-                    <li key={guest.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                    <li key={guest.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-tableRowHover)]">
                       <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                         <span className="text-purple-600 font-semibold text-sm">
                           {guest.guestFirstName.charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <span className="text-gray-900 flex-1">{guest.guestFirstName} {guest.guestLastName}</span>
+                      <span className="text-[var(--color-text)] flex-1">{guest.guestFirstName} {guest.guestLastName}</span>
                       <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Invitado</span>
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full ${
-                          invitationStatusStyles[guest.status] || 'text-gray-600 bg-gray-100'
+                          invitationStatusStyles[guest.status] || 'text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)]'
                         }`}
                       >
                         {invitationStatusLabels[guest.status] || guest.status}
@@ -741,14 +741,14 @@ export default function EventDetail() {
           {waitlist.length > 0 && (
             <Card>
               <CardHeader>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-[var(--color-text)]">
                   Lista de espera ({waitlist.length})
                 </h3>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
                   {waitlist.map((registration) => (
-                    <li key={registration.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                    <li key={registration.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-tableRowHover)]">
                       <div className="w-8 h-8 rounded-full overflow-hidden bg-yellow-100 flex items-center justify-center">
                         {registration.user?.profile?.avatar ? (
                           <img
@@ -763,10 +763,10 @@ export default function EventDetail() {
                         )}
                       </div>
                       <div className="flex items-center gap-2 flex-1">
-                        <span className="text-gray-900">{registration.user?.name}</span>
+                        <span className="text-[var(--color-text)]">{registration.user?.name}</span>
                         {registration.user?.membership?.type &&
                           membershipLabels[registration.user.membership.type] && (
-                            <span className="text-xs text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full">
+                            <span className="text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
                               {membershipLabels[registration.user.membership.type]}
                             </span>
                           )}
@@ -815,7 +815,7 @@ export default function EventDetail() {
         size="sm"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-[var(--color-textSecondary)]">
             {removeTarget?.name
               ? `¿Seguro que quieres eliminar a ${removeTarget.name} de la partida?`
               : '¿Seguro que quieres eliminar a este asistente de la partida?'}
@@ -860,40 +860,40 @@ export default function EventDetail() {
               <img
                 src={gameImageUrl}
                 alt={gameTitle}
-                className="w-full sm:w-48 rounded-lg object-contain bg-gray-50"
+                className="w-full sm:w-48 rounded-lg object-contain bg-[var(--color-tableRowHover)]"
               />
             )}
-            <div className="grid grid-cols-2 gap-3 text-sm text-gray-700">
+            <div className="grid grid-cols-2 gap-3 text-sm text-[var(--color-textSecondary)]">
               <div>
-                <p className="text-xs text-gray-500">Nota BGG</p>
+                <p className="text-xs text-[var(--color-textSecondary)]">Nota BGG</p>
                 <p className="font-semibold">{formatNumber(event.game?.averageRating)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Bayes</p>
+                <p className="text-xs text-[var(--color-textSecondary)]">Bayes</p>
                 <p className="font-semibold">{formatNumber(event.game?.bayesAverage)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Peso</p>
+                <p className="text-xs text-[var(--color-textSecondary)]">Peso</p>
                 <p className="font-semibold">{formatNumber(event.game?.complexityRating)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Ranking</p>
+                <p className="text-xs text-[var(--color-textSecondary)]">Ranking</p>
                 <p className="font-semibold">{event.game?.rank ?? '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Jugadores</p>
+                <p className="text-xs text-[var(--color-textSecondary)]">Jugadores</p>
                 <p className="font-semibold">{playersText}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Duracion</p>
+                <p className="text-xs text-[var(--color-textSecondary)]">Duracion</p>
                 <p className="font-semibold">{timeText}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Edad</p>
+                <p className="text-xs text-[var(--color-textSecondary)]">Edad</p>
                 <p className="font-semibold">{minAgeText}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Año</p>
+                <p className="text-xs text-[var(--color-textSecondary)]">Año</p>
                 <p className="font-semibold">{yearText}</p>
               </div>
             </div>
@@ -901,22 +901,22 @@ export default function EventDetail() {
 
           {gameDescription && (
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">Descripcion</h4>
-              <p className="text-sm text-gray-700 whitespace-pre-line">{gameDescription}</p>
+              <h4 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-2">Descripcion</h4>
+              <p className="text-sm text-[var(--color-textSecondary)] whitespace-pre-line">{gameDescription}</p>
             </div>
           )}
 
           {(event.game?.categories?.length || event.game?.mechanics?.length) && (
-            <div className="space-y-2 text-sm text-gray-700">
+            <div className="space-y-2 text-sm text-[var(--color-textSecondary)]">
               {event.game?.categories?.length ? (
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Categorias</p>
+                  <p className="text-xs text-[var(--color-textSecondary)] mb-1">Categorias</p>
                   <p>{event.game.categories.join(', ')}</p>
                 </div>
               ) : null}
               {event.game?.mechanics?.length ? (
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Mecanicas</p>
+                  <p className="text-xs text-[var(--color-textSecondary)] mb-1">Mecanicas</p>
                   <p>{event.game.mechanics.join(', ')}</p>
                 </div>
               ) : null}
@@ -924,16 +924,16 @@ export default function EventDetail() {
           )}
 
           {(event.game?.designers?.length || event.game?.publishers?.length) && (
-            <div className="space-y-2 text-sm text-gray-700">
+            <div className="space-y-2 text-sm text-[var(--color-textSecondary)]">
               {event.game?.designers?.length ? (
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Diseñadores</p>
+                  <p className="text-xs text-[var(--color-textSecondary)] mb-1">Diseñadores</p>
                   <p>{event.game.designers.join(', ')}</p>
                 </div>
               ) : null}
               {event.game?.publishers?.length ? (
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Editoriales</p>
+                  <p className="text-xs text-[var(--color-textSecondary)] mb-1">Editoriales</p>
                   <p>{event.game.publishers.join(', ')}</p>
                 </div>
               ) : null}
@@ -951,7 +951,7 @@ export default function EventDetail() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)]">
                 Nombre *
               </label>
               <input
@@ -959,13 +959,13 @@ export default function EventDetail() {
                 value={guestFirstName}
                 onChange={(e) => setGuestFirstName(e.target.value)}
                 minLength={2}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 placeholder="Nombre"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)]">
                 Apellidos *
               </label>
               <input
@@ -973,13 +973,13 @@ export default function EventDetail() {
                 value={guestLastName}
                 onChange={(e) => setGuestLastName(e.target.value)}
                 minLength={2}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 placeholder="Apellidos"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)]">
                 DNI *
               </label>
               <input
@@ -987,13 +987,13 @@ export default function EventDetail() {
                 value={guestDni}
                 onChange={(e) => setGuestDni(e.target.value)}
                 minLength={5}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 placeholder="00000000A"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)]">
                 Acciones
               </label>
               <div className="flex items-center gap-3">
@@ -1012,12 +1012,12 @@ export default function EventDetail() {
                   {createInvitationMutation.isPending ? 'Creando...' : 'Crear invitacion'}
                 </Button>
                 {isAdmin && (
-                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <label className="flex items-center gap-2 text-sm text-[var(--color-textSecondary)]">
                     <input
                       type="checkbox"
                       checked={isExceptional}
                       onChange={(e) => setIsExceptional(e.target.checked)}
-                      className="w-4 h-4 text-[var(--color-primary)] border-gray-300 rounded focus:ring-[var(--color-primary)]"
+                      className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)]"
                     />
                     Invitacion excepcional
                   </label>
@@ -1027,7 +1027,7 @@ export default function EventDetail() {
           </div>
 
           {qrUrl && (
-            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <div className="border border-[var(--color-cardBorder)] rounded-lg p-4 bg-[var(--color-tableRowHover)]">
               <div className="flex flex-col md:flex-row gap-4 items-center">
                 {qrImageUrl && (
                   <img
@@ -1037,19 +1037,19 @@ export default function EventDetail() {
                   />
                 )}
                 <div className="flex-1 space-y-2">
-                  <p className="text-sm text-gray-600">Enlace del QR</p>
+                  <p className="text-sm text-[var(--color-textSecondary)]">Enlace del QR</p>
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
                       readOnly
                       value={qrUrl}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-cardBackground)] text-sm"
                     />
                     <Button onClick={handleCopyQr} variant="outline">
                       Copiar
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-[var(--color-textSecondary)]">
                     Comparte este QR con el invitado. Es de un solo uso y valido solo para hoy.
                   </p>
                 </div>
@@ -1058,19 +1058,19 @@ export default function EventDetail() {
           )}
 
           {!canInvite && (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-[var(--color-textSecondary)]">
               No se pueden crear invitaciones para eventos cancelados o pasados.
             </p>
           )}
 
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-2">Invitaciones creadas</h4>
+            <h4 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-2">Invitaciones creadas</h4>
             {isInvitesLoading ? (
-              <p className="text-sm text-gray-500">Cargando invitaciones...</p>
+              <p className="text-sm text-[var(--color-textSecondary)]">Cargando invitaciones...</p>
             ) : isInvitesError ? (
-              <p className="text-sm text-gray-500">No tienes permisos para ver invitaciones.</p>
+              <p className="text-sm text-[var(--color-textSecondary)]">No tienes permisos para ver invitaciones.</p>
             ) : invitations.length === 0 ? (
-              <p className="text-sm text-gray-500">No hay invitaciones registradas.</p>
+              <p className="text-sm text-[var(--color-textSecondary)]">No hay invitaciones registradas.</p>
             ) : (
               <div className="space-y-2">
                 {invitations.map((invite) => {
@@ -1080,19 +1080,19 @@ export default function EventDetail() {
                       key={invite.id}
                       onClick={() => handleToggleInviteQr(invite)}
                       className={`flex items-center justify-between p-3 border rounded-lg ${
-                        invite.qrUrl ? 'cursor-pointer hover:bg-gray-50' : ''
+                        invite.qrUrl ? 'cursor-pointer hover:bg-[var(--color-tableRowHover)]' : ''
                       } ${
-                        isExpanded ? 'border-[var(--color-primary-300)] bg-[var(--color-primary-50)]' : 'border-gray-200'
+                        isExpanded ? 'border-[var(--color-primary-300)] bg-[var(--color-primary-50)]' : 'border-[var(--color-cardBorder)]'
                       }`}
                     >
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-[var(--color-text)]">
                           {invite.guestFirstName} {invite.guestLastName}
                         </p>
                         {invite.guestDniMasked && (
-                          <p className="text-xs text-gray-500">DNI {invite.guestDniMasked}</p>
+                          <p className="text-xs text-[var(--color-textSecondary)]">DNI {invite.guestDniMasked}</p>
                         )}
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-[var(--color-textSecondary)]">
                           {new Date(invite.validDate).toLocaleDateString('es-ES')}
                         </p>
                       </div>
@@ -1121,7 +1121,7 @@ export default function EventDetail() {
         title="Eliminar partida"
       >
         <div className="space-y-4">
-          <p className="text-gray-700">
+          <p className="text-[var(--color-textSecondary)]">
             ¿Estás seguro de que quieres eliminar esta partida? Se marcará como cancelada.
           </p>
           <div className="flex gap-3 justify-end">
@@ -1147,3 +1147,4 @@ export default function EventDetail() {
     </Layout>
   );
 }
+

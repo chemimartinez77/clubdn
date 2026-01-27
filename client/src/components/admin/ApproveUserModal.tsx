@@ -55,26 +55,26 @@ export default function ApproveUserModal({
         </div>
 
         <div>
-          <p className="text-sm font-medium text-gray-700 mb-1">Usuario:</p>
-          <div className="bg-gray-50 rounded-lg p-3">
-            <p className="font-medium text-gray-900">{user.name}</p>
-            <p className="text-sm text-gray-600">{user.email}</p>
+          <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-1">Usuario:</p>
+          <div className="bg-[var(--color-tableRowHover)] rounded-lg p-3">
+            <p className="font-medium text-[var(--color-text)]">{user.name}</p>
+            <p className="text-sm text-[var(--color-textSecondary)]">{user.email}</p>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
             Mensaje personalizado (opcional)
           </label>
           <textarea
             value={customMessage}
             onChange={(e) => setCustomMessage(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+            className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
             rows={3}
             placeholder="Escribe un mensaje de bienvenida..."
             disabled={isLoading}
           />
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-[var(--color-textSecondary)]">
             Este mensaje se incluirá en el email de aprobación
           </p>
         </div>
@@ -100,3 +100,4 @@ export default function ApproveUserModal({
     </Modal>
   );
 }
+

@@ -146,7 +146,7 @@ export default function StatsCard() {
     return (
       <Card>
         <CardHeader>
-          <h3 className="text-lg font-semibold text-gray-900">Tus estadísticas</h3>
+          <h3 className="text-lg font-semibold text-[var(--color-text)]">Tus estadísticas</h3>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-12">
@@ -160,7 +160,7 @@ export default function StatsCard() {
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-lg font-semibold text-gray-900">Tus estadísticas</h3>
+        <h3 className="text-lg font-semibold text-[var(--color-text)]">Tus estadísticas</h3>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
@@ -180,7 +180,7 @@ export default function StatsCard() {
                 <div
                   key={index}
                   onClick={onClick}
-                  className={`flex items-start gap-3 p-4 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors ${
+                  className={`flex items-start gap-3 p-4 rounded-lg border border-[var(--color-cardBorder)] hover:border-[var(--color-cardBorder)] transition-colors ${
                     isClickable ? 'cursor-pointer hover:shadow-md' : ''
                   }`}
                 >
@@ -188,8 +188,8 @@ export default function StatsCard() {
                     {stat.icon}
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                    <p className="text-sm text-gray-600">{stat.label}</p>
+                    <p className="text-2xl font-bold text-[var(--color-text)]">{stat.value}</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">{stat.label}</p>
                   </div>
                 </div>
               );
@@ -199,15 +199,15 @@ export default function StatsCard() {
           {/* Juegos más jugados por el usuario */}
           {userStats && userStats.topGames.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Tus juegos más jugados</h4>
+              <h4 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-3">Tus juegos más jugados</h4>
               <div className="space-y-2">
                 {userStats.topGames.map((game, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 bg-[var(--color-tableRowHover)] rounded-lg">
                     <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold text-gray-400">#{index + 1}</span>
-                      <span className="text-sm font-medium text-gray-900">{game.name}</span>
+                      <span className="text-lg font-bold text-[var(--color-textSecondary)]">#{index + 1}</span>
+                      <span className="text-sm font-medium text-[var(--color-text)]">{game.name}</span>
                     </div>
-                    <span className="text-sm text-gray-600">{game.count} {game.count === 1 ? 'partida' : 'partidas'}</span>
+                    <span className="text-sm text-[var(--color-textSecondary)]">{game.count} {game.count === 1 ? 'partida' : 'partidas'}</span>
                   </div>
                 ))}
               </div>
@@ -217,17 +217,17 @@ export default function StatsCard() {
           {/* Compañeros de juego frecuentes */}
           {userStats && userStats.topPlayers.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Compañeros frecuentes</h4>
+              <h4 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-3">Compañeros frecuentes</h4>
               <div className="space-y-2">
                 {userStats.topPlayers.map((player, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 bg-[var(--color-tableRowHover)] rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-[var(--color-primary)] rounded-full flex items-center justify-center">
                         <span className="text-white font-semibold text-sm">{player.name.charAt(0).toUpperCase()}</span>
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{player.name}</span>
+                      <span className="text-sm font-medium text-[var(--color-text)]">{player.name}</span>
                     </div>
-                    <span className="text-sm text-gray-600">{player.count} {player.count === 1 ? 'partida' : 'partidas'}</span>
+                    <span className="text-sm text-[var(--color-textSecondary)]">{player.count} {player.count === 1 ? 'partida' : 'partidas'}</span>
                   </div>
                 ))}
               </div>
@@ -237,12 +237,12 @@ export default function StatsCard() {
           {/* Días favoritos */}
           {userStats && userStats.topDays.length > 0 && userStats.topDays[0].count > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Días que más juegas</h4>
+              <h4 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-3">Días que más juegas</h4>
               <div className="flex gap-2">
                 {userStats.topDays.filter(d => d.count > 0).map((day, index) => (
-                  <div key={index} className="flex-1 text-center p-3 bg-gray-50 rounded-lg">
-                    <p className="text-lg font-bold text-gray-900">{day.count}</p>
-                    <p className="text-xs text-gray-600">{day.day}</p>
+                  <div key={index} className="flex-1 text-center p-3 bg-[var(--color-tableRowHover)] rounded-lg">
+                    <p className="text-lg font-bold text-[var(--color-text)]">{day.count}</p>
+                    <p className="text-xs text-[var(--color-textSecondary)]">{day.day}</p>
                   </div>
                 ))}
               </div>
@@ -252,13 +252,13 @@ export default function StatsCard() {
           {/* Juegos más jugados en el club */}
           {clubStats && clubStats.topGames.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Juegos más jugados en el club</h4>
+              <h4 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-3">Juegos más jugados en el club</h4>
               <div className="space-y-2">
                 {clubStats.topGames.map((game, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <span className="text-lg font-bold text-blue-400">#{index + 1}</span>
-                      <span className="text-sm font-medium text-gray-900">{game.name}</span>
+                      <span className="text-sm font-medium text-[var(--color-text)]">{game.name}</span>
                     </div>
                     <span className="text-sm text-blue-600">{game.count} {game.count === 1 ? 'partida' : 'partidas'}</span>
                   </div>
@@ -269,7 +269,7 @@ export default function StatsCard() {
 
           {/* Mensaje si no hay datos */}
           {(!userStats || (userStats.gamesPlayed === 0 && userStats.eventsAttended === 0)) && (
-            <p className="text-xs text-gray-500 text-center mt-4">
+            <p className="text-xs text-[var(--color-textSecondary)] text-center mt-4">
               Aún no has participado en eventos. ¡Únete a una partida para ver tus estadísticas!
             </p>
           )}
@@ -288,7 +288,7 @@ export default function StatsCard() {
             eventsAttended.map((event) => (
               <div
                 key={event.id}
-                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer hover:shadow-md"
+                className="p-4 border border-[var(--color-cardBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer hover:shadow-md"
                 onClick={() => {
                   setOpenModal(null);
                   navigate(`/events/${event.id}`);
@@ -296,9 +296,9 @@ export default function StatsCard() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{event.title}</h4>
-                    <p className="text-sm text-gray-600 mt-1">{event.description}</p>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                    <h4 className="font-semibold text-[var(--color-text)]">{event.title}</h4>
+                    <p className="text-sm text-[var(--color-textSecondary)] mt-1">{event.description}</p>
+                    <div className="flex items-center gap-4 mt-2 text-xs text-[var(--color-textSecondary)]">
                       <span>📅 {formatDate(event.date)}</span>
                       {event.startHour !== null && (
                         <span>🕐 {formatTime(event.startHour, event.startMinute)}</span>
@@ -313,7 +313,7 @@ export default function StatsCard() {
               </div>
             ))
           ) : (
-            <p className="text-center text-gray-500 py-8">No hay eventos asistidos</p>
+            <p className="text-center text-[var(--color-textSecondary)] py-8">No hay eventos asistidos</p>
           )}
         </div>
       </Modal>
@@ -329,7 +329,7 @@ export default function StatsCard() {
             gamesPlayed.map((game) => (
               <div
                 key={game.id}
-                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer hover:shadow-md"
+                className="p-4 border border-[var(--color-cardBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer hover:shadow-md"
                 onClick={() => {
                   setOpenModal(null);
                   navigate(`/events/${game.id}`);
@@ -337,11 +337,11 @@ export default function StatsCard() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{game.title}</h4>
+                    <h4 className="font-semibold text-[var(--color-text)]">{game.title}</h4>
                     {game.gameName && (
                       <p className="text-sm text-blue-600 mt-1">🎮 {game.gameName}</p>
                     )}
-                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 mt-2 text-xs text-[var(--color-textSecondary)]">
                       <span>📅 {formatDate(game.date)}</span>
                       {game.startHour !== null && (
                         <span>🕐 {formatTime(game.startHour, game.startMinute)}</span>
@@ -356,7 +356,7 @@ export default function StatsCard() {
               </div>
             ))
           ) : (
-            <p className="text-center text-gray-500 py-8">No hay partidas jugadas</p>
+            <p className="text-center text-[var(--color-textSecondary)] py-8">No hay partidas jugadas</p>
           )}
         </div>
       </Modal>
@@ -372,7 +372,7 @@ export default function StatsCard() {
             upcomingEvents.map((event) => (
               <div
                 key={event.id}
-                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer hover:shadow-md"
+                className="p-4 border border-[var(--color-cardBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer hover:shadow-md"
                 onClick={() => {
                   setOpenModal(null);
                   navigate(`/events/${event.id}`);
@@ -380,12 +380,12 @@ export default function StatsCard() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{event.title}</h4>
-                    <p className="text-sm text-gray-600 mt-1">{event.description}</p>
+                    <h4 className="font-semibold text-[var(--color-text)]">{event.title}</h4>
+                    <p className="text-sm text-[var(--color-textSecondary)] mt-1">{event.description}</p>
                     {event.gameName && (
                       <p className="text-sm text-blue-600 mt-1">🎮 {event.gameName}</p>
                     )}
-                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 mt-2 text-xs text-[var(--color-textSecondary)]">
                       <span>📅 {formatDate(event.date)}</span>
                       {event.startHour !== null && (
                         <span>🕐 {formatTime(event.startHour, event.startMinute)}</span>
@@ -400,7 +400,7 @@ export default function StatsCard() {
               </div>
             ))
           ) : (
-            <p className="text-center text-gray-500 py-8">No hay próximos eventos</p>
+            <p className="text-center text-[var(--color-textSecondary)] py-8">No hay próximos eventos</p>
           )}
         </div>
       </Modal>
@@ -488,24 +488,24 @@ function TimeRangeModalContent({ games, formatDate, formatTime, onEventClick }: 
   return (
     <div className="space-y-4">
       {/* Filtros y ordenación */}
-      <div className="flex flex-wrap gap-3 pb-4 border-b border-gray-200">
+      <div className="flex flex-wrap gap-3 pb-4 border-b border-[var(--color-cardBorder)]">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">Ordenar:</span>
+          <span className="text-sm font-medium text-[var(--color-textSecondary)]">Ordenar:</span>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as 'date' | 'time')}
-            className="text-sm border border-gray-300 rounded px-2 py-1"
+            className="text-sm border border-[var(--color-inputBorder)] rounded px-2 py-1"
           >
             <option value="date">Por fecha</option>
             <option value="time">Por hora</option>
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">Filtrar:</span>
+          <span className="text-sm font-medium text-[var(--color-textSecondary)]">Filtrar:</span>
           <select
             value={filterRange}
             onChange={(e) => setFilterRange(e.target.value as typeof filterRange)}
-            className="text-sm border border-gray-300 rounded px-2 py-1"
+            className="text-sm border border-[var(--color-inputBorder)] rounded px-2 py-1"
           >
             <option value="all">Todos</option>
             <option value="morning">Mañana (8-12h)</option>
@@ -525,24 +525,24 @@ function TimeRangeModalContent({ games, formatDate, formatTime, onEventClick }: 
 
             return (
               <div key={rangeLabel}>
-                <h5 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <h5 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-2 flex items-center gap-2">
                   <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  {rangeLabel} <span className="text-gray-500 font-normal">({gamesInRange.length})</span>
+                  {rangeLabel} <span className="text-[var(--color-textSecondary)] font-normal">({gamesInRange.length})</span>
                 </h5>
                 <div className="space-y-2">
                   {gamesInRange.map((game) => (
                     <div
                       key={game.id}
-                      className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer hover:shadow-md"
+                      className="p-3 border border-[var(--color-cardBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer hover:shadow-md"
                       onClick={() => onEventClick(game.id)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h6 className="font-semibold text-gray-900 text-sm">{game.title}</h6>
+                          <h6 className="font-semibold text-[var(--color-text)] text-sm">{game.title}</h6>
                           {game.gameName && (
                             <p className="text-xs text-blue-600 mt-1">🎮 {game.gameName}</p>
                           )}
-                          <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                          <div className="flex items-center gap-3 mt-1 text-xs text-[var(--color-textSecondary)]">
                             <span>📅 {formatDate(game.date)}</span>
                             {game.startHour !== null && (
                               <span className="font-semibold text-green-600">🕐 {formatTime(game.startHour, game.startMinute)}</span>
@@ -562,8 +562,10 @@ function TimeRangeModalContent({ games, formatDate, formatTime, onEventClick }: 
           })}
         </div>
       ) : (
-        <p className="text-center text-gray-500 py-8">No hay partidas en este rango horario</p>
+        <p className="text-center text-[var(--color-textSecondary)] py-8">No hay partidas en este rango horario</p>
       )}
     </div>
   );
 }
+
+

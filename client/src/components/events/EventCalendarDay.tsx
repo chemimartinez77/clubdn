@@ -58,11 +58,11 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
   }, [currentMonth]);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-[var(--color-cardBackground)] rounded-lg border border-[var(--color-cardBorder)] p-6">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold text-gray-900 capitalize">
+          <h3 className="text-2xl font-bold text-[var(--color-text)] capitalize">
             {dayName}
           </h3>
           {isToday && (
@@ -88,7 +88,7 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
       {dayEvents.length === 0 ? (
         <div className="text-center py-12">
           <svg
-            className="w-16 h-16 mx-auto text-gray-300 mb-4"
+            className="w-16 h-16 mx-auto text-[var(--color-textSecondary)] mb-4"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -100,10 +100,10 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
             />
           </svg>
-          <h4 className="text-lg font-medium text-gray-700 mb-2">
+          <h4 className="text-lg font-medium text-[var(--color-textSecondary)] mb-2">
             No hay eventos programados
           </h4>
-          <p className="text-gray-500 text-sm">
+          <p className="text-[var(--color-textSecondary)] text-sm">
             {isPastDay
               ? 'Este día ya ha pasado'
               : '¿Por qué no organizas una partida para este día?'}
@@ -126,7 +126,7 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
               <Link
                 key={event.id}
                 to={`/events/${event.id}`}
-                className="block border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
+                className="block border border-[var(--color-cardBorder)] rounded-lg p-4 hover:shadow-md transition-shadow bg-[var(--color-cardBackground)]"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -142,13 +142,13 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
                         {time.split(':')[0]}
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 text-lg">{event.title}</h4>
-                        <p className="text-sm text-gray-500">{time}</p>
+                        <h4 className="font-semibold text-[var(--color-text)] text-lg">{event.title}</h4>
+                        <p className="text-sm text-[var(--color-textSecondary)]">{time}</p>
                       </div>
                     </div>
 
                     {event.location && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                      <div className="flex items-center gap-2 text-sm text-[var(--color-textSecondary)] mb-2">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -158,7 +158,7 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
                     )}
 
                     {event.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                      <p className="text-sm text-[var(--color-textSecondary)] line-clamp-2 mb-3">
                         {event.description}
                       </p>
                     )}
@@ -190,7 +190,7 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
                     </div>
                   </div>
 
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
@@ -202,13 +202,13 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
 
       {/* Summary */}
       {dayEvents.length > 0 && (
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-[var(--color-cardBorder)]">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">
-              Total de eventos: <span className="font-semibold text-gray-900">{dayEvents.length}</span>
+            <span className="text-[var(--color-textSecondary)]">
+              Total de eventos: <span className="font-semibold text-[var(--color-text)]">{dayEvents.length}</span>
             </span>
-            <span className="text-gray-600">
-              Plazas totales: <span className="font-semibold text-gray-900">
+            <span className="text-[var(--color-textSecondary)]">
+              Plazas totales: <span className="font-semibold text-[var(--color-text)]">
                 {dayEvents.reduce((sum, e) => sum + (e.registeredCount || 0), 0)}/{dayEvents.reduce((sum, e) => sum + e.maxAttendees, 0)}
               </span>
             </span>
@@ -218,3 +218,4 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
     </div>
   );
 }
+

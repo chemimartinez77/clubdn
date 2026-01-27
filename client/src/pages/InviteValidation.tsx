@@ -72,7 +72,7 @@ export default function InviteValidation() {
               <h2 className="text-xl font-semibold text-red-700">Invitacion no valida</h2>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700">{errorMessage}</p>
+              <p className="text-[var(--color-textSecondary)]">{errorMessage}</p>
               <Button onClick={() => navigate('/')} className="mt-4">
                 Volver
               </Button>
@@ -101,7 +101,7 @@ export default function InviteValidation() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">Validar Invitacion</h1>
+              <h1 className="text-2xl font-bold text-[var(--color-text)]">Validar Invitacion</h1>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusStyle}`}>
                 {statusLabel}
               </span>
@@ -109,39 +109,39 @@ export default function InviteValidation() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-sm text-gray-500">Invitado</p>
-              <p className="text-lg font-semibold text-gray-900">
+              <p className="text-sm text-[var(--color-textSecondary)]">Invitado</p>
+              <p className="text-lg font-semibold text-[var(--color-text)]">
                 {invitation.guestFirstName} {invitation.guestLastName}
               </p>
               {invitation.guestDniMasked && (
-                <p className="text-sm text-gray-600">DNI {invitation.guestDniMasked}</p>
+                <p className="text-sm text-[var(--color-textSecondary)]">DNI {invitation.guestDniMasked}</p>
               )}
             </div>
 
             {invitation.inviter && (
               <div>
-                <p className="text-sm text-gray-500">Socio invitador</p>
-                <p className="text-gray-900">{invitation.inviter.name}</p>
+                <p className="text-sm text-[var(--color-textSecondary)]">Socio invitador</p>
+                <p className="text-[var(--color-text)]">{invitation.inviter.name}</p>
               </div>
             )}
 
             {invitation.event && (
               <div>
-                <p className="text-sm text-gray-500">Evento</p>
-                <p className="text-gray-900">{invitation.event.title}</p>
-                <p className="text-sm text-gray-600">{new Date(invitation.event.date).toLocaleString('es-ES')}</p>
+                <p className="text-sm text-[var(--color-textSecondary)]">Evento</p>
+                <p className="text-[var(--color-text)]">{invitation.event.title}</p>
+                <p className="text-sm text-[var(--color-textSecondary)]">{new Date(invitation.event.date).toLocaleString('es-ES')}</p>
               </div>
             )}
 
             <div>
-              <p className="text-sm text-gray-500">Valido para</p>
-              <p className="text-gray-900">{new Date(invitation.validDate).toLocaleDateString('es-ES')}</p>
+              <p className="text-sm text-[var(--color-textSecondary)]">Valido para</p>
+              <p className="text-[var(--color-text)]">{new Date(invitation.validDate).toLocaleDateString('es-ES')}</p>
             </div>
 
             {invitation.validatedBy && (
               <div>
-                <p className="text-sm text-gray-500">Validado por</p>
-                <p className="text-gray-900">{invitation.validatedBy.name}</p>
+                <p className="text-sm text-[var(--color-textSecondary)]">Validado por</p>
+                <p className="text-[var(--color-text)]">{invitation.validatedBy.name}</p>
               </div>
             )}
           </CardContent>
@@ -151,7 +151,7 @@ export default function InviteValidation() {
           <CardContent className="space-y-3">
             {isPending ? (
               <>
-                <p className="text-gray-700">
+                <p className="text-[var(--color-textSecondary)]">
                   Confirma la entrada solo cuando el invitado este en la puerta.
                 </p>
                 <Button
@@ -164,7 +164,7 @@ export default function InviteValidation() {
                 </Button>
               </>
             ) : (
-              <p className="text-gray-700">
+              <p className="text-[var(--color-textSecondary)]">
                 {invitation.status !== 'PENDING'
                   ? `Esta invitacion no puede ser validada porque esta ${statusLabel.toLowerCase()}.`
                   : 'Esta invitacion no es valida hoy.'}
@@ -176,3 +176,4 @@ export default function InviteValidation() {
     </Layout>
   );
 }
+
