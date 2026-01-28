@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../hooks/useTheme';
 import { useToast } from '../hooks/useToast';
 import { loginSchema, type LoginFormData } from '../lib/validations';
 
@@ -20,6 +21,7 @@ interface Particle {
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { themeMode } = useTheme();
   const { success, error: showError } = useToast();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -183,7 +185,7 @@ export default function Login() {
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
             <img
-              src="/logo.png"
+              src={themeMode === 'dark' ? '/logowhite.png' : '/logo.png'}
               alt="Club Dreadnought"
               className="h-20 w-auto"
             />

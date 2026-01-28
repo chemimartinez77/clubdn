@@ -2,11 +2,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../hooks/useTheme';
 import Modal from '../ui/Modal';
 import NotificationBell from '../notifications/NotificationBell';
 
 export default function Header() {
   const { user, logout, isAdmin } = useAuth();
+  const { themeMode } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const [isGamesMenuOpen, setIsGamesMenuOpen] = useState(false);
@@ -44,7 +46,7 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <img
-              src="/logo.png"
+              src={themeMode === 'dark' ? '/logowhite.png' : '/logo.png'}
               alt="Club DN Logo"
               className="w-32 h-16 rounded-lg"
             />
