@@ -255,12 +255,15 @@ export default function StatsCard() {
               <h4 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-3">Juegos más jugados en el club</h4>
               <div className="space-y-2">
                 {clubStats.topGames.map((game, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-lg"
+                  >
                     <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold text-blue-400">#{index + 1}</span>
+                      <span className="text-lg font-bold text-[var(--color-primary)]">#{index + 1}</span>
                       <span className="text-sm font-medium text-[var(--color-text)]">{game.name}</span>
                     </div>
-                    <span className="text-sm text-blue-600">{game.count} {game.count === 1 ? 'partida' : 'partidas'}</span>
+                    <span className="text-sm text-[var(--color-primary)]">{game.count} {game.count === 1 ? 'partida' : 'partidas'}</span>
                   </div>
                 ))}
               </div>
