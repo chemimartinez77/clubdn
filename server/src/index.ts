@@ -25,9 +25,25 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware CORS
+const allowedOrigins = [
+  'https://clubdn-web-production.up.railway.app',
+  'https://app.clubdreadnought.org',
+  'http://localhost:5173'
+];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Permitir requests sin origin (como mobile apps o curl)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
+  optionsSuccessStatus: 200
 }));
 
 app.use(express.json());
