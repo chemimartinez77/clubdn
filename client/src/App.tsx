@@ -24,6 +24,7 @@ import Games from './pages/Games';
 import Financiero from './pages/Financiero';
 import Ludoteca from './pages/Ludoteca';
 import Documentos from './pages/Documentos';
+import Feedback from './pages/Feedback';
 import AdminRoute from './components/routes/AdminRoute';
 
 // Componente para rutas protegidas
@@ -174,6 +175,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Documentos />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/feedback"
+            element={
+              <ProtectedRoute>
+                <Feedback />
               </ProtectedRoute>
             }
           />

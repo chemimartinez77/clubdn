@@ -140,6 +140,12 @@ export default function Header() {
             >
               Documentos
             </Link>
+            <Link
+              to="/feedback"
+              className="text-[var(--color-textSecondary)] hover:text-primary transition-colors"
+            >
+              Feedback
+            </Link>
 
             {/* Notification Bell */}
             <NotificationBell />
@@ -407,6 +413,13 @@ export default function Header() {
               >
                 Documentos
               </Link>
+              <Link
+                to="/feedback"
+                className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                onClick={closeAllMenus}
+              >
+                Feedback
+              </Link>
 
               {/* Administración - Solo admin */}
               {isAdmin && (
@@ -535,4 +548,3 @@ export default function Header() {
     </header>
   );
 }
-

@@ -23,6 +23,32 @@ enum UserRole {
   SUPER_ADMIN
 }
 
+
+enum ReportType {
+  BUG
+  MEJORA
+}
+
+enum ReportStatus {
+  NUEVO
+  EN_REVISION
+  EN_PROGRESO
+  HECHO
+}
+
+enum ReportPriority {
+  BAJA
+  MEDIA
+  ALTA
+  CRITICA
+}
+
+enum ReportSeverity {
+  NO_URGE
+  ME_MOLESTA
+  BLOQUEANTE
+}
+
 // Tipos de membresía
 enum MembershipType {
   SOCIO        // 19€/mes, con llave, requiere 1 año como COLABORADOR + aprobación
@@ -74,6 +100,8 @@ model User {
   loginAttempts     LoginAttempt[]
   uploadedDocuments Document[]
   uploadedPhotos    EventPhoto[]
+  reports           Report[]
+  reportVotes       ReportVote[]
   eventAuditLogs    EventAuditLog[] @relation("EventAuditActor")
   eventAuditTargets EventAuditLog[] @relation("EventAuditTargetUser")
   notifications     Notification[]
@@ -578,6 +606,45 @@ model EventPhoto {
 
   @@index([eventId])
   @@index([uploadedById])
+}
+
+
+model Report {
+  id               String         @id @default(cuid())
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type             ReportType
+  title            String
+  description      String         @db.Text
+  screenshotUrl    String?
+  originUrl        String?
+  status           ReportStatus   @default(NUEVO)
+  internalPriority ReportPriority @default(MEDIA)
+  perceivedSeverity ReportSeverity
+  devResponse      String?        @db.Text
+  votesCount       Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  votes            ReportVote[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([internalPriority])
+  @@index([createdAt])
+}
+
+model ReportVote {
+  id        String   @id @default(cuid())
+  reportId  String
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([reportId, userId])
+  @@index([reportId])
+  @@index([userId])
 }
 
 enum EventAuditAction {

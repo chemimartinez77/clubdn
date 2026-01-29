@@ -16,6 +16,7 @@ import {
   uploadMemberAvatar,
   getMembershipHistory
 } from '../controllers/memberController';
+import { updateReportAdmin } from '../controllers/reportController';
 
 const router = Router();
 
@@ -88,5 +89,11 @@ router.post('/members/:memberId/mark-baja', markMemberAsBaja);
  * Exportar miembros a CSV
  */
 router.get('/members/export/csv', exportMembersCSV);
+
+/**
+ * PATCH /api/admin/reports/:id
+ * Actualizar estado, prioridad y respuesta del desarrollador
+ */
+router.patch('/reports/:id', updateReportAdmin);
 
 export default router;

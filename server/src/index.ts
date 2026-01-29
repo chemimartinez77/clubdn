@@ -18,6 +18,7 @@ import invitationRoutes from './routes/invitationRoutes';
 import eventPhotoRoutes from './routes/eventPhotoRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import badgeRoutes from './routes/badgeRoutes';
+import reportRoutes from './routes/reportRoutes';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -83,6 +84,7 @@ app.use('/api/invitations', invitationRoutes);
 app.use('/api/events', eventPhotoRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/badges', badgeRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Ruta 404
 app.use((_req, res) => {
