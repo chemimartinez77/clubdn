@@ -74,6 +74,8 @@ model User {
   eventAuditLogs    EventAuditLog[] @relation("EventAuditActor")
   eventAuditTargets EventAuditLog[] @relation("EventAuditTargetUser")
   notifications     Notification[]
+  badges            UserBadge[]
+  gamePlayHistory   GamePlayHistory[]
 
   @@index([email])
   @@index([status])
@@ -220,6 +222,7 @@ model Event {
   eventGuests     EventGuest[]
   photos          EventPhoto[]
   auditLogs       EventAuditLog[]
+  gamePlayHistory GamePlayHistory[]
 
   // Estado
   status          EventStatus @default(SCHEDULED)
@@ -601,6 +604,17 @@ model EventAuditLog {
   @@index([action])
 }
 
+// Categorías de badges
+enum BadgeCategory {
+  EUROGAMES
+  TEMATICOS
+  WARGAMES
+  ROL
+  MINIATURAS
+  WARHAMMER
+  FILLERS_PARTY
+}
+
 // Tipos de notificaciones
 enum NotificationType {
   EVENT_CANCELLED         // Partida cancelada
@@ -613,6 +627,7 @@ enum NotificationType {
   INVITATION_VALIDATED    // Tu invitación fue validada
   INVITATION_REJECTED     // Tu invitación fue rechazada
   WAITLIST_SPOT_AVAILABLE // Plaza disponible desde waitlist
+  BADGE_UNLOCKED          // Badge desbloqueado
 }
 
 // Notificaciones del sistema
@@ -637,4 +652,56 @@ model Notification {
   @@index([userId])
   @@index([read])
   @@index([createdAt])
+}
+
+// Definiciones de badges (catálogo estático)
+model BadgeDefinition {
+  id            String        @id @default(cuid())
+  category      BadgeCategory
+  level         Int           // 1-6
+  name          String        // "Euro-turista", "Capataz de Recursos", etc.
+  description   String?       @db.Text
+  iconUrl       String?       // URL del icono del badge
+  requiredCount Int           // Juegos necesarios: 5, 10, 20, 40, 70, 100
+
+  // Relaciones
+  userBadges    UserBadge[]
+
+  createdAt     DateTime      @default(now())
+
+  @@unique([category, level])
+  @@index([category])
+  @@index([level])
+}
+
+// Badges desbloqueados por usuarios
+model UserBadge {
+  id                String          @id @default(cuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeDefinitionId String
+  badgeDefinition   BadgeDefinition @relation(fields: [badgeDefinitionId], references: [id], onDelete: Cascade)
+  unlockedAt        DateTime        @default(now())
+
+  @@unique([userId, badgeDefinitionId])
+  @@index([userId])
+  @@index([badgeDefinitionId])
+}
+
+// Historial de juegos jugados (para tracking de badges)
+model GamePlayHistory {
+  id           String         @id @default(cuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId      String
+  event        Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  gameName     String         // Nombre del juego jugado
+  gameCategory BadgeCategory? // Categoría del juego (puede ser null si no está categorizado)
+  playedAt     DateTime       @default(now())
+  createdAt    DateTime       @default(now())
+
+  @@index([userId])
+  @@index([eventId])
+  @@index([gameCategory])
+  @@index([playedAt])
 }

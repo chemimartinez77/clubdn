@@ -6,10 +6,12 @@ import { Card, CardHeader, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import ThemeSelector from '../components/ThemeSelector';
 import NoughterColorSelector from '../components/profile/NoughterColorSelector';
+import BadgeGrid from '../components/badges/BadgeGrid';
 import { useToast } from '../hooks/useToast';
 import { api } from '../api/axios';
 import type { UserProfile, UpdateProfileData } from '../types/profile';
 import type { ApiResponse } from '../types/auth';
+import type { UserBadgesResponse } from '../types/badge';
 
 export default function Profile() {
   const { success, error: showError } = useToast();
@@ -25,6 +27,15 @@ export default function Profile() {
     queryFn: async () => {
       const response = await api.get<ApiResponse<{ profile: UserProfile }>>('/api/profile/me');
       return response.data.data?.profile;
+    }
+  });
+
+  // Fetch badges
+  const { data: badgesData, isLoading: isLoadingBadges } = useQuery({
+    queryKey: ['myBadges'],
+    queryFn: async () => {
+      const response = await api.get<UserBadgesResponse>('/api/badges/my-badges');
+      return response.data.data;
     }
   });
 
@@ -592,6 +603,29 @@ export default function Profile() {
             )}
           </CardContent>
         </Card>
+
+        {/* Badges Section */}
+        {!isEditing && (
+          <Card>
+            <CardContent>
+              {isLoadingBadges ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]"></div>
+                </div>
+              ) : badgesData ? (
+                <BadgeGrid
+                  allBadges={badgesData.allBadges}
+                  unlockedBadges={badgesData.unlockedBadges}
+                  progress={badgesData.progress}
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-[var(--color-textSecondary)]">No se pudieron cargar los badges</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
   );
