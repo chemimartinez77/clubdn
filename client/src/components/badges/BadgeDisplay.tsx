@@ -3,7 +3,6 @@ import React from 'react';
 import type { BadgeDefinition } from '../../types/badge';
 import { getCategoryIcon, getCategoryColor } from '../../types/badge';
 import styled from '@emotion/styled';
-import { useTheme } from '../../hooks/useTheme';
 
 interface BadgeDisplayProps {
   badge: BadgeDefinition;
@@ -20,7 +19,6 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
   showProgress = false,
   currentCount = 0
 }) => {
-  const { theme } = useTheme();
   const categoryColor = getCategoryColor(badge.category);
   const categoryIcon = getCategoryIcon(badge.category);
 
@@ -30,7 +28,6 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
 
   return (
     <BadgeCard
-      theme={theme}
       isUnlocked={isUnlocked}
       categoryColor={categoryColor}
     >
@@ -43,30 +40,30 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
           {badge.name}
         </BadgeName>
 
-        <BadgeLevel theme={theme} categoryColor={categoryColor}>
+        <BadgeLevel categoryColor={categoryColor}>
           Nivel {badge.level}
         </BadgeLevel>
 
-        <BadgeRequirement theme={theme}>
+        <BadgeRequirement>
           {badge.requiredCount} juegos diferentes
         </BadgeRequirement>
 
         {showProgress && !isUnlocked && (
-          <ProgressContainer theme={theme}>
+          <ProgressContainer>
             <ProgressBar>
               <ProgressFill
                 progress={progress}
                 categoryColor={categoryColor}
               />
             </ProgressBar>
-            <ProgressText theme={theme}>
+            <ProgressText>
               {currentCount} / {badge.requiredCount}
             </ProgressText>
           </ProgressContainer>
         )}
 
         {isUnlocked && unlockedAt && (
-          <UnlockedDate theme={theme}>
+          <UnlockedDate>
             Desbloqueado: {new Date(unlockedAt).toLocaleDateString('es-ES', {
               year: 'numeric',
               month: 'short',
@@ -84,10 +81,10 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
 };
 
 // Styled Components
-const BadgeCard = styled.div<{ theme: any; isUnlocked: boolean; categoryColor: string }>`
+const BadgeCard = styled.div<{ isUnlocked: boolean; categoryColor: string }>`
   position: relative;
-  background: ${props => props.theme.colors.cardBackground};
-  border: 2px solid ${props => props.isUnlocked ? props.categoryColor : props.theme.colors.cardBorder};
+  background: var(--color-cardBackground);
+  border: 2px solid ${props => props.isUnlocked ? props.categoryColor : 'var(--color-cardBorder)'};
   border-radius: 12px;
   padding: 1rem;
   display: flex;
@@ -130,19 +127,19 @@ const BadgeName = styled.h3<{ isUnlocked: boolean }>`
   color: inherit;
 `;
 
-const BadgeLevel = styled.div<{ theme: any; categoryColor: string }>`
+const BadgeLevel = styled.div<{ categoryColor: string }>`
   font-size: 0.75rem;
   font-weight: 500;
   color: ${props => props.categoryColor};
   margin-bottom: 0.25rem;
 `;
 
-const BadgeRequirement = styled.div<{ theme: any }>`
+const BadgeRequirement = styled.div`
   font-size: 0.75rem;
-  color: ${props => props.theme.colors.textSecondary};
+  color: var(--color-textSecondary);
 `;
 
-const ProgressContainer = styled.div<{ theme: any }>`
+const ProgressContainer = styled.div`
   margin-top: 0.5rem;
 `;
 
@@ -162,15 +159,15 @@ const ProgressFill = styled.div<{ progress: number; categoryColor: string }>`
   transition: width 0.3s ease;
 `;
 
-const ProgressText = styled.div<{ theme: any }>`
+const ProgressText = styled.div`
   font-size: 0.7rem;
-  color: ${props => props.theme.colors.textSecondary};
+  color: var(--color-textSecondary);
   text-align: right;
 `;
 
-const UnlockedDate = styled.div<{ theme: any }>`
+const UnlockedDate = styled.div`
   font-size: 0.7rem;
-  color: ${props => props.theme.colors.textSecondary};
+  color: var(--color-textSecondary);
   margin-top: 0.5rem;
   font-style: italic;
 `;

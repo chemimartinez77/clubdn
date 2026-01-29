@@ -172,11 +172,11 @@ const HeaderTop = styled.div`
   gap: 1rem;
 `;
 
-const Title = styled.h2<{ theme: any }>`
+const Title = styled.h2`
   font-size: 1.75rem;
   font-weight: 700;
   margin: 0;
-  color: ${props => props.theme.colors.text};
+  color: var(--color-text);
 `;
 
 const Stats = styled.div`
@@ -191,12 +191,12 @@ const StatItem = styled.div`
 const StatValue = styled.div`
   font-size: 1.5rem;
   font-weight: 700;
-  color: ${props => props.theme.colors.primary};
+  color: var(--color-primary);
 `;
 
-const StatLabel = styled.div<{ theme?: any }>`
+const StatLabel = styled.div`
   font-size: 0.75rem;
-  color: ${props => props.theme?.colors.textSecondary || '#6b7280'};
+  color: var(--color-textSecondary);
   margin-top: 0.25rem;
 `;
 
@@ -207,21 +207,20 @@ const CategoryFilters = styled.div`
 `;
 
 const FilterButton = styled.button<{
-  theme: any;
   active: boolean;
   categoryColor?: string;
 }>`
   padding: 0.5rem 1rem;
   border: 2px solid ${props =>
     props.active
-      ? props.categoryColor || props.theme.colors.primary
-      : props.theme.colors.border};
+      ? props.categoryColor || 'var(--color-primary)'
+      : 'var(--color-cardBorder)'};
   background: ${props =>
     props.active
-      ? props.categoryColor || props.theme.colors.primary
-      : props.theme.colors.cardBackground};
+      ? props.categoryColor || 'var(--color-primary)'
+      : 'var(--color-cardBackground)'};
   color: ${props =>
-    props.active ? '#ffffff' : props.theme.colors.text};
+    props.active ? '#ffffff' : 'var(--color-text)'};
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
@@ -242,8 +241,8 @@ const BadgesContainer = styled.div`
 
 const CategorySection = styled.div``;
 
-const CategoryHeader = styled.div<{ theme: any; categoryColor: string }>`
-  background: ${props => props.theme.colors.cardBackground};
+const CategoryHeader = styled.div<{ categoryColor: string }>`
+  background: var(--color-cardBackground);
   border-left: 4px solid ${props => props.categoryColor};
   padding: 1rem 1.5rem;
   border-radius: 8px;
@@ -266,9 +265,9 @@ const CategoryName = styled.h3`
   margin: 0;
 `;
 
-const CategoryStats = styled.div<{ theme: any }>`
+const CategoryStats = styled.div`
   font-size: 0.875rem;
-  color: ${props => props.theme.colors.textSecondary};
+  color: var(--color-textSecondary);
   margin-top: 0.25rem;
 `;
 
