@@ -1,8 +1,9 @@
 // client/src/components/badges/BadgeDisplay.tsx
 import React from 'react';
-import { BadgeDefinition, getCategoryIcon, getCategoryColor } from '../../types/badge';
+import type { BadgeDefinition } from '../../types/badge';
+import { getCategoryIcon, getCategoryColor } from '../../types/badge';
 import styled from '@emotion/styled';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme } from '../../hooks/useTheme';
 
 interface BadgeDisplayProps {
   badge: BadgeDefinition;

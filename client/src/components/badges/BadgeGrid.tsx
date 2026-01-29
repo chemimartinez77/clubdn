@@ -1,12 +1,14 @@
 // client/src/components/badges/BadgeGrid.tsx
 import React, { useState } from 'react';
 import styled from '@emotion/styled';
-import { useTheme } from '../../contexts/ThemeContext';
-import {
+import { useTheme } from '../../hooks/useTheme';
+import type {
   BadgeDefinition,
   UserBadge,
   BadgeProgress,
-  BadgeCategory,
+  BadgeCategory
+} from '../../types/badge';
+import {
   getCategoryDisplayName,
   getCategoryIcon,
   getCategoryColor
