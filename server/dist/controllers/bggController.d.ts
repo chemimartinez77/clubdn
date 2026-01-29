@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 /**
- * GET /api/bgg/search?query=catan
+ * GET /api/bgg/search?query=catan&page=1&pageSize=10
  */
 export declare const searchGames: (req: Request, res: Response) => Promise<void>;
 /**

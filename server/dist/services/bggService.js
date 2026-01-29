@@ -10,7 +10,8 @@ exports.getBGGGameFull = getBGGGameFull;
 const axios_1 = __importDefault(require("axios"));
 const xml2js_1 = require("xml2js");
 const BGG_API_BASE = 'https://boardgamegeek.com/xmlapi2';
-const MAX_RESULTS = 10;
+const DEFAULT_PAGE_SIZE = 10;
+const MAX_PAGE_SIZE = 50;
 const MAX_RETRIES = 4;
 const RETRY_DELAY_MS = 1500;
 const userAgent = process.env.BGG_USER_AGENT ??
@@ -84,14 +85,18 @@ function extractPrimaryName(item) {
 /**
  * Buscar juegos en BoardGameGeek
  */
-async function searchBGGGames(query) {
+async function searchBGGGames(query, page = 1, pageSize = DEFAULT_PAGE_SIZE) {
     try {
         console.log('[BGG SERVICE] Iniciando búsqueda para:', query);
         if (!query || query.trim().length < 2) {
             console.log('[BGG SERVICE] Query muy corta');
-            return [];
+            return { games: [], total: 0, page, pageSize };
         }
         const trimmedQuery = query.trim();
+        const safePage = Number.isFinite(page) ? Math.max(1, Math.floor(page)) : 1;
+        const safePageSize = Number.isFinite(pageSize)
+            ? Math.max(1, Math.min(MAX_PAGE_SIZE, Math.floor(pageSize)))
+            : DEFAULT_PAGE_SIZE;
         console.log('[BGG SERVICE] Llamando a BGG API search...');
         const rawSearch = await requestWithRetry('/search', {
             query: trimmedQuery,
@@ -101,13 +106,17 @@ async function searchBGGGames(query) {
         console.log('[BGG SERVICE] Parseando resultados de búsqueda...');
         const searchResult = await (0, xml2js_1.parseStringPromise)(rawSearch);
         if (!searchResult.items?.item) {
-            return [];
+            return { games: [], total: 0, page: safePage, pageSize: safePageSize };
         }
         const items = normalizeItems(searchResult.items.item);
-        // Obtener IDs de los primeros 10 resultados
-        const ids = items.slice(0, MAX_RESULTS).map((item) => item.$.id);
+        const totalFromApi = Number.parseInt(searchResult.items?.$?.total ?? '', 10);
+        const total = Number.isFinite(totalFromApi) && totalFromApi > 0 ? totalFromApi : items.length;
+        const startIndex = (safePage - 1) * safePageSize;
+        const pagedItems = items.slice(startIndex, startIndex + safePageSize);
+        // Obtener IDs de los resultados paginados
+        const ids = pagedItems.map((item) => item.$.id);
         if (ids.length === 0) {
-            return [];
+            return { games: [], total, page: safePage, pageSize: safePageSize };
         }
         const rawDetails = await requestWithRetry('/thing', {
             id: ids.join(','),
@@ -116,7 +125,7 @@ async function searchBGGGames(query) {
         });
         const detailsResult = await (0, xml2js_1.parseStringPromise)(rawDetails);
         if (!detailsResult.items || !detailsResult.items.item) {
-            return [];
+            return { games: [], total, page: safePage, pageSize: safePageSize };
         }
         const detailItems = normalizeItems(detailsResult.items.item);
         // Mapear resultados
@@ -129,11 +138,11 @@ async function searchBGGGames(query) {
                 thumbnail: item.thumbnail?.[0] || ''
             };
         });
-        return games;
+        return { games, total, page: safePage, pageSize: safePageSize };
     }
     catch (error) {
         console.error('Error al buscar en BGG:', error);
-        return [];
+        return { games: [], total: 0, page, pageSize };
     }
 }
 /**

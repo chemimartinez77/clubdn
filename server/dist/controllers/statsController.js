@@ -74,7 +74,12 @@ const getAdminStats = async (_req, res) => {
                 name: true,
                 email: true,
                 status: true,
-                createdAt: true
+                createdAt: true,
+                profile: {
+                    select: {
+                        avatar: true
+                    }
+                }
             }
         });
         res.status(200).json({
@@ -368,11 +373,18 @@ const getUserEventsAttended = async (req, res) => {
                         type: true,
                         gameName: true,
                         gameImage: true,
+                        bggId: true,
                         date: true,
                         startHour: true,
                         startMinute: true,
                         location: true,
-                        status: true
+                        status: true,
+                        game: {
+                            select: {
+                                thumbnail: true,
+                                image: true
+                            }
+                        }
                     }
                 }
             },
@@ -424,11 +436,18 @@ const getUserGamesPlayed = async (req, res) => {
                         type: true,
                         gameName: true,
                         gameImage: true,
+                        bggId: true,
                         date: true,
                         startHour: true,
                         startMinute: true,
                         location: true,
-                        status: true
+                        status: true,
+                        game: {
+                            select: {
+                                thumbnail: true,
+                                image: true
+                            }
+                        }
                     }
                 }
             },
@@ -484,11 +503,18 @@ const getUserUpcomingEvents = async (req, res) => {
                         type: true,
                         gameName: true,
                         gameImage: true,
+                        bggId: true,
                         date: true,
                         startHour: true,
                         startMinute: true,
                         location: true,
-                        status: true
+                        status: true,
+                        game: {
+                            select: {
+                                thumbnail: true,
+                                image: true
+                            }
+                        }
                     }
                 }
             },

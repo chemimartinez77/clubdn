@@ -18,14 +18,35 @@ const membershipRoutes_1 = __importDefault(require("./routes/membershipRoutes"))
 const gameRoutes_1 = __importDefault(require("./routes/gameRoutes"));
 const configRoutes_1 = __importDefault(require("./routes/configRoutes"));
 const ludotecaRoutes_1 = __importDefault(require("./routes/ludotecaRoutes"));
+const documentRoutes_1 = __importDefault(require("./routes/documentRoutes"));
+const invitationRoutes_1 = __importDefault(require("./routes/invitationRoutes"));
+const eventPhotoRoutes_1 = __importDefault(require("./routes/eventPhotoRoutes"));
+const notificationRoutes_1 = __importDefault(require("./routes/notificationRoutes"));
+const badgeRoutes_1 = __importDefault(require("./routes/badgeRoutes"));
 // Cargar variables de entorno
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
 // Middleware CORS
+const allowedOrigins = [
+    'https://clubdn-web-production.up.railway.app',
+    'https://app.clubdreadnought.org',
+    'http://localhost:5173'
+];
 app.use((0, cors_1.default)({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+        // Permitir requests sin origin (como mobile apps o curl)
+        if (!origin)
+            return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        }
+        else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
+    optionsSuccessStatus: 200
 }));
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
@@ -55,6 +76,11 @@ app.use('/api/membership', membershipRoutes_1.default);
 app.use('/api/games', gameRoutes_1.default);
 app.use('/api/config', configRoutes_1.default);
 app.use('/api/ludoteca', ludotecaRoutes_1.default);
+app.use('/api/documents', documentRoutes_1.default);
+app.use('/api/invitations', invitationRoutes_1.default);
+app.use('/api/events', eventPhotoRoutes_1.default);
+app.use('/api/notifications', notificationRoutes_1.default);
+app.use('/api/badges', badgeRoutes_1.default);
 // Ruta 404
 app.use((_req, res) => {
     res.status(404).json({

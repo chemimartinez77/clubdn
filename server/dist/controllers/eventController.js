@@ -1,18 +1,55 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getEventAttendees = exports.unregisterFromEvent = exports.registerToEvent = exports.deleteEvent = exports.updateEvent = exports.createEvent = exports.getEvent = exports.getEvents = void 0;
+exports.syncEventBggIds = exports.getEventAttendees = exports.removeParticipant = exports.unregisterFromEvent = exports.registerToEvent = exports.deleteEvent = exports.updateEvent = exports.createEvent = exports.getEvent = exports.getEvents = void 0;
 const database_1 = require("../config/database");
+const REGISTRATION_COOLDOWN_MS = 3000;
 /**
  * GET /api/events - Listar eventos con filtros
  */
 const getEvents = async (req, res) => {
     try {
-        const { status, search, page = '1', limit = '10' } = req.query;
+        const { status, search, participant, startDate, endDate, page = '1', limit = '10' } = req.query;
         const userId = req.user?.userId;
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
-        const skip = (pageNum - 1) * limitNum;
-        const where = {};
+        const where = {
+            status: {
+                not: 'CANCELLED'
+            }
+        };
         if (status) {
             where.status = status;
         }
@@ -23,43 +60,127 @@ const getEvents = async (req, res) => {
                 { location: { contains: search, mode: 'insensitive' } }
             ];
         }
-        const [events, total] = await Promise.all([
-            database_1.prisma.event.findMany({
-                where,
-                include: {
-                    organizer: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true
-                        }
-                    },
-                    registrations: {
-                        select: {
-                            id: true,
-                            userId: true,
-                            status: true
+        const dateFilter = {};
+        if (startDate && typeof startDate === 'string') {
+            const parsedStart = new Date(startDate);
+            if (Number.isNaN(parsedStart.getTime())) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Fecha de inicio invalida'
+                });
+                return;
+            }
+            dateFilter.gte = parsedStart;
+        }
+        if (endDate && typeof endDate === 'string') {
+            const parsedEnd = new Date(endDate);
+            if (Number.isNaN(parsedEnd.getTime())) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Fecha de fin invalida'
+                });
+                return;
+            }
+            dateFilter.lte = parsedEnd;
+        }
+        if (dateFilter.gte || dateFilter.lte) {
+            where.date = dateFilter;
+        }
+        // Obtener eventos con relaciones necesarias para filtro de participante
+        let events = await database_1.prisma.event.findMany({
+            where,
+            include: {
+                organizer: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true
+                    }
+                },
+                registrations: {
+                    select: {
+                        id: true,
+                        userId: true,
+                        status: true,
+                        user: {
+                            select: {
+                                name: true,
+                                membership: {
+                                    select: {
+                                        type: true
+                                    }
+                                }
+                            }
                         }
                     }
                 },
-                orderBy: { date: 'asc' },
-                skip,
-                take: limitNum
-            }),
-            database_1.prisma.event.count({ where })
-        ]);
+                eventGuests: {
+                    select: {
+                        id: true,
+                        guestFirstName: true,
+                        guestLastName: true,
+                        invitation: {
+                            select: {
+                                status: true
+                            }
+                        }
+                    }
+                },
+                invitations: {
+                    select: {
+                        id: true,
+                        status: true
+                    }
+                },
+                game: {
+                    select: {
+                        thumbnail: true,
+                        image: true
+                    }
+                }
+            },
+            orderBy: { date: 'asc' }
+        });
+        // Filtrar por participante si se especifica
+        if (participant && typeof participant === 'string' && participant.trim()) {
+            const searchTerm = participant.trim().toLowerCase();
+            events = events.filter(event => {
+                // Buscar en registrations (usuarios registrados)
+                const hasMatchingUser = event.registrations.some(reg => reg.user?.name?.toLowerCase().includes(searchTerm));
+                // Buscar en eventGuests (invitados)
+                const hasMatchingGuest = event.eventGuests.some(guest => guest.invitation?.status !== 'CANCELLED' &&
+                    guest.invitation?.status !== 'EXPIRED' &&
+                    (guest.guestFirstName.toLowerCase().includes(searchTerm) ||
+                        guest.guestLastName.toLowerCase().includes(searchTerm) ||
+                        `${guest.guestFirstName} ${guest.guestLastName}`.toLowerCase().includes(searchTerm)));
+                return hasMatchingUser || hasMatchingGuest;
+            });
+        }
+        // Paginación después del filtro de participante
+        const total = events.length;
+        const skip = (pageNum - 1) * limitNum;
+        events = events.slice(skip, skip + limitNum);
         // Calcular datos adicionales para cada evento
         const eventsWithStats = events.map(event => {
-            const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length;
+            const activeGuestCount = event.invitations.filter(inv => inv.status === 'PENDING' || inv.status === 'USED').length;
+            const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length + activeGuestCount;
             const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST').length;
             const userRegistration = event.registrations.find(r => r.userId === userId);
+            const confirmedRegistrations = event.registrations.filter(r => r.status === 'CONFIRMED');
+            const hasSocioRegistered = confirmedRegistrations.some(r => r.user?.membership?.type === 'SOCIO');
+            const hasColaboradorRegistered = confirmedRegistrations.some(r => r.user?.membership?.type === 'COLABORADOR');
             return {
                 ...event,
                 registrations: undefined, // No exponer lista completa en el listado
+                eventGuests: undefined,
+                invitations: undefined,
+                guestCount: activeGuestCount,
                 registeredCount,
                 waitlistCount,
                 isUserRegistered: !!userRegistration,
-                userRegistrationStatus: userRegistration?.status
+                userRegistrationStatus: userRegistration?.status,
+                hasSocioRegistered,
+                hasColaboradorRegistered
             };
         });
         res.status(200).json({
@@ -107,11 +228,68 @@ const getEvent = async (req, res) => {
                             select: {
                                 id: true,
                                 name: true,
-                                email: true
+                                email: true,
+                                membership: {
+                                    select: {
+                                        type: true
+                                    }
+                                },
+                                profile: {
+                                    select: {
+                                        avatar: true
+                                    }
+                                }
                             }
                         }
                     },
                     orderBy: { createdAt: 'asc' }
+                },
+                eventGuests: {
+                    select: {
+                        id: true,
+                        guestFirstName: true,
+                        guestLastName: true,
+                        invitationId: true,
+                        invitation: {
+                            select: {
+                                status: true,
+                                memberId: true
+                            }
+                        }
+                    },
+                    orderBy: { createdAt: 'asc' }
+                },
+                invitations: {
+                    select: {
+                        id: true,
+                        status: true,
+                        guestFirstName: true,
+                        guestLastName: true,
+                        memberId: true
+                    },
+                    orderBy: { createdAt: 'asc' }
+                },
+                game: {
+                    select: {
+                        thumbnail: true,
+                        image: true,
+                        description: true,
+                        averageRating: true,
+                        bayesAverage: true,
+                        rank: true,
+                        complexityRating: true,
+                        minPlayers: true,
+                        maxPlayers: true,
+                        playingTime: true,
+                        minPlaytime: true,
+                        maxPlaytime: true,
+                        minAge: true,
+                        yearPublished: true,
+                        designers: true,
+                        publishers: true,
+                        categories: true,
+                        mechanics: true
+                    }
                 }
             }
         });
@@ -122,7 +300,9 @@ const getEvent = async (req, res) => {
             });
             return;
         }
-        const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length;
+        const activeInvitationsCount = event.invitations.filter(inv => inv.status === 'PENDING' || inv.status === 'USED').length;
+        const guestCount = activeInvitationsCount;
+        const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length + activeInvitationsCount;
         const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST').length;
         const userRegistration = event.registrations.find(r => r.userId === userId);
         res.status(200).json({
@@ -130,6 +310,15 @@ const getEvent = async (req, res) => {
             data: {
                 event: {
                     ...event,
+                    eventGuests: undefined,
+                    invitations: event.invitations.map(invitation => ({
+                        id: invitation.id,
+                        guestFirstName: invitation.guestFirstName,
+                        guestLastName: invitation.guestLastName,
+                        status: invitation.status,
+                        inviterId: invitation.memberId
+                    })),
+                    guestCount,
                     registeredCount,
                     waitlistCount,
                     isUserRegistered: !!userRegistration,
@@ -156,7 +345,7 @@ const createEvent = async (req, res) => {
     try {
         const userId = req.user?.userId;
         const userRole = req.user?.role;
-        const { title, description, date, location, address, maxAttendees, type, gameName, gameImage, bggId, startHour, startMinute, durationHours, durationMinutes } = req.body;
+        const { title, description, date, location, address, maxAttendees, type, gameName, gameImage, bggId, gameCategory, startHour, startMinute, durationHours, durationMinutes, attend } = req.body;
         if (!userId) {
             res.status(401).json({
                 success: false,
@@ -183,18 +372,20 @@ const createEvent = async (req, res) => {
             });
             return;
         }
+        const normalizedLocation = typeof location === 'string' && location.trim().length > 0 ? location.trim() : 'Club DN';
         const event = await database_1.prisma.event.create({
             data: {
                 title,
                 description,
                 date: eventDate,
-                location,
+                location: normalizedLocation,
                 address,
                 maxAttendees: parseInt(maxAttendees),
                 type: eventType,
                 gameName,
                 gameImage,
                 bggId,
+                gameCategory: gameCategory || null,
                 startHour: startHour !== undefined ? parseInt(startHour) : null,
                 startMinute: startMinute !== undefined ? parseInt(startMinute) : null,
                 durationHours: durationHours !== undefined ? parseInt(durationHours) : null,
@@ -211,6 +402,34 @@ const createEvent = async (req, res) => {
                 }
             }
         });
+        const shouldAttend = attend === undefined ? true : attend === true || attend === 'true' || attend === 'on';
+        if (shouldAttend) {
+            await database_1.prisma.eventRegistration.create({
+                data: {
+                    eventId: event.id,
+                    userId,
+                    status: 'CONFIRMED'
+                }
+            });
+            // Tracking automático si el evento tiene nombre de juego y categoría
+            if (gameName && gameCategory) {
+                const { checkAndUnlockBadges } = await Promise.resolve().then(() => __importStar(require('./badgeController')));
+                // Registrar el juego jugado
+                await database_1.prisma.gamePlayHistory.create({
+                    data: {
+                        userId,
+                        eventId: event.id,
+                        gameName,
+                        gameCategory
+                    }
+                });
+                // Verificar y desbloquear badges
+                await checkAndUnlockBadges(userId, gameCategory);
+            }
+        }
+        // Notificar a usuarios con preferencia activada
+        const { notifyNewEvent } = await Promise.resolve().then(() => __importStar(require('../services/notificationService')));
+        await notifyNewEvent(event.id, event.title, event.date, userId);
         res.status(201).json({
             success: true,
             data: { event },
@@ -264,17 +483,54 @@ const updateEvent = async (req, res) => {
                 return;
             }
         }
+        let newMaxAttendees = null;
+        if (maxAttendees !== undefined) {
+            newMaxAttendees = parseInt(maxAttendees);
+            if (Number.isNaN(newMaxAttendees) || newMaxAttendees < 1) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Capacidad inválida'
+                });
+                return;
+            }
+            const [confirmedCount, activeInvitations] = await Promise.all([
+                database_1.prisma.eventRegistration.count({
+                    where: {
+                        eventId: id,
+                        status: 'CONFIRMED'
+                    }
+                }),
+                database_1.prisma.invitation.count({
+                    where: {
+                        eventId: id,
+                        status: { in: ['PENDING', 'USED'] }
+                    }
+                })
+            ]);
+            const currentCount = confirmedCount + activeInvitations;
+            if (newMaxAttendees < currentCount) {
+                res.status(400).json({
+                    success: false,
+                    message: 'La capacidad no puede ser menor que los asistentes actuales'
+                });
+                return;
+            }
+        }
+        const updateData = {
+            ...(title && { title }),
+            ...(description && { description }),
+            ...(date && { date: new Date(date) }),
+            ...(address !== undefined && { address }),
+            ...(newMaxAttendees !== null && { maxAttendees: newMaxAttendees }),
+            ...(status && { status })
+        };
+        if (location !== undefined) {
+            updateData.location =
+                typeof location === 'string' && location.trim().length > 0 ? location.trim() : 'Club DN';
+        }
         const event = await database_1.prisma.event.update({
             where: { id },
-            data: {
-                ...(title && { title }),
-                ...(description && { description }),
-                ...(date && { date: new Date(date) }),
-                ...(location && { location }),
-                ...(address !== undefined && { address }),
-                ...(maxAttendees && { maxAttendees: parseInt(maxAttendees) }),
-                ...(status && { status })
-            },
+            data: updateData,
             include: {
                 organizer: {
                     select: {
@@ -285,6 +541,19 @@ const updateEvent = async (req, res) => {
                 }
             }
         });
+        if (newMaxAttendees !== null && newMaxAttendees < existingEvent.maxAttendees) {
+            await database_1.prisma.eventAuditLog.create({
+                data: {
+                    eventId: id,
+                    actorId: userId,
+                    action: 'CLOSE_CAPACITY',
+                    details: JSON.stringify({
+                        from: existingEvent.maxAttendees,
+                        to: newMaxAttendees
+                    })
+                }
+            });
+        }
         res.status(200).json({
             success: true,
             data: { event },
@@ -306,6 +575,15 @@ exports.updateEvent = updateEvent;
 const deleteEvent = async (req, res) => {
     try {
         const { id } = req.params;
+        const userId = req.user?.userId;
+        const userRole = req.user?.role;
+        if (!id) {
+            res.status(400).json({
+                success: false,
+                message: 'Datos invalidos'
+            });
+            return;
+        }
         const event = await database_1.prisma.event.findUnique({
             where: { id }
         });
@@ -316,11 +594,54 @@ const deleteEvent = async (req, res) => {
             });
             return;
         }
+        if (!userId) {
+            res.status(401).json({
+                success: false,
+                message: 'Usuario no autenticado'
+            });
+            return;
+        }
+        if (event.type !== 'PARTIDA') {
+            res.status(400).json({
+                success: false,
+                message: 'Solo se pueden eliminar partidas'
+            });
+            return;
+        }
+        if (new Date(event.date) <= new Date()) {
+            res.status(400).json({
+                success: false,
+                message: 'Solo se pueden eliminar partidas futuras'
+            });
+            return;
+        }
+        const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+        if (!isAdmin && event.createdBy !== userId) {
+            res.status(403).json({
+                success: false,
+                message: 'No tienes permisos para eliminar esta partida'
+            });
+            return;
+        }
+        if (event.status === 'CANCELLED') {
+            res.status(400).json({
+                success: false,
+                message: 'La partida ya est\u00e1 cancelada'
+            });
+            return;
+        }
         // Marcar como cancelado en lugar de eliminar
         await database_1.prisma.event.update({
             where: { id },
-            data: { status: 'CANCELLED' }
+            data: {
+                status: 'CANCELLED',
+                cancelledAt: new Date(),
+                cancelledById: userId
+            }
         });
+        // Notificar a los usuarios inscritos
+        const { notifyEventCancelled } = await Promise.resolve().then(() => __importStar(require('../services/notificationService')));
+        await notifyEventCancelled(id, event.title);
         res.status(200).json({
             success: true,
             message: 'Evento cancelado correctamente'
@@ -342,6 +663,7 @@ const registerToEvent = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.user?.userId;
+        const now = new Date();
         if (!id || !userId) {
             res.status(400).json({
                 success: false,
@@ -354,6 +676,10 @@ const registerToEvent = async (req, res) => {
             include: {
                 registrations: {
                     where: { status: 'CONFIRMED' }
+                },
+                invitations: {
+                    where: { status: { in: ['PENDING', 'USED'] } },
+                    select: { id: true }
                 }
             }
         });
@@ -373,7 +699,7 @@ const registerToEvent = async (req, res) => {
             return;
         }
         // Validar que el evento sea futuro
-        if (new Date(event.date) <= new Date()) {
+        if (new Date(event.date) <= now) {
             res.status(400).json({
                 success: false,
                 message: 'No puedes registrarte a un evento pasado'
@@ -390,17 +716,79 @@ const registerToEvent = async (req, res) => {
             }
         });
         if (existingRegistration) {
+            if (existingRegistration.status === 'CANCELLED') {
+                if (existingRegistration.cancelledAt) {
+                    const elapsedMs = now.getTime() - existingRegistration.cancelledAt.getTime();
+                    if (elapsedMs < REGISTRATION_COOLDOWN_MS) {
+                        const remainingSeconds = Math.ceil((REGISTRATION_COOLDOWN_MS - elapsedMs) / 1000);
+                        res.status(400).json({
+                            success: false,
+                            message: `Debes esperar ${remainingSeconds} segundo${remainingSeconds !== 1 ? 's' : ''} para volver a registrarte`
+                        });
+                        return;
+                    }
+                }
+                const confirmedCount = event.registrations.length + (event.invitations?.length || 0);
+                if (confirmedCount >= event.maxAttendees) {
+                    res.status(400).json({
+                        success: false,
+                        message: 'Evento completo'
+                    });
+                    return;
+                }
+                const registration = await database_1.prisma.eventRegistration.update({
+                    where: { id: existingRegistration.id },
+                    data: {
+                        status: 'CONFIRMED',
+                        cancelledAt: null
+                    }
+                });
+                await database_1.prisma.eventAuditLog.create({
+                    data: {
+                        eventId: id,
+                        actorId: userId,
+                        action: 'REGISTER',
+                        targetUserId: userId
+                    }
+                });
+                // Tracking automático de juego si el evento tiene categoría
+                if (event.gameName && event.gameCategory) {
+                    const { checkAndUnlockBadges } = await Promise.resolve().then(() => __importStar(require('./badgeController')));
+                    // Registrar el juego jugado
+                    await database_1.prisma.gamePlayHistory.create({
+                        data: {
+                            userId,
+                            eventId: id,
+                            gameName: event.gameName,
+                            gameCategory: event.gameCategory
+                        }
+                    });
+                    // Verificar y desbloquear badges
+                    await checkAndUnlockBadges(userId, event.gameCategory);
+                }
+                res.status(200).json({
+                    success: true,
+                    data: { registration },
+                    message: 'Te has registrado correctamente al evento'
+                });
+                return;
+            }
             res.status(400).json({
                 success: false,
-                message: existingRegistration.status === 'CANCELLED'
-                    ? 'Ya cancelaste tu registro a este evento'
-                    : 'Ya estás registrado a este evento'
+                message: 'Ya est?s registrado a este evento'
+            });
+            return;
+        }
+        const confirmedCount = event.registrations.length + (event.invitations?.length || 0);
+        if (confirmedCount >= event.maxAttendees) {
+            res.status(400).json({
+                success: false,
+                message: 'Evento completo'
             });
             return;
         }
         // Determinar estado: CONFIRMED o WAITLIST
-        const confirmedCount = event.registrations.length;
-        const registrationStatus = confirmedCount >= event.maxAttendees ? 'WAITLIST' : 'CONFIRMED';
+        const registrationStatus = 'CONFIRMED';
         const registration = await database_1.prisma.eventRegistration.create({
             data: {
                 eventId: id,
@@ -408,12 +796,33 @@ const registerToEvent = async (req, res) => {
                 status: registrationStatus
             }
         });
+        await database_1.prisma.eventAuditLog.create({
+            data: {
+                eventId: id,
+                actorId: userId,
+                action: 'REGISTER',
+                targetUserId: userId
+            }
+        });
+        // Tracking automático de juego si el evento tiene categoría
+        if (event.gameName && event.gameCategory) {
+            const { checkAndUnlockBadges } = await Promise.resolve().then(() => __importStar(require('./badgeController')));
+            // Registrar el juego jugado
+            await database_1.prisma.gamePlayHistory.create({
+                data: {
+                    userId,
+                    eventId: id,
+                    gameName: event.gameName,
+                    gameCategory: event.gameCategory
+                }
+            });
+            // Verificar y desbloquear badges
+            await checkAndUnlockBadges(userId, event.gameCategory);
+        }
         res.status(201).json({
             success: true,
             data: { registration },
-            message: registrationStatus === 'WAITLIST'
-                ? 'Te has registrado en lista de espera'
-                : 'Te has registrado correctamente al evento'
+            message: 'Te has registrado correctamente al evento'
         });
     }
     catch (error) {
@@ -465,22 +874,53 @@ const unregisterFromEvent = async (req, res) => {
         // Marcar como cancelado
         await database_1.prisma.eventRegistration.update({
             where: { id: registration.id },
-            data: { status: 'CANCELLED' }
+            data: { status: 'CANCELLED', cancelledAt: new Date() }
+        });
+        await database_1.prisma.eventAuditLog.create({
+            data: {
+                eventId: id,
+                actorId: userId,
+                action: 'UNREGISTER',
+                targetUserId: userId
+            }
         });
         // Si era CONFIRMED, promover el primero de la waitlist
         if (wasConfirmed) {
-            const firstWaitlisted = await database_1.prisma.eventRegistration.findFirst({
-                where: {
-                    eventId: id,
-                    status: 'WAITLIST'
-                },
-                orderBy: { createdAt: 'asc' }
-            });
-            if (firstWaitlisted) {
-                await database_1.prisma.eventRegistration.update({
-                    where: { id: firstWaitlisted.id },
-                    data: { status: 'CONFIRMED' }
-                });
+            const [eventInfo, confirmedCount] = await Promise.all([
+                database_1.prisma.event.findUnique({
+                    where: { id },
+                    select: {
+                        maxAttendees: true,
+                        invitations: {
+                            where: { status: { in: ['PENDING', 'USED'] } },
+                            select: { id: true }
+                        }
+                    }
+                }),
+                database_1.prisma.eventRegistration.count({
+                    where: {
+                        eventId: id,
+                        status: 'CONFIRMED'
+                    }
+                })
+            ]);
+            if (eventInfo) {
+                const totalConfirmed = confirmedCount + (eventInfo.invitations?.length || 0);
+                if (totalConfirmed < eventInfo.maxAttendees) {
+                    const firstWaitlisted = await database_1.prisma.eventRegistration.findFirst({
+                        where: {
+                            eventId: id,
+                            status: 'WAITLIST'
+                        },
+                        orderBy: { createdAt: 'asc' }
+                    });
+                    if (firstWaitlisted) {
+                        await database_1.prisma.eventRegistration.update({
+                            where: { id: firstWaitlisted.id },
+                            data: { status: 'CONFIRMED' }
+                        });
+                    }
+                }
             }
         }
         res.status(200).json({
@@ -497,6 +937,122 @@ const unregisterFromEvent = async (req, res) => {
     }
 };
 exports.unregisterFromEvent = unregisterFromEvent;
+/**
+ * DELETE /api/events/:id/registrations/:registrationId - Eliminar participante (organizador o admin)
+ */
+const removeParticipant = async (req, res) => {
+    try {
+        const { id, registrationId } = req.params;
+        const userId = req.user?.userId;
+        const userRole = req.user?.role;
+        if (!id || !registrationId || !userId) {
+            res.status(400).json({
+                success: false,
+                message: 'Datos inválidos'
+            });
+            return;
+        }
+        const registration = await database_1.prisma.eventRegistration.findUnique({
+            where: { id: registrationId },
+            include: {
+                event: {
+                    select: {
+                        id: true,
+                        createdBy: true,
+                        maxAttendees: true,
+                        eventGuests: { select: { id: true } }
+                    }
+                }
+            }
+        });
+        if (!registration || registration.eventId !== id) {
+            res.status(404).json({
+                success: false,
+                message: 'Registro no encontrado'
+            });
+            return;
+        }
+        const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+        const isOrganizer = registration.event?.createdBy === userId;
+        if (!isAdmin && !isOrganizer) {
+            res.status(403).json({
+                success: false,
+                message: 'No tienes permisos para eliminar participantes'
+            });
+            return;
+        }
+        if (registration.status === 'CANCELLED') {
+            res.status(400).json({
+                success: false,
+                message: 'El participante ya está cancelado'
+            });
+            return;
+        }
+        const wasConfirmed = registration.status === 'CONFIRMED';
+        await database_1.prisma.eventRegistration.update({
+            where: { id: registration.id },
+            data: { status: 'CANCELLED', cancelledAt: new Date() }
+        });
+        await database_1.prisma.eventAuditLog.create({
+            data: {
+                eventId: id,
+                actorId: userId,
+                action: 'REMOVE_PARTICIPANT',
+                targetUserId: registration.userId
+            }
+        });
+        if (wasConfirmed) {
+            const [eventInfo, confirmedCount] = await Promise.all([
+                database_1.prisma.event.findUnique({
+                    where: { id },
+                    select: {
+                        maxAttendees: true,
+                        invitations: {
+                            where: { status: { in: ['PENDING', 'USED'] } },
+                            select: { id: true }
+                        }
+                    }
+                }),
+                database_1.prisma.eventRegistration.count({
+                    where: {
+                        eventId: id,
+                        status: 'CONFIRMED'
+                    }
+                })
+            ]);
+            if (eventInfo) {
+                const totalConfirmed = confirmedCount + (eventInfo.invitations?.length || 0);
+                if (totalConfirmed < eventInfo.maxAttendees) {
+                    const firstWaitlisted = await database_1.prisma.eventRegistration.findFirst({
+                        where: {
+                            eventId: id,
+                            status: 'WAITLIST'
+                        },
+                        orderBy: { createdAt: 'asc' }
+                    });
+                    if (firstWaitlisted) {
+                        await database_1.prisma.eventRegistration.update({
+                            where: { id: firstWaitlisted.id },
+                            data: { status: 'CONFIRMED' }
+                        });
+                    }
+                }
+            }
+        }
+        res.status(200).json({
+            success: true,
+            message: 'Participante eliminado'
+        });
+    }
+    catch (error) {
+        console.error('Error al eliminar participante:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al eliminar participante'
+        });
+    }
+};
+exports.removeParticipant = removeParticipant;
 /**
  * GET /api/events/:id/attendees - Obtener lista de asistentes
  */
@@ -548,4 +1104,97 @@ const getEventAttendees = async (req, res) => {
     }
 };
 exports.getEventAttendees = getEventAttendees;
+/**
+ * Sincronizar bggId de eventos existentes con la tabla Game (Admin)
+ * Busca eventos que tienen gameName pero no bggId y los vincula con juegos existentes
+ */
+const syncEventBggIds = async (_req, res) => {
+    try {
+        // Buscar eventos con gameName pero sin bggId
+        const eventsWithoutBggId = await database_1.prisma.event.findMany({
+            where: {
+                gameName: { not: null },
+                bggId: null,
+                type: 'PARTIDA'
+            },
+            select: {
+                id: true,
+                gameName: true,
+                gameImage: true
+            }
+        });
+        console.log(`[SYNC] Encontrados ${eventsWithoutBggId.length} eventos sin bggId`);
+        const results = {
+            updated: 0,
+            notFound: 0,
+            errors: 0,
+            details: []
+        };
+        for (const event of eventsWithoutBggId) {
+            try {
+                // Buscar el juego en la tabla Game por nombre (case insensitive)
+                const game = await database_1.prisma.game.findFirst({
+                    where: {
+                        name: {
+                            equals: event.gameName,
+                            mode: 'insensitive'
+                        }
+                    },
+                    select: {
+                        id: true,
+                        name: true,
+                        image: true,
+                        thumbnail: true
+                    }
+                });
+                if (game) {
+                    // Actualizar el evento con el bggId
+                    await database_1.prisma.event.update({
+                        where: { id: event.id },
+                        data: { bggId: game.id }
+                    });
+                    results.updated++;
+                    results.details.push({
+                        eventId: event.id,
+                        gameName: event.gameName,
+                        status: 'updated',
+                        bggId: game.id
+                    });
+                    console.log(`[SYNC] Evento ${event.id} actualizado con bggId ${game.id}`);
+                }
+                else {
+                    results.notFound++;
+                    results.details.push({
+                        eventId: event.id,
+                        gameName: event.gameName,
+                        status: 'game_not_found'
+                    });
+                    console.log(`[SYNC] Juego no encontrado para evento ${event.id}: ${event.gameName}`);
+                }
+            }
+            catch (err) {
+                results.errors++;
+                results.details.push({
+                    eventId: event.id,
+                    gameName: event.gameName,
+                    status: 'error'
+                });
+                console.error(`[SYNC] Error procesando evento ${event.id}:`, err);
+            }
+        }
+        res.status(200).json({
+            success: true,
+            message: `Sincronización completada: ${results.updated} actualizados, ${results.notFound} juegos no encontrados, ${results.errors} errores`,
+            data: results
+        });
+    }
+    catch (error) {
+        console.error('Error al sincronizar bggIds:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al sincronizar bggIds'
+        });
+    }
+};
+exports.syncEventBggIds = syncEventBggIds;
 //# sourceMappingURL=eventController.js.map

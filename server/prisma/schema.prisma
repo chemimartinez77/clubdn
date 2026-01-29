@@ -203,6 +203,7 @@ model Event {
   gameImage       String?
   bggId           String?
   game            Game?    @relation("GameEvents", fields: [bggId], references: [id])
+  gameCategory    BadgeCategory? // Categoría para tracking de badges
 
   // Fecha y hora
   date            DateTime

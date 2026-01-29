@@ -9,6 +9,7 @@ import GameSearchModal from '../components/events/GameSearchModal';
 import { useToast } from '../hooks/useToast';
 import { api } from '../api/axios';
 import type { BGGGame, CreateEventData } from '../types/event';
+import { getCategoryDisplayName, getCategoryIcon } from '../types/badge';
 
 export default function CreatePartida() {
   const navigate = useNavigate();
@@ -57,6 +58,8 @@ export default function CreatePartida() {
     if (startHour) eventDate.setHours(parseInt(startHour));
     if (startMinute) eventDate.setMinutes(parseInt(startMinute));
 
+    const gameCategory = formData.get('gameCategory') as string;
+
     const data: CreateEventData = {
       type: 'PARTIDA',
       title: formData.get('title') as string,
@@ -72,7 +75,8 @@ export default function CreatePartida() {
       attend,
       gameName: selectedGame?.name,
       gameImage: selectedGame?.image,
-      bggId: selectedGame?.id
+      bggId: selectedGame?.id,
+      gameCategory: gameCategory || undefined
     };
 
     createMutation.mutate(data);
@@ -162,6 +166,29 @@ export default function CreatePartida() {
                     Buscar juego en BoardGameGeek
                   </button>
                 )}
+              </div>
+
+              {/* Categoría del juego (para badges) */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
+                  Categoría del juego (opcional)
+                </label>
+                <select
+                  name="gameCategory"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                >
+                  <option value="">Sin categoría</option>
+                  <option value="EUROGAMES">{getCategoryIcon('EUROGAMES')} {getCategoryDisplayName('EUROGAMES')}</option>
+                  <option value="TEMATICOS">{getCategoryIcon('TEMATICOS')} {getCategoryDisplayName('TEMATICOS')}</option>
+                  <option value="WARGAMES">{getCategoryIcon('WARGAMES')} {getCategoryDisplayName('WARGAMES')}</option>
+                  <option value="ROL">{getCategoryIcon('ROL')} {getCategoryDisplayName('ROL')}</option>
+                  <option value="MINIATURAS">{getCategoryIcon('MINIATURAS')} {getCategoryDisplayName('MINIATURAS')}</option>
+                  <option value="WARHAMMER">{getCategoryIcon('WARHAMMER')} {getCategoryDisplayName('WARHAMMER')}</option>
+                  <option value="FILLERS_PARTY">{getCategoryIcon('FILLERS_PARTY')} {getCategoryDisplayName('FILLERS_PARTY')}</option>
+                </select>
+                <p className="text-xs text-[var(--color-textSecondary)] mt-1">
+                  Ayuda a otros miembros a desbloquear badges automáticamente
+                </p>
               </div>
 
               {/* Asistencia */}

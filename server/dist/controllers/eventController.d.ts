@@ -30,7 +30,16 @@ export declare const registerToEvent: (req: Request, res: Response) => Promise<v
  */
 export declare const unregisterFromEvent: (req: Request, res: Response) => Promise<void>;
 /**
+ * DELETE /api/events/:id/registrations/:registrationId - Eliminar participante (organizador o admin)
+ */
+export declare const removeParticipant: (req: Request, res: Response) => Promise<void>;
+/**
  * GET /api/events/:id/attendees - Obtener lista de asistentes
  */
 export declare const getEventAttendees: (req: Request, res: Response) => Promise<void>;
+/**
+ * Sincronizar bggId de eventos existentes con la tabla Game (Admin)
+ * Busca eventos que tienen gameName pero no bggId y los vincula con juegos existentes
+ */
+export declare const syncEventBggIds: (_req: Request, res: Response) => Promise<void>;
 //# sourceMappingURL=eventController.d.ts.map

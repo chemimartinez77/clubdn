@@ -1,35 +1,46 @@
 "use strict";
-// server/src/services/emailService.ts
-// Servicio de emails usando Resend
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendRejectionEmail = exports.sendApprovalEmail = exports.sendAdminNotification = exports.sendVerificationEmail = exports.sendEmail = void 0;
-const resend_1 = require("resend");
+// server/src/services/emailService.ts
+// Servicio de emails usando Resend
+const axios_1 = __importDefault(require("axios"));
 const database_1 = require("../config/database");
-const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
+const resendApiKey = process.env.RESEND_API_KEY;
+const resendFrom = process.env.RESEND_FROM || process.env.EMAIL_FROM || 'Club DN <no-reply@clubdn.es>';
+const resendApiUrl = 'https://api.resend.com/emails';
 /**
  * Función base para enviar emails
  */
 const sendEmail = async (options) => {
     try {
-        const { data, error } = await resend.emails.send({
-            from: process.env.EMAIL_FROM || 'Club DN <onboarding@resend.dev>',
+        if (!resendApiKey) {
+            throw new Error('RESEND_API_KEY no configurada');
+        }
+        const response = await axios_1.default.post(resendApiUrl, {
+            from: resendFrom,
             to: options.to,
             subject: options.subject,
-            html: options.html,
+            html: options.html
+        }, {
+            headers: {
+                Authorization: `Bearer ${resendApiKey}`,
+                'Content-Type': 'application/json'
+            },
+            timeout: 15000
         });
-        if (error) {
-            throw new Error(error.message);
-        }
         // Log exitoso
         await database_1.prisma.emailLog.create({
             data: {
                 to: options.to,
                 subject: options.subject,
                 template: options.template,
-                success: true,
+                success: true
             },
         });
-        return { success: true, messageId: data?.id };
+        return { success: true, messageId: response.data?.id };
     }
     catch (error) {
         // Log con error
@@ -239,7 +250,7 @@ const sendApprovalEmail = async (email, name, customMessage) => {
   `;
     return (0, exports.sendEmail)({
         to: email,
-        subject: '🎉 ¡Bienvenido al Club DN!',
+        subject: '🎉 ¡Bienvenido al Club Dreadnought!',
         html,
         template: 'approval',
     });

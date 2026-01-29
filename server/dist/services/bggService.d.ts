@@ -36,10 +36,16 @@ export interface BGGGameFull {
     artists: string[];
     publishers: string[];
 }
+export interface BGGSearchResult {
+    games: BGGGame[];
+    total: number;
+    page: number;
+    pageSize: number;
+}
 /**
  * Buscar juegos en BoardGameGeek
  */
-export declare function searchBGGGames(query: string): Promise<BGGGame[]>;
+export declare function searchBGGGames(query: string, page?: number, pageSize?: number): Promise<BGGSearchResult>;
 /**
  * Obtener detalles de un juego específico
  */

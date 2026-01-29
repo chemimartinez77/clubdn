@@ -350,6 +350,7 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
       gameName,
       gameImage,
       bggId,
+      gameCategory,
       startHour,
       startMinute,
       durationHours,
@@ -402,6 +403,7 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
         gameName,
         gameImage,
         bggId,
+        gameCategory: gameCategory || null,
         startHour: startHour !== undefined ? parseInt(startHour) : null,
         startMinute: startMinute !== undefined ? parseInt(startMinute) : null,
         durationHours: durationHours !== undefined ? parseInt(durationHours) : null,
@@ -429,6 +431,24 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
           status: 'CONFIRMED'
         }
       });
+
+      // Tracking automático si el evento tiene nombre de juego y categoría
+      if (gameName && gameCategory) {
+        const { checkAndUnlockBadges } = await import('./badgeController');
+
+        // Registrar el juego jugado
+        await prisma.gamePlayHistory.create({
+          data: {
+            userId,
+            eventId: event.id,
+            gameName,
+            gameCategory
+          }
+        });
+
+        // Verificar y desbloquear badges
+        await checkAndUnlockBadges(userId, gameCategory);
+      }
     }
 
     // Notificar a usuarios con preferencia activada
@@ -787,6 +807,24 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
             }
           });
 
+          // Tracking automático de juego si el evento tiene categoría
+          if (event.gameName && event.gameCategory) {
+            const { checkAndUnlockBadges } = await import('./badgeController');
+
+            // Registrar el juego jugado
+            await prisma.gamePlayHistory.create({
+              data: {
+                userId,
+                eventId: id,
+                gameName: event.gameName,
+                gameCategory: event.gameCategory
+              }
+            });
+
+            // Verificar y desbloquear badges
+            await checkAndUnlockBadges(userId, event.gameCategory);
+          }
+
           res.status(200).json({
             success: true,
             data: { registration },
@@ -830,6 +868,24 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
           targetUserId: userId
         }
       });
+
+      // Tracking automático de juego si el evento tiene categoría
+      if (event.gameName && event.gameCategory) {
+        const { checkAndUnlockBadges } = await import('./badgeController');
+
+        // Registrar el juego jugado
+        await prisma.gamePlayHistory.create({
+          data: {
+            userId,
+            eventId: id,
+            gameName: event.gameName,
+            gameCategory: event.gameCategory
+          }
+        });
+
+        // Verificar y desbloquear badges
+        await checkAndUnlockBadges(userId, event.gameCategory);
+      }
 
       res.status(201).json({
         success: true,

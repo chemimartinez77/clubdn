@@ -1,4 +1,6 @@
 // client/src/types/event.ts
+import type { BadgeCategory } from './badge';
+
 export type EventType = 'PARTIDA' | 'TORNEO' | 'OTROS';
 export type EventStatus = 'SCHEDULED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
 export type RegistrationStatus = 'CONFIRMED' | 'CANCELLED' | 'WAITLIST';
@@ -13,6 +15,7 @@ export interface Event {
   gameName?: string | null;
   gameImage?: string | null;
   bggId?: string | null;
+  gameCategory?: BadgeCategory | null;
   game?: {
     thumbnail: string | null;
     image: string | null;
@@ -120,6 +123,7 @@ export interface CreateEventData {
   gameName?: string;
   gameImage?: string;
   bggId?: string;
+  gameCategory?: string;
 
   // Fecha y hora
   date: string;

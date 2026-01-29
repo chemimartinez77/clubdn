@@ -11,4 +11,8 @@ export declare const getUserProfile: (req: Request, res: Response) => Promise<vo
  * Actualizar perfil del usuario autenticado
  */
 export declare const updateMyProfile: (req: Request, res: Response) => Promise<void>;
+/**
+ * Subir avatar del usuario autenticado
+ */
+export declare const uploadAvatar: (req: Request, res: Response) => Promise<void>;
 //# sourceMappingURL=profileController.d.ts.map

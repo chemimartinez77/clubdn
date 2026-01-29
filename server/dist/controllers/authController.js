@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -45,7 +78,19 @@ const register = async (req, res) => {
             },
         });
         // Enviar email de verificación
-        await (0, emailService_1.sendVerificationEmail)(email, name, verificationToken);
+        try {
+            await (0, emailService_1.sendVerificationEmail)(email, name, verificationToken);
+        }
+        catch (mailError) {
+            console.error('Error enviando email de verificaci?n:', mailError);
+            return res.status(201).json({
+                success: true,
+                message: 'Registro exitoso, pero no se pudo enviar el email de verificación.',
+                data: {
+                    email: user.email,
+                },
+            });
+        }
         return res.status(201).json({
             success: true,
             message: 'Registro exitoso. Por favor, verifica tu email.',
@@ -64,7 +109,7 @@ const register = async (req, res) => {
 };
 exports.register = register;
 /**
- * Verificación de email
+ * Verificacion de email
  * GET /api/auth/verify-email?token=xxx
  */
 const verifyEmail = async (req, res) => {
@@ -73,7 +118,7 @@ const verifyEmail = async (req, res) => {
         if (!token || typeof token !== 'string') {
             return res.status(400).json({
                 success: false,
-                message: 'Token de verificación no proporcionado',
+                message: 'Token de verificaci\u00f3n no proporcionado',
             });
         }
         // Buscar usuario por token
@@ -85,14 +130,14 @@ const verifyEmail = async (req, res) => {
         if (!user) {
             return res.status(400).json({
                 success: false,
-                message: 'Token de verificación inválido',
+                message: 'Token de verificaci\u00f3n inv\u00e1lido o ya utilizado',
             });
         }
         // Verificar que el token no haya expirado
         if (user.tokenExpiry && user.tokenExpiry < new Date()) {
             return res.status(400).json({
                 success: false,
-                message: 'El token de verificación ha expirado',
+                message: 'El token de verificaci\u00f3n ha expirado',
             });
         }
         // Actualizar usuario
@@ -107,9 +152,24 @@ const verifyEmail = async (req, res) => {
         });
         // Obtener email del admin por defecto
         const defaultAdminEmail = process.env.DEFAULT_ADMIN_EMAIL;
+        const displayName = user.name || 'Usuario';
+        const displayEmail = user.email || 'Email no disponible';
         if (defaultAdminEmail) {
-            // Enviar notificación al admin
-            await (0, emailService_1.sendAdminNotification)(defaultAdminEmail, user.name, user.email);
+            try {
+                // Enviar notificacion al admin sin bloquear la verificacion
+                await (0, emailService_1.sendAdminNotification)(defaultAdminEmail, displayName, displayEmail);
+            }
+            catch (notifyError) {
+                console.error('Error enviando notificacion al admin:', notifyError);
+            }
+        }
+        try {
+            // Notificar a admins en la aplicacion
+            const { notifyAdminsNewUser } = await Promise.resolve().then(() => __importStar(require('../services/notificationService')));
+            await notifyAdminsNewUser(displayName, displayEmail);
+        }
+        catch (notifyError) {
+            console.error('Error creando notificacion en la app:', notifyError);
         }
         return res.status(200).json({
             success: true,
@@ -117,18 +177,14 @@ const verifyEmail = async (req, res) => {
         });
     }
     catch (error) {
-        console.error('Error en verificación de email:', error);
+        console.error('Error en verificacion de email:', error);
         return res.status(500).json({
             success: false,
-            message: 'Error al verificar el email',
+            message: 'Error al verificar el email. Inténtalo de nuevo en unos minutos.',
         });
     }
 };
 exports.verifyEmail = verifyEmail;
-/**
- * Obtener usuario actual
- * GET /api/auth/me
- */
 const getCurrentUser = async (req, res) => {
     try {
         const userId = req.user?.userId;
@@ -149,6 +205,16 @@ const getCurrentUser = async (req, res) => {
                 emailVerified: true,
                 createdAt: true,
                 lastLoginAt: true,
+                membership: {
+                    select: {
+                        type: true
+                    }
+                },
+                profile: {
+                    select: {
+                        avatar: true
+                    }
+                }
             },
         });
         if (!user) {
@@ -287,6 +353,18 @@ const login = async (req, res) => {
         const updatedUser = await database_1.prisma.user.update({
             where: { id: user.id },
             data: { lastLoginAt: new Date() },
+            include: {
+                membership: {
+                    select: {
+                        type: true
+                    }
+                },
+                profile: {
+                    select: {
+                        avatar: true
+                    }
+                }
+            }
         });
         // Registrar login exitoso
         await (0, loginAttemptService_1.logLoginAttempt)({
@@ -307,6 +385,8 @@ const login = async (req, res) => {
                     status: updatedUser.status,
                     createdAt: updatedUser.createdAt.toISOString(),
                     lastLoginAt: updatedUser.lastLoginAt?.toISOString() || null,
+                    membership: updatedUser.membership,
+                    profile: updatedUser.profile
                 },
             },
         });
