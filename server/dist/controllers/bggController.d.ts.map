@@ -1,1 +1,0 @@
-{"version":3,"file":"bggController.d.ts","sourceRoot":"","sources":["../../src/controllers/bggController.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,OAAO,EAAE,QAAQ,EAAE,MAAM,SAAS,CAAC;AAG5C;;GAEG;AACH,eAAO,MAAM,WAAW,GAAU,KAAK,OAAO,EAAE,KAAK,QAAQ,KAAG,OAAO,CAAC,IAAI,CAsC3E,CAAC;AAEF;;GAEG;AACH,eAAO,MAAM,OAAO,GAAU,KAAK,OAAO,EAAE,KAAK,QAAQ,KAAG,OAAO,CAAC,IAAI,CAiCvE,CAAC"}

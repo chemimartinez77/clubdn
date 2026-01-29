@@ -1,1 +1,0 @@
-{"version":3,"file":"bggRoutes.js","sourceRoot":"","sources":["../../src/routes/bggRoutes.ts"],"names":[],"mappings":";;AAAA,iCAAiC;AACjC,qCAAiC;AACjC,gEAAoE;AACpE,6CAAkD;AAElD,MAAM,MAAM,GAAG,IAAA,gBAAM,GAAE,CAAC;AAExB,8CAA8C;AAC9C,MAAM,CAAC,GAAG,CAAC,SAAS,EAAE,mBAAY,EAAE,2BAAW,CAAC,CAAC;AACjD,MAAM,CAAC,GAAG,CAAC,WAAW,EAAE,mBAAY,EAAE,uBAAO,CAAC,CAAC;AAE/C,kBAAe,MAAM,CAAC"}
