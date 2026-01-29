@@ -319,7 +319,7 @@ exports.sendRejectionEmail = sendRejectionEmail;
  * Enviar email de recuperación de contraseña
  */
 const sendPasswordResetEmail = async (email, name, token) => {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = process.env.CLIENT_URL || 'https://app.clubdreadnought.org';
     const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
     const html = `
     <!DOCTYPE html>
