@@ -35,7 +35,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --exec tsx src/index.ts",
-    "build": "rm -rf dist && prisma migrate deploy && prisma generate && tsc",
+    "build": "bash build.sh",
     "start": "node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
