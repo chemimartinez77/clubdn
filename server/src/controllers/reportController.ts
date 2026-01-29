@@ -176,6 +176,10 @@ export const toggleVote = async (req: Request, res: Response): Promise<void> => 
       res.status(401).json({ success: false, message: 'Usuario no autenticado' });
       return;
     }
+    if (!id) {
+      res.status(400).json({ success: false, message: 'ID de reporte inválido' });
+      return;
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const existingReport = await tx.report.findUnique({ where: { id } });
@@ -227,6 +231,10 @@ export const updateReportAdmin = async (req: Request, res: Response): Promise<vo
   try {
     const { id } = req.params;
     const { status, internalPriority, devResponse } = req.body;
+    if (!id) {
+      res.status(400).json({ success: false, message: 'ID de reporte inválido' });
+      return;
+    }
 
     const updateData: {
       status?: ReportStatus;
