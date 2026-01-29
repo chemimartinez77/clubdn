@@ -348,3 +348,82 @@ export const sendRejectionEmail = async (
     template: 'rejection',
   });
 };
+
+/**
+ * Enviar email de recuperación de contraseña
+ */
+export const sendPasswordResetEmail = async (email: string, name: string, token: string) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Recuperación de contraseña - Club DN</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f3f4f6;">
+        <div style="max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 40px 30px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">
+              🔐 Recuperación de Contraseña
+            </h1>
+          </div>
+
+          <!-- Content -->
+          <div style="padding: 40px 30px;">
+            <p style="font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 20px;">
+              Hola <strong>${name}</strong>,
+            </p>
+
+            <p style="font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 20px;">
+              Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en Club DN.
+            </p>
+
+            <p style="font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 30px;">
+              Haz clic en el botón de abajo para crear una nueva contraseña:
+            </p>
+
+            <!-- CTA Button -->
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}"
+                 style="display: inline-block; background: #6366f1; color: white; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                Restablecer Contraseña
+              </a>
+            </div>
+
+            <div style="background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0;">
+              <p style="margin: 0; color: #92400e; font-size: 14px;">
+                <strong>⚠️ Importante:</strong> Este enlace expirará en 1 hora. Si no solicitaste este cambio, puedes ignorar este email.
+              </p>
+            </div>
+
+            <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+              Si tienes problemas con el botón, copia y pega este enlace en tu navegador:
+            </p>
+            <p style="font-size: 12px; color: #9ca3af; word-break: break-all; background: #f9fafb; padding: 10px; border-radius: 4px;">
+              ${resetUrl}
+            </p>
+
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+
+            <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">
+              Saludos,<br>
+              <strong>El equipo del Club DN</strong>
+            </p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: 'Recuperación de contraseña - Club DN',
+    html,
+    template: 'password_reset',
+  });
+};

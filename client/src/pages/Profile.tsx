@@ -7,6 +7,7 @@ import Button from '../components/ui/Button';
 import ThemeSelector from '../components/ThemeSelector';
 import NoughterColorSelector from '../components/profile/NoughterColorSelector';
 import BadgeGrid from '../components/badges/BadgeGrid';
+import ChangePasswordSection from '../components/profile/ChangePasswordSection';
 import { useToast } from '../hooks/useToast';
 import { api } from '../api/axios';
 import type { UserProfile, UpdateProfileData } from '../types/profile';
@@ -603,6 +604,15 @@ export default function Profile() {
             )}
           </CardContent>
         </Card>
+
+        {/* Change Password Section */}
+        {!isEditing && (
+          <Card>
+            <CardContent>
+              <ChangePasswordSection />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Badges Section */}
         {!isEditing && (

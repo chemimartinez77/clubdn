@@ -111,5 +111,73 @@ router.post('/login', [
     }
     return (0, authController_1.login)(req, res);
 });
+/**
+ * POST /api/auth/request-password-reset
+ * Solicitar recuperación de contraseña
+ */
+router.post('/request-password-reset', [
+    (0, express_validator_1.body)('email')
+        .trim()
+        .isEmail()
+        .withMessage('Debe proporcionar un email válido')
+        .normalizeEmail(),
+], async (req, res) => {
+    const { validationResult } = await Promise.resolve().then(() => __importStar(require('express-validator')));
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            success: false,
+            message: 'Error de validación',
+            errors: errors.array(),
+        });
+    }
+    return (0, authController_1.requestPasswordReset)(req, res);
+});
+/**
+ * POST /api/auth/reset-password
+ * Restablecer contraseña con token
+ */
+router.post('/reset-password', [
+    (0, express_validator_1.body)('token')
+        .notEmpty()
+        .withMessage('Token requerido'),
+    (0, express_validator_1.body)('newPassword')
+        .isLength({ min: 6 })
+        .withMessage('La contraseña debe tener al menos 6 caracteres'),
+], async (req, res) => {
+    const { validationResult } = await Promise.resolve().then(() => __importStar(require('express-validator')));
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            success: false,
+            message: 'Error de validación',
+            errors: errors.array(),
+        });
+    }
+    return (0, authController_1.resetPassword)(req, res);
+});
+/**
+ * POST /api/auth/change-password
+ * Cambiar contraseña (usuario autenticado)
+ */
+router.post('/change-password', auth_1.authenticate, [
+    (0, express_validator_1.body)('currentPassword')
+        .notEmpty()
+        .withMessage('Contraseña actual requerida'),
+    (0, express_validator_1.body)('newPassword')
+        .isLength({ min: 6 })
+        .withMessage('La nueva contraseña debe tener al menos 6 caracteres'),
+], async (req, res) => {
+    const { validationResult } = await Promise.resolve().then(() => __importStar(require('express-validator')));
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            success: false,
+            message: 'Error de validación',
+            errors: errors.array(),
+        });
+    }
+    return (0, authController_1.changePassword)(req, res);
+});
 exports.default = router;
 //# sourceMappingURL=authRoutes.js.map

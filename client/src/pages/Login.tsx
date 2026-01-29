@@ -243,6 +243,14 @@ export default function Login() {
             {errors.password && (
               <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
             )}
+            <div className="text-right">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-[var(--color-primary)] hover:text-[var(--color-primaryDark)] font-medium transition-colors"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
           </div>
 
           <button

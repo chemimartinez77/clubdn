@@ -44,7 +44,10 @@ model User {
   emailVerified     Boolean     @default(false)
   verificationToken String?     @unique
   tokenExpiry       DateTime?
-  
+
+  resetPasswordToken String?    @unique
+  resetPasswordExpiry DateTime?
+
   approvedBy        String?
   approvedAt        DateTime?
   rejectedBy        String?

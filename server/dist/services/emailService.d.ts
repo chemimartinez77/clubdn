@@ -39,5 +39,12 @@ export declare const sendRejectionEmail: (email: string, name: string, reason?: 
     success: boolean;
     messageId: any;
 }>;
+/**
+ * Enviar email de recuperación de contraseña
+ */
+export declare const sendPasswordResetEmail: (email: string, name: string, token: string) => Promise<{
+    success: boolean;
+    messageId: any;
+}>;
 export {};
 //# sourceMappingURL=emailService.d.ts.map

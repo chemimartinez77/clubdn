@@ -1,7 +1,15 @@
 // server/src/routes/authRoutes.ts
 import { Router, Request, Response } from 'express';
 import { body } from 'express-validator';
-import { register, verifyEmail, login, getCurrentUser } from '../controllers/authController';
+import {
+  register,
+  verifyEmail,
+  login,
+  getCurrentUser,
+  requestPasswordReset,
+  resetPassword,
+  changePassword
+} from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
@@ -91,6 +99,96 @@ router.post(
     }
 
     return login(req, res);
+  }
+);
+
+/**
+ * POST /api/auth/request-password-reset
+ * Solicitar recuperación de contraseña
+ */
+router.post(
+  '/request-password-reset',
+  [
+    body('email')
+      .trim()
+      .isEmail()
+      .withMessage('Debe proporcionar un email válido')
+      .normalizeEmail(),
+  ],
+  async (req: Request, res: Response) => {
+    const { validationResult } = await import('express-validator');
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Error de validación',
+        errors: errors.array(),
+      });
+    }
+
+    return requestPasswordReset(req, res);
+  }
+);
+
+/**
+ * POST /api/auth/reset-password
+ * Restablecer contraseña con token
+ */
+router.post(
+  '/reset-password',
+  [
+    body('token')
+      .notEmpty()
+      .withMessage('Token requerido'),
+    body('newPassword')
+      .isLength({ min: 6 })
+      .withMessage('La contraseña debe tener al menos 6 caracteres'),
+  ],
+  async (req: Request, res: Response) => {
+    const { validationResult } = await import('express-validator');
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Error de validación',
+        errors: errors.array(),
+      });
+    }
+
+    return resetPassword(req, res);
+  }
+);
+
+/**
+ * POST /api/auth/change-password
+ * Cambiar contraseña (usuario autenticado)
+ */
+router.post(
+  '/change-password',
+  authenticate,
+  [
+    body('currentPassword')
+      .notEmpty()
+      .withMessage('Contraseña actual requerida'),
+    body('newPassword')
+      .isLength({ min: 6 })
+      .withMessage('La nueva contraseña debe tener al menos 6 caracteres'),
+  ],
+  async (req: Request, res: Response) => {
+    const { validationResult } = await import('express-validator');
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Error de validación',
+        errors: errors.array(),
+      });
+    }
+
+    return changePassword(req, res);
   }
 );
 
