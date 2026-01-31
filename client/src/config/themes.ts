@@ -242,10 +242,10 @@ export const themes: Record<ThemeName, Theme> = {
         border: '#4a3728',
         hover: '#4a3728',
         accent: '#fbbf24',
-        calendarDaySocio: '#3d2f20',
-        calendarDayColaborador: '#4d3a28',
-        calendarTextSocio: '#fbbf24',
-        calendarTextColaborador: '#fcd34d'
+        calendarDaySocio: '#4d3a1a',
+        calendarDayColaborador: '#5a4520',
+        calendarTextSocio: '#fcd34d',
+        calendarTextColaborador: '#fde68a'
       }
     }
   },
@@ -280,10 +280,10 @@ export const themes: Record<ThemeName, Theme> = {
         border: '#3f4147',
         hover: '#404249',
         accent: '#949cf7',
-        calendarDaySocio: '#35373c',
-        calendarDayColaborador: '#3f4249',
-        calendarTextSocio: '#949cf7',
-        calendarTextColaborador: '#b5bdf8'
+        calendarDaySocio: '#3d3f4a',
+        calendarDayColaborador: '#4a4d58',
+        calendarTextSocio: '#a5b4fc',
+        calendarTextColaborador: '#c7d2fe'
       }
     }
   }
