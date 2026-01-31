@@ -923,6 +923,13 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
           eventId: id,
           userId
         }
+      },
+      include: {
+        event: {
+          select: {
+            date: true
+          }
+        }
       }
     });
 
@@ -930,6 +937,17 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
       res.status(404).json({
         success: false,
         message: 'No estás registrado a este evento'
+      });
+      return;
+    }
+
+    // Validar que el evento no haya comenzado
+    const eventDate = new Date(registration.event.date);
+    const now = new Date();
+    if (eventDate <= now) {
+      res.status(400).json({
+        success: false,
+        message: 'No puedes cancelar tu registro en un evento que ya ha comenzado o pasado'
       });
       return;
     }
@@ -1037,6 +1055,7 @@ export const removeParticipant = async (req: Request, res: Response): Promise<vo
         event: {
           select: {
             id: true,
+            date: true,
             createdBy: true,
             maxAttendees: true,
             eventGuests: { select: { id: true } }
@@ -1060,6 +1079,17 @@ export const removeParticipant = async (req: Request, res: Response): Promise<vo
       res.status(403).json({
         success: false,
         message: 'No tienes permisos para eliminar participantes'
+      });
+      return;
+    }
+
+    // Validar que el evento no haya comenzado
+    const eventDate = new Date(registration.event.date);
+    const now = new Date();
+    if (eventDate <= now) {
+      res.status(400).json({
+        success: false,
+        message: 'No se pueden eliminar participantes de un evento que ya ha comenzado o pasado'
       });
       return;
     }
