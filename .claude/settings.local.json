@@ -42,7 +42,14 @@
       "Bash(git push:*)",
       "Bash(npm run type-check:*)",
       "Bash(dir /B c:proyectosclubdnclientpublicnoughter*.png)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(source:*)",
+      "Bash(psql:*)",
+      "Bash(where:*)",
+      "Bash(railway --version:*)",
+      "Bash(railway status:*)",
+      "Bash(railway link:*)",
+      "Bash(DATABASE_URL=\"$RAILWAY_DATABASE_URL\" npx prisma db push:*)"
     ]
   }
 }
