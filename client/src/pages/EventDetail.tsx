@@ -797,6 +797,7 @@ export default function EventDetail() {
           <CardContent className="p-6">
             <EventPhotoGallery
               eventId={id!}
+              eventDate={event.date}
               canUpload={!!(event.isUserRegistered && event.userRegistrationStatus === 'CONFIRMED')}
               currentUserId={user?.id}
               isAdmin={isAdmin}

@@ -21,6 +21,7 @@ interface EventPhoto {
 
 interface EventPhotoGalleryProps {
   eventId: string;
+  eventDate: string; // Fecha del evento para validar si ya comenzó
   canUpload: boolean; // true si el usuario es SOCIO/COLABORADOR registrado
   currentUserId?: string;
   isAdmin?: boolean;
@@ -30,6 +31,7 @@ const MAX_PHOTOS = 8;
 
 export default function EventPhotoGallery({
   eventId,
+  eventDate,
   canUpload,
   currentUserId,
   isAdmin = false
@@ -40,6 +42,7 @@ export default function EventPhotoGallery({
   const [selectedPhoto, setSelectedPhoto] = useState<EventPhoto | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [caption, setCaption] = useState('');
+  const [showDateWarning, setShowDateWarning] = useState(false);
 
   // Fetch photos
   const { data: photos = [], isLoading } = useQuery({
@@ -130,6 +133,20 @@ export default function EventPhotoGallery({
     });
   };
 
+  const handleUploadClick = () => {
+    const now = new Date();
+    const eventDateTime = new Date(eventDate);
+
+    if (eventDateTime > now) {
+      // El evento aún no ha comenzado
+      setShowDateWarning(true);
+      return;
+    }
+
+    // El evento ya comenzó, permitir subir foto
+    fileInputRef.current?.click();
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-4">
@@ -160,7 +177,7 @@ export default function EventPhotoGallery({
               type="button"
               variant="outline"
               disabled={isUploading}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={handleUploadClick}
             >
               {isUploading ? (
                 <>
@@ -261,6 +278,37 @@ export default function EventPhotoGallery({
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Warning Modal - Event not started */}
+      <Modal
+        isOpen={showDateWarning}
+        onClose={() => setShowDateWarning(false)}
+        title="Evento no iniciado"
+      >
+        <div className="space-y-4">
+          <p className="text-[var(--color-textSecondary)]">
+            Solo se pueden subir fotos a eventos que ya hayan comenzado.
+          </p>
+          <p className="text-[var(--color-textSecondary)]">
+            Este evento está programado para el{' '}
+            <span className="font-semibold text-[var(--color-text)]">
+              {new Date(eventDate).toLocaleDateString('es-ES', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </span>
+          </p>
+          <div className="flex justify-end">
+            <Button onClick={() => setShowDateWarning(false)}>
+              Entendido
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
