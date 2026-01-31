@@ -94,7 +94,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Escribe el nombre del juego..."
-                className="w-full px-4 py-3 pl-10 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                className="w-full px-4 py-3 pl-10 bg-[var(--color-inputBackground)] text-[var(--color-inputText)] border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent placeholder:text-[var(--color-textSecondary)]"
                 autoFocus
               />
               <svg
@@ -171,7 +171,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                 <button
                   key={game.id}
                   onClick={() => handleSelectGame(game)}
-                  className="flex items-center gap-4 p-3 rounded-lg border border-[var(--color-cardBorder)] hover:bg-[var(--color-primary-50)] hover:border-[var(--color-primary-300)] transition-colors text-left"
+                  className="flex items-center gap-4 p-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] hover:bg-[var(--color-hover)] hover:border-[var(--color-primary)] transition-colors text-left"
                 >
                   {game.thumbnail ? (
                     <img
