@@ -21,6 +21,10 @@ export interface ThemeColors {
   border: string;
   hover: string;
   accent: string;
+  calendarDaySocio: string;
+  calendarDayColaborador: string;
+  calendarTextSocio: string;
+  calendarTextColaborador: string;
 }
 
 export interface Theme {
@@ -47,7 +51,11 @@ const lightBase = {
   text: '#111827',
   textSecondary: '#4b5563',
   border: '#e5e7eb',
-  hover: '#f3f4f6'
+  hover: '#f3f4f6',
+  calendarDaySocio: '#d1fae5',
+  calendarDayColaborador: '#fef3c7',
+  calendarTextSocio: '#065f46',
+  calendarTextColaborador: '#78350f'
 };
 
 export const themes: Record<ThemeName, Theme> = {
@@ -81,7 +89,11 @@ export const themes: Record<ThemeName, Theme> = {
         textSecondary: '#d1d5db',
         border: '#4c1d95',
         hover: '#6b21a8',
-        accent: '#c084fc'
+        accent: '#c084fc',
+        calendarDaySocio: '#2d1b4e',
+        calendarDayColaborador: '#3d2465',
+        calendarTextSocio: '#c084fc',
+        calendarTextColaborador: '#e9d5ff'
       }
     }
   },
@@ -115,7 +127,11 @@ export const themes: Record<ThemeName, Theme> = {
         textSecondary: '#cbd5e1',
         border: '#334155',
         hover: '#1d4ed8',
-        accent: '#60a5fa'
+        accent: '#60a5fa',
+        calendarDaySocio: '#1e3a5f',
+        calendarDayColaborador: '#2d4a7c',
+        calendarTextSocio: '#60a5fa',
+        calendarTextColaborador: '#93c5fd'
       }
     }
   },
@@ -149,7 +165,11 @@ export const themes: Record<ThemeName, Theme> = {
         textSecondary: '#d1d5db',
         border: '#064e3b',
         hover: '#059669',
-        accent: '#34d399'
+        accent: '#34d399',
+        calendarDaySocio: '#1e3a2f',
+        calendarDayColaborador: '#2d4a3c',
+        calendarTextSocio: '#34d399',
+        calendarTextColaborador: '#6ee7b7'
       }
     }
   },
@@ -183,7 +203,11 @@ export const themes: Record<ThemeName, Theme> = {
         textSecondary: '#d1d5db',
         border: '#7f1d1d',
         hover: '#c92a2a',
-        accent: '#f87171'
+        accent: '#f87171',
+        calendarDaySocio: '#3d1f1f',
+        calendarDayColaborador: '#4d2626',
+        calendarTextSocio: '#fca5a5',
+        calendarTextColaborador: '#fecaca'
       }
     }
   },
@@ -217,7 +241,11 @@ export const themes: Record<ThemeName, Theme> = {
         textSecondary: '#d4b896',
         border: '#4a3728',
         hover: '#4a3728',
-        accent: '#fbbf24'
+        accent: '#fbbf24',
+        calendarDaySocio: '#3d2f20',
+        calendarDayColaborador: '#4d3a28',
+        calendarTextSocio: '#fbbf24',
+        calendarTextColaborador: '#fcd34d'
       }
     }
   },
@@ -251,7 +279,11 @@ export const themes: Record<ThemeName, Theme> = {
         textSecondary: '#b5bac1',
         border: '#3f4147',
         hover: '#404249',
-        accent: '#949cf7'
+        accent: '#949cf7',
+        calendarDaySocio: '#35373c',
+        calendarDayColaborador: '#3f4249',
+        calendarTextSocio: '#949cf7',
+        calendarTextColaborador: '#b5bdf8'
       }
     }
   }

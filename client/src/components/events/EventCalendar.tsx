@@ -67,18 +67,22 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
     };
 
     const dayBackground = hasSocio
-      ? 'bg-green-100'
+      ? 'bg-[var(--color-calendarDaySocio)]'
       : hasEvents && hasColaborador
-      ? 'bg-yellow-100'
+      ? 'bg-[var(--color-calendarDayColaborador)]'
       : 'bg-[var(--color-cardBackground)]';
-    const dayText = hasSocio ? 'text-green-900' : 'text-[var(--color-text)]';
+    const dayText = hasSocio
+      ? 'text-[var(--color-calendarTextSocio)]'
+      : hasColaborador
+      ? 'text-[var(--color-calendarTextColaborador)]'
+      : 'text-[var(--color-text)]';
 
     return (
       <div
         key={day}
         onClick={handleDayClick}
-        className={`min-h-[72px] border border-[var(--color-cardBorder)] p-1 sm:p-2 ${dayBackground} ${
-          isToday ? 'ring-2 ring-[var(--color-primary-300)]' : ''
+        className={`min-h-[72px] border p-1 sm:p-2 ${dayBackground} ${
+          isToday ? 'border-2 border-[var(--color-primary)]' : 'border border-[var(--color-cardBorder)]'
         } cursor-pointer transition-colors hover:brightness-95`}
         title="Toca un dia para ver el detalle"
       >
@@ -130,11 +134,11 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
       {/* Legend */}
       <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-[var(--color-textSecondary)]">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-green-100"></div>
+          <div className="w-3 h-3 rounded bg-[var(--color-calendarDaySocio)] border border-[var(--color-cardBorder)]"></div>
           <span>Día con socios</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-yellow-100"></div>
+          <div className="w-3 h-3 rounded bg-[var(--color-calendarDayColaborador)] border border-[var(--color-cardBorder)]"></div>
           <span>Día con colaboradores</span>
         </div>
         <div className="flex items-center gap-2">
@@ -142,7 +146,7 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
           <span>Sin partidas</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-[var(--color-cardBackground)] border border-[var(--color-primary-300)]"></div>
+          <div className="w-3 h-3 rounded bg-[var(--color-cardBackground)] border-2 border-[var(--color-primary)]"></div>
           <span>Hoy</span>
         </div>
         <span className="text-[var(--color-textSecondary)]">Toca un dia para ver el detalle</span>
