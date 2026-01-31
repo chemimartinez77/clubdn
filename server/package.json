@@ -37,7 +37,8 @@
   "scripts": {
     "dev": "nodemon --exec tsx src/index.ts",
     "build": "bash build.sh",
-    "start": "node dist/index.js",
+    "build:railway": "bash build-railway.sh",
+    "start": "npx prisma migrate deploy && node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:migrate:dev": "prisma migrate dev",
