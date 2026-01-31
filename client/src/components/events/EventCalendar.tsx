@@ -131,11 +131,11 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
       <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-[var(--color-textSecondary)]">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-green-100"></div>
-          <span>D?a con socios</span>
+          <span>Día con socios</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-yellow-100"></div>
-          <span>D?a con colaboradores</span>
+          <span>Día con colaboradores</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)]"></div>
