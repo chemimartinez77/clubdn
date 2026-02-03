@@ -52,7 +52,9 @@
       "Bash(DATABASE_URL=\"$RAILWAY_DATABASE_URL\" npx prisma db push:*)",
       "Bash(start cmd /k \"npx dotenv -e .env.railway -- npx prisma studio\")",
       "Bash(choco install:*)",
-      "Bash(winget install:*)"
+      "Bash(winget install:*)",
+      "Bash(railway whoami:*)",
+      "Bash(railway list:*)"
     ]
   }
 }
