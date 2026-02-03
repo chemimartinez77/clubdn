@@ -289,5 +289,5 @@ export const themes: Record<ThemeName, Theme> = {
   }
 };
 
-export const defaultTheme: ThemeName = 'purple';
+export const defaultTheme: ThemeName = 'green';
 export const defaultThemeMode: ThemeMode = 'light';
