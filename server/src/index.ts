@@ -30,7 +30,8 @@ const PORT = process.env.PORT || 5000;
 const allowedOrigins = [
   'https://clubdn-web-production.up.railway.app',
   'https://app.clubdreadnought.org',
-  'http://localhost:5173'
+  'http://localhost:5173',
+  'http://localhost:5174'
 ];
 
 app.use(cors({
