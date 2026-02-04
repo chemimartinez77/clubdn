@@ -7,7 +7,8 @@ export type BadgeCategory =
   | 'ROL'
   | 'MINIATURAS'
   | 'WARHAMMER'
-  | 'FILLERS_PARTY';
+  | 'FILLERS_PARTY'
+  | 'CATALOGADOR';
 
 export interface BadgeDefinition {
   id: string;
@@ -85,7 +86,8 @@ export const getCategoryDisplayName = (category: BadgeCategory): string => {
     ROL: 'Rol',
     MINIATURAS: 'Miniaturas',
     WARHAMMER: 'Warhammer',
-    FILLERS_PARTY: 'Fillers / Party'
+    FILLERS_PARTY: 'Fillers / Party',
+    CATALOGADOR: 'Catalogador'
   };
   return categoryNames[category];
 };
@@ -99,7 +101,8 @@ export const getCategoryColor = (category: BadgeCategory): string => {
     ROL: '#9333ea',             // Púrpura
     MINIATURAS: '#059669',      // Verde
     WARHAMMER: '#18181b',       // Negro/Gris oscuro
-    FILLERS_PARTY: '#fbbf24'    // Amarillo/Dorado
+    FILLERS_PARTY: '#fbbf24',   // Amarillo/Dorado
+    CATALOGADOR: '#06b6d4'      // Cian
   };
   return categoryColors[category];
 };
@@ -113,7 +116,8 @@ export const getCategoryIcon = (category: BadgeCategory): string => {
     ROL: '🎲',
     MINIATURAS: '🗿',
     WARHAMMER: '⚡',
-    FILLERS_PARTY: '🎉'
+    FILLERS_PARTY: '🎉',
+    CATALOGADOR: '📚'
   };
   return categoryIcons[category];
 };

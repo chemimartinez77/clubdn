@@ -59,6 +59,14 @@ const badgeDefinitions = [
   { category: BadgeCategory.FILLERS_PARTY, level: 4, name: 'Alma de la Convención', requiredCount: 40 },
   { category: BadgeCategory.FILLERS_PARTY, level: 5, name: 'Embajador del Caos Alegre', requiredCount: 70 },
   { category: BadgeCategory.FILLERS_PARTY, level: 6, name: 'Espíritu de la Ludoteca', requiredCount: 100 },
+
+  // CATALOGADOR (por categorizar juegos en partidas)
+  { category: BadgeCategory.CATALOGADOR, level: 1, name: 'Aprendiz de Biblioteca', requiredCount: 5 },
+  { category: BadgeCategory.CATALOGADOR, level: 2, name: 'Archivero Dedicado', requiredCount: 10 },
+  { category: BadgeCategory.CATALOGADOR, level: 3, name: 'Curador de Colecciones', requiredCount: 20 },
+  { category: BadgeCategory.CATALOGADOR, level: 4, name: 'Maestro Taxonomista', requiredCount: 40 },
+  { category: BadgeCategory.CATALOGADOR, level: 5, name: 'Gran Bibliotecario', requiredCount: 70 },
+  { category: BadgeCategory.CATALOGADOR, level: 6, name: 'Guardián del Saber Lúdico', requiredCount: 100 },
 ];
 
 export async function seedBadges() {
