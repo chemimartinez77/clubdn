@@ -38,7 +38,8 @@ select {
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--color-textSecondary);
+  color: #9ca3af;
+  opacity: 0.6;
 }
 
 /* Toast Animations */

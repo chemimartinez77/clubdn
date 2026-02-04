@@ -459,6 +459,9 @@ model Game {
   mechanics         String[] // Hand Management, Set Collection, etc.
   families          String[] // Components, Themes, etc.
 
+  // Categoría para badges (asignada manualmente)
+  badgeCategory     BadgeCategory?
+
   // Creadores
   designers         String[] // Nombres de diseñadores
   artists           String[] // Nombres de artistas

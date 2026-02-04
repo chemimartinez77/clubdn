@@ -22,6 +22,7 @@ export default function CreatePartida() {
 
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<BGGGame | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
 
   // Generar opciones para horas (0-23)
   const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -85,10 +86,16 @@ export default function CreatePartida() {
   const handleGameSelect = async (game: BGGGame) => {
     setSelectedGame(game);
 
-    // Guardar el juego completo en la base de datos
+    // Guardar el juego completo en la base de datos y obtener la categoría si existe
     try {
-      await api.get(`/api/games/${game.id}`);
+      const response = await api.get(`/api/games/${game.id}`);
       console.log(`Juego ${game.name} guardado en BD`);
+
+      // Si el juego tiene una categoría asignada, establecerla automáticamente
+      if (response.data?.data?.badgeCategory) {
+        setSelectedCategory(response.data.data.badgeCategory);
+        console.log(`Categoría cargada automáticamente: ${response.data.data.badgeCategory}`);
+      }
     } catch (error) {
       console.error('Error al guardar juego en BD:', error);
       // No mostramos error al usuario porque el juego ya se seleccionó correctamente
@@ -97,6 +104,7 @@ export default function CreatePartida() {
 
   const handleRemoveGame = () => {
     setSelectedGame(null);
+    setSelectedCategory(''); // Limpiar también la categoría
   };
 
   // Fecha mínima (hoy)
@@ -176,6 +184,8 @@ export default function CreatePartida() {
                 </label>
                 <select
                   name="gameCategory"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
                 >
                   <option value="">Sin categoría</option>
@@ -188,7 +198,7 @@ export default function CreatePartida() {
                   <option value="FILLERS_PARTY">{getCategoryIcon('FILLERS_PARTY')} {getCategoryDisplayName('FILLERS_PARTY')}</option>
                 </select>
                 <p className="text-xs text-[var(--color-textSecondary)] mt-1">
-                  Ayuda a otros miembros a desbloquear badges automáticamente
+                  {selectedCategory ? 'Categoría cargada automáticamente desde la BD. Puedes cambiarla si es incorrecta.' : 'Ayuda a otros miembros a desbloquear badges automáticamente'}
                 </p>
               </div>
 
@@ -218,7 +228,7 @@ export default function CreatePartida() {
                   minLength={3}
                   maxLength={100}
                   defaultValue={selectedGame ? `${selectedGame.name}` : ''}
-                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)] placeholder:text-gray-500"
                   placeholder="Ej: Partida de Catan"
                 />
               </div>
@@ -231,7 +241,7 @@ export default function CreatePartida() {
                 <textarea
                   name="description"
                   rows={4}
-                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none bg-[var(--color-inputBackground)] text-[var(--color-inputText)] placeholder:text-gray-500"
                   placeholder="Dale a los jugadores más información acerca de la partida..."
                 />
               </div>
@@ -347,7 +357,7 @@ export default function CreatePartida() {
                   type="text"
                   name="location"
                   minLength={3}
-                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)] placeholder:text-gray-500"
                   placeholder="Club DN"
                 />
               </div>
@@ -360,7 +370,7 @@ export default function CreatePartida() {
                 <input
                   type="text"
                   name="address"
-                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)] placeholder:text-gray-500"
                   placeholder="Direccion completa"
                 />
               </div>

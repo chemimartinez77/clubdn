@@ -166,6 +166,7 @@ export interface BGGGame {
   yearPublished: string;
   image: string;
   thumbnail: string;
+  badgeCategory?: BadgeCategory | null;
 }
 
 export interface EventFilters {
