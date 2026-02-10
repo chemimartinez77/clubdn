@@ -91,7 +91,11 @@ export const getUserBadgesById = async (req: Request, res: Response): Promise<vo
  * Calcular progreso de badges por categoría
  */
 async function calculateBadgeProgress(userId: string) {
-  const categories = Object.values(BadgeCategory);
+  const categoryRows = await prisma.badgeDefinition.findMany({
+    select: { category: true },
+    distinct: ['category']
+  });
+  const categories = categoryRows.map(row => row.category);
   const progress: Record<string, { count: number; nextBadge?: any }> = {};
 
   for (const category of categories) {
@@ -336,7 +340,11 @@ export const getGameStats = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const categories = Object.values(BadgeCategory);
+    const categoryRows = await prisma.badgeDefinition.findMany({
+      select: { category: true },
+      distinct: ['category']
+    });
+    const categories = categoryRows.map(row => row.category);
     const stats: Record<string, number> = {};
 
     for (const category of categories) {
@@ -376,7 +384,8 @@ function getCategoryDisplayName(category: BadgeCategory): string {
     [BadgeCategory.ROL]: 'Rol',
     [BadgeCategory.MINIATURAS]: 'Miniaturas',
     [BadgeCategory.WARHAMMER]: 'Warhammer',
-    [BadgeCategory.FILLERS_PARTY]: 'Fillers / Party'
+    [BadgeCategory.FILLERS_PARTY]: 'Fillers / Party',
+    [BadgeCategory.CATALOGADOR]: 'Catalogador'
   };
   return names[category];
 }
