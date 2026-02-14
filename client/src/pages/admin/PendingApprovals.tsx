@@ -79,7 +79,7 @@ export default function PendingApprovals() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-[var(--color-text)]">
-              Solicitudes Pendientes
+              Aprobar Usuarios
             </h1>
             <p className="text-[var(--color-textSecondary)] mt-1">
               Gestiona las solicitudes de registro de nuevos usuarios

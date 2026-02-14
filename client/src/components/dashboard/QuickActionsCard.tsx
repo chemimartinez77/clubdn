@@ -59,10 +59,11 @@ export default function QuickActionsCard({ isAdmin }: QuickActionsCardProps) {
         <h3 className="text-lg font-semibold text-[var(--color-text)]">Acciones rápidas</h3>
       </CardHeader>
       <CardContent className="space-y-3">
+        {/* Acción crítica para admins - No está duplicada como acción principal en el menú */}
         {isAdmin && (
           <QuickAction
             to="/admin/pending-approvals"
-            title="Gestión de Usuarios"
+            title="Aprobar Usuarios"
             description="Aprobar solicitudes pendientes"
             icon={
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -72,34 +73,7 @@ export default function QuickActionsCard({ isAdmin }: QuickActionsCardProps) {
           />
         )}
 
-        {isAdmin && (
-          <QuickAction
-            to="/admin/dashboard"
-            title="Panel de Administración"
-            description="Ver estadísticas y métricas"
-            enabled={true}
-            icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            }
-          />
-        )}
-
-        {isAdmin && (
-          <QuickAction
-            to="/admin/membership"
-            title="Gestión de Membresías"
-            description="Control de pagos y cuotas"
-            enabled={true}
-            icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            }
-          />
-        )}
-
+        {/* Acción principal - Crear partidas es la funcionalidad más usada */}
         <QuickAction
           to="/events/crear-partida"
           title="Organizar Partida"
@@ -112,6 +86,7 @@ export default function QuickActionsCard({ isAdmin }: QuickActionsCardProps) {
           }
         />
 
+        {/* Consulta frecuente - Acceso rápido al calendario */}
         <QuickAction
           to="/events"
           title="Ver Eventos"
@@ -124,26 +99,15 @@ export default function QuickActionsCard({ isAdmin }: QuickActionsCardProps) {
           }
         />
 
+        {/* Acceso a ludoteca - Enlace directo al catálogo */}
         <QuickAction
-          to="/games"
-          title="Catálogo de Juegos"
+          to="/ludoteca"
+          title="Ludoteca del Club"
           description="Explora nuestra colección"
-          enabled={false}
-          icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-          }
-        />
-
-        <QuickAction
-          to="/profile"
-          title="Mi Perfil"
-          description="Editar información personal"
           enabled={true}
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           }
         />

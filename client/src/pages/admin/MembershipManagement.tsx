@@ -148,7 +148,7 @@ export default function MembershipManagement() {
       <div className="max-w-full mx-auto space-y-6 px-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-[var(--color-text)]">Pagos</h1>
+            <h1 className="text-3xl font-bold text-[var(--color-text)]">Gestión de Pagos</h1>
             <p className="text-[var(--color-textSecondary)] mt-1">Control de pagos mensuales de membresías</p>
           </div>
         </div>
