@@ -107,6 +107,7 @@ model User {
   notifications     Notification[]
   badges            UserBadge[]
   gamePlayHistory   GamePlayHistory[]
+  financialMovements FinancialMovement[] @relation("FinancialMovements")
 
   @@index([email])
   @@index([status])
@@ -779,4 +780,42 @@ model GamePlayHistory {
   @@index([eventId])
   @@index([gameCategory])
   @@index([playedAt])
+}
+
+// ==================== GESTIÓN FINANCIERA ====================
+
+// Categorías de gastos/ingresos
+model FinancialCategory {
+  id              String              @id @default(cuid())
+  name            String              @unique // Nombre de la categoría (ej: "Alquiler", "Luz")
+  icon            String              @default("💰") // Emoji o icono para la categoría
+  color           String              @default("bg-blue-100 text-blue-800") // Clases de color para UI
+  showInBalance   Boolean             @default(true) // Si se muestra en el balance
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  movements       FinancialMovement[]
+
+  @@index([showInBalance])
+}
+
+// Movimientos financieros (ingresos y gastos)
+model FinancialMovement {
+  id              String            @id @default(cuid())
+  categoryId      String
+  category        FinancialCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  amount          Float             // Monto del movimiento (positivo para ingresos, negativo para gastos)
+  description     String?           // Descripción opcional del movimiento
+  date            DateTime          // Fecha del movimiento
+  year            Int               // Año extraído para facilitar consultas
+  month           Int               // Mes (1-12) extraído para facilitar consultas
+  createdBy       String            // Usuario que creó el movimiento
+  user            User              @relation("FinancialMovements", fields: [createdBy], references: [id])
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([categoryId])
+  @@index([year, month])
+  @@index([date])
+  @@index([createdBy])
 }
