@@ -1,0 +1,27 @@
+{
+  "name": "Club Dreadnought",
+  "short_name": "ClubDN",
+  "description": "Club de juegos de mesa Dreadnought - Gestión de eventos, partidas y comunidad",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favico.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favico.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "social", "lifestyle"],
+  "lang": "es-ES",
+  "dir": "ltr"
+}

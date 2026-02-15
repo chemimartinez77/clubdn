@@ -54,7 +54,12 @@
       "Bash(choco install:*)",
       "Bash(winget install:*)",
       "Bash(railway whoami:*)",
-      "Bash(railway list:*)"
+      "Bash(railway list:*)",
+      "Bash(npm pkg set:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run test:uat:*)",
+      "Bash(convert --version:*)",
+      "Bash(magick:*)"
     ]
   }
 }

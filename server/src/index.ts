@@ -107,28 +107,30 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   });
 });
 
-// Iniciar servidor
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`📝 Entorno: ${process.env.NODE_ENV || 'development'}`);
-});
-
-// Manejo de cierre graceful
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM recibido. Cerrando servidor...');
-  server.close(async () => {
-    await prisma.$disconnect();
-    process.exit(0);
+// Solo iniciar servidor si no estamos en modo test
+if (process.env.NODE_ENV !== 'test') {
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`📝 Entorno: ${process.env.NODE_ENV || 'development'}`);
   });
-});
 
-process.on('SIGINT', async () => {
-  console.log('\nSIGINT recibido. Cerrando servidor...');
-  server.close(async () => {
-    await prisma.$disconnect();
-    process.exit(0);
+  // Manejo de cierre graceful
+  process.on('SIGTERM', async () => {
+    console.log('SIGTERM recibido. Cerrando servidor...');
+    server.close(async () => {
+      await prisma.$disconnect();
+      process.exit(0);
+    });
   });
-});
+
+  process.on('SIGINT', async () => {
+    console.log('\nSIGINT recibido. Cerrando servidor...');
+    server.close(async () => {
+      await prisma.$disconnect();
+      process.exit(0);
+    });
+  });
+}
 
 // Exportar app para testing
 export default app;
