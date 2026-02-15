@@ -7,12 +7,20 @@ import '@jest/globals';
 // Cargar variables de entorno de test
 dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
 
+// 🚨 SEGURIDAD CRÍTICA: Prevenir ejecución de tests contra producción
+if (!process.env.DATABASE_URL?.includes('test.db')) {
+  console.error('🚨 PELIGRO: Los tests NO pueden ejecutarse contra producción!');
+  console.error(`DATABASE_URL actual: ${process.env.DATABASE_URL}`);
+  throw new Error(
+    'Tests bloqueados: DATABASE_URL debe contener "test.db" (SQLite de test). ' +
+    'Verifica que .env.test existe y se está cargando correctamente.'
+  );
+}
+
 // Setup global antes de todos los tests
 beforeAll(async () => {
-  // Opcional: Aplicar migraciones si es necesario
-  // await execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-
   console.log('🧪 Test environment initialized');
+  console.log(`📊 Database: ${process.env.DATABASE_URL}`);
 });
 
 // Cleanup después de cada test
