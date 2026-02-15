@@ -32,7 +32,6 @@ export default function EventDetail() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name?: string } | null>(null);
-  const [showPendingApprovals, setShowPendingApprovals] = useState(false);
 
   // Fetch event details
   const { data: event, isLoading } = useQuery({
