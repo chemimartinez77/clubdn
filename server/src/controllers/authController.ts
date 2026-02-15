@@ -10,6 +10,7 @@ import {
   sendPasswordResetEmail,
 } from '../services/emailService';
 import { logLoginAttempt } from '../services/loginAttemptService';
+import { notifyAdminsNewUser } from '../services/notificationService';
 
 /**
  * Registro de nuevo usuario
@@ -140,10 +141,13 @@ export const verifyEmail = async (req: Request, res: Response) => {
         select: { email: true },
       });
 
-      // Enviar notificación a cada admin
+      // Enviar email a cada admin
       for (const admin of admins) {
         await sendAdminNotification(admin.email, user.name, user.email);
       }
+
+      // Crear notificación en la campanita para los admins
+      await notifyAdminsNewUser(user.name, user.email);
     } catch (mailError) {
       console.error('Error enviando notificación a admins:', mailError);
     }
