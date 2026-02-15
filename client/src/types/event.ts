@@ -3,7 +3,7 @@ import type { BadgeCategory } from './badge';
 
 export type EventType = 'PARTIDA' | 'TORNEO' | 'OTROS';
 export type EventStatus = 'SCHEDULED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
-export type RegistrationStatus = 'CONFIRMED' | 'CANCELLED' | 'WAITLIST';
+export type RegistrationStatus = 'CONFIRMED' | 'CANCELLED' | 'WAITLIST' | 'PENDING_APPROVAL';
 
 export interface Event {
   id: string;
@@ -51,6 +51,7 @@ export interface Event {
   // Capacidad
   maxAttendees: number;
   guestCount?: number;
+  requiresApproval?: boolean;
   status: EventStatus;
   createdBy: string;
   createdAt: string;
@@ -139,6 +140,7 @@ export interface CreateEventData {
   // Capacidad
   maxAttendees: number;
   attend?: boolean;
+  requiresApproval?: boolean;
 }
 
 export interface UpdateEventData {

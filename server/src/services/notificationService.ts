@@ -215,3 +215,180 @@ export const notifyNewEvent = async (
     return { success: false, error };
   }
 };
+
+/**
+ * Notificar al organizador sobre una solicitud de registro pendiente
+ */
+export const notifyRegistrationPending = async (
+  eventId: string,
+  eventTitle: string,
+  organizerId: string,
+  userName: string
+) => {
+  return await createNotification({
+    userId: organizerId,
+    type: 'REGISTRATION_PENDING',
+    title: 'Nueva solicitud de registro',
+    message: `${userName} ha solicitado unirse a "${eventTitle}".`,
+    metadata: { eventId, eventTitle, userName },
+  });
+};
+
+/**
+ * Notificar al usuario que su registro fue aprobado
+ */
+export const notifyRegistrationApproved = async (
+  userId: string,
+  eventId: string,
+  eventTitle: string
+) => {
+  return await createNotification({
+    userId,
+    type: 'REGISTRATION_APPROVED',
+    title: 'Registro aprobado',
+    message: `Tu solicitud para "${eventTitle}" ha sido aprobada.`,
+    metadata: { eventId, eventTitle },
+  });
+};
+
+/**
+ * Notificar al usuario que su registro fue rechazado
+ */
+export const notifyRegistrationRejected = async (
+  userId: string,
+  eventId: string,
+  eventTitle: string
+) => {
+  return await createNotification({
+    userId,
+    type: 'REGISTRATION_REJECTED',
+    title: 'Registro rechazado',
+    message: `Tu solicitud para "${eventTitle}" no ha sido aprobada.`,
+    metadata: { eventId, eventTitle },
+  });
+};
+
+/**
+ * Notificar a todos los admins sobre un nuevo reporte
+ */
+export const notifyReportCreated = async (
+  reportId: string,
+  reportTitle: string,
+  reportType: string,
+  reporterName: string
+) => {
+  try {
+    const admins = await prisma.user.findMany({
+      where: {
+        role: {
+          in: ['ADMIN', 'SUPER_ADMIN'],
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const adminIds = admins.map(admin => admin.id);
+
+    if (adminIds.length === 0) {
+      return { success: true, count: 0 };
+    }
+
+    return await createBulkNotifications({
+      userIds: adminIds,
+      type: 'REPORT_CREATED',
+      title: 'Nuevo reporte',
+      message: `${reporterName} ha creado un ${reportType}: "${reportTitle}".`,
+      metadata: { reportId, reportTitle, reportType, reporterName },
+    });
+  } catch (error) {
+    console.error('Error notificando creación de reporte:', error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Notificar al creador del reporte sobre una actualización
+ */
+export const notifyReportUpdated = async (
+  reportId: string,
+  reportTitle: string,
+  userId: string,
+  changeDescription: string
+) => {
+  return await createNotification({
+    userId,
+    type: 'REPORT_UPDATED',
+    title: 'Actualización en tu reporte',
+    message: `Tu reporte "${reportTitle}" ha sido actualizado: ${changeDescription}`,
+    metadata: { reportId, reportTitle, changeDescription },
+  });
+};
+
+/**
+ * Notificar sobre un nuevo comentario en un reporte
+ * Si hay admin asignado, solo notifica a él. Si no, notifica a todos los admins.
+ */
+export const notifyReportComment = async (
+  reportId: string,
+  reportTitle: string,
+  commenterId: string,
+  commenterName: string,
+  assignedToId: string | null,
+  reportCreatorId: string
+) => {
+  try {
+    // Si el comentario es del creador del reporte, notificar al admin asignado o todos los admins
+    if (commenterId === reportCreatorId) {
+      if (assignedToId) {
+        // Notificar solo al admin asignado
+        return await createNotification({
+          userId: assignedToId,
+          type: 'REPORT_COMMENT',
+          title: 'Nuevo comentario en reporte',
+          message: `${commenterName} ha comentado en "${reportTitle}".`,
+          metadata: { reportId, reportTitle, commenterName },
+        });
+      } else {
+        // Notificar a todos los admins
+        const admins = await prisma.user.findMany({
+          where: {
+            role: {
+              in: ['ADMIN', 'SUPER_ADMIN'],
+            },
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        const adminIds = admins.map(admin => admin.id);
+
+        if (adminIds.length === 0) {
+          return { success: true, count: 0 };
+        }
+
+        return await createBulkNotifications({
+          userIds: adminIds,
+          type: 'REPORT_COMMENT',
+          title: 'Nuevo comentario en reporte',
+          message: `${commenterName} ha comentado en "${reportTitle}".`,
+          metadata: { reportId, reportTitle, commenterName },
+        });
+      }
+    } else {
+      // Si el comentario es de un admin, notificar al creador del reporte
+      return await createNotification({
+        userId: reportCreatorId,
+        type: 'REPORT_COMMENT',
+        title: 'Nuevo comentario en tu reporte',
+        message: `${commenterName} ha comentado en "${reportTitle}".`,
+        metadata: { reportId, reportTitle, commenterName },
+      });
+    }
+  } catch (error) {
+    console.error('Error notificando comentario en reporte:', error);
+    return { success: false, error };
+  }
+};

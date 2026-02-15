@@ -408,6 +408,7 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
         startMinute: startMinute !== undefined ? parseInt(startMinute) : null,
         durationHours: durationHours !== undefined ? parseInt(durationHours) : null,
         durationMinutes: durationMinutes !== undefined ? parseInt(durationMinutes) : null,
+        requiresApproval: req.body.requiresApproval !== undefined ? req.body.requiresApproval === true || req.body.requiresApproval === 'true' : true,
         createdBy: userId
       },
       include: {
@@ -849,8 +850,8 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
         return;
       }
 
-      // Determinar estado: CONFIRMED o WAITLIST
-      const registrationStatus = 'CONFIRMED';
+      // Determinar status: PENDING_APPROVAL si requiere aprobación, sino CONFIRMED
+      const registrationStatus = event.requiresApproval ? 'PENDING_APPROVAL' : 'CONFIRMED';
 
       const registration = await prisma.eventRegistration.create({
         data: {
@@ -869,7 +870,35 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
         }
       });
 
-      // Tracking automático de juego si el evento tiene categoría
+      // Si requiere aprobación, notificar al organizador
+      if (event.requiresApproval) {
+        const { notifyRegistrationPending } = await import('../services/notificationService');
+        const { sendRegistrationPendingEmail } = await import('../services/emailService');
+
+        const organizer = await prisma.user.findUnique({
+          where: { id: event.createdBy },
+          select: { name: true, email: true }
+        });
+
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { name: true }
+        });
+
+        if (organizer && user) {
+          await notifyRegistrationPending(id, event.title, event.createdBy, user.name);
+          await sendRegistrationPendingEmail(organizer.email, organizer.name, event.title, user.name, id);
+        }
+
+        res.status(201).json({
+          success: true,
+          data: { registration },
+          message: 'Tu solicitud está pendiente de aprobación del organizador'
+        });
+        return;
+      }
+
+      // Solo hacer tracking de badges si está CONFIRMED
       if (event.gameName && event.gameCategory) {
         const { checkAndUnlockBadges } = await import('./badgeController');
 
@@ -890,7 +919,7 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
       res.status(201).json({
         success: true,
         data: { registration },
-      message: 'Te has registrado correctamente al evento'
+        message: 'Te has registrado correctamente al evento'
       });
   } catch (error) {
     console.error('Error al registrarse a evento:', error);
@@ -1319,6 +1348,284 @@ export const syncEventBggIds = async (_req: Request, res: Response): Promise<voi
     res.status(500).json({
       success: false,
       message: 'Error al sincronizar bggIds'
+    });
+  }
+};
+
+/**
+ * GET /api/events/:id/pending-registrations - Obtener registros pendientes de aprobación
+ */
+export const getPendingRegistrations = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.userId;
+    const userRole = req.user?.role;
+
+    const event = await prisma.event.findUnique({
+      where: { id },
+      select: { createdBy: true }
+    });
+
+    if (!event) {
+      res.status(404).json({
+        success: false,
+        message: 'Evento no encontrado'
+      });
+      return;
+    }
+
+    // Solo organizador o admin pueden ver registros pendientes
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+    if (!isAdmin && event.createdBy !== userId) {
+      res.status(403).json({
+        success: false,
+        message: 'No tienes permiso para ver las solicitudes pendientes'
+      });
+      return;
+    }
+
+    const pendingRegistrations = await prisma.eventRegistration.findMany({
+      where: {
+        eventId: id,
+        status: 'PENDING_APPROVAL'
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profile: {
+              select: {
+                avatar: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'asc' } // Primero en llegar, primero en ser aprobado
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { registrations: pendingRegistrations }
+    });
+  } catch (error) {
+    console.error('Error al obtener registros pendientes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener registros pendientes'
+    });
+  }
+};
+
+/**
+ * POST /api/events/:id/registrations/:registrationId/approve - Aprobar registro
+ */
+export const approveRegistration = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id, registrationId } = req.params;
+    const userId = req.user?.userId;
+    const userRole = req.user?.role;
+
+    const registration = await prisma.eventRegistration.findUnique({
+      where: { id: registrationId },
+      include: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            createdBy: true,
+            maxAttendees: true,
+            gameName: true,
+            gameCategory: true
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    if (!registration || registration.eventId !== id) {
+      res.status(404).json({
+        success: false,
+        message: 'Registro no encontrado'
+      });
+      return;
+    }
+
+    // Solo organizador o admin pueden aprobar
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+    if (!isAdmin && registration.event.createdBy !== userId) {
+      res.status(403).json({
+        success: false,
+        message: 'No tienes permiso para aprobar registros'
+      });
+      return;
+    }
+
+    if (registration.status !== 'PENDING_APPROVAL') {
+      res.status(400).json({
+        success: false,
+        message: 'Este registro ya fue procesado'
+      });
+      return;
+    }
+
+    // Verificar capacidad
+    const [confirmedCount, activeInvitations] = await Promise.all([
+      prisma.eventRegistration.count({
+        where: {
+          eventId: id,
+          status: 'CONFIRMED'
+        }
+      }),
+      prisma.invitation.count({
+        where: {
+          eventId: id,
+          status: { in: ['PENDING', 'USED'] }
+        }
+      })
+    ]);
+
+    const totalConfirmed = confirmedCount + activeInvitations;
+    if (totalConfirmed >= registration.event.maxAttendees) {
+      res.status(400).json({
+        success: false,
+        message: 'El evento está completo'
+      });
+      return;
+    }
+
+    // Aprobar registro
+    await prisma.eventRegistration.update({
+      where: { id: registrationId },
+      data: { status: 'CONFIRMED' }
+    });
+
+    // Badge tracking si aplica
+    if (registration.event.gameName && registration.event.gameCategory) {
+      const { checkAndUnlockBadges } = await import('./badgeController');
+
+      await prisma.gamePlayHistory.create({
+        data: {
+          userId: registration.userId,
+          eventId: id,
+          gameName: registration.event.gameName,
+          gameCategory: registration.event.gameCategory
+        }
+      });
+
+      await checkAndUnlockBadges(registration.userId, registration.event.gameCategory);
+    }
+
+    // Notificar usuario
+    const { notifyRegistrationApproved } = await import('../services/notificationService');
+    const { sendRegistrationApprovedEmail } = await import('../services/emailService');
+
+    await notifyRegistrationApproved(registration.userId, id, registration.event.title);
+    await sendRegistrationApprovedEmail(
+      registration.user.email,
+      registration.user.name,
+      registration.event.title,
+      id
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Registro aprobado'
+    });
+  } catch (error) {
+    console.error('Error al aprobar registro:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al aprobar registro'
+    });
+  }
+};
+
+/**
+ * POST /api/events/:id/registrations/:registrationId/reject - Rechazar registro
+ */
+export const rejectRegistration = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id, registrationId } = req.params;
+    const userId = req.user?.userId;
+    const userRole = req.user?.role;
+
+    const registration = await prisma.eventRegistration.findUnique({
+      where: { id: registrationId },
+      include: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            createdBy: true
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+
+    if (!registration || registration.eventId !== id) {
+      res.status(404).json({
+        success: false,
+        message: 'Registro no encontrado'
+      });
+      return;
+    }
+
+    // Solo organizador o admin pueden rechazar
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+    if (!isAdmin && registration.event.createdBy !== userId) {
+      res.status(403).json({
+        success: false,
+        message: 'No tienes permiso para rechazar registros'
+      });
+      return;
+    }
+
+    if (registration.status !== 'PENDING_APPROVAL') {
+      res.status(400).json({
+        success: false,
+        message: 'Este registro ya fue procesado'
+      });
+      return;
+    }
+
+    // Rechazar registro (marcar como CANCELLED)
+    await prisma.eventRegistration.update({
+      where: { id: registrationId },
+      data: {
+        status: 'CANCELLED',
+        cancelledAt: new Date()
+      }
+    });
+
+    // Notificar usuario
+    const { notifyRegistrationRejected } = await import('../services/notificationService');
+
+    await notifyRegistrationRejected(registration.userId, id, registration.event.title);
+
+    res.status(200).json({
+      success: true,
+      message: 'Registro rechazado'
+    });
+  } catch (error) {
+    console.error('Error al rechazar registro:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al rechazar registro'
     });
   }
 };

@@ -53,6 +53,7 @@ export default function CreatePartida() {
     const startMinute = formData.get('startMinute') as string;
     const locationValue = (formData.get('location') as string)?.trim();
     const attend = formData.get('attend') === 'on';
+    const requiresApproval = formData.get('requiresApproval') === 'on';
 
     // Crear fecha completa con hora
     const eventDate = new Date(dateValue);
@@ -74,6 +75,7 @@ export default function CreatePartida() {
       address: (formData.get('address') as string) || undefined,
       maxAttendees: parseInt(formData.get('maxAttendees') as string),
       attend,
+      requiresApproval,
       gameName: selectedGame?.name,
       gameImage: selectedGame?.image,
       bggId: selectedGame?.id,
@@ -213,6 +215,20 @@ export default function CreatePartida() {
                 />
                 <label htmlFor="attend" className="text-sm text-[var(--color-textSecondary)]">
                   Asistire a la partida
+                </label>
+              </div>
+
+              {/* Requiere aprobación */}
+              <div className="flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] px-4 py-3">
+                <input
+                  id="requiresApproval"
+                  name="requiresApproval"
+                  type="checkbox"
+                  defaultChecked
+                  className="h-4 w-4 rounded border-[var(--color-inputBorder)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                />
+                <label htmlFor="requiresApproval" className="text-sm text-[var(--color-textSecondary)]">
+                  Requiere aprobación del organizador
                 </label>
               </div>
 

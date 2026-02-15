@@ -427,3 +427,208 @@ export const sendPasswordResetEmail = async (email: string, name: string, token:
     template: 'password_reset',
   });
 };
+
+/**
+ * Email al organizador sobre solicitud de registro pendiente
+ */
+export const sendRegistrationPendingEmail = async (
+  organizerEmail: string,
+  organizerName: string,
+  eventTitle: string,
+  userName: string,
+  eventId: string
+) => {
+  const eventUrl = `${process.env.CLIENT_URL}/events/${eventId}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">Nueva Solicitud de Registro</h1>
+        </div>
+
+        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+          <h2 style="color: #667eea; margin-top: 0;">Hola ${organizerName},</h2>
+
+          <p><strong>${userName}</strong> ha solicitado unirse a tu evento:</p>
+
+          <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin: 20px 0;">
+            <p style="margin: 10px 0;"><strong>📅 Evento:</strong> ${eventTitle}</p>
+          </div>
+
+          <p>Accede al evento para aprobar o rechazar esta solicitud:</p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${eventUrl}"
+               style="background-color: #667eea;
+                      color: white;
+                      padding: 14px 30px;
+                      text-decoration: none;
+                      border-radius: 5px;
+                      display: inline-block;
+                      font-weight: bold;
+                      box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">
+              Ver Solicitudes Pendientes
+            </a>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+
+          <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">
+            Saludos,<br>
+            <strong>El equipo del Club DN</strong>
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: organizerEmail,
+    subject: `Nueva solicitud de registro - ${eventTitle}`,
+    html,
+    template: 'registration_pending',
+  });
+};
+
+/**
+ * Email al usuario notificando aprobación de registro
+ */
+export const sendRegistrationApprovedEmail = async (
+  userEmail: string,
+  userName: string,
+  eventTitle: string,
+  eventId: string
+) => {
+  const eventUrl = `${process.env.CLIENT_URL}/events/${eventId}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 32px;">🎉</h1>
+          <h2 style="color: white; margin: 10px 0; font-size: 28px;">¡Registro Aprobado!</h2>
+        </div>
+
+        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+          <h2 style="color: #059669; margin-top: 0;">¡Hola ${userName}!</h2>
+
+          <p style="font-size: 18px; color: #10b981; font-weight: bold;">
+            Tu solicitud para unirte al evento ha sido aprobada.
+          </p>
+
+          <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981; margin: 20px 0;">
+            <p style="margin: 10px 0;"><strong>📅 Evento:</strong> ${eventTitle}</p>
+          </div>
+
+          <p>¡Te esperamos en el evento!</p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${eventUrl}"
+               style="background-color: #10b981;
+                      color: white;
+                      padding: 14px 30px;
+                      text-decoration: none;
+                      border-radius: 5px;
+                      display: inline-block;
+                      font-weight: bold;
+                      box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
+              Ver Detalles del Evento
+            </a>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+
+          <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">
+            Saludos,<br>
+            <strong>El equipo del Club DN</strong>
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: userEmail,
+    subject: `¡Registro aprobado! - ${eventTitle}`,
+    html,
+    template: 'registration_approved',
+  });
+};
+
+/**
+ * Email a admins sobre nuevo reporte
+ */
+export const sendReportCreatedEmail = async (
+  adminEmail: string,
+  reportTitle: string,
+  reportType: string,
+  reporterName: string
+) => {
+  const reportUrl = `${process.env.CLIENT_URL}/feedback`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">🔔 Nuevo Reporte</h1>
+        </div>
+
+        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+          <h2 style="color: #d97706; margin-top: 0;">Nuevo ${reportType}</h2>
+
+          <p><strong>${reporterName}</strong> ha creado un nuevo reporte:</p>
+
+          <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0;">
+            <p style="margin: 10px 0;"><strong>📝 Título:</strong> ${reportTitle}</p>
+            <p style="margin: 10px 0;"><strong>🏷️ Tipo:</strong> ${reportType}</p>
+          </div>
+
+          <p>Revisa y gestiona este reporte en el panel de feedback:</p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${reportUrl}"
+               style="background-color: #f59e0b;
+                      color: white;
+                      padding: 14px 30px;
+                      text-decoration: none;
+                      border-radius: 5px;
+                      display: inline-block;
+                      font-weight: bold;
+                      box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
+              Ver Reportes
+            </a>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+
+          <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">
+            Sistema automático del Club DN
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: adminEmail,
+    subject: `🔔 Nuevo reporte: ${reportTitle}`,
+    html,
+    template: 'report_created',
+  });
+};

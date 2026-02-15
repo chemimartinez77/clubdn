@@ -102,6 +102,8 @@ model User {
   uploadedPhotos    EventPhoto[]
   reports           Report[]
   reportVotes       ReportVote[]
+  assignedReports   Report[]        @relation("AssignedReports")
+  reportComments    ReportComment[]
   eventAuditLogs    EventAuditLog[] @relation("EventAuditActor")
   eventAuditTargets EventAuditLog[] @relation("EventAuditTargetUser")
   notifications     Notification[]
@@ -212,6 +214,7 @@ enum RegistrationStatus {
   CONFIRMED
   CANCELLED
   WAITLIST
+  PENDING_APPROVAL  // Registro pendiente de aprobación del organizador
 }
 
 enum InvitationStatus {
@@ -256,6 +259,9 @@ model Event {
   photos          EventPhoto[]
   auditLogs       EventAuditLog[]
   gamePlayHistory GamePlayHistory[]
+
+  // Aprobación de jugadores
+  requiresApproval Boolean @default(true) // Si requiere aprobación del organizador
 
   // Estado
   status          EventStatus @default(SCHEDULED)
@@ -627,6 +633,12 @@ model Report {
   perceivedSeverity ReportSeverity
   devResponse      String?        @db.Text
   votesCount       Int            @default(0)
+
+  // Threading y asignación
+  assignedToId     String?
+  assignedTo       User?          @relation("AssignedReports", fields: [assignedToId], references: [id])
+  comments         ReportComment[]
+
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -636,6 +648,7 @@ model Report {
   @@index([status])
   @@index([internalPriority])
   @@index([createdAt])
+  @@index([assignedToId])
 }
 
 model ReportVote {
@@ -649,6 +662,21 @@ model ReportVote {
   @@unique([reportId, userId])
   @@index([reportId])
   @@index([userId])
+}
+
+// Comentarios en reportes (threading)
+model ReportComment {
+  id        String   @id @default(cuid())
+  reportId  String
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([reportId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 enum EventAuditAction {
@@ -704,6 +732,12 @@ enum NotificationType {
   INVITATION_REJECTED     // Tu invitación fue rechazada
   WAITLIST_SPOT_AVAILABLE // Plaza disponible desde waitlist
   BADGE_UNLOCKED          // Badge desbloqueado
+  REGISTRATION_PENDING    // Solicitud de registro pendiente (para organizador)
+  REGISTRATION_APPROVED   // Registro aprobado (para usuario)
+  REGISTRATION_REJECTED   // Registro rechazado (para usuario)
+  REPORT_CREATED          // Nuevo reporte creado (para admins)
+  REPORT_UPDATED          // Reporte actualizado (para creador)
+  REPORT_COMMENT          // Nuevo comentario en reporte
 }
 
 // Notificaciones del sistema

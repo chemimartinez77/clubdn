@@ -102,10 +102,7 @@ export default function NotificationBell() {
   };
 
   const handleNotificationClick = async (notification: Notification) => {
-    if (notification.type !== 'ADMIN_NEW_USER') {
-      return;
-    }
-
+    // Marcar como leída si no lo está
     if (!notification.read) {
       try {
         await markAsRead(notification.id);
@@ -119,33 +116,77 @@ export default function NotificationBell() {
     }
 
     setIsOpen(false);
-    navigate('/admin/pending-approvals', { state: { refreshPending: true } });
+
+    // Navegar según el tipo de notificación
+    switch (notification.type) {
+      case 'ADMIN_NEW_USER':
+        navigate('/admin/pending-approvals', { state: { refreshPending: true } });
+        break;
+
+      case 'EVENT_CREATED':
+      case 'EVENT_CANCELLED':
+      case 'EVENT_MODIFIED':
+      case 'EVENT_REMINDER':
+      case 'REGISTRATION_APPROVED':
+      case 'REGISTRATION_REJECTED':
+      case 'REGISTRATION_PENDING':
+        // Navegar a detalle del evento usando metadata.eventId
+        if (notification.metadata && typeof notification.metadata === 'object') {
+          const metadata = notification.metadata as { eventId?: string };
+          if (metadata.eventId) {
+            navigate(`/events/${metadata.eventId}`);
+          }
+        }
+        break;
+
+      case 'REPORT_CREATED':
+      case 'REPORT_UPDATED':
+      case 'REPORT_COMMENT':
+        navigate('/feedback');
+        break;
+
+      default:
+        // No hay navegación para otros tipos
+        break;
+    }
   };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'EVENT_CANCELLED':
-        return String.fromCodePoint(0x1F6AB);
+        return String.fromCodePoint(0x1F6AB); // 🚫
       case 'EVENT_MODIFIED':
-        return String.fromCodePoint(0x1F527);
+        return String.fromCodePoint(0x1F527); // 🔧
       case 'EVENT_CREATED':
-        return String.fromCodePoint(0x1F4C5);
+        return String.fromCodePoint(0x1F4C5); // 📅
       case 'EVENT_REMINDER':
-        return String.fromCodePoint(0x23F0);
+        return String.fromCodePoint(0x23F0); // ⏰
       case 'USER_APPROVED':
-        return String.fromCodePoint(0x2705);
+        return String.fromCodePoint(0x2705); // ✅
       case 'USER_REJECTED':
-        return String.fromCodePoint(0x274C);
+        return String.fromCodePoint(0x274C); // ❌
       case 'ADMIN_NEW_USER':
-        return String.fromCodePoint(0x1F464);
+        return String.fromCodePoint(0x1F464); // 👤
       case 'INVITATION_VALIDATED':
-        return String.fromCodePoint(0x1F4E9);
+        return String.fromCodePoint(0x1F4E9); // 📩
       case 'INVITATION_REJECTED':
-        return String.fromCodePoint(0x1F4E4);
+        return String.fromCodePoint(0x1F4E4); // 📤
       case 'WAITLIST_SPOT_AVAILABLE':
-        return String.fromCodePoint(0x1F6AA);
+        return String.fromCodePoint(0x1F6AA); // 🚪
+      case 'REGISTRATION_PENDING':
+        return String.fromCodePoint(0x23F3); // ⏳
+      case 'REGISTRATION_APPROVED':
+        return String.fromCodePoint(0x2705); // ✅
+      case 'REGISTRATION_REJECTED':
+        return String.fromCodePoint(0x274C); // ❌
+      case 'REPORT_CREATED':
+        return String.fromCodePoint(0x1F4DD); // 📝
+      case 'REPORT_UPDATED':
+        return String.fromCodePoint(0x1F504); // 🔄
+      case 'REPORT_COMMENT':
+        return String.fromCodePoint(0x1F4AC); // 💬
       default:
-        return String.fromCodePoint(0x1F514);
+        return String.fromCodePoint(0x1F514); // 🔔
     }
   };
 
@@ -214,8 +255,8 @@ export default function NotificationBell() {
                   <div
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
-                    role={notification.type === 'ADMIN_NEW_USER' ? 'button' : undefined}
-                    className={`p-4 border-b border-[var(--color-cardBorder)] hover:bg-[var(--color-tableRowHover)] transition-colors ${
+                    role="button"
+                    className={`p-4 border-b border-[var(--color-cardBorder)] hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer ${
                       !notification.read ? 'bg-[var(--color-tableRowHover)]' : ''
                     }`}
                   >

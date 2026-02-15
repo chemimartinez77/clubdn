@@ -10,7 +10,10 @@ import {
   unregisterFromEvent,
   removeParticipant,
   getEventAttendees,
-  syncEventBggIds
+  syncEventBggIds,
+  getPendingRegistrations,
+  approveRegistration,
+  rejectRegistration
 } from '../controllers/eventController';
 import { authenticate, requireAdmin } from '../middleware/auth';
 
@@ -25,6 +28,11 @@ router.get('/:id/attendees', authenticate, getEventAttendees);
 router.post('/:id/register', authenticate, registerToEvent);
 router.delete('/:id/register', authenticate, unregisterFromEvent);
 router.delete('/:id/registrations/:registrationId', authenticate, removeParticipant);
+
+// Aprobación de registros (organizador o admin)
+router.get('/:id/pending-registrations', authenticate, getPendingRegistrations);
+router.post('/:id/registrations/:registrationId/approve', authenticate, approveRegistration);
+router.post('/:id/registrations/:registrationId/reject', authenticate, rejectRegistration);
 
 // CRUD
 router.post('/', authenticate, createEvent); // Usuarios pueden crear PARTIDA, admins todo

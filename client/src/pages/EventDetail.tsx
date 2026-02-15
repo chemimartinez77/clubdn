@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
-import { Card, CardHeader, CardContent } from '../components/ui/Card';
+import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
 import { useToast } from '../hooks/useToast';
@@ -32,6 +32,7 @@ export default function EventDetail() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name?: string } | null>(null);
+  const [showPendingApprovals, setShowPendingApprovals] = useState(false);
 
   // Fetch event details
   const { data: event, isLoading } = useQuery({
@@ -160,6 +161,17 @@ export default function EventDetail() {
     enabled: !!id
   });
 
+  // Fetch pending registrations (solo si es organizador o admin)
+  const isOrganizerOrAdmin = isAdmin || user?.id === event?.createdBy;
+  const { data: pendingRegistrations = [], refetch: refetchPending } = useQuery({
+    queryKey: ['pending-registrations', id],
+    queryFn: async () => {
+      const response = await api.get(`/api/events/${id}/pending-registrations`);
+      return response.data.data?.registrations || [];
+    },
+    enabled: !!id && isOrganizerOrAdmin
+  });
+
   const createInvitationMutation = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -186,6 +198,42 @@ export default function EventDetail() {
     },
     onError: (err: unknown) => {
       showError(getErrorMessage(err, 'Error al crear invitacion'));
+    }
+  });
+
+  // Approve registration mutation
+  const approveRegistrationMutation = useMutation({
+    mutationFn: async (registrationId: string) => {
+      const response = await api.post(`/api/events/${id}/registrations/${registrationId}/approve`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: ['pending-registrations', id] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      refetchPending();
+      success(data.message || 'Registro aprobado');
+    },
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, 'Error al aprobar registro'));
+    }
+  });
+
+  // Reject registration mutation
+  const rejectRegistrationMutation = useMutation({
+    mutationFn: async (registrationId: string) => {
+      const response = await api.post(`/api/events/${id}/registrations/${registrationId}/reject`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: ['pending-registrations', id] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      refetchPending();
+      success(data.message || 'Registro rechazado');
+    },
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, 'Error al rechazar registro'));
     }
   });
 
@@ -275,8 +323,9 @@ export default function EventDetail() {
   }
   const isPast = eventStart < new Date();
   const isFull = (event.registeredCount || 0) >= event.maxAttendees;
+  const isPendingApproval = event.userRegistrationStatus === 'PENDING_APPROVAL';
   const canRegister = event.status === 'SCHEDULED' && !isPast && !event.isUserRegistered && !isFull;
-  const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED';
+  const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && !isPendingApproval;
   const canInvite = event.status !== 'CANCELLED' && !isPast && !isFull;
   const canDelete = isPartida && !isPast && event.status !== 'CANCELLED' && (isAdmin || user?.id === event.createdBy);
   const canCloseCapacity = isPartida
@@ -485,9 +534,15 @@ export default function EventDetail() {
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                         event.userRegistrationStatus === 'CONFIRMED'
                           ? 'bg-green-100 text-green-800'
+                          : event.userRegistrationStatus === 'PENDING_APPROVAL'
+                          ? 'bg-amber-100 text-amber-800'
                           : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                        {event.userRegistrationStatus === 'CONFIRMED' ? 'Estás registrado' : 'En lista de espera'}
+                        {event.userRegistrationStatus === 'CONFIRMED'
+                          ? 'Estás registrado'
+                          : event.userRegistrationStatus === 'PENDING_APPROVAL'
+                          ? 'Pendiente de aprobación'
+                          : 'En lista de espera'}
                       </span>
                     )}
                   </div>
@@ -523,6 +578,15 @@ export default function EventDetail() {
                         </svg>
                       </span>
                     </Button>
+                  )}
+
+                  {isPendingApproval && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-800 rounded-lg w-full sm:w-auto">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm font-medium">Pendiente de aprobación</span>
+                    </div>
                   )}
 
                   <Button
@@ -791,6 +855,76 @@ export default function EventDetail() {
             </Card>
           )}
         </div>
+
+        {/* Pending Approvals Section - Solo visible para organizador/admin */}
+        {isOrganizerOrAdmin && event.requiresApproval && pendingRegistrations.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Solicitudes Pendientes ({pendingRegistrations.length})</span>
+                <span className="text-sm font-normal text-[var(--color-textSecondary)]">
+                  Ordenadas por fecha de solicitud
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {pendingRegistrations.map((registration: any) => (
+                  <div
+                    key={registration.id}
+                    className="flex items-center justify-between p-4 bg-[var(--color-tableRowHover)] rounded-lg border border-[var(--color-cardBorder)]"
+                  >
+                    <div className="flex items-center gap-3">
+                      {registration.user.profile?.avatar ? (
+                        <img
+                          src={registration.user.profile.avatar}
+                          alt={registration.user.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center font-semibold">
+                          {registration.user.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-medium text-[var(--color-text)]">{registration.user.name}</p>
+                        <p className="text-xs text-[var(--color-textSecondary)]">
+                          Solicitó el {new Date(registration.createdAt).toLocaleDateString('es-ES', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => approveRegistrationMutation.mutate(registration.id)}
+                        disabled={approveRegistrationMutation.isPending || rejectRegistrationMutation.isPending}
+                        className="!bg-green-600 hover:!bg-green-700"
+                      >
+                        {approveRegistrationMutation.isPending ? 'Aprobando...' : 'Aprobar'}
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => rejectRegistrationMutation.mutate(registration.id)}
+                        disabled={approveRegistrationMutation.isPending || rejectRegistrationMutation.isPending}
+                        className="!bg-red-600 hover:!bg-red-700"
+                      >
+                        {rejectRegistrationMutation.isPending ? 'Rechazando...' : 'Rechazar'}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Photo Gallery */}
         <Card>

@@ -31,6 +31,20 @@ interface Report {
     name: string;
   };
   hasVoted: boolean;
+  assignedToId?: string | null;
+}
+
+interface ReportComment {
+  id: string;
+  reportId: string;
+  userId: string;
+  content: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    role: string;
+  };
 }
 
 const statusLabels: Record<ReportStatus, string> = {
@@ -161,6 +175,9 @@ export default function Feedback() {
   const [filterStatus, setFilterStatus] = useState<ReportStatus | 'ALL'>('ALL');
   const [sortByVotes, setSortByVotes] = useState(false);
 
+  const [selectedReport, setSelectedReport] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState('');
+
   const filtersKey = useMemo(
     () => ({ filterMine, filterStatus, sortByVotes }),
     [filterMine, filterStatus, sortByVotes]
@@ -209,6 +226,30 @@ export default function Feedback() {
     },
     onError: (err: any) => {
       showError(err.response?.data?.message || 'Error al votar');
+    }
+  });
+
+  const { data: comments = [], refetch: refetchComments } = useQuery({
+    queryKey: ['report-comments', selectedReport],
+    queryFn: async () => {
+      if (!selectedReport) return [];
+      const response = await api.get(`/api/reports/${selectedReport}/comments`);
+      return response.data.data || [];
+    },
+    enabled: !!selectedReport
+  });
+
+  const createCommentMutation = useMutation({
+    mutationFn: async (payload: { reportId: string; content: string }) => {
+      return await api.post(`/api/reports/${payload.reportId}/comments`, { content: payload.content });
+    },
+    onSuccess: () => {
+      refetchComments();
+      setCommentText('');
+      success('Comentario añadido');
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || 'Error al añadir comentario');
     }
   });
 
@@ -416,6 +457,88 @@ export default function Feedback() {
                     )}
 
                     {isAdmin && <ReportAdminControls report={report} />}
+
+                    <div className="border-t border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] mt-4">
+                      <button
+                        onClick={() => setSelectedReport(selectedReport === report.id ? null : report.id)}
+                        className="w-full px-6 py-3 text-left flex items-center justify-between hover:bg-[var(--color-cardHover)] transition-colors"
+                      >
+                        <span className="text-sm font-medium text-[var(--color-text)]">
+                          💬 Comentarios {selectedReport === report.id ? '▼' : '▶'}
+                        </span>
+                      </button>
+
+                      {selectedReport === report.id && (
+                        <div className="px-6 pb-6 space-y-4">
+                          {/* Lista de comentarios */}
+                          <div className="space-y-3 max-h-96 overflow-y-auto">
+                            {comments.length === 0 ? (
+                              <p className="text-sm text-[var(--color-textSecondary)] text-center py-4">
+                                No hay comentarios aún. Sé el primero en comentar.
+                              </p>
+                            ) : (
+                              comments.map((comment: ReportComment) => (
+                                <div
+                                  key={comment.id}
+                                  className={`p-4 rounded-lg ${
+                                    comment.user.role === 'ADMIN' || comment.user.role === 'SUPER_ADMIN'
+                                      ? 'bg-blue-50 border-l-4 border-blue-500'
+                                      : 'bg-white border border-[var(--color-cardBorder)]'
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between mb-2">
+                                    <span className="font-medium text-sm text-[var(--color-text)]">
+                                      {comment.user.name}
+                                      {(comment.user.role === 'ADMIN' || comment.user.role === 'SUPER_ADMIN') && (
+                                        <span className="ml-2 text-xs px-2 py-1 bg-blue-500 text-white rounded">Admin</span>
+                                      )}
+                                    </span>
+                                    <span className="text-xs text-[var(--color-textSecondary)]">
+                                      {new Date(comment.createdAt).toLocaleString('es-ES')}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm whitespace-pre-wrap text-[var(--color-textSecondary)]">{comment.content}</p>
+                                </div>
+                              ))
+                            )}
+                          </div>
+
+                          {/* Input de comentario */}
+                          {(isAdmin || report.user.id === user?.id) && (
+                            <div className="flex gap-2">
+                              <textarea
+                                value={commentText}
+                                onChange={(e) => setCommentText(e.target.value)}
+                                placeholder="Añadir comentario..."
+                                rows={2}
+                                className="flex-1 px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] resize-none"
+                              />
+                              <Button
+                                onClick={() => {
+                                  if (commentText.trim()) {
+                                    createCommentMutation.mutate({
+                                      reportId: report.id,
+                                      content: commentText.trim()
+                                    });
+                                  }
+                                }}
+                                disabled={!commentText.trim() || createCommentMutation.isPending}
+                                variant="primary"
+                              >
+                                {createCommentMutation.isPending ? 'Enviando...' : 'Enviar'}
+                              </Button>
+                            </div>
+                          )}
+
+                          {/* Indicador de asignación */}
+                          {report.assignedToId && (
+                            <p className="text-xs text-[var(--color-textSecondary)] mt-2">
+                              📌 Un administrador está trabajando en este reporte
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
