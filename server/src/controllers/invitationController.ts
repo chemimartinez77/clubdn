@@ -354,18 +354,26 @@ export const cancelInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    await prisma.invitation.update({
-      where: { id },
-      data: { status: InvitationStatus.CANCELLED }
-    });
+    await prisma.$transaction(async (tx) => {
+      await tx.invitation.update({
+        where: { id },
+        data: { status: InvitationStatus.CANCELLED }
+      });
 
-    await prisma.eventAuditLog.create({
-      data: {
-        eventId: invitation.eventId,
-        actorId: userId,
-        action: 'CANCEL_INVITE',
-        targetGuestId: invitation.eventGuest?.id || null
+      if (invitation.eventGuest?.id) {
+        await tx.eventGuest.delete({
+          where: { id: invitation.eventGuest.id }
+        });
       }
+
+      await tx.eventAuditLog.create({
+        data: {
+          eventId: invitation.eventId,
+          actorId: userId,
+          action: 'CANCEL_INVITE',
+          targetGuestId: invitation.eventGuest?.id || null
+        }
+      });
     });
 
     res.status(200).json({ success: true, message: 'Invitacion cancelada' });

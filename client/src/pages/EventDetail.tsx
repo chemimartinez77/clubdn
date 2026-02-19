@@ -769,7 +769,7 @@ export default function EventDetail() {
                       )}
                     </li>
                   ))}
-                  {event.invitations?.map((guest) => (
+                  {event.invitations?.filter((guest) => guest.status !== 'CANCELLED').map((guest) => (
                     <li key={guest.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-tableRowHover)]">
                       <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                         <span className="text-purple-600 font-semibold text-sm">
