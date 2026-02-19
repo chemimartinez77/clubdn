@@ -735,7 +735,7 @@ export default function EventDetail() {
           <Card>
             <CardHeader>
               <h3 className="text-lg font-semibold text-[var(--color-text)]">
-                Asistentes e invitados ({confirmed.length + (event.invitations?.length || 0)})
+                Asistentes e invitados ({confirmed.length + (event.invitations?.filter(i => i.status !== 'CANCELLED').length || 0)})
               </h3>
             </CardHeader>
             <CardContent>
