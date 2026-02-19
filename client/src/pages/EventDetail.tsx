@@ -529,19 +529,23 @@ export default function EventDetail() {
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[event.status]}`}>
                       {statusLabels[event.status]}
                     </span>
-                    {event.isUserRegistered && (
+                    {event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && (
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                         event.userRegistrationStatus === 'CONFIRMED'
                           ? 'bg-green-100 text-green-800'
                           : event.userRegistrationStatus === 'PENDING_APPROVAL'
                           ? 'bg-amber-100 text-amber-800'
-                          : 'bg-yellow-100 text-yellow-800'
+                          : event.userRegistrationStatus === 'WAITLIST'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-gray-100 text-gray-800'
                       }`}>
                         {event.userRegistrationStatus === 'CONFIRMED'
                           ? 'Estás registrado'
                           : event.userRegistrationStatus === 'PENDING_APPROVAL'
                           ? 'Pendiente de aprobación'
-                          : 'En lista de espera'}
+                          : event.userRegistrationStatus === 'WAITLIST'
+                          ? 'En lista de espera'
+                          : event.userRegistrationStatus}
                       </span>
                     )}
                   </div>

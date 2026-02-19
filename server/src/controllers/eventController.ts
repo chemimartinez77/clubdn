@@ -2,7 +2,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 
-const REGISTRATION_COOLDOWN_MS = 3000;
+const REGISTRATION_COOLDOWN_MS = 30000; // 30 segundos
 
 /**
  * GET /api/events - Listar eventos con filtros
@@ -165,7 +165,7 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
           guestCount: activeGuestCount,
           registeredCount,
           waitlistCount,
-          isUserRegistered: !!userRegistration,
+          isUserRegistered: !!userRegistration && userRegistration.status !== 'CANCELLED',
           userRegistrationStatus: userRegistration?.status,
           hasSocioRegistered,
           hasColaboradorRegistered
@@ -316,7 +316,7 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
             guestCount,
             registeredCount,
             waitlistCount,
-            isUserRegistered: !!userRegistration,
+            isUserRegistered: !!userRegistration && userRegistration.status !== 'CANCELLED',
             userRegistrationStatus: userRegistration?.status
           }
       }
