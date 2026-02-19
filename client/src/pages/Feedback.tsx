@@ -1,5 +1,6 @@
 // client/src/pages/Feedback.tsx
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -172,11 +173,14 @@ export default function Feedback() {
   const [screenshot, setScreenshot] = useState<File | null>(null);
 
   const [filterMine, setFilterMine] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<ReportStatus | 'ALL'>('ALL');
+  const [filterStatus, setFilterStatus] = useState<ReportStatus | 'ALL' | 'ALL_EXCEPT_HECHO'>('ALL_EXCEPT_HECHO');
   const [sortByVotes, setSortByVotes] = useState(false);
 
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
+
+  const [searchParams] = useSearchParams();
+  const scrolledRef = useRef(false);
 
   const filtersKey = useMemo(
     () => ({ filterMine, filterStatus, sortByVotes }),
@@ -188,12 +192,27 @@ export default function Feedback() {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filterMine) params.append('mine', 'true');
-      if (filterStatus !== 'ALL') params.append('status', filterStatus);
+      if (filterStatus !== 'ALL' && filterStatus !== 'ALL_EXCEPT_HECHO') params.append('status', filterStatus);
       if (sortByVotes) params.append('sort', 'votes');
       const response = await api.get(`/api/reports?${params.toString()}`);
       return response.data.data as Report[];
     }
   });
+
+  const visibleReports = useMemo(() => {
+    if (filterStatus === 'ALL_EXCEPT_HECHO') return reports.filter(r => r.status !== 'HECHO');
+    return reports;
+  }, [reports, filterStatus]);
+
+  useEffect(() => {
+    const reportId = searchParams.get('report');
+    if (!reportId || isLoading || scrolledRef.current) return;
+    const el = document.getElementById(reportId);
+    if (el) {
+      scrolledRef.current = true;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [searchParams, isLoading, reports]);
 
   const createMutation = useMutation({
     mutationFn: async (payload: FormData) => {
@@ -380,9 +399,10 @@ export default function Feedback() {
               </Button>
               <select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as ReportStatus | 'ALL')}
+                onChange={(e) => setFilterStatus(e.target.value as ReportStatus | 'ALL' | 'ALL_EXCEPT_HECHO')}
                 className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
               >
+                <option value="ALL_EXCEPT_HECHO">Todos (menos &apos;Hecho&apos;)</option>
                 <option value="ALL">Estado (todos)</option>
                 <option value="NUEVO">Nuevo</option>
                 <option value="EN_REVISION">En revisión</option>
@@ -395,14 +415,14 @@ export default function Feedback() {
               <div className="flex justify-center items-center py-10">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--color-primary)]"></div>
               </div>
-            ) : reports.length === 0 ? (
+            ) : visibleReports.length === 0 ? (
               <div className="text-center text-[var(--color-textSecondary)] py-10">
                 No hay reportes aún. Sé el primero en dejar feedback.
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4">
-                {reports.map((report) => (
-                  <div key={report.id} className="border border-[var(--color-cardBorder)] rounded-lg p-5 bg-[var(--color-cardBackground)]">
+                {visibleReports.map((report) => (
+                  <div key={report.id} id={report.id} className="border border-[var(--color-cardBorder)] rounded-lg p-5 bg-[var(--color-cardBackground)]">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">

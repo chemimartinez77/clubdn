@@ -321,16 +321,19 @@ export const updateReportAdmin = async (req: Request, res: Response): Promise<vo
       }
     });
 
-    // Detectar cambios y notificar al creador del reporte
+    // Detectar cambios y notificar al creador del reporte (solo status y devResponse)
+    const statusLabels: Record<string, string> = {
+      NUEVO: 'Nuevo',
+      EN_REVISION: 'En revisión',
+      EN_PROGRESO: 'En progreso',
+      HECHO: 'Hecho',
+    };
     const changes: string[] = [];
     if (status && status !== existingReport.status) {
-      changes.push(`Estado: ${status}`);
+      changes.push(`Estado cambiado a "${statusLabels[status] || status}"`);
     }
-    if (internalPriority && internalPriority !== existingReport.internalPriority) {
-      changes.push(`Prioridad: ${internalPriority}`);
-    }
-    if (devResponse !== undefined && devResponse !== existingReport.devResponse) {
-      changes.push('Respuesta actualizada');
+    if (devResponse !== undefined && devResponse !== existingReport.devResponse && devResponse) {
+      changes.push('Nueva respuesta del desarrollador');
     }
 
     if (changes.length > 0) {

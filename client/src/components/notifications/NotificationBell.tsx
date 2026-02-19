@@ -142,6 +142,13 @@ export default function NotificationBell() {
       case 'REPORT_CREATED':
       case 'REPORT_UPDATED':
       case 'REPORT_COMMENT':
+        if (notification.metadata && typeof notification.metadata === 'object') {
+          const metadata = notification.metadata as { reportId?: string };
+          if (metadata.reportId) {
+            navigate(`/feedback?report=${metadata.reportId}`);
+            break;
+          }
+        }
         navigate('/feedback');
         break;
 
