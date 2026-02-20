@@ -17,6 +17,7 @@ interface Document {
   mimeType: string;
   size: number;
   visibility: DocumentVisibility;
+  url: string;
   createdAt: string;
   uploadedBy: {
     id: string;
@@ -216,23 +217,15 @@ export default function Documentos() {
     uploadMutation.mutate(formData);
   };
 
-  const handleDownload = async (doc: Document) => {
-    try {
-      const response = await api.get(`/api/documents/${doc.id}/download`, {
-        responseType: 'blob'
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', doc.filename);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch {
-      showError('Error al descargar el documento');
-    }
+  const handleDownload = (doc: Document) => {
+    // Descargar directamente desde Cloudinary
+    const link = document.createElement('a');
+    link.href = doc.url;
+    link.setAttribute('download', doc.filename);
+    link.setAttribute('target', '_blank');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
   const handleDelete = (doc: Document) => {

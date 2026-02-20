@@ -1,8 +1,16 @@
 // server/src/controllers/documentController.ts
 import { Request, Response } from 'express';
 import { PrismaClient, DocumentVisibility, UserRole } from '@prisma/client';
+import { v2 as cloudinary } from 'cloudinary';
 
 const prisma = new PrismaClient();
+
+// Configurar Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 // Tipos de archivo permitidos
 const ALLOWED_MIME_TYPES = [
@@ -18,20 +26,6 @@ const ALLOWED_MIME_TYPES = [
 
 // Tamaño máximo: 20MB
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
-
-// Verificar si el usuario puede acceder a un documento según su visibilidad
-const canAccessDocument = (visibility: DocumentVisibility, userRole: UserRole): boolean => {
-  switch (visibility) {
-    case 'PUBLIC':
-      return true;
-    case 'ADMIN':
-      return userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
-    case 'SUPER_ADMIN':
-      return userRole === 'SUPER_ADMIN';
-    default:
-      return false;
-  }
-};
 
 // Verificar si el usuario es admin
 const isAdmin = (role: UserRole): boolean => {
@@ -69,7 +63,7 @@ export const getDocuments = async (req: Request, res: Response): Promise<void> =
       where.title = { contains: search, mode: 'insensitive' };
     }
 
-    // Obtener documentos SIN el contenido binario (para rendimiento)
+    // Obtener documentos con sus URLs de Cloudinary
     const documents = await prisma.document.findMany({
       where,
       select: {
@@ -79,6 +73,8 @@ export const getDocuments = async (req: Request, res: Response): Promise<void> =
         mimeType: true,
         size: true,
         visibility: true,
+        url: true,
+        cloudinaryId: true,
         createdAt: true,
         updatedAt: true,
         uploadedBy: {
@@ -100,49 +96,6 @@ export const getDocuments = async (req: Request, res: Response): Promise<void> =
     res.status(500).json({
       success: false,
       message: 'Error al obtener documentos'
-    });
-  }
-};
-
-/**
- * Descargar un documento específico
- */
-export const downloadDocument = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userRole = req.user?.role as UserRole;
-    const { id } = req.params;
-
-    const document = await prisma.document.findUnique({
-      where: { id }
-    });
-
-    if (!document) {
-      res.status(404).json({
-        success: false,
-        message: 'Documento no encontrado'
-      });
-      return;
-    }
-
-    // Verificar permisos
-    if (!canAccessDocument(document.visibility, userRole)) {
-      res.status(403).json({
-        success: false,
-        message: 'No tienes permiso para acceder a este documento'
-      });
-      return;
-    }
-
-    // Enviar archivo
-    res.setHeader('Content-Type', document.mimeType);
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(document.filename)}"`);
-    res.setHeader('Content-Length', document.size.toString());
-    res.send(document.content);
-  } catch (error) {
-    console.error('Error al descargar documento:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al descargar documento'
     });
   }
 };
@@ -214,14 +167,30 @@ export const uploadDocument = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Crear documento en BD
+    // Subir a Cloudinary
+    const uploadResult = await new Promise<any>((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'clubdn/documents',
+          resource_type: 'auto', // Permite PDF, imágenes, etc.
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(file.buffer);
+    });
+
+    // Crear documento en BD con URL de Cloudinary
     const document = await prisma.document.create({
       data: {
         title: title.trim(),
         filename: file.originalname,
         mimeType: file.mimetype,
         size: file.size,
-        content: file.buffer,
+        cloudinaryId: uploadResult.public_id,
+        url: uploadResult.secure_url,
         visibility: docVisibility,
         uploadedById: userId!
       },
@@ -232,6 +201,7 @@ export const uploadDocument = async (req: Request, res: Response): Promise<void>
         mimeType: true,
         size: true,
         visibility: true,
+        url: true,
         createdAt: true,
         uploadedBy: {
           select: {
@@ -286,7 +256,16 @@ export const deleteDocument = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Eliminar
+    // Eliminar de Cloudinary
+    try {
+      const resourceType = document.mimeType.startsWith('image/') ? 'image' : 'raw';
+      await cloudinary.uploader.destroy(document.cloudinaryId, { resource_type: resourceType });
+    } catch (cloudinaryError) {
+      console.error('Error al eliminar de Cloudinary:', cloudinaryError);
+      // Continuar aunque falle Cloudinary (el documento en BD se borrará igual)
+    }
+
+    // Eliminar de BD
     await prisma.document.delete({
       where: { id }
     });

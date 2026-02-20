@@ -579,8 +579,9 @@ model Document {
   mimeType      String             // application/pdf, image/png, etc.
   size          Int                // Tamaño en bytes
 
-  // Contenido binario (almacenado en BYTEA)
-  content       Bytes
+  // Cloudinary storage
+  cloudinaryId  String             // public_id de Cloudinary
+  url           String             // Secure URL del documento
 
   // Permisos/Visibilidad
   visibility    DocumentVisibility @default(PUBLIC)

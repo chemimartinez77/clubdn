@@ -4,7 +4,6 @@ import multer from 'multer';
 import { authenticate } from '../middleware/auth';
 import {
   getDocuments,
-  downloadDocument,
   uploadDocument,
   deleteDocument,
   getDocumentStats
@@ -28,9 +27,6 @@ router.get('/', getDocuments);
 
 // GET /api/documents/stats - Estadísticas (solo admin)
 router.get('/stats', getDocumentStats);
-
-// GET /api/documents/:id/download - Descargar documento
-router.get('/:id/download', downloadDocument);
 
 // POST /api/documents - Subir documento (solo admin)
 router.post('/', upload.single('file'), uploadDocument);

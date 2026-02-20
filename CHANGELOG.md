@@ -4,6 +4,51 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-02-21
+
+### ⚡ Mejoras de Rendimiento
+
+#### Migración de almacenamiento de documentos a Cloudinary
+- **Problema anterior:** Los documentos se almacenaban en PostgreSQL usando BYTEA, aumentando el tamaño de la base de datos
+- **Solución:** Migración completa a Cloudinary para almacenamiento en la nube
+- **Ventajas:**
+  - Base de datos más ligera (solo metadatos y URLs)
+  - Backups de BD más rápidos (no incluyen archivos binarios)
+  - Mejor rendimiento en queries (sin excluir campo `content`)
+  - Descarga directa desde CDN global de Cloudinary
+  - Consistencia con sistema de EventPhoto (mismo patrón)
+
+**Cambios en el modelo de datos:**
+- ❌ Eliminado: `content: Bytes` (almacenamiento binario en PostgreSQL)
+- ✅ Añadido: `cloudinaryId: String` (identificador único en Cloudinary)
+- ✅ Añadido: `url: String` (URL segura del documento en Cloudinary)
+
+**Cambios en el backend:**
+- Configuración de Cloudinary (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`)
+- `uploadDocument`: Sube archivos a carpeta `clubdn/documents` con `resource_type: 'auto'`
+- `deleteDocument`: Elimina de Cloudinary (usando `resource_type` según mimeType) antes de borrar de BD
+- ❌ Eliminada función `downloadDocument` (ya no necesaria)
+- `getDocuments`: Incluye campos `url` y `cloudinaryId` en response
+
+**Cambios en el frontend:**
+- Interface `Document`: Añadido campo `url`
+- `handleDownload`: Simplificado para descargar directamente desde Cloudinary (sin petición al backend)
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` - Modelo Document actualizado
+- `server/src/controllers/documentController.ts` - Integración completa con Cloudinary
+- `server/src/routes/documentRoutes.ts` - Eliminada ruta `GET /api/documents/:id/download`
+- `client/src/pages/Documentos.tsx` - Descarga directa desde Cloudinary
+
+**Notas técnicas:**
+- Límite de 20MB por archivo (sin cambios)
+- Tipos permitidos: PDF, Word, Excel, JPG, PNG, GIF (sin cambios)
+- Sistema de visibilidad (`PUBLIC`, `ADMIN`, `SUPER_ADMIN`) intacto
+- Los documentos se almacenan en Cloudinary con detección automática de tipo (`resource_type: 'auto'`)
+- Al eliminar: imágenes usan `resource_type: 'image'`, otros archivos usan `'raw'`
+
+---
+
 ## 2026-02-20
 
 ### 🐛 Correcciones
