@@ -371,7 +371,7 @@ export const cancelInvitation = async (req: Request, res: Response): Promise<voi
           eventId: invitation.eventId,
           actorId: userId,
           action: 'CANCEL_INVITE',
-          targetGuestId: invitation.eventGuest?.id || null
+          targetGuestId: null
         }
       });
     });
