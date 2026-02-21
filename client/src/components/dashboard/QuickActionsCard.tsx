@@ -114,7 +114,7 @@ export default function QuickActionsCard({ isAdmin }: QuickActionsCardProps) {
 
         {/* Acceso al perfil - Ver y editar información personal */}
         <QuickAction
-          to="/perfil"
+          to="/profile"
           title="Mi Perfil"
           description="Ver y editar mi información"
           enabled={true}
