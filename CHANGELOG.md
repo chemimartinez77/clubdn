@@ -25,6 +25,10 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### 🐛 Corrección de errores
 
+#### Editar partida: eliminar el juego no limpiaba la imagen
+- **Problema:** Al editar una partida y quitar el juego seleccionado, la imagen seguía mostrándose después de guardar. Los campos `gameName`, `gameImage` y `bggId` se enviaban como `undefined` (que se omite en JSON) en lugar de `null`, por lo que el backend los ignoraba y conservaba los valores anteriores
+- **Solución:** Usar `?? null` en lugar de `?.prop` para enviar `null` explícito cuando no hay juego seleccionado
+
 #### Registro rechazado: mensaje de error genérico al intentar registrarse de nuevo
 - **Problema:** Si un usuario con solicitud rechazada intentaba registrarse con el mismo correo, recibía el mensaje genérico "Este email ya está registrado" sin más explicación
 - **Solución:** El servidor detecta el estado `REJECTED` y devuelve un mensaje claro indicando que la solicitud fue rechazada y que debe contactar con un administrador
@@ -218,4 +222,4 @@ Incluye:
 
 ---
 
-**Última actualización:** 20 de Febrero de 2026
+**Última actualización:** 22 de Febrero de 2026

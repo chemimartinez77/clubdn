@@ -267,10 +267,10 @@ export default function EventDetail() {
       address: editFormData.address || undefined,
       maxAttendees: editFormData.maxAttendees,
       requiresApproval: editFormData.requiresApproval,
-      gameName: editSelectedGame?.name,
-      gameImage: editSelectedGame?.image,
-      bggId: editSelectedGame?.id,
-      gameCategory: editSelectedCategory || undefined,
+      gameName: editSelectedGame?.name ?? null,
+      gameImage: editSelectedGame?.image ?? null,
+      bggId: editSelectedGame?.id ?? null,
+      gameCategory: editSelectedCategory || null,
     });
   };
 
