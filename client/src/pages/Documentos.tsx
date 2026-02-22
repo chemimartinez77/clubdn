@@ -225,15 +225,24 @@ export default function Documentos() {
     uploadMutation.mutate(formData);
   };
 
-  const handleDownload = (doc: Document) => {
-    // Descargar directamente desde Cloudinary
-    const link = document.createElement('a');
-    link.href = doc.url;
-    link.setAttribute('download', doc.filename);
-    link.setAttribute('target', '_blank');
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+  const handleDownload = async (doc: Document) => {
+    try {
+      // Descargar como blob para forzar el nombre de archivo correcto
+      // (el atributo 'download' es ignorado por el navegador en dominios externos)
+      const response = await fetch(doc.url);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.setAttribute('download', doc.filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      // Fallback: abrir en nueva pestaña si falla el fetch
+      window.open(doc.url, '_blank');
+    }
   };
 
   const handleDelete = (doc: Document) => {
