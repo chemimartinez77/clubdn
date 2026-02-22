@@ -26,6 +26,13 @@ export const register = async (req: Request, res: Response) => {
     });
 
     if (existingUser) {
+      if (existingUser.status === 'REJECTED') {
+        return res.status(403).json({
+          success: false,
+          message: 'Tu solicitud de registro fue rechazada. Por favor, contacta con un administrador para más información.',
+          failureReason: 'rejected',
+        });
+      }
       return res.status(400).json({
         success: false,
         message: 'Este email ya está registrado',

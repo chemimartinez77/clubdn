@@ -383,23 +383,6 @@ export const getReportComments = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    // Verificar que el usuario es el creador o admin
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true }
-    });
-
-    const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
-    const isCreator = report.userId === userId;
-
-    if (!isAdmin && !isCreator) {
-      res.status(403).json({
-        success: false,
-        message: 'No tienes permiso para ver los comentarios'
-      });
-      return;
-    }
-
     // Obtener comentarios ordenados por fecha
     const comments = await prisma.reportComment.findMany({
       where: { reportId: id },

@@ -85,20 +85,16 @@ function ReportAdminControls({ report }: { report: Report }) {
   const { success, error: showError } = useToast();
   const [status, setStatus] = useState<ReportStatus>(report.status);
   const [priority, setPriority] = useState<ReportPriority>(report.internalPriority);
-  const [devResponse, setDevResponse] = useState<string>(report.devResponse || '');
-
   useEffect(() => {
     setStatus(report.status);
     setPriority(report.internalPriority);
-    setDevResponse(report.devResponse || '');
-  }, [report.status, report.internalPriority, report.devResponse]);
+  }, [report.status, report.internalPriority]);
 
   const updateMutation = useMutation({
     mutationFn: async () => {
       const response = await api.patch(`/api/admin/reports/${report.id}`, {
         status,
         internalPriority: priority,
-        devResponse
       });
       return response.data;
     },
@@ -138,16 +134,6 @@ function ReportAdminControls({ report }: { report: Report }) {
               <option key={value} value={value}>{priorityLabels[value as ReportPriority]}</option>
             ))}
           </select>
-        </div>
-        <div className="md:col-span-3">
-          <label className="block text-xs font-medium text-[var(--color-textSecondary)] mb-1">Respuesta del desarrollador</label>
-          <textarea
-            value={devResponse}
-            onChange={(e) => setDevResponse(e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
-            placeholder="Comparte el estado o la solución..."
-          />
         </div>
       </div>
       <Button
@@ -469,19 +455,12 @@ export default function Feedback() {
                       </div>
                     )}
 
-                    {report.devResponse && (
-                      <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
-                        <p className="text-sm font-semibold text-green-800">Respuesta del desarrollador</p>
-                        <p className="text-sm text-green-900 mt-1 whitespace-pre-wrap">{report.devResponse}</p>
-                      </div>
-                    )}
-
                     {isAdmin && <ReportAdminControls report={report} />}
 
-                    <div className="border-t border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] mt-4">
+                    <div className="border-t border-[var(--color-cardBorder)] mt-4">
                       <button
                         onClick={() => setSelectedReport(selectedReport === report.id ? null : report.id)}
-                        className="w-full px-6 py-3 text-left flex items-center justify-between hover:bg-[var(--color-cardHover)] transition-colors"
+                        className="w-full px-6 py-3 text-left flex items-center justify-between hover:bg-[var(--color-tableRowHover)] transition-colors"
                       >
                         <span className="text-sm font-medium text-[var(--color-text)]">
                           💬 Comentarios {selectedReport === report.id ? '▼' : '▶'}
@@ -489,49 +468,74 @@ export default function Feedback() {
                       </button>
 
                       {selectedReport === report.id && (
-                        <div className="px-6 pb-6 space-y-4">
-                          {/* Lista de comentarios */}
-                          <div className="space-y-3 max-h-96 overflow-y-auto">
+                        <div className="px-6 pb-6 space-y-3">
+                          {/* Hilo de comentarios */}
+                          <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                             {comments.length === 0 ? (
-                              <p className="text-sm text-[var(--color-textSecondary)] text-center py-4">
-                                No hay comentarios aún. Sé el primero en comentar.
+                              <p className="text-sm text-[var(--color-textSecondary)] text-center py-6">
+                                No hay comentarios aún.
                               </p>
                             ) : (
-                              comments.map((comment: ReportComment) => (
-                                <div
-                                  key={comment.id}
-                                  className={`p-4 rounded-lg ${
-                                    comment.user.role === 'ADMIN' || comment.user.role === 'SUPER_ADMIN'
-                                      ? 'bg-blue-50 border-l-4 border-blue-500'
-                                      : 'bg-white border border-[var(--color-cardBorder)]'
-                                  }`}
-                                >
-                                  <div className="flex items-start justify-between mb-2">
-                                    <span className="font-medium text-sm text-[var(--color-text)]">
-                                      {comment.user.name}
-                                      {(comment.user.role === 'ADMIN' || comment.user.role === 'SUPER_ADMIN') && (
-                                        <span className="ml-2 text-xs px-2 py-1 bg-blue-500 text-white rounded">Admin</span>
-                                      )}
-                                    </span>
-                                    <span className="text-xs text-[var(--color-textSecondary)]">
-                                      {new Date(comment.createdAt).toLocaleString('es-ES')}
-                                    </span>
+                              comments.map((comment: ReportComment) => {
+                                const isAdminComment = comment.user.role === 'ADMIN' || comment.user.role === 'SUPER_ADMIN';
+                                const isOwnComment = comment.user.id === user?.id;
+                                return (
+                                  <div
+                                    key={comment.id}
+                                    className={`flex gap-3 ${isOwnComment ? 'flex-row-reverse' : 'flex-row'}`}
+                                  >
+                                    {/* Avatar */}
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                                      isAdminComment
+                                        ? 'bg-[var(--color-primary)] text-white'
+                                        : 'bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)]'
+                                    }`}>
+                                      {comment.user.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    {/* Burbuja */}
+                                    <div className={`max-w-[75%] ${isOwnComment ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+                                      <div className="flex items-center gap-2">
+                                        {!isOwnComment && (
+                                          <span className="text-xs font-semibold text-[var(--color-text)]">{comment.user.name}</span>
+                                        )}
+                                        {isAdminComment && (
+                                          <span className="text-xs px-1.5 py-0.5 bg-[var(--color-primary)] text-white rounded font-medium">Admin</span>
+                                        )}
+                                        <span className="text-xs text-[var(--color-textSecondary)]">
+                                          {new Date(comment.createdAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                      </div>
+                                      <div className={`px-4 py-2.5 rounded-2xl text-sm whitespace-pre-wrap leading-relaxed ${
+                                        isOwnComment
+                                          ? 'bg-[var(--color-primary)] text-white rounded-tr-sm'
+                                          : isAdminComment
+                                            ? 'bg-[var(--color-tableRowHover)] text-[var(--color-text)] border border-[var(--color-primary)] rounded-tl-sm'
+                                            : 'bg-[var(--color-tableRowHover)] text-[var(--color-text)] rounded-tl-sm'
+                                      }`}>
+                                        {comment.content}
+                                      </div>
+                                    </div>
                                   </div>
-                                  <p className="text-sm whitespace-pre-wrap text-[var(--color-textSecondary)]">{comment.content}</p>
-                                </div>
-                              ))
+                                );
+                              })
                             )}
                           </div>
 
                           {/* Input de comentario */}
                           {(isAdmin || report.user.id === user?.id) && (
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 pt-2 border-t border-[var(--color-cardBorder)]">
                               <textarea
                                 value={commentText}
                                 onChange={(e) => setCommentText(e.target.value)}
-                                placeholder="Añadir comentario..."
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey && commentText.trim()) {
+                                    e.preventDefault();
+                                    createCommentMutation.mutate({ reportId: report.id, content: commentText.trim() });
+                                  }
+                                }}
+                                placeholder="Escribe un comentario... (Enter para enviar)"
                                 rows={2}
-                                className="flex-1 px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] resize-none"
+                                className="flex-1 px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] resize-none text-sm bg-[var(--color-inputBackground)] text-[var(--color-text)]"
                               />
                               <Button
                                 onClick={() => {
@@ -545,14 +549,13 @@ export default function Feedback() {
                                 disabled={!commentText.trim() || createCommentMutation.isPending}
                                 variant="primary"
                               >
-                                {createCommentMutation.isPending ? 'Enviando...' : 'Enviar'}
+                                {createCommentMutation.isPending ? '...' : 'Enviar'}
                               </Button>
                             </div>
                           )}
 
-                          {/* Indicador de asignación */}
                           {report.assignedToId && (
-                            <p className="text-xs text-[var(--color-textSecondary)] mt-2">
+                            <p className="text-xs text-[var(--color-textSecondary)]">
                               📌 Un administrador está trabajando en este reporte
                             </p>
                           )}

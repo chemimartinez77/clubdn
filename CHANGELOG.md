@@ -4,7 +4,42 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-02-22
+
+### 🐛 Corrección de errores
+
+#### Registro rechazado: mensaje de error genérico al intentar registrarse de nuevo
+- **Problema:** Si un usuario con solicitud rechazada intentaba registrarse con el mismo correo, recibía el mensaje genérico "Este email ya está registrado" sin más explicación
+- **Solución:** El servidor detecta el estado `REJECTED` y devuelve un mensaje claro indicando que la solicitud fue rechazada y que debe contactar con un administrador
+
+### ✨ Mejoras
+
+#### Sección de comentarios en Feedback rediseñada como hilo de conversación
+- Eliminado el campo separado "Respuesta del desarrollador"; toda la comunicación ocurre en el hilo de comentarios
+- Nuevo diseño tipo chat: mensajes propios a la derecha, mensajes de otros a la izquierda
+- Los comentarios de administradores se distinguen visualmente con borde de color primario y badge "Admin"
+- Avatar con inicial del nombre del usuario
+- `Enter` para enviar, `Shift+Enter` para salto de línea
+- Los comentarios son visibles para cualquier usuario autenticado (antes solo creador + admins)
+- Los permisos para comentar se mantienen: solo el creador del reporte y los admins pueden escribir
+
+### 🛠️ Infraestructura
+
+#### Configuración inicial de Playwright para tests E2E
+- Instalado `@playwright/test` en el cliente
+- Añadida guía de configuración de entorno local y staging en `client/tests/e2e/SETUP_E2E_TESTING_2026-02-21_20-14.md`
+
+---
+
 ## 2026-02-21
+
+### 🐛 Corrección de errores
+
+#### Error 500 al cancelar invitación a evento
+- **Problema:** Al cancelar una invitación, la transacción fallaba con error de FK porque se intentaba referenciar en el audit log un `EventGuest` que había sido eliminado en la misma transacción
+- **Solución:** Establecer `targetGuestId: null` en el registro de auditoría al cancelar invitaciones
+
+---
 
 ### ⚡ Mejoras de Rendimiento
 
