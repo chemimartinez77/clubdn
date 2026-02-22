@@ -12,6 +12,7 @@ import {
   getMemberProfile,
   updateMemberProfile,
   markMemberAsBaja,
+  reactivateMember,
   exportMembersCSV,
   uploadMemberAvatar,
   getMembershipHistory
@@ -83,6 +84,7 @@ router.post('/members/:memberId/avatar', upload.single('avatar'), uploadMemberAv
  * Marcar un miembro como BAJA
  */
 router.post('/members/:memberId/mark-baja', markMemberAsBaja);
+router.post('/members/:memberId/reactivate', reactivateMember);
 
 /**
  * GET /api/admin/members/export/csv

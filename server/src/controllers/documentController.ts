@@ -167,23 +167,23 @@ export const uploadDocument = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Subir a Cloudinary usando upload_large_stream para soportar archivos > 10MB
+    // Subir a Cloudinary
     const uploadResult = await new Promise<any>((resolve, reject) => {
-      const { PassThrough } = require('stream');
-      const bufferStream = new PassThrough();
-      const uploadStream = cloudinary.uploader.upload_large_stream(
+      const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: 'clubdn/documents',
           resource_type: 'auto',
-          chunk_size: 6 * 1024 * 1024, // chunks de 6MB
         },
-        (error: any, result: any) => {
-          if (error) reject(error);
-          else resolve(result);
+        (error, result) => {
+          if (error) {
+            console.error('[Cloudinary] Upload error:', JSON.stringify(error));
+            reject(error);
+          } else {
+            resolve(result);
+          }
         }
       );
-      bufferStream.end(file.buffer);
-      bufferStream.pipe(uploadStream);
+      uploadStream.end(file.buffer);
     });
 
     // Crear documento en BD con URL de Cloudinary
@@ -222,10 +222,10 @@ export const uploadDocument = async (req: Request, res: Response): Promise<void>
       data: document
     });
   } catch (error) {
-    console.error('Error al subir documento:', error);
+    console.error('Error al subir documento:', error instanceof Error ? error.message : JSON.stringify(error));
     res.status(500).json({
       success: false,
-      message: 'Error al subir documento'
+      message: error instanceof Error ? error.message : 'Error al subir documento'
     });
   }
 };

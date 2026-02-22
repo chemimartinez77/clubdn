@@ -65,9 +65,15 @@ export const getClubConfig = async (_req: Request, res: Response) => {
       });
     }
 
+    // Normalizar membershipTypes a array por si el campo Json está corrompido
+    const data = {
+      ...config,
+      membershipTypes: Array.isArray(config.membershipTypes) ? config.membershipTypes : []
+    };
+
     return res.json({
       success: true,
-      data: config
+      data
     });
   } catch (error) {
     console.error('[CONFIG] Error al obtener configuración:', error);

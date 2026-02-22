@@ -40,6 +40,16 @@ export const useMembers = (filters: MemberFilters) => {
     },
   });
 
+  const reactivateMemberMutation = useMutation({
+    mutationFn: async ({ memberId }: { memberId: string }) => {
+      const response = await api.post(`/api/admin/members/${memberId}/reactivate`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+    },
+  });
+
   const exportCSV = () => {
     const exportQueryString = new URLSearchParams({
       search: filters.search || '',
@@ -62,6 +72,8 @@ export const useMembers = (filters: MemberFilters) => {
     refetch,
     markAsBaja: markAsBajaMutation.mutate,
     isMarkingBaja: markAsBajaMutation.isPending,
+    reactivateMember: reactivateMemberMutation.mutate,
+    isReactivating: reactivateMemberMutation.isPending,
     exportCSV,
   };
 };

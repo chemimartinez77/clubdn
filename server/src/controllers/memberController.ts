@@ -527,6 +527,55 @@ export const markMemberAsBaja = async (req: Request, res: Response): Promise<voi
 };
 
 /**
+ * POST /api/admin/members/:memberId/reactivate
+ * Reactivate a member that was previously marked as BAJA
+ */
+export const reactivateMember = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { memberId } = req.params;
+
+    const membership = await prisma.membership.findUnique({
+      where: { userId: memberId }
+    });
+
+    if (!membership) {
+      res.status(404).json({
+        success: false,
+        message: 'Membresía no encontrada'
+      });
+      return;
+    }
+
+    if (!membership.fechaBaja) {
+      res.status(400).json({
+        success: false,
+        message: 'El miembro no está marcado como BAJA'
+      });
+      return;
+    }
+
+    await prisma.membership.update({
+      where: { userId: memberId },
+      data: {
+        fechaBaja: null,
+        isActive: true
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Miembro reactivado exitosamente'
+    });
+  } catch (error) {
+    console.error('Error reactivating member:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al reactivar miembro'
+    });
+  }
+};
+
+/**
  * GET /api/admin/members/export/csv
  * Export members to CSV with same filters as list view
  */

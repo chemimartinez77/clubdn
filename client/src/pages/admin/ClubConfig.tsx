@@ -35,7 +35,7 @@ export default function ClubConfigPage() {
         clubAddress: config.clubAddress,
         defaultCurrency: config.defaultCurrency
       });
-      setMembershipTypes(config.membershipTypes);
+      setMembershipTypes(Array.isArray(config.membershipTypes) ? config.membershipTypes : []);
     }
   }, [config]);
 

@@ -46,7 +46,7 @@ export default function Members() {
   });
 
   // Fetch members data
-  const { data, isLoading, refetch, markAsBaja, isMarkingBaja, exportCSV } = useMembers(filters);
+  const { data, isLoading, refetch, markAsBaja, isMarkingBaja, reactivateMember, isReactivating, exportCSV } = useMembers(filters);
 
   const { data: memberProfile, isLoading: isProfileLoading, isError: isProfileError } = useQuery({
     queryKey: ['memberProfile', selectedMember?.id],
@@ -191,6 +191,20 @@ export default function Members() {
   const handleMarkAsBaja = (member: MemberData) => {
     setSelectedMember(member);
     setBajaModalOpen(true);
+  };
+
+  const handleReactivate = (member: MemberData) => {
+    reactivateMember(
+      { memberId: member.id },
+      {
+        onSuccess: () => {
+          success('Miembro reactivado exitosamente');
+        },
+        onError: () => {
+          error('Error al reactivar miembro');
+        },
+      }
+    );
   };
 
   const confirmMarkAsBaja = () => {
@@ -548,6 +562,16 @@ export default function Members() {
                                   onClick={() => handleMarkAsBaja(member)}
                                 >
                                   Dar de baja
+                                </Button>
+                              )}
+                              {member.membershipType === 'BAJA' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleReactivate(member)}
+                                  disabled={isReactivating}
+                                >
+                                  Reactivar
                                 </Button>
                               )}
                             </div>
