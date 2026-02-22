@@ -1334,6 +1334,10 @@ export const addMemberToEvent = async (req: Request, res: Response): Promise<voi
       res.status(401).json({ success: false, message: 'No autenticado' });
       return;
     }
+    if (!id) {
+      res.status(400).json({ success: false, message: 'ID de evento requerido' });
+      return;
+    }
     if (!targetUserId) {
       res.status(400).json({ success: false, message: 'userId requerido' });
       return;
