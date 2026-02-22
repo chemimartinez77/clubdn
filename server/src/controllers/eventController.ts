@@ -478,7 +478,12 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
     const { id } = req.params;
     const userId = req.user?.userId;
     const userRole = req.user?.role;
-    const { title, description, date, location, address, maxAttendees, status } = req.body;
+    const {
+      title, description, date, location, address, maxAttendees, status,
+      gameName, gameImage, bggId, gameCategory,
+      startHour, startMinute, durationHours, durationMinutes,
+      requiresApproval
+    } = req.body;
 
     const existingEvent = await prisma.event.findUnique({
       where: { id }
@@ -555,7 +560,16 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
       ...(date && { date: new Date(date) }),
       ...(address !== undefined && { address }),
       ...(newMaxAttendees !== null && { maxAttendees: newMaxAttendees }),
-      ...(status && { status })
+      ...(status && { status }),
+      ...(gameName !== undefined && { gameName: gameName || null }),
+      ...(gameImage !== undefined && { gameImage: gameImage || null }),
+      ...(bggId !== undefined && { bggId: bggId || null }),
+      ...(gameCategory !== undefined && { gameCategory: gameCategory || null }),
+      ...(startHour !== undefined && { startHour: startHour !== null ? parseInt(startHour) : null }),
+      ...(startMinute !== undefined && { startMinute: startMinute !== null ? parseInt(startMinute) : null }),
+      ...(durationHours !== undefined && { durationHours: durationHours !== null ? parseInt(durationHours) : null }),
+      ...(durationMinutes !== undefined && { durationMinutes: durationMinutes !== null ? parseInt(durationMinutes) : null }),
+      ...(requiresApproval !== undefined && { requiresApproval: requiresApproval === true || requiresApproval === 'true' })
     };
 
     if (location !== undefined) {
@@ -1253,6 +1267,151 @@ export const getEventAttendees = async (req: Request, res: Response): Promise<vo
       success: false,
       message: 'Error al obtener asistentes'
     });
+  }
+};
+
+/**
+ * Buscar miembros del club para apuntarlos a un evento
+ * GET /api/events/members/search?q=nombre
+ */
+export const searchMembersForEvent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { q } = req.query;
+
+    if (!q || typeof q !== 'string' || q.trim().length < 2) {
+      res.status(400).json({ success: false, message: 'Escribe al menos 2 caracteres para buscar' });
+      return;
+    }
+
+    const users = await prisma.user.findMany({
+      where: {
+        name: { contains: q.trim(), mode: 'insensitive' },
+        status: 'APPROVED',
+        membership: {
+          type: { in: ['SOCIO', 'COLABORADOR', 'EN_PRUEBAS'] },
+          isActive: true
+        },
+        profile: {
+          allowEventInvitations: true
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        membership: { select: { type: true } },
+        profile: { select: { avatar: true } }
+      },
+      take: 10
+    });
+
+    res.status(200).json({
+      success: true,
+      data: users.map(u => ({
+        id: u.id,
+        name: u.name,
+        avatar: u.profile?.avatar ?? null,
+        membershipType: u.membership?.type ?? null
+      }))
+    });
+  } catch (error) {
+    console.error('Error buscando miembros:', error);
+    res.status(500).json({ success: false, message: 'Error al buscar miembros' });
+  }
+};
+
+/**
+ * Apuntar a un miembro del club a un evento (solo organizador o admin)
+ * POST /api/events/:id/add-member
+ */
+export const addMemberToEvent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const actorId = req.user?.userId;
+    const actorRole = req.user?.role;
+    const { userId: targetUserId } = req.body;
+
+    if (!actorId) {
+      res.status(401).json({ success: false, message: 'No autenticado' });
+      return;
+    }
+    if (!targetUserId) {
+      res.status(400).json({ success: false, message: 'userId requerido' });
+      return;
+    }
+
+    const event = await prisma.event.findUnique({ where: { id } });
+    if (!event) {
+      res.status(404).json({ success: false, message: 'Evento no encontrado' });
+      return;
+    }
+
+    const isAdmin = actorRole === 'ADMIN' || actorRole === 'SUPER_ADMIN';
+    if (!isAdmin && event.createdBy !== actorId) {
+      res.status(403).json({ success: false, message: 'Sin permiso para añadir miembros' });
+      return;
+    }
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      include: { profile: true }
+    });
+
+    if (!targetUser) {
+      res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+      return;
+    }
+
+    if (targetUser.profile?.allowEventInvitations === false) {
+      res.status(400).json({ success: false, message: 'Este usuario no permite ser apuntado a eventos' });
+      return;
+    }
+
+    const existing = await prisma.eventRegistration.findUnique({
+      where: { eventId_userId: { eventId: id, userId: targetUserId } }
+    });
+
+    if (existing && existing.status !== 'CANCELLED') {
+      res.status(400).json({ success: false, message: 'Este usuario ya está registrado en el evento' });
+      return;
+    }
+
+    const [confirmedCount, activeInvitations] = await Promise.all([
+      prisma.eventRegistration.count({ where: { eventId: id, status: 'CONFIRMED' } }),
+      prisma.invitation.count({ where: { eventId: id, status: { in: ['PENDING', 'USED'] } } })
+    ]);
+
+    if (confirmedCount + activeInvitations >= event.maxAttendees) {
+      res.status(400).json({ success: false, message: 'El evento está completo' });
+      return;
+    }
+
+    if (existing && existing.status === 'CANCELLED') {
+      await prisma.eventRegistration.update({
+        where: { id: existing.id },
+        data: { status: 'CONFIRMED' }
+      });
+    } else {
+      await prisma.eventRegistration.create({
+        data: { eventId: id, userId: targetUserId, status: 'CONFIRMED' }
+      });
+    }
+
+    const { createNotification } = await import('../services/notificationService');
+    await createNotification({
+      userId: targetUserId,
+      type: 'EVENT_MODIFIED',
+      title: 'Te han apuntado a una partida',
+      message: `Te han apuntado a la partida "${event.title}".`,
+      metadata: { eventId: id, eventTitle: event.title }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `${targetUser.name} ha sido apuntado a la partida`
+    });
+  } catch (error) {
+    console.error('Error añadiendo miembro:', error);
+    res.status(500).json({ success: false, message: 'Error al apuntar miembro' });
   }
 };
 

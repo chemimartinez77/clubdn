@@ -6,6 +6,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-02-22
 
+### ✨ Mejoras
+
+#### Editar evento/partida
+- Nuevo botón "Editar" (visible para el organizador y admins) en el detalle del evento
+- Modal con todos los campos del formulario de creación pre-poblados: juego, categoría, título, descripción, fecha, hora, duración, capacidad, ubicación, dirección y aprobación requerida
+- El backend acepta ahora todos esos campos en el endpoint `PUT /api/events/:id`
+
+#### Apuntar miembro del club a una partida
+- Nuevo botón "Apuntar miembro" (solo organizador/admin) en el detalle del evento; deshabilitado si el evento está lleno
+- Modal con buscador en tiempo real de miembros activos (socios, colaboradores, en pruebas) que tengan habilitada la preferencia de invitaciones
+- El miembro queda apuntado directamente con estado CONFIRMED y recibe una notificación
+- Nueva preferencia en el perfil: "Permitir invitaciones a partidas" (activada por defecto), que controla si otros organizadores pueden apuntarte
+- Botón "Añadir invitado" renombrado a "Invitar externo" para distinguir los dos flujos
+
+#### Contador de comentarios en Feedback
+- El botón de comentarios en cada reporte muestra el número de comentarios existentes (ej. `💬 Comentarios (3)`) sin necesidad de expandir el hilo
+
 ### 🐛 Corrección de errores
 
 #### Registro rechazado: mensaje de error genérico al intentar registrarse de nuevo

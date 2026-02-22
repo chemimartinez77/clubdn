@@ -178,6 +178,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
       notifyEventChanges,
       notifyEventCancelled,
       notifyInvitations,
+      allowEventInvitations,
       noughterColor
     } = req.body;
 
@@ -205,6 +206,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           notifyEventChanges: notifyEventChanges ?? true,
           notifyEventCancelled: notifyEventCancelled ?? true,
           notifyInvitations: notifyInvitations ?? true,
+          allowEventInvitations: allowEventInvitations ?? true,
           noughterColor: noughterColor ?? null
         },
         include: {
@@ -240,6 +242,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           ...(notifyEventChanges !== undefined && { notifyEventChanges }),
           ...(notifyEventCancelled !== undefined && { notifyEventCancelled }),
           ...(notifyInvitations !== undefined && { notifyInvitations }),
+          ...(allowEventInvitations !== undefined && { allowEventInvitations }),
           ...(noughterColor !== undefined && { noughterColor })
         },
         include: {

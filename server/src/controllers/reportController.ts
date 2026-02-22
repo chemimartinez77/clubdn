@@ -179,6 +179,9 @@ export const listReports = async (req: Request, res: Response): Promise<void> =>
       include: {
         user: {
           select: { id: true, name: true }
+        },
+        _count: {
+          select: { comments: true }
         }
       }
     });
@@ -191,7 +194,8 @@ export const listReports = async (req: Request, res: Response): Promise<void> =>
     const votedSet = new Set(votes.map((v) => v.reportId));
     const data = reports.map((report) => ({
       ...report,
-      hasVoted: votedSet.has(report.id)
+      hasVoted: votedSet.has(report.id),
+      commentCount: report._count.comments
     }));
 
     res.status(200).json({ success: true, data });

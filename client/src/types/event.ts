@@ -159,6 +159,8 @@ export interface UpdateEventData {
   address?: string;
   maxAttendees?: number;
   status?: EventStatus;
+  gameCategory?: string;
+  requiresApproval?: boolean;
 }
 
 // BGG Types

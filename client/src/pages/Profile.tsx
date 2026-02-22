@@ -116,6 +116,7 @@ export default function Profile() {
         notifyEventChanges: profile.notifyEventChanges,
         notifyEventCancelled: profile.notifyEventCancelled,
         notifyInvitations: profile.notifyInvitations,
+        allowEventInvitations: profile.allowEventInvitations,
         noughterColor: profile.noughterColor ?? undefined
       });
     }
@@ -443,6 +444,18 @@ export default function Profile() {
                           <div>
                             <span className="text-sm font-medium text-[var(--color-textSecondary)]">Estado de invitaciones</span>
                             <p className="text-xs text-[var(--color-textSecondary)]">Notificar cuando tus invitaciones sean validadas o rechazadas</p>
+                          </div>
+                        </label>
+                        <label className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={formData.allowEventInvitations ?? true}
+                            onChange={(e) => setFormData({ ...formData, allowEventInvitations: e.target.checked })}
+                            className="w-5 h-5 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] mt-0.5"
+                          />
+                          <div>
+                            <span className="text-sm font-medium text-[var(--color-textSecondary)]">Permitir invitaciones a partidas</span>
+                            <p className="text-xs text-[var(--color-textSecondary)]">Permite que los organizadores te apunten directamente a sus partidas</p>
                           </div>
                         </label>
                       </div>

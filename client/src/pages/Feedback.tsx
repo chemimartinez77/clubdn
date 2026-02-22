@@ -33,6 +33,7 @@ interface Report {
   };
   hasVoted: boolean;
   assignedToId?: string | null;
+  commentCount: number;
 }
 
 interface ReportComment {
@@ -463,7 +464,7 @@ export default function Feedback() {
                         className="w-full px-6 py-3 text-left flex items-center justify-between hover:bg-[var(--color-tableRowHover)] transition-colors"
                       >
                         <span className="text-sm font-medium text-[var(--color-text)]">
-                          💬 Comentarios {selectedReport === report.id ? '▼' : '▶'}
+                          💬 Comentarios {report.commentCount > 0 ? `(${report.commentCount})` : ''} {selectedReport === report.id ? '▼' : '▶'}
                         </span>
                       </button>
 

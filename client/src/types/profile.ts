@@ -24,6 +24,7 @@ export interface UserProfile {
   notifyEventChanges: boolean;
   notifyEventCancelled: boolean;
   notifyInvitations: boolean;
+  allowEventInvitations: boolean;
   noughterColor: string | null;
   createdAt: string;
   updatedAt: string;
@@ -45,5 +46,6 @@ export interface UpdateProfileData {
   notifyEventChanges?: boolean;
   notifyEventCancelled?: boolean;
   notifyInvitations?: boolean;
+  allowEventInvitations?: boolean;
   noughterColor?: string | null;
 }

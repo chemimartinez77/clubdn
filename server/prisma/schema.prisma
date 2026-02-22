@@ -151,6 +151,7 @@ model UserProfile {
   notifyEventChanges    Boolean @default(true)   // Cambios en eventos inscritos
   notifyEventCancelled  Boolean @default(true)   // Eventos cancelados
   notifyInvitations     Boolean @default(true)   // Estado de invitaciones
+  allowEventInvitations Boolean @default(true)   // Permitir ser apuntado a eventos por otros miembros
 
   // Personalización
   noughterColor   String?  // Color de Noughter: purple, blue, green, red, brown (null = usar tema activo)

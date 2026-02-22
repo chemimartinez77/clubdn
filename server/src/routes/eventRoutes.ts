@@ -13,11 +13,16 @@ import {
   syncEventBggIds,
   getPendingRegistrations,
   approveRegistration,
-  rejectRegistration
+  rejectRegistration,
+  searchMembersForEvent,
+  addMemberToEvent
 } from '../controllers/eventController';
 import { authenticate, requireAdmin } from '../middleware/auth';
 
 const router = Router();
+
+// Búsqueda de miembros para apuntar (ANTES de /:id para evitar colisión de parámetros)
+router.get('/members/search', authenticate, searchMembersForEvent);
 
 // Rutas públicas (requieren autenticación)
 router.get('/', authenticate, getEvents);
@@ -28,6 +33,9 @@ router.get('/:id/attendees', authenticate, getEventAttendees);
 router.post('/:id/register', authenticate, registerToEvent);
 router.delete('/:id/register', authenticate, unregisterFromEvent);
 router.delete('/:id/registrations/:registrationId', authenticate, removeParticipant);
+
+// Apuntar miembro (organizador o admin)
+router.post('/:id/add-member', authenticate, addMemberToEvent);
 
 // Aprobación de registros (organizador o admin)
 router.get('/:id/pending-registrations', authenticate, getPendingRegistrations);

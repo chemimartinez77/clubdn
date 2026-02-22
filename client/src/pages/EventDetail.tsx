@@ -10,10 +10,12 @@ import { useToast } from '../hooks/useToast';
 import { api } from '../api/axios';
 import { GameImage } from '../components/events/EventCard';
 import EventPhotoGallery from '../components/events/EventPhotoGallery';
+import GameSearchModal from '../components/events/GameSearchModal';
 import { useAuth } from '../contexts/AuthContext';
-import type { Event } from '../types/event';
+import type { Event, BGGGame, UpdateEventData } from '../types/event';
 import type { ApiResponse } from '../types/auth';
 import type { Invitation, InvitationCreateResponse } from '../types/invitation';
+import { getCategoryDisplayName, getCategoryIcon } from '../types/badge';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -32,6 +34,31 @@ export default function EventDetail() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name?: string } | null>(null);
+
+  // Estado modal apuntar miembro
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [memberSearchResults, setMemberSearchResults] = useState<Array<{ id: string; name: string; avatar: string | null; membershipType: string | null }>>([]);
+  const [memberSearchLoading, setMemberSearchLoading] = useState(false);
+
+  // Estado modal edición
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEditGameModalOpen, setIsEditGameModalOpen] = useState(false);
+  const [editSelectedGame, setEditSelectedGame] = useState<BGGGame | null>(null);
+  const [editSelectedCategory, setEditSelectedCategory] = useState('');
+  const [editFormData, setEditFormData] = useState({
+    title: '',
+    description: '',
+    date: '',
+    startHour: '17',
+    startMinute: '0',
+    durationHours: '',
+    durationMinutes: '0',
+    location: '',
+    address: '',
+    maxAttendees: 4,
+    requiresApproval: true,
+  });
 
   // Fetch event details
   const { data: event, isLoading } = useQuery({
@@ -151,6 +178,102 @@ export default function EventDetail() {
       showError(getErrorMessage(err, 'Error al eliminar partida'));
     }
   });
+  const handleMemberSearch = async (query: string) => {
+    setMemberSearchQuery(query);
+    if (query.trim().length < 2) {
+      setMemberSearchResults([]);
+      return;
+    }
+    setMemberSearchLoading(true);
+    try {
+      const response = await api.get(`/api/events/members/search?q=${encodeURIComponent(query.trim())}`);
+      setMemberSearchResults(response.data.data || []);
+    } catch {
+      setMemberSearchResults([]);
+    } finally {
+      setMemberSearchLoading(false);
+    }
+  };
+
+  const addMemberMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await api.post(`/api/events/${id}/add-member`, { userId });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      setIsAddMemberModalOpen(false);
+      setMemberSearchQuery('');
+      setMemberSearchResults([]);
+      success(data.message || 'Miembro apuntado correctamente');
+    },
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, 'Error al apuntar miembro'));
+    }
+  });
+
+  const editEventMutation = useMutation({
+    mutationFn: async (data: UpdateEventData) => {
+      const response = await api.put(`/api/events/${id}`, data);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      setIsEditModalOpen(false);
+      success(data.message || 'Partida actualizada correctamente');
+    },
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, 'Error al actualizar partida'));
+    }
+  });
+
+  const handleOpenEditModal = () => {
+    if (!event) return;
+    const eventDate = new Date(event.date);
+    setEditFormData({
+      title: event.title,
+      description: event.description || '',
+      date: eventDate.toISOString().split('T')[0],
+      startHour: event.startHour?.toString() ?? '17',
+      startMinute: event.startMinute?.toString() ?? '0',
+      durationHours: event.durationHours?.toString() ?? '',
+      durationMinutes: event.durationMinutes?.toString() ?? '0',
+      location: event.location || '',
+      address: event.address ?? '',
+      maxAttendees: event.maxAttendees,
+      requiresApproval: event.requiresApproval ?? true,
+    });
+    setEditSelectedGame(event.bggId ? { id: event.bggId, name: event.gameName ?? '', image: event.gameImage ?? '', thumbnail: '', yearPublished: '' } : null);
+    setEditSelectedCategory(event.gameCategory ?? '');
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = () => {
+    const eventDate = new Date(editFormData.date);
+    if (editFormData.startHour) eventDate.setHours(parseInt(editFormData.startHour));
+    if (editFormData.startMinute) eventDate.setMinutes(parseInt(editFormData.startMinute));
+
+    editEventMutation.mutate({
+      title: editFormData.title,
+      description: editFormData.description,
+      date: eventDate.toISOString(),
+      startHour: editFormData.startHour ? parseInt(editFormData.startHour) : undefined,
+      startMinute: editFormData.startMinute !== '' ? parseInt(editFormData.startMinute) : undefined,
+      durationHours: editFormData.durationHours ? parseInt(editFormData.durationHours) : undefined,
+      durationMinutes: editFormData.durationMinutes !== '' ? parseInt(editFormData.durationMinutes) : undefined,
+      location: editFormData.location || 'Club DN',
+      address: editFormData.address || undefined,
+      maxAttendees: editFormData.maxAttendees,
+      requiresApproval: editFormData.requiresApproval,
+      gameName: editSelectedGame?.name,
+      gameImage: editSelectedGame?.image,
+      bggId: editSelectedGame?.id,
+      gameCategory: editSelectedCategory || undefined,
+    });
+  };
+
   const { data: invitations = [], isLoading: isInvitesLoading, isError: isInvitesError } = useQuery({
     queryKey: ['invitations', id],
     queryFn: async () => {
@@ -327,6 +450,8 @@ export default function EventDetail() {
   const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && !isPendingApproval;
   const canInvite = event.status !== 'CANCELLED' && !isPast && !isFull;
   const canDelete = isPartida && !isPast && event.status !== 'CANCELLED' && (isAdmin || user?.id === event.createdBy);
+  const canEdit = isOrganizerOrAdmin && event.status !== 'CANCELLED' && !isPast;
+  const canAddMember = isOrganizerOrAdmin && event.status !== 'CANCELLED' && !isPast && !isFull;
   const canCloseCapacity = isPartida
     && !isPast
     && (isAdmin || user?.id === event.createdBy)
@@ -607,12 +732,27 @@ export default function EventDetail() {
                     className="w-full sm:w-auto !bg-indigo-500 hover:!bg-indigo-600 !text-white transition-all duration-300"
                   >
                     <span className="flex items-center justify-center gap-2">
-                      <span>Añadir invitado</span>
+                      <span>Invitar externo</span>
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                       </svg>
                     </span>
                   </Button>
+
+                  {isOrganizerOrAdmin && (
+                    <Button
+                      onClick={() => setIsAddMemberModalOpen(true)}
+                      disabled={!canAddMember}
+                      className="w-full sm:w-auto !bg-teal-600 hover:!bg-teal-700 !text-white transition-all duration-300"
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        <span>Apuntar miembro</span>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </span>
+                    </Button>
+                  )}
 
                   <Button
                     onClick={handleShareWhatsApp}
@@ -640,6 +780,20 @@ export default function EventDetail() {
                       className="w-full sm:w-auto bg-slate-200 hover:bg-slate-300 text-[var(--color-text)]"
                     >
                       {closeCapacityMutation.isPending ? 'Cerrando...' : 'Cerrar plazas'}
+                    </Button>
+                  )}
+
+                  {canEdit && (
+                    <Button
+                      onClick={handleOpenEditModal}
+                      className="w-full sm:w-auto !bg-amber-500 hover:!bg-amber-600 !text-white transition-all duration-300"
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        <span>Editar</span>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </span>
                     </Button>
                   )}
 
@@ -1260,6 +1414,222 @@ export default function EventDetail() {
           </div>
         </div>
       </Modal>
+
+      {/* Modal apuntar miembro */}
+      <Modal
+        isOpen={isAddMemberModalOpen}
+        onClose={() => {
+          setIsAddMemberModalOpen(false);
+          setMemberSearchQuery('');
+          setMemberSearchResults([]);
+        }}
+        title="Apuntar miembro"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--color-textSecondary)]">
+            Busca un miembro del club para apuntarlo directamente a esta partida.
+          </p>
+          <input
+            type="text"
+            value={memberSearchQuery}
+            onChange={(e) => handleMemberSearch(e.target.value)}
+            placeholder="Escribe el nombre del miembro..."
+            autoFocus
+            className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
+          />
+          {memberSearchLoading && (
+            <p className="text-sm text-[var(--color-textSecondary)]">Buscando...</p>
+          )}
+          {memberSearchResults.length > 0 && (
+            <ul className="space-y-1 max-h-60 overflow-y-auto">
+              {memberSearchResults.map(member => (
+                <li key={member.id}>
+                  <button
+                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-tableRowHover)] text-left transition-colors"
+                    onClick={() => addMemberMutation.mutate(member.id)}
+                    disabled={addMemberMutation.isPending}
+                  >
+                    <div className="w-9 h-9 rounded-full overflow-hidden bg-[var(--color-tableRowHover)] flex items-center justify-center flex-shrink-0">
+                      {member.avatar ? (
+                        <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[var(--color-primary)] font-semibold text-sm">
+                          {member.name.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-[var(--color-text)]">{member.name}</span>
+                      {member.membershipType && (
+                        <span className="ml-2 text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
+                          {member.membershipType}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {memberSearchQuery.trim().length >= 2 && !memberSearchLoading && memberSearchResults.length === 0 && (
+            <p className="text-sm text-[var(--color-textSecondary)] text-center py-2">
+              No se encontraron miembros con ese nombre.
+            </p>
+          )}
+        </div>
+      </Modal>
+
+      {/* Modal de edición */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Editar partida"
+        size="lg"
+      >
+        <div className="space-y-5">
+          {/* Juego */}
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Juego (opcional)</label>
+            {editSelectedGame ? (
+              <div className="flex items-center gap-4 p-3 border-2 border-[var(--color-primary)] rounded-lg bg-[var(--color-cardBackground)]">
+                {editSelectedGame.image && (
+                  <img src={editSelectedGame.image} alt={editSelectedGame.name} className="w-12 h-12 object-cover rounded" />
+                )}
+                <div className="flex-1">
+                  <p className="font-medium text-sm text-[var(--color-text)]">{editSelectedGame.name}</p>
+                </div>
+                <button type="button" onClick={() => { setEditSelectedGame(null); setEditSelectedCategory(''); }} className="text-red-500 hover:text-red-600">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => setIsEditGameModalOpen(true)} className="w-full px-4 py-3 border-2 border-dashed border-[var(--color-inputBorder)] rounded-lg hover:border-[var(--color-primary)] transition-colors text-[var(--color-textSecondary)] text-sm">
+                Buscar juego en BoardGameGeek
+              </button>
+            )}
+          </div>
+
+          {/* Categoría */}
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Categoría del juego (opcional)</label>
+            <select value={editSelectedCategory} onChange={(e) => setEditSelectedCategory(e.target.value)} className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]">
+              <option value="">Sin categoría</option>
+              <option value="EUROGAMES">{getCategoryIcon('EUROGAMES')} {getCategoryDisplayName('EUROGAMES')}</option>
+              <option value="TEMATICOS">{getCategoryIcon('TEMATICOS')} {getCategoryDisplayName('TEMATICOS')}</option>
+              <option value="WARGAMES">{getCategoryIcon('WARGAMES')} {getCategoryDisplayName('WARGAMES')}</option>
+              <option value="ROL">{getCategoryIcon('ROL')} {getCategoryDisplayName('ROL')}</option>
+              <option value="MINIATURAS">{getCategoryIcon('MINIATURAS')} {getCategoryDisplayName('MINIATURAS')}</option>
+              <option value="WARHAMMER">{getCategoryIcon('WARHAMMER')} {getCategoryDisplayName('WARHAMMER')}</option>
+              <option value="FILLERS_PARTY">{getCategoryIcon('FILLERS_PARTY')} {getCategoryDisplayName('FILLERS_PARTY')}</option>
+            </select>
+          </div>
+
+          {/* Requiere aprobación */}
+          <div className="flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] px-4 py-3">
+            <input id="edit-requiresApproval" type="checkbox" checked={editFormData.requiresApproval} onChange={(e) => setEditFormData(prev => ({ ...prev, requiresApproval: e.target.checked }))} className="h-4 w-4 rounded border-[var(--color-inputBorder)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]" />
+            <label htmlFor="edit-requiresApproval" className="text-sm text-[var(--color-textSecondary)]">Requiere aprobación del organizador</label>
+          </div>
+
+          {/* Título */}
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Título *</label>
+            <input type="text" required minLength={3} maxLength={100} value={editFormData.title} onChange={(e) => setEditFormData(prev => ({ ...prev, title: e.target.value }))} className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]" />
+          </div>
+
+          {/* Descripción */}
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Descripción (opcional)</label>
+            <textarea rows={3} value={editFormData.description} onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))} className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] resize-none bg-[var(--color-inputBackground)] text-[var(--color-inputText)]" />
+          </div>
+
+          {/* Fecha y hora */}
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Fecha y hora *</label>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Fecha</label>
+                <input type="date" required min={new Date().toISOString().split('T')[0]} value={editFormData.date} onChange={(e) => setEditFormData(prev => ({ ...prev, date: e.target.value }))} className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)] [color-scheme:dark]" />
+              </div>
+              <div>
+                <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Hora</label>
+                <select value={editFormData.startHour} onChange={(e) => setEditFormData(prev => ({ ...prev, startHour: e.target.value }))} className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]">
+                  <option value="">--</option>
+                  {Array.from({ length: 24 }, (_, i) => i).map(h => <option key={h} value={h}>{h.toString().padStart(2, '0')}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Minutos</label>
+                <select value={editFormData.startMinute} onChange={(e) => setEditFormData(prev => ({ ...prev, startMinute: e.target.value }))} className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]">
+                  {[0, 15, 30, 45].map(m => <option key={m} value={m}>{m.toString().padStart(2, '0')}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Duración */}
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Duración estimada (opcional)</label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Horas</label>
+                <select value={editFormData.durationHours} onChange={(e) => setEditFormData(prev => ({ ...prev, durationHours: e.target.value }))} className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]">
+                  <option value="">--</option>
+                  {Array.from({ length: 13 }, (_, i) => i).map(h => <option key={h} value={h}>{h}h</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Minutos</label>
+                <select value={editFormData.durationMinutes} onChange={(e) => setEditFormData(prev => ({ ...prev, durationMinutes: e.target.value }))} className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]">
+                  {[0, 15, 30, 45].map(m => <option key={m} value={m}>{m}min</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Capacidad */}
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Número máximo de jugadores *</label>
+            <input type="number" required min={1} max={100} value={editFormData.maxAttendees} onChange={(e) => setEditFormData(prev => ({ ...prev, maxAttendees: parseInt(e.target.value) }))} className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]" />
+          </div>
+
+          {/* Ubicación */}
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Ubicación</label>
+            <input type="text" value={editFormData.location} onChange={(e) => setEditFormData(prev => ({ ...prev, location: e.target.value }))} placeholder="Club DN" className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]" />
+          </div>
+
+          {/* Dirección */}
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Dirección (opcional)</label>
+            <input type="text" value={editFormData.address} onChange={(e) => setEditFormData(prev => ({ ...prev, address: e.target.value }))} className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]" />
+          </div>
+
+          <div className="flex gap-3 justify-end pt-2">
+            <Button onClick={() => setIsEditModalOpen(false)} variant="outline">Cancelar</Button>
+            <Button onClick={handleEditSubmit} variant="primary" disabled={editEventMutation.isPending || !editFormData.title.trim() || !editFormData.date}>
+              {editEventMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <GameSearchModal
+        isOpen={isEditGameModalOpen}
+        onClose={() => setIsEditGameModalOpen(false)}
+        onSelect={async (game) => {
+          setEditSelectedGame(game);
+          setIsEditGameModalOpen(false);
+          try {
+            const response = await api.get(`/api/games/${game.id}`);
+            if (response.data?.data?.badgeCategory) {
+              setEditSelectedCategory(response.data.data.badgeCategory);
+            }
+          } catch {
+            // ignorar error al guardar juego en BD
+          }
+        }}
+      />
 
       {/* Modal de confirmación de eliminación */}
       <Modal
