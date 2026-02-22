@@ -46,6 +46,7 @@ interface ReportComment {
     id: string;
     name: string;
     role: string;
+    profile?: { avatar?: string | null } | null;
   };
 }
 
@@ -486,12 +487,17 @@ export default function Feedback() {
                                     className={`flex gap-3 ${isOwnComment ? 'flex-row-reverse' : 'flex-row'}`}
                                   >
                                     {/* Avatar */}
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                                      isAdminComment
-                                        ? 'bg-[var(--color-primary)] text-white'
-                                        : 'bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)]'
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden ${
+                                      comment.user.profile?.avatar
+                                        ? ''
+                                        : isAdminComment
+                                          ? 'bg-[var(--color-primary)] text-white'
+                                          : 'bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)]'
                                     }`}>
-                                      {comment.user.name.charAt(0).toUpperCase()}
+                                      {comment.user.profile?.avatar
+                                        ? <img src={comment.user.profile.avatar} alt={comment.user.name} className="w-full h-full object-cover" />
+                                        : comment.user.name.charAt(0).toUpperCase()
+                                      }
                                     </div>
                                     {/* Burbuja */}
                                     <div className={`max-w-[75%] ${isOwnComment ? 'items-end' : 'items-start'} flex flex-col gap-1`}>

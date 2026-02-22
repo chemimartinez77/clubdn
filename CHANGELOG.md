@@ -23,6 +23,24 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 #### Contador de comentarios en Feedback
 - El botón de comentarios en cada reporte muestra el número de comentarios existentes (ej. `💬 Comentarios (3)`) sin necesidad de expandir el hilo
 
+### ✨ Mejoras
+
+#### Subida de documentos: barra de progreso y soporte para archivos grandes
+- El modal de subida muestra ahora una barra de progreso con porcentaje mientras se transfiere el archivo
+- El botón indica `Subiendo... N%` durante la operación
+- Backend cambiado a `upload_large_stream` con chunks de 6MB para soportar archivos mayores de 10MB (límite del plan gratuito de Cloudinary con `upload_stream`)
+
+#### Calendario de eventos en formato europeo (Lunes–Domingo)
+- El calendario mensual arrancaba la semana en Domingo (formato USA); ahora arranca en Lunes
+- Cabeceras reordenadas: `Lun Mar Mié Jue Vie Sáb Dom`
+
+#### Avatares en comentarios de Feedback
+- Los comentarios muestran ahora la foto de perfil del usuario si la tiene; si no, la inicial con color de fondo según rol
+- Backend incluye `profile.avatar` en la respuesta de comentarios
+
+#### Corrección de assignedToId en notificaciones de Feedback
+- Al comentar por primera vez en un reporte, el `assignedToId` recién asignado se pasaba ya al servicio de notificaciones en lugar del valor anterior (`null`)
+
 ### 🐛 Corrección de errores
 
 #### Editar partida: eliminar el juego no limpiaba la imagen

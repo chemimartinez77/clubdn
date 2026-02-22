@@ -396,7 +396,8 @@ export const getReportComments = async (req: Request, res: Response): Promise<vo
           select: {
             id: true,
             name: true,
-            role: true
+            role: true,
+            profile: { select: { avatar: true } }
           }
         }
       }
@@ -517,7 +518,7 @@ export const createReportComment = async (req: Request, res: Response): Promise<
       report.title,
       userId,
       user.name,
-      report.assignedToId || (isAdmin ? userId : null), // Usar la nueva asignación si se hizo
+      updateData.assignedToId || report.assignedToId || (isAdmin ? userId : null),
       report.userId
     );
 

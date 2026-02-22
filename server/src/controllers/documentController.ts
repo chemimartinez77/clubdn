@@ -167,19 +167,22 @@ export const uploadDocument = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Subir a Cloudinary
+    // Subir a Cloudinary usando upload_large para soportar archivos > 10MB
     const uploadResult = await new Promise<any>((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
+      const stream = require('stream');
+      const bufferStream = new stream.PassThrough();
+      bufferStream.end(file.buffer);
+      cloudinary.uploader.upload_large_stream(
         {
           folder: 'clubdn/documents',
-          resource_type: 'auto', // Permite PDF, imágenes, etc.
+          resource_type: 'auto',
+          chunk_size: 6 * 1024 * 1024, // chunks de 6MB
         },
-        (error, result) => {
+        (error: any, result: any) => {
           if (error) reject(error);
           else resolve(result);
         }
-      );
-      uploadStream.end(file.buffer);
+      )(bufferStream);
     });
 
     // Crear documento en BD con URL de Cloudinary

@@ -15,7 +15,8 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDay = new Date(year, month, 1);
-    const firstDayOfMonth = firstDay.getDay();
+    // getDay() devuelve 0=domingo..6=sábado; convertir a ISO: 0=lunes..6=domingo
+    const firstDayOfMonth = (firstDay.getDay() + 6) % 7;
 
     const monthName = new Intl.DateTimeFormat('es-ES', {
       month: 'long',
@@ -115,7 +116,7 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-px bg-[var(--color-cardBorder)] w-full">
         {/* Day headers */}
-        {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
+        {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
           <div
             key={day}
             className="bg-[var(--color-tableRowHover)] p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-[var(--color-textSecondary)]"

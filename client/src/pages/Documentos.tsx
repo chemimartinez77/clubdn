@@ -117,6 +117,7 @@ export default function Documentos() {
   const [uploadVisibility, setUploadVisibility] = useState<DocumentVisibility>('PUBLIC');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Fetch documents
   const { data: documents = [], isLoading } = useQuery({
@@ -144,8 +145,14 @@ export default function Documentos() {
   // Upload mutation
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
+      setUploadProgress(0);
       const response = await api.post('/api/documents', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (event) => {
+          if (event.total) {
+            setUploadProgress(Math.round((event.loaded * 100) / event.total));
+          }
+        }
       });
       return response.data;
     },
@@ -181,6 +188,7 @@ export default function Documentos() {
     setUploadTitle('');
     setUploadVisibility('PUBLIC');
     setSelectedFile(null);
+    setUploadProgress(0);
   };
 
   const handleFileSelect = (file: File) => {
@@ -566,6 +574,22 @@ export default function Documentos() {
                 </p>
               </div>
 
+              {/* Barra de progreso */}
+              {uploadMutation.isPending && (
+                <div className="pt-2">
+                  <div className="flex justify-between text-xs text-[var(--color-textSecondary)] mb-1">
+                    <span>Subiendo archivo...</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-[var(--color-tableRowHover)] rounded-full h-2">
+                    <div
+                      className="bg-[var(--color-primary)] h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Botones */}
               <div className="flex gap-3 pt-4">
                 <Button
@@ -574,7 +598,7 @@ export default function Documentos() {
                   disabled={!selectedFile || !uploadTitle.trim() || uploadMutation.isPending}
                   className="flex-1"
                 >
-                  {uploadMutation.isPending ? 'Subiendo...' : 'Subir documento'}
+                  {uploadMutation.isPending ? `Subiendo... ${uploadProgress}%` : 'Subir documento'}
                 </Button>
                 <Button
                   onClick={closeUploadModal}
