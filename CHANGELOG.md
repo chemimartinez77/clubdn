@@ -6,6 +6,15 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-02-22
 
+### 🐛 Corrección de errores
+
+#### Exportar CSV de miembros daba "Token no proporcionado"
+- **Problema:** El botón "Exportar CSV" usaba `window.open()` para abrir la URL directamente en el navegador, lo que no incluye el token de autenticación en los headers
+- **Solución:** Reemplazado por una llamada `api.get()` con `responseType: 'blob'` que sí envía el token, seguida de descarga mediante object URL
+
+**Archivos modificados:**
+- `client/src/hooks/useMembers.ts` - `exportCSV` ahora usa fetch autenticado en lugar de `window.open()`
+
 ### ✨ Mejoras
 
 #### Editar evento/partida

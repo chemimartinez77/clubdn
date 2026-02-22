@@ -50,7 +50,7 @@ export const useMembers = (filters: MemberFilters) => {
     },
   });
 
-  const exportCSV = () => {
+  const exportCSV = async () => {
     const exportQueryString = new URLSearchParams({
       search: filters.search || '',
       membershipType: filters.membershipType || 'all',
@@ -59,10 +59,21 @@ export const useMembers = (filters: MemberFilters) => {
       paymentStatus: filters.paymentStatus || 'all',
     }).toString();
 
-    window.open(
-      `${api.defaults.baseURL}/api/admin/members/export/csv?${exportQueryString}`,
-      '_blank'
-    );
+    try {
+      const response = await api.get(`/api/admin/members/export/csv?${exportQueryString}`, {
+        responseType: 'blob',
+      });
+      const objectUrl = URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.setAttribute('download', 'miembros.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      console.error('Error al exportar CSV');
+    }
   };
 
   return {
