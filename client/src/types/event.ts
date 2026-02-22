@@ -147,9 +147,9 @@ export interface UpdateEventData {
   title?: string;
   description?: string;
   type?: EventType;
-  gameName?: string;
-  gameImage?: string;
-  bggId?: string;
+  gameName?: string | null;
+  gameImage?: string | null;
+  bggId?: string | null;
   date?: string;
   startHour?: number;
   startMinute?: number;
@@ -159,7 +159,7 @@ export interface UpdateEventData {
   address?: string;
   maxAttendees?: number;
   status?: EventStatus;
-  gameCategory?: string;
+  gameCategory?: string | null;
   requiresApproval?: boolean;
 }
 
