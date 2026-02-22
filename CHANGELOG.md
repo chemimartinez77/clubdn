@@ -25,10 +25,18 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### ✨ Mejoras
 
-#### Subida de documentos: barra de progreso y soporte para archivos grandes
-- El modal de subida muestra ahora una barra de progreso con porcentaje mientras se transfiere el archivo
+#### Reactivar miembro dado de baja
+- Nuevo botón "Reactivar" en la lista de miembros, visible solo cuando el miembro está en estado BAJA
+- Nuevo endpoint `POST /api/admin/members/:memberId/reactivate` que restaura `fechaBaja = null` e `isActive = true`
+
+#### Subida de documentos: barra de progreso y mensaje de error detallado
+- El modal de subida muestra una barra de progreso con porcentaje mientras se transfiere el archivo al servidor
 - El botón indica `Subiendo... N%` durante la operación
-- Backend cambiado a `upload_large_stream` con chunks de 6MB para soportar archivos mayores de 10MB (límite del plan gratuito de Cloudinary con `upload_stream`)
+- El mensaje de error ahora muestra el motivo real devuelto por Cloudinary en lugar del genérico "Error al subir documento"
+
+#### Admin/Config: página en blanco al cargar
+- El campo `membershipTypes` (tipo `Json` en Prisma) podía no ser un array en ciertos casos, causando `h.map is not a function` y dejando la página en blanco
+- Backend y frontend normalizan el campo a `[]` si no es un array antes de usarlo
 
 #### Calendario de eventos en formato europeo (Lunes–Domingo)
 - El calendario mensual arrancaba la semana en Domingo (formato USA); ahora arranca en Lunes
