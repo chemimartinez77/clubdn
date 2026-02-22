@@ -167,12 +167,17 @@ export const uploadDocument = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    // Determinar resource_type: imágenes como 'image', resto como 'raw'
+    const isImage = file.mimetype.startsWith('image/');
+    const resourceType = isImage ? 'image' : 'raw';
+
     // Subir a Cloudinary
     const uploadResult = await new Promise<any>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: 'clubdn/documents',
-          resource_type: 'auto',
+          resource_type: resourceType,
+          access_mode: 'public',
         },
         (error, result) => {
           if (error) {
