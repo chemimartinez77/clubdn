@@ -6,6 +6,15 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-02-25
 
+### 🐛 Corrección de errores
+
+#### Etiqueta de rol mostraba "Administrador" para Super Administradores
+- **Problema:** En el menú desplegable del header, tanto `ADMIN` como `SUPER_ADMIN` mostraban el texto "Administrador"
+- **Solución:** Distinción de los tres roles: `SUPER_ADMIN` → "Super Administrador", `ADMIN` → "Administrador", `USER` → "Usuario"
+
+**Archivos modificados:**
+- `client/src/components/layout/Header.tsx` - etiqueta de rol en el dropdown del perfil
+
 ### ✨ Mejoras
 
 #### Editar documentos (título y visibilidad)

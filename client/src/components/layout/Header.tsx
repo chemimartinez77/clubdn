@@ -277,7 +277,7 @@ export default function Header() {
                       <p className="text-sm font-medium text-[var(--color-text)]">{user?.name}</p>
                       <p className="text-xs text-[var(--color-textSecondary)]">{user?.email}</p>
                       <p className="text-xs text-primary mt-1 font-medium">
-                        {user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' ? 'Administrador' : 'Usuario'}
+                        {user?.role === 'SUPER_ADMIN' ? 'Super Administrador' : user?.role === 'ADMIN' ? 'Administrador' : 'Usuario'}
                       </p>
                     </div>
 
