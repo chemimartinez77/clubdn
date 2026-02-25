@@ -118,6 +118,9 @@ export default function Documentos() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [editingDoc, setEditingDoc] = useState<Document | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editVisibility, setEditVisibility] = useState<DocumentVisibility>('PUBLIC');
 
   // Fetch documents
   const { data: documents = [], isLoading } = useQuery({
@@ -164,6 +167,23 @@ export default function Documentos() {
     },
     onError: (err: any) => {
       showError(err.response?.data?.message || 'Error al subir documento');
+    }
+  });
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, title, visibility }: { id: string; title: string; visibility: DocumentVisibility }) => {
+      const response = await api.patch(`/api/documents/${id}`, { title, visibility });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['document-stats'] });
+      success('Documento actualizado');
+      setEditingDoc(null);
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || 'Error al actualizar documento');
     }
   });
 
@@ -243,6 +263,17 @@ export default function Documentos() {
       // Fallback: abrir en nueva pestaña si falla el fetch
       window.open(doc.url, '_blank');
     }
+  };
+
+  const handleEdit = (doc: Document) => {
+    setEditingDoc(doc);
+    setEditTitle(doc.title);
+    setEditVisibility(doc.visibility);
+  };
+
+  const handleEditSave = () => {
+    if (!editingDoc || !editTitle.trim()) return;
+    updateMutation.mutate({ id: editingDoc.id, title: editTitle.trim(), visibility: editVisibility });
   };
 
   const handleDelete = (doc: Document) => {
@@ -452,15 +483,26 @@ export default function Documentos() {
                         </svg>
                       </button>
                       {isAdmin && (
-                        <button
-                          onClick={() => handleDelete(doc)}
-                          className="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                          title="Eliminar"
-                        >
-                          <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleEdit(doc)}
+                            className="p-2 hover:bg-[var(--color-tableRowHover)] rounded-lg transition-colors cursor-pointer"
+                            title="Editar"
+                          >
+                            <svg className="w-5 h-5 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(doc)}
+                            className="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            title="Eliminar"
+                          >
+                            <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -492,6 +534,77 @@ export default function Documentos() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de edición */}
+      {editingDoc && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[var(--color-cardBackground)] rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-[var(--color-text)]">Editar Documento</h2>
+              <button
+                onClick={() => setEditingDoc(null)}
+                className="text-[var(--color-textSecondary)] hover:text-[var(--color-textSecondary)] cursor-pointer"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                  Título del documento *
+                </label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                  Visibilidad
+                </label>
+                <select
+                  value={editVisibility}
+                  onChange={(e) => setEditVisibility(e.target.value as DocumentVisibility)}
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                >
+                  <option value="PUBLIC">Todos los miembros</option>
+                  <option value="ADMIN">Solo administradores</option>
+                  <option value="SUPER_ADMIN">Solo super admins</option>
+                </select>
+                <p className="text-sm text-[var(--color-textSecondary)] mt-1">
+                  {editVisibility === 'PUBLIC' && 'Visible para todos los miembros del club'}
+                  {editVisibility === 'ADMIN' && 'Solo visible para administradores'}
+                  {editVisibility === 'SUPER_ADMIN' && 'Solo visible para super administradores'}
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={handleEditSave}
+                  variant="primary"
+                  disabled={!editTitle.trim() || updateMutation.isPending}
+                  className="flex-1"
+                >
+                  {updateMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
+                </Button>
+                <Button
+                  onClick={() => setEditingDoc(null)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de subida */}
       {isUploadModalOpen && (

@@ -5,6 +5,7 @@ import { authenticate } from '../middleware/auth';
 import {
   getDocuments,
   uploadDocument,
+  updateDocument,
   deleteDocument,
   getDocumentStats
 } from '../controllers/documentController';
@@ -30,6 +31,9 @@ router.get('/stats', getDocumentStats);
 
 // POST /api/documents - Subir documento (solo admin)
 router.post('/', upload.single('file'), uploadDocument);
+
+// PATCH /api/documents/:id - Actualizar título/visibilidad (solo admin)
+router.patch('/:id', updateDocument);
 
 // DELETE /api/documents/:id - Eliminar documento (solo admin)
 router.delete('/:id', deleteDocument);

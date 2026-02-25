@@ -4,6 +4,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-02-25
+
+### ✨ Mejoras
+
+#### Editar documentos (título y visibilidad)
+- Los administradores pueden ahora editar el título y la visibilidad de cualquier documento ya subido sin necesidad de eliminarlo y volver a subirlo
+- Nuevo botón de editar (icono lápiz) junto al botón de eliminar en cada fila de documento
+- Modal de edición con campos pre-poblados para título y visibilidad con descripción contextual de cada nivel
+- Nuevo endpoint `PATCH /api/documents/:id` en el backend (solo admins)
+
+**Archivos modificados:**
+- `server/src/controllers/documentController.ts` - nueva función `updateDocument`
+- `server/src/routes/documentRoutes.ts` - nueva ruta `PATCH /:id`
+- `client/src/pages/Documentos.tsx` - botón de editar, modal de edición y mutation `updateMutation`
+
+---
+
 ## 2026-02-22
 
 ### 🐛 Corrección de errores

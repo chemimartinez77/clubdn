@@ -236,6 +236,76 @@ export const uploadDocument = async (req: Request, res: Response): Promise<void>
 };
 
 /**
+ * Actualizar título y/o visibilidad de un documento (solo admin)
+ */
+export const updateDocument = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userRole = req.user?.role as UserRole;
+    const { id } = req.params;
+    const { title, visibility } = req.body;
+
+    if (!isAdmin(userRole)) {
+      res.status(403).json({
+        success: false,
+        message: 'Solo los administradores pueden editar documentos'
+      });
+      return;
+    }
+
+    const document = await prisma.document.findUnique({ where: { id } });
+
+    if (!document) {
+      res.status(404).json({
+        success: false,
+        message: 'Documento no encontrado'
+      });
+      return;
+    }
+
+    const updateData: { title?: string; visibility?: DocumentVisibility } = {};
+
+    if (title !== undefined) {
+      if (title.trim().length === 0) {
+        res.status(400).json({ success: false, message: 'El título no puede estar vacío' });
+        return;
+      }
+      updateData.title = title.trim();
+    }
+
+    if (visibility !== undefined) {
+      const validVisibilities: DocumentVisibility[] = ['PUBLIC', 'ADMIN', 'SUPER_ADMIN'];
+      if (!validVisibilities.includes(visibility as DocumentVisibility)) {
+        res.status(400).json({ success: false, message: 'Visibilidad no válida' });
+        return;
+      }
+      updateData.visibility = visibility as DocumentVisibility;
+    }
+
+    const updated = await prisma.document.update({
+      where: { id },
+      data: updateData,
+      select: {
+        id: true,
+        title: true,
+        filename: true,
+        mimeType: true,
+        size: true,
+        visibility: true,
+        url: true,
+        createdAt: true,
+        updatedAt: true,
+        uploadedBy: { select: { id: true, name: true } }
+      }
+    });
+
+    res.json({ success: true, message: 'Documento actualizado', data: updated });
+  } catch (error) {
+    console.error('Error al actualizar documento:', error);
+    res.status(500).json({ success: false, message: 'Error al actualizar documento' });
+  }
+};
+
+/**
  * Eliminar un documento (solo admin)
  */
 export const deleteDocument = async (req: Request, res: Response): Promise<void> => {
