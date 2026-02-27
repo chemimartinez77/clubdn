@@ -2,7 +2,6 @@
 import { useEffect, useRef } from 'react';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
-import TourDismissBar from './TourDismissBar';
 
 interface AppTourProps {
   onDismiss: (permanent: boolean) => void;
@@ -84,7 +83,17 @@ export default function AppTour({ onDismiss }: AppTourProps) {
       smoothScroll: true,
       allowClose: true,
       popoverClass: 'clubdn-tour-popover',
-      // El ✕ nativo y "Finalizar" cierran sin guardar (si no fue gestionado ya por los botones propios)
+      onPopoverRender: (popover) => {
+        const btn = document.createElement('button');
+        btn.innerText = 'No volver a mostrar';
+        btn.className = 'tour-dismiss-btn';
+        btn.addEventListener('click', () => {
+          handledRef.current = true;
+          driverObj.destroy();
+          onDismissRef.current(true);
+        });
+        popover.footerButtons.prepend(btn);
+      },
       onDestroyStarted: () => {
         driverObj.destroy();
         if (!handledRef.current) {
@@ -123,17 +132,5 @@ export default function AppTour({ onDismiss }: AppTourProps) {
     return () => { driverObj.destroy(); };
   }, []);
 
-  const handleClose = () => {
-    handledRef.current = true;
-    driverRef.current?.destroy();
-    onDismissRef.current(false);
-  };
-
-  const handleDismiss = () => {
-    handledRef.current = true;
-    driverRef.current?.destroy();
-    onDismissRef.current(true);
-  };
-
-  return <TourDismissBar onClose={handleClose} onDismiss={handleDismiss} />;
+  return null;
 }

@@ -65,6 +65,23 @@ textarea::placeholder {
   max-width: min(360px, calc(100vw - 2rem)) !important;
 }
 
+/* Botón "No volver a mostrar" en el footer del popover */
+.tour-dismiss-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  margin-right: auto;
+  line-height: 1;
+}
+.tour-dismiss-btn:hover {
+  color: #6b7280;
+}
+
 /* En pantallas pequeñas: reducir padding y tipografía */
 @media (max-width: 480px) {
   .driver-popover {
