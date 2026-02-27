@@ -59,7 +59,10 @@
       "Bash(npm test:*)",
       "Bash(npm run test:uat:*)",
       "Bash(convert --version:*)",
-      "Bash(magick:*)"
+      "Bash(magick:*)",
+      "Bash(node_modules/.bin/prisma generate)",
+      "Bash(node_modules/.bin/tsx prisma/seeds/badgeDefinitions.ts)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:fDCKlQJhnjHZUwJdffFmBSvAWSXNZbxYG@metro.proxy.rlwy.net:31715/railway\" node_modules/.bin/tsx prisma/seeds/badgeDefinitions.ts)"
     ]
   }
 }

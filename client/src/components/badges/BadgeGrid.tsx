@@ -28,6 +28,19 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
 }) => {
   const { theme } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState<BadgeCategory | 'ALL'>('ALL');
+  const [expandedCategories, setExpandedCategories] = useState<Set<BadgeCategory>>(new Set());
+
+  const toggleCategory = (category: BadgeCategory) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
+  };
 
   // Agrupar badges por categoría
   const badgesByCategory = allBadges.reduce((acc, badge) => {
@@ -63,7 +76,7 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
   // Calcular estadísticas
   const totalBadges = allBadges.length;
   const unlockedCount = unlockedBadges.length;
-  const completionPercentage = Math.round((unlockedCount / totalBadges) * 100);
+  const completionPercentage = totalBadges > 0 ? Math.round((unlockedCount / totalBadges) * 100) : 0;
 
   return (
     <Container theme={theme}>
@@ -112,9 +125,15 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
             unlockedBadgeIds.has(badge.id)
           ).length;
 
+          const isExpanded = expandedCategories.has(category);
+
           return (
             <CategorySection key={category}>
-              <CategoryHeader theme={theme} categoryColor={getCategoryColor(category)}>
+              <CategoryHeader
+                theme={theme}
+                categoryColor={getCategoryColor(category)}
+                onClick={() => toggleCategory(category)}
+              >
                 <CategoryTitle>
                   <CategoryIconLarge>{getCategoryIcon(category)}</CategoryIconLarge>
                   <div>
@@ -127,25 +146,28 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
                     </CategoryStats>
                   </div>
                 </CategoryTitle>
+                <ExpandIcon isExpanded={isExpanded}>▾</ExpandIcon>
               </CategoryHeader>
 
-              <BadgeList>
-                {categoryBadges.map(badge => {
-                  const isUnlocked = unlockedBadgeIds.has(badge.id);
-                  const unlockedAt = getUnlockedDate(badge.id);
+              {isExpanded && (
+                <BadgeList>
+                  {categoryBadges.map(badge => {
+                    const isUnlocked = unlockedBadgeIds.has(badge.id);
+                    const unlockedAt = getUnlockedDate(badge.id);
 
-                  return (
-                    <BadgeDisplay
-                      key={badge.id}
-                      badge={badge}
-                      isUnlocked={isUnlocked}
-                      unlockedAt={unlockedAt}
-                      showProgress={!isUnlocked}
-                      currentCount={categoryProgress?.count || 0}
-                    />
-                  );
-                })}
-              </BadgeList>
+                    return (
+                      <BadgeDisplay
+                        key={badge.id}
+                        badge={badge}
+                        isUnlocked={isUnlocked}
+                        unlockedAt={unlockedAt}
+                        showProgress={!isUnlocked}
+                        currentCount={categoryProgress?.count || 0}
+                      />
+                    );
+                  })}
+                </BadgeList>
+              )}
             </CategorySection>
           );
         })}
@@ -247,12 +269,29 @@ const CategoryHeader = styled.div<{ categoryColor: string }>`
   padding: 1rem 1.5rem;
   border-radius: 8px;
   margin-bottom: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+
+  &:hover {
+    background: var(--color-tableRowHover);
+  }
+`;
+
+const ExpandIcon = styled.span<{ isExpanded: boolean }>`
+  font-size: 1.25rem;
+  color: var(--color-textSecondary);
+  transition: transform 0.2s ease;
+  transform: ${props => props.isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'};
 `;
 
 const CategoryTitle = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex: 1;
 `;
 
 const CategoryIconLarge = styled.div`
