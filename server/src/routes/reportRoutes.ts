@@ -32,6 +32,6 @@ router.post('/:id/votes', toggleVote);
 router.get('/:id/comments', getReportComments);
 
 // POST /api/reports/:id/comments
-router.post('/:id/comments', createReportComment);
+router.post('/:id/comments', upload.array('images', 2), createReportComment);
 
 export default router;

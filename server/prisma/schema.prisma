@@ -674,6 +674,7 @@ model ReportComment {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   content   String   @db.Text
+  imageUrls String[] @default([])
   createdAt DateTime @default(now())
 
   @@index([reportId])

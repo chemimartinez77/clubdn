@@ -41,6 +41,7 @@ interface ReportComment {
   reportId: string;
   userId: string;
   content: string;
+  imageUrls: string[];
   createdAt: string;
   user: {
     id: string;
@@ -166,6 +167,9 @@ export default function Feedback() {
 
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
+  const [commentImages, setCommentImages] = useState<File[]>([]);
+  const [commentImagePreviews, setCommentImagePreviews] = useState<string[]>([]);
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [searchParams] = useSearchParams();
   const scrolledRef = useRef(false);
@@ -246,13 +250,44 @@ export default function Feedback() {
     enabled: !!selectedReport
   });
 
+  const addCommentImages = (files: FileList | File[]) => {
+    const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    const combined = [...commentImages, ...newFiles].slice(0, 2);
+    setCommentImages(combined);
+    setCommentImagePreviews(combined.map(f => URL.createObjectURL(f)));
+  };
+
+  const removeCommentImage = (index: number) => {
+    const updated = commentImages.filter((_, i) => i !== index);
+    setCommentImages(updated);
+    setCommentImagePreviews(updated.map(f => URL.createObjectURL(f)));
+  };
+
+  const handleCommentPaste = (e: React.ClipboardEvent) => {
+    const imageFiles = Array.from(e.clipboardData.items)
+      .filter(item => item.type.startsWith('image/'))
+      .map(item => item.getAsFile())
+      .filter(Boolean) as File[];
+    if (imageFiles.length > 0) {
+      e.preventDefault();
+      addCommentImages(imageFiles);
+    }
+  };
+
   const createCommentMutation = useMutation({
-    mutationFn: async (payload: { reportId: string; content: string }) => {
-      return await api.post(`/api/reports/${payload.reportId}/comments`, { content: payload.content });
+    mutationFn: async (payload: { reportId: string; content: string; images: File[] }) => {
+      const formData = new FormData();
+      formData.append('content', payload.content);
+      payload.images.forEach(img => formData.append('images', img));
+      return await api.post(`/api/reports/${payload.reportId}/comments`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
     },
     onSuccess: () => {
       refetchComments();
       setCommentText('');
+      setCommentImages([]);
+      setCommentImagePreviews([]);
       success('Comentario añadido');
     },
     onError: (err: any) => {
@@ -520,6 +555,15 @@ export default function Feedback() {
                                             : 'bg-[var(--color-tableRowHover)] text-[var(--color-text)] rounded-tl-sm'
                                       }`}>
                                         {comment.content}
+                                        {comment.imageUrls?.length > 0 && (
+                                          <div className="flex flex-wrap gap-2 mt-2">
+                                            {comment.imageUrls.map((url, i) => (
+                                              <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                                                <img src={url} alt={`imagen ${i + 1}`} className="max-h-48 rounded-lg object-cover border border-white/20 hover:opacity-90 transition-opacity cursor-zoom-in" />
+                                              </a>
+                                            ))}
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -530,34 +574,66 @@ export default function Feedback() {
 
                           {/* Input de comentario */}
                           {(isAdmin || report.user.id === user?.id) && (
-                            <div className="flex gap-2 pt-2 border-t border-[var(--color-cardBorder)]">
-                              <textarea
-                                value={commentText}
-                                onChange={(e) => setCommentText(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && !e.shiftKey && commentText.trim()) {
-                                    e.preventDefault();
-                                    createCommentMutation.mutate({ reportId: report.id, content: commentText.trim() });
-                                  }
-                                }}
-                                placeholder="Escribe un comentario... (Enter para enviar)"
-                                rows={2}
-                                className="flex-1 px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] resize-none text-sm bg-[var(--color-inputBackground)] text-[var(--color-text)]"
-                              />
-                              <Button
-                                onClick={() => {
-                                  if (commentText.trim()) {
-                                    createCommentMutation.mutate({
-                                      reportId: report.id,
-                                      content: commentText.trim()
-                                    });
-                                  }
-                                }}
-                                disabled={!commentText.trim() || createCommentMutation.isPending}
-                                variant="primary"
+                            <div className="flex flex-col gap-2 pt-2 border-t border-[var(--color-cardBorder)]">
+                              {/* Previews de imágenes */}
+                              {commentImagePreviews.length > 0 && (
+                                <div className="flex gap-2 flex-wrap">
+                                  {commentImagePreviews.map((src, i) => (
+                                    <div key={i} className="relative group">
+                                      <img src={src} alt={`preview ${i + 1}`} className="h-20 rounded-lg object-cover border border-[var(--color-cardBorder)]" />
+                                      <button
+                                        onClick={() => removeCommentImage(i)}
+                                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >✕</button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <div
+                                className="flex gap-2"
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={(e) => { e.preventDefault(); addCommentImages(e.dataTransfer.files); }}
                               >
-                                {createCommentMutation.isPending ? '...' : 'Enviar'}
-                              </Button>
+                                <textarea
+                                  ref={commentTextareaRef}
+                                  value={commentText}
+                                  onChange={(e) => setCommentText(e.target.value)}
+                                  onPaste={handleCommentPaste}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey && (commentText.trim() || commentImages.length > 0)) {
+                                      e.preventDefault();
+                                      createCommentMutation.mutate({ reportId: report.id, content: commentText.trim(), images: commentImages });
+                                    }
+                                  }}
+                                  placeholder="Escribe un comentario o pega una imagen... (Enter para enviar)"
+                                  rows={2}
+                                  className="flex-1 px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] resize-none text-sm bg-[var(--color-inputBackground)] text-[var(--color-text)]"
+                                />
+                                <div className="flex flex-col gap-1">
+                                  <label className="cursor-pointer flex items-center justify-center w-10 h-10 rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] hover:bg-[var(--color-tableRowHover)] transition-colors" title="Adjuntar imagen">
+                                    <span className="text-lg">📎</span>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      multiple
+                                      className="hidden"
+                                      onChange={(e) => e.target.files && addCommentImages(e.target.files)}
+                                    />
+                                  </label>
+                                  <Button
+                                    onClick={() => {
+                                      if (commentText.trim() || commentImages.length > 0) {
+                                        createCommentMutation.mutate({ reportId: report.id, content: commentText.trim(), images: commentImages });
+                                      }
+                                    }}
+                                    disabled={(!commentText.trim() && commentImages.length === 0) || createCommentMutation.isPending}
+                                    variant="primary"
+                                  >
+                                    {createCommentMutation.isPending ? '...' : 'Enviar'}
+                                  </Button>
+                                </div>
+                              </div>
+                              <p className="text-xs text-[var(--color-textSecondary)]">Puedes pegar (Ctrl+V), arrastrar o adjuntar hasta 2 imágenes</p>
                             </div>
                           )}
 

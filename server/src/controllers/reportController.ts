@@ -421,6 +421,7 @@ export const createReportComment = async (req: Request, res: Response): Promise<
     const { id } = req.params;
     const userId = req.user?.userId;
     const { content } = req.body;
+    const files = (req.files as Express.Multer.File[]) || [];
 
     if (!userId) {
       res.status(401).json({ success: false, message: 'Usuario no autenticado' });
@@ -432,7 +433,7 @@ export const createReportComment = async (req: Request, res: Response): Promise<
       return;
     }
 
-    if (!content || !content.trim()) {
+    if ((!content || !content.trim()) && files.length === 0) {
       res.status(400).json({ success: false, message: 'El comentario no puede estar vacío' });
       return;
     }
@@ -476,6 +477,20 @@ export const createReportComment = async (req: Request, res: Response): Promise<
       return;
     }
 
+    // Subir imágenes a Cloudinary si las hay
+    const imageUrls: string[] = [];
+    for (const file of files) {
+      if (!ALLOWED_SCREENSHOT_TYPES.includes(file.mimetype)) continue;
+      const uploadResult = await new Promise<any>((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: 'clubdn/report-comments', transformation: [{ quality: 'auto:good' }] },
+          (error, result) => { if (error) reject(error); else resolve(result); }
+        );
+        uploadStream.end(file.buffer);
+      });
+      imageUrls.push(uploadResult.secure_url);
+    }
+
     // Auto-asignar admin si comenta y no hay asignación previa
     let updateData: any = {};
     if (isAdmin && !report.assignedToId) {
@@ -488,7 +503,8 @@ export const createReportComment = async (req: Request, res: Response): Promise<
         data: {
           reportId: id,
           userId,
-          content: content.trim()
+          content: content?.trim() || '',
+          imageUrls
         },
         include: {
           user: {
