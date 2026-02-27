@@ -49,6 +49,7 @@ export default function WelcomeCard({ user }: WelcomeCardProps) {
 
   return (
     <Card
+      id="dashboard-welcome"
       className="text-white"
       style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
     >

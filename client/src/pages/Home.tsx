@@ -4,9 +4,12 @@ import Layout from '../components/layout/Layout';
 import WelcomeCard from '../components/dashboard/WelcomeCard';
 import StatsCard from '../components/dashboard/StatsCard';
 import QuickActionsCard from '../components/dashboard/QuickActionsCard';
+import AppTour from '../components/tour/AppTour';
+import { useTour } from '../hooks/useTour';
 
 export default function Home() {
   const { user, isAdmin } = useAuth();
+  const { shouldShow, dismissTour } = useTour();
 
   if (!user) {
     return null;
@@ -31,6 +34,8 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {shouldShow && <AppTour onDismiss={dismissTour} />}
     </Layout>
   );
 }

@@ -26,6 +26,7 @@ export interface UserProfile {
   notifyInvitations: boolean;
   allowEventInvitations: boolean;
   noughterColor: string | null;
+  tourDismissed: boolean;
   createdAt: string;
   updatedAt: string;
   user?: User;

@@ -400,3 +400,32 @@ export const uploadAvatar = async (req: Request, res: Response): Promise<void> =
     });
   }
 };
+
+/**
+ * Guardar preferencia del tour (dismiss permanente)
+ */
+export const dismissTour = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+      return;
+    }
+
+    await prisma.userProfile.upsert({
+      where: { userId },
+      update: { tourDismissed: true },
+      create: {
+        userId,
+        tourDismissed: true,
+        favoriteGames: [],
+        emailUpdates: true
+      }
+    });
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Error al guardar preferencia del tour:', error);
+    res.status(500).json({ success: false, message: 'Error al guardar preferencia' });
+  }
+};

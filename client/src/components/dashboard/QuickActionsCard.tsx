@@ -54,7 +54,7 @@ interface QuickActionsCardProps {
 
 export default function QuickActionsCard({ isAdmin }: QuickActionsCardProps) {
   return (
-    <Card>
+    <Card id="dashboard-quick-actions">
       <CardHeader>
         <h3 className="text-lg font-semibold text-[var(--color-text)]">Acciones rápidas</h3>
       </CardHeader>

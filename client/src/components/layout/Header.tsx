@@ -72,6 +72,7 @@ export default function Header() {
 
             {/* Inicio */}
             <Link
+              id="nav-inicio"
               to="/"
               className="text-[var(--color-textSecondary)] hover:text-primary transition-colors"
             >
@@ -80,6 +81,7 @@ export default function Header() {
 
             {/* Calendario (antes Eventos) */}
             <Link
+              id="nav-calendario"
               to="/events"
               className="text-[var(--color-textSecondary)] hover:text-primary transition-colors"
             >
@@ -141,6 +143,7 @@ export default function Header() {
               Documentos
             </Link>
             <Link
+              id="nav-feedback"
               to="/feedback"
               className="text-[var(--color-textSecondary)] hover:text-primary transition-colors"
             >
@@ -234,6 +237,7 @@ export default function Header() {
             {/* User Dropdown */}
             <div className="relative">
               <button
+                id="nav-user-menu"
                 onClick={() => {
                   setIsMenuOpen(!isMenuOpen);
                   setIsAdminMenuOpen(false);
@@ -282,6 +286,7 @@ export default function Header() {
                     </div>
 
                     <Link
+                      id="nav-perfil"
                       to="/profile"
                       className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors flex items-center gap-2"
                       onClick={() => setIsMenuOpen(false)}

@@ -5,11 +5,13 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  id?: string;
 }
 
-export function Card({ children, className = '', style }: CardProps) {
+export function Card({ children, className = '', style, id }: CardProps) {
   return (
     <div
+      id={id}
       className={`bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-lg shadow-md overflow-hidden ${className}`}
       style={style}
     >
