@@ -9,7 +9,6 @@ interface BadgeDisplayProps {
   badge: BadgeDefinition;
   isUnlocked: boolean;
   unlockedAt?: string;
-  showProgress?: boolean;
   currentCount?: number;
 }
 
@@ -17,7 +16,6 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
   badge,
   isUnlocked,
   unlockedAt,
-  showProgress = false,
   currentCount = 0
 }) => {
   const categoryColor = getCategoryColor(badge.category);
@@ -25,20 +23,20 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
   const [revealed, setRevealed] = useState(false);
   const [peeling, setPeeling] = useState(false);
 
-  const progress = showProgress && !isUnlocked
+  const progress = !isUnlocked
     ? Math.min((currentCount / badge.requiredCount) * 100, 100)
     : 100;
 
   const handleReveal = (e: React.MouseEvent) => {
     e.stopPropagation();
     setPeeling(true);
-    setTimeout(() => setRevealed(true), 500);
+    setTimeout(() => setRevealed(true), 650);
   };
 
   const showSticker = !isUnlocked && !revealed;
 
   return (
-    <BadgeCard isUnlocked={isUnlocked} categoryColor={categoryColor}>
+    <BadgeCard isUnlocked={isUnlocked} categoryColor={categoryColor} showSticker={showSticker}>
       <BadgeIcon isUnlocked={isUnlocked}>
         {categoryIcon}
       </BadgeIcon>
@@ -56,7 +54,7 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
           {badge.requiredCount} juegos diferentes
         </BadgeRequirement>
 
-        {showProgress && !isUnlocked && (
+        {!isUnlocked && (
           <ProgressContainer>
             <ProgressBar>
               <ProgressFill progress={progress} categoryColor={categoryColor} />
@@ -84,24 +82,51 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
 
       {showSticker && (
         <Sticker peeling={peeling} onClick={handleReveal}>
-          <StickerIcon>🔒</StickerIcon>
-          <StickerText>Logro oculto</StickerText>
-          <StickerButton>Revelar</StickerButton>
+          <StickerCorner />
+          <StickerContent>
+            <StickerIcon>🩹</StickerIcon>
+            <StickerText>Logro oculto</StickerText>
+            <StickerProgress>{currentCount} / {badge.requiredCount} partidas</StickerProgress>
+            <StickerButton>Quitar tirita</StickerButton>
+          </StickerContent>
         </Sticker>
       )}
     </BadgeCard>
   );
 };
 
-// Animaciones
-const peelOff = keyframes`
-  0%   { transform: rotate(0deg) scale(1);   opacity: 1; transform-origin: top left; }
-  40%  { transform: rotate(-8deg) scale(1.05) translateY(-4px); opacity: 1; transform-origin: top left; }
-  100% { transform: rotate(-15deg) scale(0.7) translate(-60px, -40px); opacity: 0; transform-origin: top left; }
+// Animación de tirita que se despega desde la esquina inferior derecha y sale volando
+const peelAnimation = keyframes`
+  0% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+    transform: rotate(0deg) translate(0, 0);
+    opacity: 1;
+  }
+  30% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 60%, 60% 100%, 0% 100%);
+    transform: rotate(0deg) translate(0, 0);
+    opacity: 1;
+  }
+  60% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 100% 100%, 0% 100%);
+    transform: rotate(-6deg) translate(-5px, -10px);
+    opacity: 1;
+  }
+  100% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 100% 100%, 0% 100%);
+    transform: rotate(-20deg) translate(-80px, -120px) scale(0.6);
+    opacity: 0;
+  }
+`;
+
+const cornerPeel = keyframes`
+  0%   { width: 0; height: 0; }
+  30%  { width: 28px; height: 28px; }
+  100% { width: 28px; height: 28px; }
 `;
 
 // Styled Components
-const BadgeCard = styled.div<{ isUnlocked: boolean; categoryColor: string }>`
+const BadgeCard = styled.div<{ isUnlocked: boolean; categoryColor: string; showSticker: boolean }>`
   position: relative;
   background: var(--color-cardBackground);
   border: 2px solid ${props => props.isUnlocked ? props.categoryColor : 'var(--color-cardBorder)'};
@@ -112,7 +137,7 @@ const BadgeCard = styled.div<{ isUnlocked: boolean; categoryColor: string }>`
   gap: 1rem;
   transition: all 0.3s ease;
   opacity: ${props => props.isUnlocked ? 1 : 0.6};
-  overflow: hidden;
+  overflow: ${props => props.showSticker ? 'visible' : 'hidden'};
 
   &:hover {
     transform: translateY(-2px);
@@ -211,44 +236,63 @@ const UnlockedBadge = styled.div`
 
 const Sticker = styled.div<{ peeling: boolean }>`
   position: absolute;
-  inset: 0;
+  inset: -2px;
   background: repeating-linear-gradient(
     -45deg,
-    #1e293b,
-    #1e293b 10px,
-    #0f172a 10px,
-    #0f172a 20px
+    #b45309,
+    #b45309 10px,
+    #92400e 10px,
+    #92400e 20px
   );
   border-radius: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
   cursor: pointer;
-  animation: ${props => props.peeling ? peelOff : 'none'} 0.5s ease-in forwards;
+  z-index: 10;
+  animation: ${props => props.peeling ? peelAnimation : 'none'} 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 
-  &::after {
+  &::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     border-radius: 10px;
-    border: 2px dashed rgba(255,255,255,0.15);
+    border: 2px dashed rgba(255, 255, 255, 0.25);
     pointer-events: none;
   }
 
   &:hover {
     background: repeating-linear-gradient(
       -45deg,
-      #263548,
-      #263548 10px,
-      #1a2535 10px,
-      #1a2535 20px
+      #c46010,
+      #c46010 10px,
+      #a34e0f 10px,
+      #a34e0f 20px
     );
   }
+`;
+
+// Triángulo en la esquina inferior derecha simulando el inicio del despegue
+const StickerCorner = styled.div`
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 22px 22px;
+  border-color: transparent transparent rgba(0,0,0,0.35) transparent;
+  border-bottom-right-radius: 10px;
+  animation: ${cornerPeel} 0.65s ease forwards;
+  pointer-events: none;
+`;
+
+const StickerContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
 `;
 
 const StickerIcon = styled.div`
@@ -258,16 +302,21 @@ const StickerIcon = styled.div`
 const StickerText = styled.div`
   font-size: 0.75rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.85);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+`;
+
+const StickerProgress = styled.div`
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.65);
 `;
 
 const StickerButton = styled.div`
   font-size: 0.7rem;
   font-weight: 700;
-  color: #60a5fa;
-  border: 1px solid #60a5fa;
+  color: #fef3c7;
+  border: 1px solid rgba(254, 243, 199, 0.6);
   border-radius: 4px;
   padding: 0.2rem 0.6rem;
   margin-top: 0.2rem;

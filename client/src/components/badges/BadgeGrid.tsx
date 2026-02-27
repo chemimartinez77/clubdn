@@ -161,7 +161,6 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
                         badge={badge}
                         isUnlocked={isUnlocked}
                         unlockedAt={unlockedAt}
-                        showProgress={!isUnlocked}
                         currentCount={categoryProgress?.count || 0}
                       />
                     );
