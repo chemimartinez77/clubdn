@@ -29,6 +29,7 @@ export interface UserProfile {
   tourDismissed: boolean;
   calendarTourDismissed: boolean;
   feedbackTourDismissed: boolean;
+  createPartidaTourDismissed: boolean;
   createdAt: string;
   updatedAt: string;
   user?: User;

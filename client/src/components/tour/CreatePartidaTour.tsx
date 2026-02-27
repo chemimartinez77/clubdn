@@ -1,14 +1,14 @@
-// client/src/components/tour/AppTour.tsx
+// client/src/components/tour/CreatePartidaTour.tsx
 import { useEffect, useRef } from 'react';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import TourDismissBar from './TourDismissBar';
 
-interface AppTourProps {
+interface CreatePartidaTourProps {
   onDismiss: (permanent: boolean) => void;
 }
 
-export default function AppTour({ onDismiss }: AppTourProps) {
+export default function CreatePartidaTour({ onDismiss }: CreatePartidaTourProps) {
   const driverRef = useRef<ReturnType<typeof driver> | null>(null);
   const onDismissRef = useRef(onDismiss);
   useEffect(() => { onDismissRef.current = onDismiss; }, [onDismiss]);
@@ -25,69 +25,68 @@ export default function AppTour({ onDismiss }: AppTourProps) {
       smoothScroll: true,
       allowClose: true,
       popoverClass: 'clubdn-tour-popover',
-      // El ✕ nativo y "Finalizar" cierran sin guardar
       onDestroyStarted: () => {
         driverObj.destroy();
         onDismissRef.current(false);
       },
       steps: [
         {
-          element: '#dashboard-welcome',
+          element: '#create-partida-header',
           popover: {
-            title: '¡Bienvenido al Club DN! 👋',
+            title: 'Organizar una Partida 🎲',
             description:
-              'Esta es tu página de inicio. Aquí verás un resumen de tu actividad y podrás acceder rápidamente a todo lo que necesitas.',
+              'Desde aquí puedes crear una partida para jugar con otros miembros del club. Rellena los campos y en un momento estará lista.',
             side: 'bottom',
             align: 'start'
           }
         },
         {
-          element: '#nav-inicio',
+          element: '#create-partida-game',
           popover: {
-            title: 'Inicio',
+            title: 'Elige el juego',
             description:
-              'Vuelve siempre a esta pantalla pulsando en "Inicio" en la barra de navegación.',
+              'Busca el juego en BoardGameGeek para añadir imagen y título automáticamente. También puedes elegir la categoría manualmente para que los demás miembros ganen badges al participar.',
             side: 'bottom',
             align: 'start'
           }
         },
         {
-          element: '#nav-calendario',
+          element: '#create-partida-title',
           popover: {
-            title: 'Calendario de Eventos',
+            title: 'Título y descripción',
             description:
-              'Aquí encontrarás todas las partidas y eventos organizados por el club. Puedes apuntarte, ver detalles y estar al día de todo.',
+              'El título se rellena solo si seleccionas un juego, pero puedes cambiarlo. La descripción es opcional: úsala para dar contexto, nivel de experiencia requerido, etc.',
             side: 'bottom',
             align: 'start'
           }
         },
         {
-          element: '#nav-feedback',
+          element: '#create-partida-datetime',
           popover: {
-            title: 'Feedback',
+            title: 'Fecha y hora',
             description:
-              '¿Tienes alguna sugerencia o encontraste un problema? Cuéntanoslo aquí. Valoramos mucho tu opinión.',
+              'Elige cuándo se jugará la partida. Si vienes desde el calendario, la fecha ya estará preseleccionada.',
             side: 'bottom',
             align: 'start'
           }
         },
         {
-          element: '#nav-user-menu',
+          element: '#create-partida-attendees',
           popover: {
-            title: 'Tu Perfil y Logros',
+            title: 'Número de jugadores',
             description:
-              'Pulsa aquí para acceder a tu perfil, personalizar tu cuenta y ver los logros que has conseguido jugando en el club.',
-            side: 'bottom',
-            align: 'end'
+              'Indica el máximo de jugadores que caben en la partida, incluyéndote a ti. Una vez se alcance el límite, los demás entrarán en lista de espera.',
+            side: 'top',
+            align: 'start'
           }
         },
         {
-          element: '#dashboard-quick-actions',
+          element: '#create-partida-submit',
           popover: {
-            title: '¡Listo para jugar! 🎲',
+            title: '¡A jugar!',
             description:
-              'Desde aquí puedes organizar una partida, ver eventos próximos o explorar la ludoteca del club. ¡Bienvenido!',
-            side: 'left',
+              'Cuando lo tengas todo listo, pulsa "Guardar" para publicar la partida. Aparecerá en el calendario y los demás miembros podrán apuntarse.',
+            side: 'top',
             align: 'start'
           }
         }

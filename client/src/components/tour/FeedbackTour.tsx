@@ -1,23 +1,19 @@
 // client/src/components/tour/FeedbackTour.tsx
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
+import TourDismissBar from './TourDismissBar';
 
 interface FeedbackTourProps {
   onDismiss: (permanent: boolean) => void;
 }
 
 export default function FeedbackTour({ onDismiss }: FeedbackTourProps) {
-  const [neverShow, setNeverShow] = useState(false);
-  const neverShowRef = useRef(false);
+  const driverRef = useRef<ReturnType<typeof driver> | null>(null);
   const onDismissRef = useRef(onDismiss);
-
-  useEffect(() => { neverShowRef.current = neverShow; }, [neverShow]);
   useEffect(() => { onDismissRef.current = onDismiss; }, [onDismiss]);
 
   useEffect(() => {
-    const handleFinish = () => onDismissRef.current(neverShowRef.current);
-
     const driverObj = driver({
       showProgress: true,
       progressText: 'Paso {{current}} de {{total}}',
@@ -31,7 +27,7 @@ export default function FeedbackTour({ onDismiss }: FeedbackTourProps) {
       popoverClass: 'clubdn-tour-popover',
       onDestroyStarted: () => {
         driverObj.destroy();
-        handleFinish();
+        onDismissRef.current(false);
       },
       steps: [
         {
@@ -87,43 +83,21 @@ export default function FeedbackTour({ onDismiss }: FeedbackTourProps) {
       ]
     });
 
+    driverRef.current = driverObj;
     driverObj.drive();
 
     return () => { driverObj.destroy(); };
   }, []);
 
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: '1.5rem',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 100000,
-        background: 'var(--color-cardBackground)',
-        border: '1px solid var(--color-cardBorder)',
-        borderRadius: '8px',
-        padding: '0.6rem 1rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        fontSize: '0.85rem',
-        color: 'var(--color-text)',
-        cursor: 'pointer',
-        userSelect: 'none',
-        whiteSpace: 'nowrap'
-      }}
-      onClick={() => setNeverShow(prev => !prev)}
-    >
-      <input
-        type="checkbox"
-        checked={neverShow}
-        onChange={e => setNeverShow(e.target.checked)}
-        onClick={e => e.stopPropagation()}
-        style={{ cursor: 'pointer', width: '16px', height: '16px', flexShrink: 0 }}
-      />
-      No volver a mostrar este tour
-    </div>
-  );
+  const handleClose = () => {
+    driverRef.current?.destroy();
+    onDismissRef.current(false);
+  };
+
+  const handleDismiss = () => {
+    driverRef.current?.destroy();
+    onDismissRef.current(true);
+  };
+
+  return <TourDismissBar onClose={handleClose} onDismiss={handleDismiss} />;
 }

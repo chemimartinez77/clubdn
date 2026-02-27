@@ -401,10 +401,11 @@ export const uploadAvatar = async (req: Request, res: Response): Promise<void> =
   }
 };
 
-const TOUR_FIELD_MAP: Record<string, 'tourDismissed' | 'calendarTourDismissed' | 'feedbackTourDismissed'> = {
+const TOUR_FIELD_MAP: Record<string, 'tourDismissed' | 'calendarTourDismissed' | 'feedbackTourDismissed' | 'createPartidaTourDismissed'> = {
   home: 'tourDismissed',
   calendar: 'calendarTourDismissed',
-  feedback: 'feedbackTourDismissed'
+  feedback: 'feedbackTourDismissed',
+  createPartida: 'createPartidaTourDismissed'
 };
 
 /**

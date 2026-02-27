@@ -5,12 +5,13 @@ import { api } from '../api/axios';
 import type { ApiResponse } from '../types/auth';
 import type { UserProfile } from '../types/profile';
 
-export type TourKey = 'home' | 'calendar' | 'feedback';
+export type TourKey = 'home' | 'calendar' | 'feedback' | 'createPartida';
 
 const TOUR_FIELD: Record<TourKey, keyof UserProfile> = {
   home: 'tourDismissed',
   calendar: 'calendarTourDismissed',
-  feedback: 'feedbackTourDismissed'
+  feedback: 'feedbackTourDismissed',
+  createPartida: 'createPartidaTourDismissed'
 };
 
 export function useTour(tourKey: TourKey) {

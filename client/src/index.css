@@ -57,3 +57,32 @@ textarea::placeholder {
 .animate-slide-in-right {
   animation: slide-in-right 0.3s ease-out;
 }
+
+/* ─── Driver.js tour overrides ─────────────────────────────────────────── */
+
+/* Limitar ancho del popover en móvil para que no se salga del viewport */
+.driver-popover {
+  max-width: min(360px, calc(100vw - 2rem)) !important;
+}
+
+/* En pantallas pequeñas: reducir padding y tipografía */
+@media (max-width: 480px) {
+  .driver-popover {
+    padding: 14px 16px !important;
+  }
+  .driver-popover-title {
+    font-size: 0.95rem !important;
+  }
+  .driver-popover-description {
+    font-size: 0.82rem !important;
+  }
+  /* Botones de navegación más compactos */
+  .driver-popover-navigation-btns button {
+    padding: 6px 12px !important;
+    font-size: 0.8rem !important;
+  }
+  /* El contador de pasos */
+  .driver-popover-progress-text {
+    font-size: 0.75rem !important;
+  }
+}

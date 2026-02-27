@@ -10,12 +10,15 @@ import { useToast } from '../hooks/useToast';
 import { api } from '../api/axios';
 import type { BGGGame, CreateEventData } from '../types/event';
 import { getCategoryDisplayName, getCategoryIcon } from '../types/badge';
+import CreatePartidaTour from '../components/tour/CreatePartidaTour';
+import { useTour } from '../hooks/useTour';
 
 export default function CreatePartida() {
   const navigate = useNavigate();
   const location = useLocation();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
+  const { shouldShow: showTour, dismissTour } = useTour('createPartida');
 
   // Obtener fecha predefinida del estado de navegación (desde el calendario)
   const preselectedDate = (location.state as { selectedDate?: string })?.selectedDate;
@@ -116,7 +119,7 @@ export default function CreatePartida() {
     <Layout>
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
-        <div>
+        <div id="create-partida-header">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-[var(--color-textSecondary)] hover:text-[var(--color-text)] mb-4"
@@ -135,7 +138,7 @@ export default function CreatePartida() {
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Juego */}
-              <div>
+              <div id="create-partida-game">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Elige un juego (opcional)
                 </label>
@@ -233,7 +236,7 @@ export default function CreatePartida() {
               </div>
 
               {/* Título */}
-              <div>
+              <div id="create-partida-title">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Título de la partida *
                 </label>
@@ -263,7 +266,7 @@ export default function CreatePartida() {
               </div>
 
               {/* Fecha y Hora */}
-              <div>
+              <div id="create-partida-datetime">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   ¿Cuándo será la partida? *
                 </label>
@@ -346,7 +349,7 @@ export default function CreatePartida() {
               </div>
 
               {/* Número de jugadores */}
-              <div>
+              <div id="create-partida-attendees">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   ¿Cuántos jugadores o jugadoras seréis en la partida? *
                 </label>
@@ -392,7 +395,7 @@ export default function CreatePartida() {
               </div>
 
               {/* Submit Buttons */}
-              <div className="flex gap-3 pt-4">
+              <div id="create-partida-submit" className="flex gap-3 pt-4">
                 <Button
                   type="submit"
                   variant="primary"
@@ -421,6 +424,8 @@ export default function CreatePartida() {
         onClose={() => setIsGameModalOpen(false)}
         onSelect={handleGameSelect}
       />
+
+      {showTour && <CreatePartidaTour onDismiss={dismissTour} />}
     </Layout>
   );
 }
