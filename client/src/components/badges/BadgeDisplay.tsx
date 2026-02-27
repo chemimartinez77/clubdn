@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import type { BadgeDefinition } from '../../types/badge';
 import { getCategoryIcon, getCategoryColor } from '../../types/badge';
-import styled, { keyframes } from '@emotion/styled';
+import styled from '@emotion/styled';
+import { keyframes } from '@emotion/react';
 
 interface BadgeDisplayProps {
   badge: BadgeDefinition;
