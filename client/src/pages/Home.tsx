@@ -9,7 +9,7 @@ import { useTour } from '../hooks/useTour';
 
 export default function Home() {
   const { user, isAdmin } = useAuth();
-  const { shouldShow, dismissTour } = useTour();
+  const { shouldShow, dismissTour } = useTour('home');
 
   if (!user) {
     return null;

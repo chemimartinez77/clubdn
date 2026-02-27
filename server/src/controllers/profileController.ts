@@ -401,8 +401,15 @@ export const uploadAvatar = async (req: Request, res: Response): Promise<void> =
   }
 };
 
+const TOUR_FIELD_MAP: Record<string, 'tourDismissed' | 'calendarTourDismissed' | 'feedbackTourDismissed'> = {
+  home: 'tourDismissed',
+  calendar: 'calendarTourDismissed',
+  feedback: 'feedbackTourDismissed'
+};
+
 /**
  * Guardar preferencia del tour (dismiss permanente)
+ * Body: { tour: 'home' | 'calendar' | 'feedback' }
  */
 export const dismissTour = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -412,12 +419,19 @@ export const dismissTour = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
+    const tourKey = req.body?.tour || 'home';
+    const field = TOUR_FIELD_MAP[tourKey];
+    if (!field) {
+      res.status(400).json({ success: false, message: 'Tour no válido' });
+      return;
+    }
+
     await prisma.userProfile.upsert({
       where: { userId },
-      update: { tourDismissed: true },
+      update: { [field]: true },
       create: {
         userId,
-        tourDismissed: true,
+        [field]: true,
         favoriteGames: [],
         emailUpdates: true
       }

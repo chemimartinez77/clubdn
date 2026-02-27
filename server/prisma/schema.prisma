@@ -155,7 +155,9 @@ model UserProfile {
 
   // Personalización
   noughterColor   String?  // Color de Noughter: purple, blue, green, red, brown (null = usar tema activo)
-  tourDismissed   Boolean  @default(false)  // true = no volver a mostrar el tour
+  tourDismissed           Boolean  @default(false)  // true = no volver a mostrar el tour de inicio
+  calendarTourDismissed   Boolean  @default(false)  // true = no volver a mostrar el tour del calendario
+  feedbackTourDismissed   Boolean  @default(false)  // true = no volver a mostrar el tour de feedback
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

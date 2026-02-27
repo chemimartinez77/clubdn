@@ -8,6 +8,8 @@ import Button from '../components/ui/Button';
 import { api } from '../api/axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import FeedbackTour from '../components/tour/FeedbackTour';
+import { useTour } from '../hooks/useTour';
 
 type ReportType = 'BUG' | 'MEJORA';
 type ReportStatus = 'NUEVO' | 'EN_REVISION' | 'EN_PROGRESO' | 'HECHO';
@@ -154,6 +156,7 @@ export default function Feedback() {
   const { user, isAdmin } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
+  const { shouldShow: showTour, dismissTour } = useTour('feedback');
 
   const [type, setType] = useState<ReportType>('BUG');
   const [title, setTitle] = useState('');
@@ -315,7 +318,7 @@ export default function Feedback() {
   return (
     <Layout>
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div id="feedback-header" className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-[var(--color-text)]">Feedback y Reporte de Bugs</h1>
             <p className="text-[var(--color-textSecondary)] mt-1">
@@ -324,7 +327,7 @@ export default function Feedback() {
           </div>
         </div>
 
-        <Card>
+        <Card id="feedback-form">
           <CardHeader>
             <CardTitle>Enviar reporte</CardTitle>
           </CardHeader>
@@ -393,6 +396,7 @@ export default function Feedback() {
             </div>
 
             <Button
+              id="feedback-submit-btn"
               onClick={handleSubmit}
               variant="primary"
               disabled={createMutation.isPending}
@@ -402,12 +406,12 @@ export default function Feedback() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="feedback-board">
           <CardHeader>
             <CardTitle>Tablero público</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:flex-row gap-3 mb-4">
+            <div id="feedback-filters" className="flex flex-col md:flex-row gap-3 mb-4">
               <Button
                 onClick={() => setFilterMine((prev) => !prev)}
                 variant={filterMine ? 'primary' : 'outline'}
@@ -672,6 +676,8 @@ export default function Feedback() {
           </Card>
         )}
       </div>
+
+      {showTour && <FeedbackTour onDismiss={dismissTour} />}
     </Layout>
   );
 }

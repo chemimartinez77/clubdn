@@ -5,7 +5,15 @@ import { api } from '../api/axios';
 import type { ApiResponse } from '../types/auth';
 import type { UserProfile } from '../types/profile';
 
-export function useTour() {
+export type TourKey = 'home' | 'calendar' | 'feedback';
+
+const TOUR_FIELD: Record<TourKey, keyof UserProfile> = {
+  home: 'tourDismissed',
+  calendar: 'calendarTourDismissed',
+  feedback: 'feedbackTourDismissed'
+};
+
+export function useTour(tourKey: TourKey) {
   const queryClient = useQueryClient();
   const [shouldShow, setShouldShow] = useState(false);
 
@@ -18,23 +26,23 @@ export function useTour() {
     staleTime: 5 * 60 * 1000
   });
 
-  // Mostrar el tour si el perfil está cargado y tourDismissed es false
+  const field = TOUR_FIELD[tourKey];
+
   useEffect(() => {
-    if (isSuccess && profile && !profile.tourDismissed) {
-      // Pequeño delay para que el DOM esté listo
+    if (isSuccess && profile && !profile[field]) {
       const timer = setTimeout(() => setShouldShow(true), 800);
       return () => clearTimeout(timer);
     }
-  }, [isSuccess, profile]);
+  }, [isSuccess, profile, field]);
 
   const dismissMutation = useMutation({
     mutationFn: async () => {
-      await api.patch('/api/profile/me/tour-dismiss');
+      await api.patch('/api/profile/me/tour-dismiss', { tour: tourKey });
     },
     onSuccess: () => {
       queryClient.setQueryData(['myProfile'], (old: UserProfile | undefined) => {
         if (!old) return old;
-        return { ...old, tourDismissed: true };
+        return { ...old, [field]: true };
       });
     }
   });

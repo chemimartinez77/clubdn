@@ -8,6 +8,8 @@ import EventCard from '../components/events/EventCard';
 import EventCalendar from '../components/events/EventCalendar';
 import EventCalendarWeek from '../components/events/EventCalendarWeek';
 import EventCalendarDay from '../components/events/EventCalendarDay';
+import CalendarTour from '../components/tour/CalendarTour';
+import { useTour } from '../hooks/useTour';
 import { api } from '../api/axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/useToast';
@@ -23,6 +25,7 @@ type SortOption = 'date_desc' | 'date_asc' | 'name_asc' | 'name_desc';
 export default function Events() {
   const { user, isAdmin } = useAuth();
   const { error: showError } = useToast();
+  const { shouldShow: showTour, dismissTour } = useTour('calendar');
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [calendarView, setCalendarView] = useState<CalendarView>('month');
   const [statusFilter, setStatusFilter] = useState<EventStatus | ''>('');
@@ -215,14 +218,14 @@ export default function Events() {
     <Layout>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div id="events-header" className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-[var(--color-text)]">Eventos</h1>
             <p className="text-[var(--color-textSecondary)] mt-1">Descubre y regístrate a eventos del club</p>
           </div>
 
           {/* View Toggle */}
-          <div className="flex gap-2 bg-[var(--color-tableRowHover)] p-1 rounded-lg">
+          <div id="events-view-toggle" className="flex gap-2 bg-[var(--color-tableRowHover)] p-1 rounded-lg">
             <button
               onClick={() => setViewMode('list')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -254,7 +257,7 @@ export default function Events() {
 
         {/* Filters - Solo en vista lista */}
         {viewMode === 'list' && (
-          <Card>
+          <Card id="events-filters">
             <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {/* Type Filter */}
@@ -409,9 +412,9 @@ export default function Events() {
               /* Calendar View */
               <div className="space-y-4">
                 {/* Calendar Controls */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div id="events-calendar-controls" className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   {/* Navigation */}
-                  <div className="flex items-center gap-2">
+                  <div id="events-calendar-nav" className="flex items-center gap-2">
                     <Button variant="outline" onClick={handlePrevious}>
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -439,7 +442,7 @@ export default function Events() {
                         Compartir prevision semanal
                       </Button>
                     )}
-                    <div className="flex gap-2 bg-[var(--color-tableRowHover)] p-1 rounded-lg">
+                    <div id="events-calendar-view-selector" className="flex gap-2 bg-[var(--color-tableRowHover)] p-1 rounded-lg">
                       <button
                         onClick={() => setCalendarView('month')}
                         className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
@@ -493,6 +496,10 @@ export default function Events() {
           </>
         )}
       </div>
+
+      {showTour && viewMode === 'calendar' && (
+        <CalendarTour onDismiss={dismissTour} />
+      )}
     </Layout>
   );
 }
