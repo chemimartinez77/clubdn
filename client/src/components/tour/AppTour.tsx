@@ -11,9 +11,68 @@ interface AppTourProps {
 export default function AppTour({ onDismiss }: AppTourProps) {
   const driverRef = useRef<ReturnType<typeof driver> | null>(null);
   const onDismissRef = useRef(onDismiss);
+  const handledRef = useRef(false);
   useEffect(() => { onDismissRef.current = onDismiss; }, [onDismiss]);
 
   useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+
+    const desktopNavSteps = [
+      {
+        element: '#nav-inicio',
+        popover: {
+          title: 'Inicio',
+          description:
+            'Vuelve siempre a esta pantalla pulsando en "Inicio" en la barra de navegación.',
+          side: 'bottom' as const,
+          align: 'start' as const
+        }
+      },
+      {
+        element: '#nav-calendario',
+        popover: {
+          title: 'Calendario de Eventos',
+          description:
+            'Aquí encontrarás todas las partidas y eventos organizados por el club. Puedes apuntarte, ver detalles y estar al día de todo.',
+          side: 'bottom' as const,
+          align: 'start' as const
+        }
+      },
+      {
+        element: '#nav-feedback',
+        popover: {
+          title: 'Feedback',
+          description:
+            '¿Tienes alguna sugerencia o encontraste un problema? Cuéntanoslo aquí. Valoramos mucho tu opinión.',
+          side: 'bottom' as const,
+          align: 'start' as const
+        }
+      },
+      {
+        element: '#nav-user-menu',
+        popover: {
+          title: 'Tu Perfil y Logros',
+          description:
+            'Pulsa aquí para acceder a tu perfil, personalizar tu cuenta y ver los logros que has conseguido jugando en el club.',
+          side: 'bottom' as const,
+          align: 'end' as const
+        }
+      },
+    ];
+
+    const mobileNavStep = [
+      {
+        element: '#mobile-menu-button',
+        popover: {
+          title: 'Menú de navegación',
+          description:
+            'Pulsa aquí para abrir el menú. Desde ahí puedes acceder al Calendario, Feedback, tu Perfil y todo lo demás.',
+          side: 'bottom' as const,
+          align: 'end' as const
+        }
+      },
+    ];
+
     const driverObj = driver({
       showProgress: true,
       progressText: 'Paso {{current}} de {{total}}',
@@ -25,10 +84,13 @@ export default function AppTour({ onDismiss }: AppTourProps) {
       smoothScroll: true,
       allowClose: true,
       popoverClass: 'clubdn-tour-popover',
-      // El ✕ nativo y "Finalizar" cierran sin guardar
+      // El ✕ nativo y "Finalizar" cierran sin guardar (si no fue gestionado ya por los botones propios)
       onDestroyStarted: () => {
         driverObj.destroy();
-        onDismissRef.current(false);
+        if (!handledRef.current) {
+          handledRef.current = true;
+          onDismissRef.current(false);
+        }
       },
       steps: [
         {
@@ -41,53 +103,14 @@ export default function AppTour({ onDismiss }: AppTourProps) {
             align: 'start'
           }
         },
-        {
-          element: '#nav-inicio',
-          popover: {
-            title: 'Inicio',
-            description:
-              'Vuelve siempre a esta pantalla pulsando en "Inicio" en la barra de navegación.',
-            side: 'bottom',
-            align: 'start'
-          }
-        },
-        {
-          element: '#nav-calendario',
-          popover: {
-            title: 'Calendario de Eventos',
-            description:
-              'Aquí encontrarás todas las partidas y eventos organizados por el club. Puedes apuntarte, ver detalles y estar al día de todo.',
-            side: 'bottom',
-            align: 'start'
-          }
-        },
-        {
-          element: '#nav-feedback',
-          popover: {
-            title: 'Feedback',
-            description:
-              '¿Tienes alguna sugerencia o encontraste un problema? Cuéntanoslo aquí. Valoramos mucho tu opinión.',
-            side: 'bottom',
-            align: 'start'
-          }
-        },
-        {
-          element: '#nav-user-menu',
-          popover: {
-            title: 'Tu Perfil y Logros',
-            description:
-              'Pulsa aquí para acceder a tu perfil, personalizar tu cuenta y ver los logros que has conseguido jugando en el club.',
-            side: 'bottom',
-            align: 'end'
-          }
-        },
+        ...(isMobile ? mobileNavStep : desktopNavSteps),
         {
           element: '#dashboard-quick-actions',
           popover: {
             title: '¡Listo para jugar! 🎲',
             description:
               'Desde aquí puedes organizar una partida, ver eventos próximos o explorar la ludoteca del club. ¡Bienvenido!',
-            side: 'left',
+            side: isMobile ? 'bottom' : 'left',
             align: 'start'
           }
         }
@@ -101,11 +124,13 @@ export default function AppTour({ onDismiss }: AppTourProps) {
   }, []);
 
   const handleClose = () => {
+    handledRef.current = true;
     driverRef.current?.destroy();
     onDismissRef.current(false);
   };
 
   const handleDismiss = () => {
+    handledRef.current = true;
     driverRef.current?.destroy();
     onDismissRef.current(true);
   };

@@ -1,20 +1,11 @@
 # TODO
 
-## Pendiente de decisión
+## ~~Pendiente de decisión~~ RESUELTO
 
-### Membresía al aprobar usuario
-Al aprobar un usuario, actualmente **no se crea ningún registro en la tabla `Membership`**.
-El admin tiene que asignarla manualmente después editando el perfil del miembro.
-
-Opciones barajadas:
-- **A)** Pedir el tipo de membresía en el modal de aprobación (crear membresía en el mismo paso)
-- **B)** Crear membresía por defecto (`EN_PRUEBAS` o `COLABORADOR`) al aprobar, editable después
-- **C)** Mantener el flujo en dos pasos pero mostrar una alerta en la lista de miembros para usuarios aprobados sin membresía asignada
-
-**Archivos relevantes:**
-- `server/src/controllers/adminController.ts` — endpoint `POST /api/admin/approve/:userId`
-- `client/src/components/admin/ApproveUserModal.tsx` — modal de aprobación (actualmente solo permite mensaje personalizado)
-- `server/src/controllers/memberController.ts` — lógica de creación de membresía (método `updateMemberProfile`)
+### ~~Membresía al aprobar usuario~~
+- ✅ Opción A implementada: el modal de aprobación incluye un selector obligatorio de tipo de membresía (por defecto `EN_PRUEBAS`)
+- ✅ Al aprobar, se crea la membresía en la misma transacción que la aprobación del usuario
+- Archivos modificados: `ApproveUserModal.tsx`, `useAdminUsers.ts`, `PendingApprovals.tsx`, `adminController.ts`
 
 ---
 

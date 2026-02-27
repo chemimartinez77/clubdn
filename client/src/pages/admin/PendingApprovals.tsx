@@ -39,9 +39,9 @@ export default function PendingApprovals() {
     setRejectModalOpen(true);
   };
 
-  const handleConfirmApprove = async (userId: string, customMessage?: string) => {
+  const handleConfirmApprove = async (userId: string, membershipType: string, customMessage?: string) => {
     try {
-      await approveUser({ userId, customMessage });
+      await approveUser({ userId, membershipType, customMessage });
       success('Usuario aprobado exitosamente');
       setApproveModalOpen(false);
       setSelectedUser(null);

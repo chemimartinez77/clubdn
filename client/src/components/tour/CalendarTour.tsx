@@ -11,6 +11,7 @@ interface CalendarTourProps {
 export default function CalendarTour({ onDismiss }: CalendarTourProps) {
   const driverRef = useRef<ReturnType<typeof driver> | null>(null);
   const onDismissRef = useRef(onDismiss);
+  const handledRef = useRef(false);
   useEffect(() => { onDismissRef.current = onDismiss; }, [onDismiss]);
 
   useEffect(() => {
@@ -27,7 +28,10 @@ export default function CalendarTour({ onDismiss }: CalendarTourProps) {
       popoverClass: 'clubdn-tour-popover',
       onDestroyStarted: () => {
         driverObj.destroy();
-        onDismissRef.current(false);
+        if (!handledRef.current) {
+          handledRef.current = true;
+          onDismissRef.current(false);
+        }
       },
       steps: [
         {
@@ -80,11 +84,13 @@ export default function CalendarTour({ onDismiss }: CalendarTourProps) {
   }, []);
 
   const handleClose = () => {
+    handledRef.current = true;
     driverRef.current?.destroy();
     onDismissRef.current(false);
   };
 
   const handleDismiss = () => {
+    handledRef.current = true;
     driverRef.current?.destroy();
     onDismissRef.current(true);
   };

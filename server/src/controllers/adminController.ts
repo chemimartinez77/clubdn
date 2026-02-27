@@ -68,7 +68,7 @@ export const getPendingApprovals = async (_req: Request, res: Response) => {
 export const approveUser = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
-    const { customMessage } = req.body;
+    const { customMessage, membershipType } = req.body;
     const adminId = req.user?.userId;
 
     if (!userId) {
@@ -82,6 +82,14 @@ export const approveUser = async (req: Request, res: Response) => {
       return res.status(401).json({
         success: false,
         message: 'Usuario no autenticado',
+      });
+    }
+
+    const validMembershipTypes = ['EN_PRUEBAS', 'COLABORADOR', 'SOCIO', 'FAMILIAR'];
+    if (!membershipType || !validMembershipTypes.includes(membershipType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tipo de membresía requerido y debe ser válido',
       });
     }
 
@@ -113,14 +121,32 @@ export const approveUser = async (req: Request, res: Response) => {
       });
     }
 
-    // Actualizar usuario
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        status: 'APPROVED',
-        approvedBy: adminId,
-        approvedAt: new Date(),
-      },
+    // Actualizar usuario y crear membresía en una transacción
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          status: 'APPROVED',
+          approvedBy: adminId,
+          approvedAt: new Date(),
+        },
+      });
+
+      const monthlyFeeMap: Record<string, number> = {
+        EN_PRUEBAS: 0,
+        COLABORADOR: 15,
+        SOCIO: 19,
+        FAMILIAR: 0,
+      };
+
+      await tx.membership.create({
+        data: {
+          userId,
+          type: membershipType,
+          monthlyFee: monthlyFeeMap[membershipType] ?? 0,
+          startDate: new Date(),
+        },
+      });
     });
 
     // Enviar email de aprobaci�n

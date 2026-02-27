@@ -4,6 +4,34 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-02-28
+
+### ✨ Mejoras
+
+#### Membresía obligatoria al aprobar usuarios
+- El modal de aprobación incluye ahora un selector de tipo de membresía (obligatorio), con `EN_PRUEBAS` marcado por defecto
+- Al aprobar un usuario se crea automáticamente su membresía en la misma transacción, eliminando el paso manual posterior
+- El backend valida que el tipo de membresía sea válido antes de proceder
+
+**Archivos modificados:**
+- `client/src/components/admin/ApproveUserModal.tsx` - nuevo selector de tipo de membresía
+- `client/src/hooks/useAdminUsers.ts` - propagación de `membershipType` en la mutation
+- `client/src/pages/admin/PendingApprovals.tsx` - propagación de `membershipType` al confirmar
+- `server/src/controllers/adminController.ts` - validación y creación de membresía en transacción
+
+#### Tours guiados: adaptación a móvil y corrección de "No volver a mostrar"
+- En móvil, los pasos de navegación del tour de inicio se sustituyen por un único paso apuntando al botón del menú hamburguesa
+- Corregido bug en los 4 tours (`AppTour`, `CalendarTour`, `FeedbackTour`, `CreatePartidaTour`): el callback `onDestroyStarted` de driver.js sobreescribía la preferencia permanente cuando el usuario pulsaba "No volver a mostrar" o completaba el tour; ahora se usa un flag `handledRef` para evitarlo
+
+**Archivos modificados:**
+- `client/src/components/layout/Header.tsx` - añadido `id="mobile-menu-button"` al botón hamburguesa
+- `client/src/components/tour/AppTour.tsx` - pasos adaptativos móvil/desktop + fix `handledRef`
+- `client/src/components/tour/CalendarTour.tsx` - fix `handledRef`
+- `client/src/components/tour/FeedbackTour.tsx` - fix `handledRef`
+- `client/src/components/tour/CreatePartidaTour.tsx` - fix `handledRef`
+
+---
+
 ## 2026-02-25
 
 ### 🐛 Corrección de errores

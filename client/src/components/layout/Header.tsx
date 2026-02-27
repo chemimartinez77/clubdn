@@ -316,6 +316,7 @@ export default function Header() {
           <div className="md:hidden flex items-center gap-2">
             <NotificationBell />
             <button
+              id="mobile-menu-button"
               onClick={() => {
                 setIsMenuOpen(!isMenuOpen);
                 setIsMobileGamesOpen(false);

@@ -27,8 +27,8 @@ export const useAdminUsers = () => {
 
   // Mutation para aprobar usuario
   const approveMutation = useMutation({
-    mutationFn: async ({ userId, customMessage }: { userId: string; customMessage?: string }) => {
-      const response = await api.post(`/api/admin/approve/${userId}`, { customMessage });
+    mutationFn: async ({ userId, membershipType, customMessage }: { userId: string; membershipType: string; customMessage?: string }) => {
+      const response = await api.post(`/api/admin/approve/${userId}`, { membershipType, customMessage });
       return response.data;
     },
     onSuccess: () => {

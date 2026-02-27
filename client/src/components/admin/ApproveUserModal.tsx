@@ -3,11 +3,20 @@ import { useState } from 'react';
 import Modal, { ModalFooter } from '../ui/Modal';
 import Button from '../ui/Button';
 
+type MembershipType = 'EN_PRUEBAS' | 'COLABORADOR' | 'SOCIO' | 'FAMILIAR';
+
+const MEMBERSHIP_OPTIONS: { value: MembershipType; label: string }[] = [
+  { value: 'EN_PRUEBAS', label: 'En Pruebas' },
+  { value: 'COLABORADOR', label: 'Colaborador (15€/mes)' },
+  { value: 'SOCIO', label: 'Socio (19€/mes)' },
+  { value: 'FAMILIAR', label: 'Familiar' },
+];
+
 interface ApproveUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: { id: string; name: string; email: string } | null;
-  onConfirm: (userId: string, customMessage?: string) => void;
+  onConfirm: (userId: string, membershipType: MembershipType, customMessage?: string) => void;
   isLoading?: boolean;
 }
 
@@ -19,17 +28,20 @@ export default function ApproveUserModal({
   isLoading = false
 }: ApproveUserModalProps) {
   const [customMessage, setCustomMessage] = useState('');
+  const [membershipType, setMembershipType] = useState<MembershipType>('EN_PRUEBAS');
 
   const handleConfirm = () => {
     if (user) {
-      onConfirm(user.id, customMessage.trim() || undefined);
+      onConfirm(user.id, membershipType, customMessage.trim() || undefined);
       setCustomMessage('');
+      setMembershipType('EN_PRUEBAS');
       onClose();
     }
   };
 
   const handleClose = () => {
     setCustomMessage('');
+    setMembershipType('EN_PRUEBAS');
     onClose();
   };
 
@@ -60,6 +72,22 @@ export default function ApproveUserModal({
             <p className="font-medium text-[var(--color-text)]">{user.name}</p>
             <p className="text-sm text-[var(--color-textSecondary)]">{user.email}</p>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
+            Tipo de membresía <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={membershipType}
+            onChange={(e) => setMembershipType(e.target.value as MembershipType)}
+            className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-[var(--color-surface)] text-[var(--color-text)]"
+            disabled={isLoading}
+          >
+            {MEMBERSHIP_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
         </div>
 
         <div>
