@@ -99,19 +99,13 @@ async function calculateBadgeProgress(userId: string) {
   const progress: Record<string, { count: number; nextBadge?: any }> = {};
 
   for (const category of categories) {
-    // Contar juegos únicos jugados en esta categoría
-    const uniqueGames = await prisma.gamePlayHistory.findMany({
+    // Contar partidas jugadas en esta categoría
+    const count = await prisma.gamePlayHistory.count({
       where: {
         userId,
         gameCategory: category
-      },
-      select: {
-        gameName: true
-      },
-      distinct: ['gameName']
+      }
     });
-
-    const count = uniqueGames.length;
 
     // Encontrar el siguiente badge a desbloquear
     const nextBadge = await prisma.badgeDefinition.findFirst({
@@ -144,19 +138,13 @@ export const checkAndUnlockBadges = async (
   if (!gameCategory) return;
 
   try {
-    // Contar juegos únicos en esta categoría
-    const uniqueGames = await prisma.gamePlayHistory.findMany({
+    // Contar partidas jugadas en esta categoría
+    const count = await prisma.gamePlayHistory.count({
       where: {
         userId,
         gameCategory
-      },
-      select: {
-        gameName: true
-      },
-      distinct: ['gameName']
+      }
     });
-
-    const count = uniqueGames.length;
 
     // Encontrar badges que debería tener desbloqueados
     const eligibleBadges = await prisma.badgeDefinition.findMany({
