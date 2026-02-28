@@ -349,21 +349,21 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
 
     // Agrupar por rangos horarios
     const timeRanges: Record<string, number> = {
-      'Mañana (8-12h)': 0,
-      'Tarde (12-18h)': 0,
-      'Noche (18-24h)': 0,
+      'Mañana (8-14h)': 0,
+      'Tarde (14-20h)': 0,
+      'Noche (20-24h)': 0,
       'Madrugada (0-8h)': 0
     };
 
     eventsWithTime.forEach(reg => {
       const hour = reg.event.startHour;
       if (hour !== null && hour !== undefined) {
-        if (hour >= 8 && hour < 12) {
-          timeRanges['Mañana (8-12h)'] = (timeRanges['Mañana (8-12h)'] || 0) + 1;
-        } else if (hour >= 12 && hour < 18) {
-          timeRanges['Tarde (12-18h)'] = (timeRanges['Tarde (12-18h)'] || 0) + 1;
-        } else if (hour >= 18 && hour < 24) {
-          timeRanges['Noche (18-24h)'] = (timeRanges['Noche (18-24h)'] || 0) + 1;
+        if (hour >= 8 && hour < 14) {
+          timeRanges['Mañana (8-14h)'] = (timeRanges['Mañana (8-14h)'] || 0) + 1;
+        } else if (hour >= 14 && hour < 20) {
+          timeRanges['Tarde (14-20h)'] = (timeRanges['Tarde (14-20h)'] || 0) + 1;
+        } else if (hour >= 20 && hour < 24) {
+          timeRanges['Noche (20-24h)'] = (timeRanges['Noche (20-24h)'] || 0) + 1;
         } else {
           timeRanges['Madrugada (0-8h)'] = (timeRanges['Madrugada (0-8h)'] || 0) + 1;
         }

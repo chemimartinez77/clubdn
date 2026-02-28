@@ -8,6 +8,16 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### ✨ Mejoras
 
+#### Franjas horarias redefinidas e icono de info en "Horario favorito"
+- Las franjas del horario favorito pasan a ser: Mañana (8-14h), Tarde (14-20h), Noche (20-24h), Madrugada (0-8h)
+- Se añade un icono ⓘ junto al label "Horario favorito" con tooltip explicativo de las franjas, visible al pasar el ratón o al tocar en móvil
+
+**Archivos modificados:**
+- `server/src/controllers/statsController.ts` - nuevas franjas en el cálculo del horario favorito
+- `client/src/components/dashboard/StatsCard.tsx` - franjas actualizadas en modal y filtros; tooltip en tarjeta de horario favorito
+
+
+
 #### Membresía obligatoria al aprobar usuarios
 - El modal de aprobación incluye ahora un selector de tipo de membresía (obligatorio), con `EN_PRUEBAS` marcado por defecto
 - Al aprobar un usuario se crea automáticamente su membresía en la misma transacción, eliminando el paso manual posterior

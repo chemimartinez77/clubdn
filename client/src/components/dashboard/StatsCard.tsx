@@ -13,6 +13,7 @@ interface StatItem {
   value: string | number;
   icon: React.ReactNode;
   color: 'purple' | 'blue' | 'green' | 'yellow';
+  tooltip?: string;
 }
 
 const colorClasses = {
@@ -124,6 +125,7 @@ export default function StatsCard() {
       label: 'Horario favorito',
       value: userStats?.favoriteTimeRange ?? '-',
       color: 'green',
+      tooltip: 'Mañana: 8-14h · Tarde: 14-20h · Noche: 20-24h · Madrugada: 0-8h',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -187,9 +189,24 @@ export default function StatsCard() {
                   <div className={`p-2 rounded-lg ${colorClasses[stat.color]}`}>
                     {stat.icon}
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className="text-2xl font-bold text-[var(--color-text)]">{stat.value}</p>
-                    <p className="text-sm text-[var(--color-textSecondary)]">{stat.label}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-sm text-[var(--color-textSecondary)]">{stat.label}</p>
+                      {stat.tooltip && (
+                        <div className="relative group">
+                          <svg className="w-3.5 h-3.5 text-[var(--color-textSecondary)] cursor-help flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-50 hidden group-hover:block pointer-events-none">
+                            <div className="bg-[var(--color-text)] text-[var(--color-cardBackground)] text-xs rounded px-2 py-1.5 whitespace-nowrap shadow-lg">
+                              {stat.tooltip}
+                            </div>
+                            <div className="w-2 h-2 bg-[var(--color-text)] rotate-45 mx-auto -mt-1"></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -443,17 +460,17 @@ function TimeRangeModalContent({ games, formatDate, formatTime, onEventClick }: 
   // Agrupar juegos por rango horario
   const getTimeRange = (hour: number | null): string => {
     if (hour === null) return 'Sin hora';
-    if (hour >= 8 && hour < 12) return 'Mañana (8-12h)';
-    if (hour >= 12 && hour < 18) return 'Tarde (12-18h)';
-    if (hour >= 18 && hour < 24) return 'Noche (18-24h)';
+    if (hour >= 8 && hour < 14) return 'Mañana (8-14h)';
+    if (hour >= 14 && hour < 20) return 'Tarde (14-20h)';
+    if (hour >= 20 && hour < 24) return 'Noche (20-24h)';
     return 'Madrugada (0-8h)';
   };
 
   const getTimeRangeKey = (hour: number | null): 'morning' | 'afternoon' | 'evening' | 'night' | 'none' => {
     if (hour === null) return 'none';
-    if (hour >= 8 && hour < 12) return 'morning';
-    if (hour >= 12 && hour < 18) return 'afternoon';
-    if (hour >= 18 && hour < 24) return 'evening';
+    if (hour >= 8 && hour < 14) return 'morning';
+    if (hour >= 14 && hour < 20) return 'afternoon';
+    if (hour >= 20 && hour < 24) return 'evening';
     return 'night';
   };
 
@@ -486,7 +503,7 @@ function TimeRangeModalContent({ games, formatDate, formatTime, onEventClick }: 
     return acc;
   }, {} as Record<string, EventDetail[]>);
 
-  const timeRangeOrder = ['Mañana (8-12h)', 'Tarde (12-18h)', 'Noche (18-24h)', 'Madrugada (0-8h)', 'Sin hora'];
+  const timeRangeOrder = ['Mañana (8-14h)', 'Tarde (14-20h)', 'Noche (20-24h)', 'Madrugada (0-8h)', 'Sin hora'];
 
   return (
     <div className="space-y-4">
@@ -511,9 +528,9 @@ function TimeRangeModalContent({ games, formatDate, formatTime, onEventClick }: 
             className="text-sm border border-[var(--color-inputBorder)] rounded px-2 py-1"
           >
             <option value="all">Todos</option>
-            <option value="morning">Mañana (8-12h)</option>
-            <option value="afternoon">Tarde (12-18h)</option>
-            <option value="evening">Noche (18-24h)</option>
+            <option value="morning">Mañana (8-14h)</option>
+            <option value="afternoon">Tarde (14-20h)</option>
+            <option value="evening">Noche (20-24h)</option>
             <option value="night">Madrugada (0-8h)</option>
           </select>
         </div>
