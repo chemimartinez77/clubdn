@@ -1,6 +1,8 @@
 // server/src/controllers/eventController.ts
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
+import { BadgeCategory, RegistrationStatus } from '@prisma/client';
+import { checkAndUnlockBadges } from './badgeController';
 
 const REGISTRATION_COOLDOWN_MS = 30000; // 30 segundos
 
@@ -1790,5 +1792,69 @@ export const rejectRegistration = async (req: Request, res: Response): Promise<v
       success: false,
       message: 'Error al rechazar registro'
     });
+  }
+};
+
+/**
+ * Marcar evento como completado manualmente (solo admins)
+ * POST /api/events/:id/complete
+ */
+export const completeEvent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const event = await prisma.event.findUnique({
+      where: { id },
+      include: {
+        registrations: {
+          where: { status: RegistrationStatus.CONFIRMED },
+          select: { userId: true }
+        }
+      }
+    });
+
+    if (!event) {
+      res.status(404).json({ success: false, message: 'Evento no encontrado' });
+      return;
+    }
+
+    if (event.status === 'COMPLETED') {
+      res.status(400).json({ success: false, message: 'El evento ya está marcado como completado' });
+      return;
+    }
+
+    if (event.status === 'CANCELLED') {
+      res.status(400).json({ success: false, message: 'No se puede completar un evento cancelado' });
+      return;
+    }
+
+    await prisma.event.update({
+      where: { id },
+      data: { status: 'COMPLETED' }
+    });
+
+    // Registrar en GamePlayHistory y desbloquear badges para partidas con juego y categoría
+    if (event.type === 'PARTIDA' && event.gameName && event.gameCategory) {
+      const gameName = event.gameName;
+      const gameCategory = event.gameCategory as BadgeCategory;
+
+      for (const { userId } of event.registrations) {
+        const alreadyTracked = await prisma.gamePlayHistory.findFirst({
+          where: { userId, eventId: id }
+        });
+
+        if (!alreadyTracked) {
+          await prisma.gamePlayHistory.create({
+            data: { userId, eventId: id, gameName, gameCategory }
+          });
+          await checkAndUnlockBadges(userId, gameCategory);
+        }
+      }
+    }
+
+    res.status(200).json({ success: true, message: 'Evento marcado como completado' });
+  } catch (error) {
+    console.error('Error al completar evento:', error);
+    res.status(500).json({ success: false, message: 'Error al completar el evento' });
   }
 };

@@ -1,7 +1,61 @@
 // server/src/controllers/statsController.ts
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
-import { RegistrationStatus, EventStatus } from '@prisma/client';
+import { RegistrationStatus, EventStatus, BadgeCategory } from '@prisma/client';
+import { checkAndUnlockBadges } from './badgeController';
+
+/**
+ * Marca como COMPLETED todos los eventos/partidas cuya fecha ya ha pasado
+ * y crea los registros de GamePlayHistory para los participantes confirmados.
+ * Se llama automáticamente al cargar stats para mantener los datos actualizados.
+ */
+async function completePassedEvents(): Promise<void> {
+  const now = new Date();
+
+  // Buscar eventos pasados que aún no están COMPLETED ni CANCELLED
+  const passedEvents = await prisma.event.findMany({
+    where: {
+      date: { lt: now },
+      status: { notIn: [EventStatus.COMPLETED, EventStatus.CANCELLED] }
+    },
+    include: {
+      registrations: {
+        where: { status: RegistrationStatus.CONFIRMED },
+        select: { userId: true }
+      }
+    }
+  });
+
+  if (passedEvents.length === 0) return;
+
+  for (const event of passedEvents) {
+    // Marcar el evento como completado
+    await prisma.event.update({
+      where: { id: event.id },
+      data: { status: EventStatus.COMPLETED }
+    });
+
+    // Solo procesar badges para partidas con juego y categoría definidos
+    if (event.type !== 'PARTIDA' || !event.gameName || !event.gameCategory) continue;
+
+    const gameName = event.gameName;
+    const gameCategory = event.gameCategory as BadgeCategory;
+
+    for (const { userId } of event.registrations) {
+      // Evitar duplicados en GamePlayHistory
+      const alreadyTracked = await prisma.gamePlayHistory.findFirst({
+        where: { userId, eventId: event.id }
+      });
+
+      if (!alreadyTracked) {
+        await prisma.gamePlayHistory.create({
+          data: { userId, eventId: event.id, gameName, gameCategory }
+        });
+        await checkAndUnlockBadges(userId, gameCategory);
+      }
+    }
+  }
+}
 
 /**
  * Obtener estadísticas generales del sistema (solo admins)
@@ -144,6 +198,9 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
       res.status(401).json({ success: false, message: 'No autorizado' });
       return;
     }
+
+    // Actualizar eventos pasados a COMPLETED y registrar GamePlayHistory
+    await completePassedEvents();
 
     // 1. Eventos asistidos (confirmados y completados)
     const eventsAttended = await prisma.eventRegistration.count({

@@ -61,6 +61,22 @@ export default function EventManagement() {
     }
   });
 
+  // Complete mutation (registra GamePlayHistory y desbloquea badges)
+  const completeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.post(`/api/events/${id}/complete`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-events'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      success(data.message || 'Evento marcado como completado');
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || 'Error al completar evento');
+    }
+  });
+
   // Delete (cancel) mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -112,7 +128,11 @@ export default function EventManagement() {
   };
 
   const handleStatusChange = (id: string, status: EventStatus) => {
-    updateMutation.mutate({ id, data: { status } });
+    if (status === 'COMPLETED') {
+      completeMutation.mutate(id);
+    } else {
+      updateMutation.mutate({ id, data: { status } });
+    }
   };
 
   const handleCloseModal = () => {
