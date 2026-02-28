@@ -34,8 +34,8 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
     setTimeout(() => setRevealed(true), 650);
   };
 
-  // La pegatina solo se muestra si está desbloqueado y no se ha revelado aún
-  const showSticker = isUnlocked && !revealed;
+  // La pegatina se muestra siempre hasta que el usuario la quite (solo posible si desbloqueado)
+  const showSticker = !revealed;
 
   return (
     <BadgeCard isUnlocked={isUnlocked} categoryColor={categoryColor} showSticker={showSticker}>
@@ -78,33 +78,32 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
         )}
       </BadgeInfo>
 
-      {/* Candado: cerrado si bloqueado, abierto si desbloqueado */}
-      <LockIcon isUnlocked={isUnlocked}>
-        {isUnlocked ? (
-          // Candado abierto
-          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h2c0-1.65 1.35-3 3-3s3 1.35 3 3v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
-          </svg>
-        ) : (
-          // Candado cerrado
-          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/>
-          </svg>
-        )}
-      </LockIcon>
-
       {showSticker && (
-        <Sticker peeling={peeling} onClick={handleReveal}>
+        <Sticker peeling={peeling} isUnlocked={isUnlocked} onClick={handleReveal}>
           <StickerCorner />
           <StickerContent>
             <StickerIcon>🩹</StickerIcon>
-            <StickerText>Logro desbloqueado</StickerText>
+            {/* Candado dentro de la pegatina */}
+            <LockIcon isUnlocked={isUnlocked}>
+              {isUnlocked ? (
+                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                  <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h2c0-1.65 1.35-3 3-3s3 1.35 3 3v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                  <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/>
+                </svg>
+              )}
+            </LockIcon>
+            <StickerText>{isUnlocked ? 'Logro desbloqueado' : 'Logro oculto'}</StickerText>
             <StickerProgress>{currentCount} / {badge.requiredCount} partidas</StickerProgress>
           </StickerContent>
-          <StickerTapHint>
-            <TapArrow>↗</TapArrow>
-            <span>toca aquí</span>
-          </StickerTapHint>
+          {isUnlocked && (
+            <StickerTapHint>
+              <TapArrow>↗</TapArrow>
+              <span>toca aquí</span>
+            </StickerTapHint>
+          )}
         </Sticker>
       )}
     </BadgeCard>
@@ -239,21 +238,7 @@ const UnlockedDate = styled.div`
   font-style: italic;
 `;
 
-const LockIcon = styled.div<{ isUnlocked: boolean }>`
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: ${props => props.isUnlocked ? '#10b981' : 'rgba(0,0,0,0.25)'};
-  color: ${props => props.isUnlocked ? 'white' : 'rgba(255,255,255,0.8)'};
-`;
-
-const Sticker = styled.div<{ peeling: boolean }>`
+const Sticker = styled.div<{ peeling: boolean; isUnlocked: boolean }>`
   position: absolute;
   inset: -2px;
   background: repeating-linear-gradient(
@@ -268,7 +253,7 @@ const Sticker = styled.div<{ peeling: boolean }>`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: ${props => props.isUnlocked ? 'pointer' : 'not-allowed'};
   z-index: 10;
   animation: ${props => props.peeling ? peelAnimation : 'none'} 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 
@@ -281,15 +266,17 @@ const Sticker = styled.div<{ peeling: boolean }>`
     pointer-events: none;
   }
 
-  &:hover {
-    background: repeating-linear-gradient(
-      -45deg,
-      #c46010,
-      #c46010 10px,
-      #a34e0f 10px,
-      #a34e0f 20px
-    );
-  }
+  ${props => props.isUnlocked && `
+    &:hover {
+      background: repeating-linear-gradient(
+        -45deg,
+        #c46010,
+        #c46010 10px,
+        #a34e0f 10px,
+        #a34e0f 20px
+      );
+    }
+  `}
 `;
 
 // Triángulo en la esquina inferior derecha simulando el inicio del despegue
@@ -316,6 +303,13 @@ const StickerContent = styled.div`
 
 const StickerIcon = styled.div`
   font-size: 1.75rem;
+`;
+
+const LockIcon = styled.div<{ isUnlocked: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${props => props.isUnlocked ? '#a7f3d0' : 'rgba(255,255,255,0.6)'};
 `;
 
 const StickerText = styled.div`
