@@ -125,7 +125,7 @@ export default function StatsCard() {
       label: 'Horario favorito',
       value: userStats?.favoriteTimeRange ?? '-',
       color: 'green',
-      tooltip: 'Franja con más partidas que empiezan entre: Mañana 8-14h · Tarde 14-20h · Noche 20-24h · Madrugada 0-8h',
+      tooltip: 'Franja con más partidas que empiezan entre:\nMañana 8-14h · Tarde 14-20h\nNoche 20-24h · Madrugada 0-8h',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -199,7 +199,7 @@ export default function StatsCard() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-50 hidden group-hover:block pointer-events-none">
-                            <div className="bg-[var(--color-text)] text-[var(--color-cardBackground)] text-xs rounded px-2 py-1.5 whitespace-nowrap shadow-lg">
+                            <div className="bg-[var(--color-text)] text-[var(--color-cardBackground)] text-xs rounded px-2 py-1.5 whitespace-pre-line w-44 text-center shadow-lg">
                               {stat.tooltip}
                             </div>
                             <div className="w-2 h-2 bg-[var(--color-text)] rotate-45 mx-auto -mt-1"></div>
