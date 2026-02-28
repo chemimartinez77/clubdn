@@ -29,11 +29,13 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
 
   const handleReveal = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isUnlocked) return;
     setPeeling(true);
     setTimeout(() => setRevealed(true), 650);
   };
 
-  const showSticker = !isUnlocked && !revealed;
+  // La pegatina solo se muestra si está desbloqueado y no se ha revelado aún
+  const showSticker = isUnlocked && !revealed;
 
   return (
     <BadgeCard isUnlocked={isUnlocked} categoryColor={categoryColor} showSticker={showSticker}>
@@ -76,19 +78,33 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
         )}
       </BadgeInfo>
 
-      {isUnlocked && (
-        <UnlockedBadge>✓</UnlockedBadge>
-      )}
+      {/* Candado: cerrado si bloqueado, abierto si desbloqueado */}
+      <LockIcon isUnlocked={isUnlocked}>
+        {isUnlocked ? (
+          // Candado abierto
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h2c0-1.65 1.35-3 3-3s3 1.35 3 3v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+          </svg>
+        ) : (
+          // Candado cerrado
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/>
+          </svg>
+        )}
+      </LockIcon>
 
       {showSticker && (
         <Sticker peeling={peeling} onClick={handleReveal}>
           <StickerCorner />
           <StickerContent>
             <StickerIcon>🩹</StickerIcon>
-            <StickerText>Logro oculto</StickerText>
+            <StickerText>Logro desbloqueado</StickerText>
             <StickerProgress>{currentCount} / {badge.requiredCount} partidas</StickerProgress>
-            <StickerButton>Quitar tirita</StickerButton>
           </StickerContent>
+          <StickerTapHint>
+            <TapArrow>↗</TapArrow>
+            <span>toca aquí</span>
+          </StickerTapHint>
         </Sticker>
       )}
     </BadgeCard>
@@ -123,6 +139,11 @@ const cornerPeel = keyframes`
   0%   { width: 0; height: 0; }
   30%  { width: 28px; height: 28px; }
   100% { width: 28px; height: 28px; }
+`;
+
+const tapPulse = keyframes`
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); }
 `;
 
 // Styled Components
@@ -218,20 +239,18 @@ const UnlockedDate = styled.div`
   font-style: italic;
 `;
 
-const UnlockedBadge = styled.div`
+const LockIcon = styled.div<{ isUnlocked: boolean }>`
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  width: 24px;
-  height: 24px;
-  background: #10b981;
-  color: white;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
-  font-weight: bold;
+  background: ${props => props.isUnlocked ? '#10b981' : 'rgba(0,0,0,0.25)'};
+  color: ${props => props.isUnlocked ? 'white' : 'rgba(255,255,255,0.8)'};
 `;
 
 const Sticker = styled.div<{ peeling: boolean }>`
@@ -312,15 +331,24 @@ const StickerProgress = styled.div`
   color: rgba(255, 255, 255, 0.65);
 `;
 
-const StickerButton = styled.div`
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #fef3c7;
-  border: 1px solid rgba(254, 243, 199, 0.6);
-  border-radius: 4px;
-  padding: 0.2rem 0.6rem;
-  margin-top: 0.2rem;
+const StickerTapHint = styled.div`
+  position: absolute;
+  bottom: 6px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
   letter-spacing: 0.03em;
+  animation: ${tapPulse} 1.8s ease-in-out infinite;
+  pointer-events: none;
+`;
+
+const TapArrow = styled.span`
+  font-size: 0.75rem;
+  line-height: 1;
 `;
 
 export default BadgeDisplay;

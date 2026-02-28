@@ -8,6 +8,14 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### ✨ Mejoras
 
+#### Candados y mejora de interacción en logros/badges
+- Los logros muestran ahora un candado en la esquina superior derecha: cerrado (gris) si están bloqueados, abierto (verde) si están desbloqueados
+- La pegatina solo puede quitarse cuando el logro está desbloqueado; los logros bloqueados muestran directamente su barra de progreso
+- Se añade indicador "↗ toca aquí" con animación de pulso en la esquina de la pegatina para orientar al usuario
+
+**Archivos modificados:**
+- `client/src/components/badges/BadgeDisplay.tsx` - candados, lógica de pegatina restringida a desbloqueados, hint de interacción
+
 #### Franjas horarias redefinidas e icono de info en "Horario favorito"
 - Las franjas del horario favorito pasan a ser: Mañana (8-14h), Tarde (14-20h), Noche (20-24h), Madrugada (0-8h)
 - Se añade un icono ⓘ junto al label "Horario favorito" con tooltip explicativo de las franjas, visible al pasar el ratón o al tocar en móvil
