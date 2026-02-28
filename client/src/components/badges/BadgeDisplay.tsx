@@ -14,7 +14,7 @@ interface BadgeDisplayProps {
 
 const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
   badge,
-  isUnlocked,
+  isUnlocked: isUnlockedProp,
   unlockedAt,
   currentCount = 0
 }) => {
@@ -22,6 +22,9 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
   const categoryIcon = getCategoryIcon(badge.category);
   const [revealed, setRevealed] = useState(false);
   const [peeling, setPeeling] = useState(false);
+
+  // Considerar desbloqueado también si el contador ya supera el requisito
+  const isUnlocked = isUnlockedProp || currentCount >= badge.requiredCount;
 
   const progress = !isUnlocked
     ? Math.min((currentCount / badge.requiredCount) * 100, 100)
@@ -82,15 +85,14 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
         <Sticker peeling={peeling} isUnlocked={isUnlocked} onClick={handleReveal}>
           <StickerCorner />
           <StickerContent>
-            <StickerIcon>🩹</StickerIcon>
-            {/* Candado dentro de la pegatina */}
+            {/* Candado grande plateado/dorado */}
             <LockIcon isUnlocked={isUnlocked}>
               {isUnlocked ? (
-                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="40" height="40">
                   <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h2c0-1.65 1.35-3 3-3s3 1.35 3 3v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
                 </svg>
               ) : (
-                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="40" height="40">
                   <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/>
                 </svg>
               )}
@@ -301,15 +303,16 @@ const StickerContent = styled.div`
   gap: 0.3rem;
 `;
 
-const StickerIcon = styled.div`
-  font-size: 1.75rem;
-`;
-
 const LockIcon = styled.div<{ isUnlocked: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${props => props.isUnlocked ? '#a7f3d0' : 'rgba(255,255,255,0.6)'};
+  /* dorado si desbloqueado, plateado si bloqueado */
+  color: ${props => props.isUnlocked ? '#fbbf24' : '#cbd5e1'};
+  filter: ${props => props.isUnlocked
+    ? 'drop-shadow(0 0 4px rgba(251,191,36,0.6))'
+    : 'drop-shadow(0 0 3px rgba(148,163,184,0.5))'
+  };
 `;
 
 const StickerText = styled.div`
