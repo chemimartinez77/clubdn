@@ -8,6 +8,18 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### ✨ Mejoras
 
+#### Logros: persistencia de revelados, contadores y descripción de Catalogador
+- Al quitar la pegatina de un logro, ese estado queda guardado en `localStorage` (por usuario) y persiste entre recargas
+- El contador del header muestra ahora `X / N desbloqueados` (solo los que ya tienen la pegatina quitada) y `Y por descubrir` en ámbar cuando hay logros desbloqueados aún sin revelar
+- Los logros bloqueados cuyo contador supere el requisito se tratan como desbloqueados en el cliente, permitiendo levantar la pegatina aunque el servidor aún no lo haya registrado
+- Se añade descripción de la categoría Catalogador visible al expandirla: *"Se obtiene jugando partidas en las que hayas seleccionado el género del juego al crearlas."*
+
+**Archivos modificados:**
+- `client/src/components/badges/BadgeDisplay.tsx` - nuevas props `isRevealed` y `onReveal`; fallback de desbloqueo por contador
+- `client/src/components/badges/BadgeGrid.tsx` - gestión de revelados en localStorage, contadores actualizados, descripción de categoría
+- `client/src/pages/Profile.tsx` - propagación de `userId` a BadgeGrid
+- `client/src/types/badge.ts` - nueva función `getCategoryDescription`
+
 #### Tooltip de horario favorito mejorado
 - El tooltip del icono ⓘ ahora especifica que las franjas corresponden a la hora de inicio de las partidas
 

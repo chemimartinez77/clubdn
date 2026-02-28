@@ -1,5 +1,5 @@
 // client/src/components/badges/BadgeGrid.tsx
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { useTheme } from '../../hooks/useTheme';
 import type {
@@ -11,7 +11,8 @@ import type {
 import {
   getCategoryDisplayName,
   getCategoryIcon,
-  getCategoryColor
+  getCategoryColor,
+  getCategoryDescription
 } from '../../types/badge';
 import BadgeDisplay from './BadgeDisplay';
 
@@ -19,16 +20,42 @@ interface BadgeGridProps {
   allBadges: BadgeDefinition[];
   unlockedBadges: UserBadge[];
   progress: Record<BadgeCategory, BadgeProgress>;
+  userId?: string;
 }
 
 const BadgeGrid: React.FC<BadgeGridProps> = ({
   allBadges,
   unlockedBadges,
-  progress
+  progress,
+  userId
 }) => {
   const { theme } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState<BadgeCategory | 'ALL'>('ALL');
   const [expandedCategories, setExpandedCategories] = useState<Set<BadgeCategory>>(new Set());
+
+  // Clave única en localStorage por usuario
+  const storageKey = userId ? `badges_revealed_${userId}` : 'badges_revealed_guest';
+
+  // Cargar IDs revelados desde localStorage
+  const [revealedIds, setRevealedIds] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      return stored ? new Set<string>(JSON.parse(stored)) : new Set<string>();
+    } catch {
+      return new Set<string>();
+    }
+  });
+
+  const handleReveal = useCallback((badgeId: string) => {
+    setRevealedIds(prev => {
+      const next = new Set(prev);
+      next.add(badgeId);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(Array.from(next)));
+      } catch { /* noop */ }
+      return next;
+    });
+  }, [storageKey]);
 
   const toggleCategory = (category: BadgeCategory) => {
     setExpandedCategories(prev => {
@@ -76,7 +103,8 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
   // Calcular estadísticas
   const totalBadges = allBadges.length;
   const unlockedCount = unlockedBadges.length;
-  const completionPercentage = totalBadges > 0 ? Math.round((unlockedCount / totalBadges) * 100) : 0;
+  const discoveredCount = unlockedBadges.filter(ub => revealedIds.has(ub.badgeDefinitionId)).length;
+  const pendingDiscovery = unlockedCount - discoveredCount;
 
   return (
     <Container theme={theme}>
@@ -85,13 +113,15 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
           <Title theme={theme}>Logros y Badges</Title>
           <Stats theme={theme}>
             <StatItem>
-              <StatValue>{unlockedCount}</StatValue>
-              <StatLabel>/ {totalBadges} desbloqueados</StatLabel>
+              <StatValue>{discoveredCount} / {totalBadges}</StatValue>
+              <StatLabel>desbloqueados</StatLabel>
             </StatItem>
-            <StatItem>
-              <StatValue>{completionPercentage}%</StatValue>
-              <StatLabel>completado</StatLabel>
-            </StatItem>
+            {pendingDiscovery > 0 && (
+              <StatItem>
+                <StatValue pending>{pendingDiscovery}</StatValue>
+                <StatLabel>por descubrir</StatLabel>
+              </StatItem>
+            )}
           </Stats>
         </HeaderTop>
 
@@ -149,6 +179,10 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
                 <ExpandIcon isExpanded={isExpanded}>▾</ExpandIcon>
               </CategoryHeader>
 
+              {isExpanded && getCategoryDescription(category) && (
+                <CategoryDescription>{getCategoryDescription(category)}</CategoryDescription>
+              )}
+
               {isExpanded && (
                 <BadgeList>
                   {categoryBadges.map(badge => {
@@ -162,6 +196,8 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
                         isUnlocked={isUnlocked}
                         unlockedAt={unlockedAt}
                         currentCount={categoryProgress?.count || 0}
+                        isRevealed={revealedIds.has(badge.id)}
+                        onReveal={handleReveal}
                       />
                     );
                   })}
@@ -209,10 +245,10 @@ const StatItem = styled.div`
   text-align: center;
 `;
 
-const StatValue = styled.div`
+const StatValue = styled.div<{ pending?: boolean }>`
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--color-primary);
+  color: ${props => props.pending ? '#f59e0b' : 'var(--color-primary)'};
 `;
 
 const StatLabel = styled.div`
@@ -307,6 +343,17 @@ const CategoryStats = styled.div`
   font-size: 0.875rem;
   color: var(--color-textSecondary);
   margin-top: 0.25rem;
+`;
+
+const CategoryDescription = styled.p`
+  font-size: 0.8rem;
+  color: var(--color-textSecondary);
+  font-style: italic;
+  margin: -0.5rem 0 0.75rem 0;
+  padding: 0.6rem 1rem;
+  border-left: 3px solid #06b6d4;
+  background: rgba(6, 182, 212, 0.06);
+  border-radius: 0 6px 6px 0;
 `;
 
 const BadgeList = styled.div`

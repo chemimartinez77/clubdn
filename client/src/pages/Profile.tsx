@@ -640,6 +640,7 @@ export default function Profile() {
                   allBadges={badgesData.allBadges}
                   unlockedBadges={badgesData.unlockedBadges}
                   progress={badgesData.progress}
+                  userId={profile?.userId}
                 />
               ) : (
                 <div className="text-center py-8">

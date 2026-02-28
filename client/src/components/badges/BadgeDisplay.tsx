@@ -10,18 +10,22 @@ interface BadgeDisplayProps {
   isUnlocked: boolean;
   unlockedAt?: string;
   currentCount?: number;
+  isRevealed?: boolean;
+  onReveal?: (badgeId: string) => void;
 }
 
 const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
   badge,
   isUnlocked: isUnlockedProp,
   unlockedAt,
-  currentCount = 0
+  currentCount = 0,
+  isRevealed = false,
+  onReveal
 }) => {
   const categoryColor = getCategoryColor(badge.category);
   const categoryIcon = getCategoryIcon(badge.category);
-  const [revealed, setRevealed] = useState(false);
   const [peeling, setPeeling] = useState(false);
+  const [localRevealed, setLocalRevealed] = useState(false);
 
   // Considerar desbloqueado también si el contador ya supera el requisito
   const isUnlocked = isUnlockedProp || currentCount >= badge.requiredCount;
@@ -34,8 +38,14 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
     e.stopPropagation();
     if (!isUnlocked) return;
     setPeeling(true);
-    setTimeout(() => setRevealed(true), 650);
+    setTimeout(() => {
+      setLocalRevealed(true);
+      onReveal?.(badge.id);
+    }, 650);
   };
+
+  // Revelado si ya lo estaba persistido O si acaba de revelar en esta sesión
+  const revealed = isRevealed || localRevealed;
 
   // La pegatina se muestra siempre hasta que el usuario la quite (solo posible si desbloqueado)
   const showSticker = !revealed;

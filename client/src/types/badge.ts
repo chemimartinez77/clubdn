@@ -92,6 +92,14 @@ export const getCategoryDisplayName = (category: BadgeCategory): string => {
   return categoryNames[category];
 };
 
+// Helper para obtener descripción de categoría
+export const getCategoryDescription = (category: BadgeCategory): string | undefined => {
+  const descriptions: Partial<Record<BadgeCategory, string>> = {
+    CATALOGADOR: 'Se obtiene jugando partidas en las que hayas seleccionado el género del juego al crearlas.'
+  };
+  return descriptions[category];
+};
+
 // Helper para obtener color de categoría (basado en el tema)
 export const getCategoryColor = (category: BadgeCategory): string => {
   const categoryColors: Record<BadgeCategory, string> = {
