@@ -51,7 +51,7 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
         </BadgeLevel>
 
         <BadgeRequirement>
-          {badge.requiredCount} juegos diferentes
+          {badge.requiredCount} partidas jugadas
         </BadgeRequirement>
 
         {!isUnlocked && (

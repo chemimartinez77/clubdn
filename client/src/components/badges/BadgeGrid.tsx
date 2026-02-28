@@ -141,7 +141,7 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
                     <CategoryStats theme={theme}>
                       {unlockedInCategory} / {categoryBadges.length} desbloqueados
                       {categoryProgress && (
-                        <> • {categoryProgress.count} juegos jugados</>
+                        <> • {categoryProgress.count} partidas jugadas</>
                       )}
                     </CategoryStats>
                   </div>
