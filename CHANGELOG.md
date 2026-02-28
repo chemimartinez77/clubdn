@@ -8,6 +8,12 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### ✨ Mejoras
 
+#### Tooltip de horario favorito mejorado
+- El tooltip del icono ⓘ ahora especifica que las franjas corresponden a la hora de inicio de las partidas
+
+**Archivos modificados:**
+- `client/src/components/dashboard/StatsCard.tsx` - texto del tooltip actualizado
+
 #### Candados y mejora de interacción en logros/badges
 - Los logros muestran ahora un candado en la esquina superior derecha: cerrado (gris) si están bloqueados, abierto (verde) si están desbloqueados
 - La pegatina solo puede quitarse cuando el logro está desbloqueado; los logros bloqueados muestran directamente su barra de progreso

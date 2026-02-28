@@ -125,7 +125,7 @@ export default function StatsCard() {
       label: 'Horario favorito',
       value: userStats?.favoriteTimeRange ?? '-',
       color: 'green',
-      tooltip: 'Mañana: 8-14h · Tarde: 14-20h · Noche: 20-24h · Madrugada: 0-8h',
+      tooltip: 'Franja con más partidas que empiezan entre: Mañana 8-14h · Tarde 14-20h · Noche 20-24h · Madrugada 0-8h',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
