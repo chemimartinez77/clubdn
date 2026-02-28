@@ -1837,15 +1837,16 @@ export const completeEvent = async (req: Request, res: Response): Promise<void> 
     if (event.type === 'PARTIDA' && event.gameName && event.gameCategory) {
       const gameName = event.gameName;
       const gameCategory = event.gameCategory as BadgeCategory;
+      const eventId = event.id;
 
       for (const { userId } of event.registrations) {
         const alreadyTracked = await prisma.gamePlayHistory.findFirst({
-          where: { userId, eventId: id }
+          where: { userId, eventId }
         });
 
         if (!alreadyTracked) {
           await prisma.gamePlayHistory.create({
-            data: { userId, eventId: id, gameName, gameCategory }
+            data: { userId, eventId, gameName, gameCategory }
           });
           await checkAndUnlockBadges(userId, gameCategory);
         }
