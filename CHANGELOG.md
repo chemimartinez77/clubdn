@@ -19,16 +19,39 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 - `client/src/pages/admin/PendingApprovals.tsx` - propagación de `membershipType` al confirmar
 - `server/src/controllers/adminController.ts` - validación y creación de membresía en transacción
 
-#### Tours guiados: adaptación a móvil y corrección de "No volver a mostrar"
-- En móvil, los pasos de navegación del tour de inicio se sustituyen por un único paso apuntando al botón del menú hamburguesa
+#### Tours guiados: adaptación a móvil, corrección de "No volver a mostrar" y rediseño del botón
+- En móvil, los pasos de navegación del tour de inicio se sustituyen por un único paso apuntando al botón del menú hamburguesa, ya que en móvil los enlaces de la barra de navegación no existen en el DOM
 - Corregido bug en los 4 tours (`AppTour`, `CalendarTour`, `FeedbackTour`, `CreatePartidaTour`): el callback `onDestroyStarted` de driver.js sobreescribía la preferencia permanente cuando el usuario pulsaba "No volver a mostrar" o completaba el tour; ahora se usa un flag `handledRef` para evitarlo
+- El botón "No volver a mostrar" se inyecta dentro del popover de driver.js mediante `onPopoverRender` (antes flotaba fuera y era bloqueado por el overlay), garantizando que sea siempre interactivo
+- Layout del botón corregido: ocupa su propia línea debajo de los botones de navegación del tour mediante `order: 10; width: 100%; border-top`
 
 **Archivos modificados:**
 - `client/src/components/layout/Header.tsx` - añadido `id="mobile-menu-button"` al botón hamburguesa
-- `client/src/components/tour/AppTour.tsx` - pasos adaptativos móvil/desktop + fix `handledRef`
-- `client/src/components/tour/CalendarTour.tsx` - fix `handledRef`
-- `client/src/components/tour/FeedbackTour.tsx` - fix `handledRef`
-- `client/src/components/tour/CreatePartidaTour.tsx` - fix `handledRef`
+- `client/src/components/tour/AppTour.tsx` - pasos adaptativos móvil/desktop + fix `handledRef` + botón en popover
+- `client/src/components/tour/CalendarTour.tsx` - fix `handledRef` + botón en popover
+- `client/src/components/tour/FeedbackTour.tsx` - fix `handledRef` + botón en popover
+- `client/src/components/tour/CreatePartidaTour.tsx` - fix `handledRef` + botón en popover
+- `client/src/index.css` - estilos para `.tour-dismiss-btn` y `flex-wrap` en el footer del popover
+
+#### Partidas jugadas: corrección de contador siempre a 0
+- Las partidas y eventos pasados nunca alcanzaban el estado `COMPLETED` automáticamente (no hay cron job), por lo que el contador de partidas jugadas y los badges asociados nunca se calculaban
+- **Solución:** Al cargar las estadísticas del usuario se ejecuta `completePassedEvents()`, que busca todos los eventos con fecha pasada en estado `SCHEDULED`/`ONGOING`, los marca como `COMPLETED`, crea los registros `GamePlayHistory` para cada participante confirmado y desbloquea los badges correspondientes
+- Añadido endpoint de admin `POST /api/events/:id/complete` para completar eventos manualmente desde el panel de gestión sin necesidad de cambiar el estado por el selector genérico
+
+**Archivos modificados:**
+- `server/src/controllers/statsController.ts` - función `completePassedEvents()` ejecutada antes de calcular stats
+- `server/src/controllers/eventController.ts` - nueva función exportada `completeEvent`
+- `server/src/routes/eventRoutes.ts` - nueva ruta `POST /:id/complete` (solo admins)
+- `client/src/pages/admin/EventManagement.tsx` - usa `completeMutation` al seleccionar estado COMPLETED
+
+#### Calendario de eventos: visibilidad de todos los tipos y desglose en vista mensual
+- El filtro de tipo por defecto era `PARTIDA`, ocultando eventos de tipo `TORNEO` y `OTROS` (como "Salón del Cómic")
+- Ahora el filtro por defecto muestra todos los tipos (`''`), de modo que el calendario arranca con todos los eventos visibles
+- Las celdas del calendario mensual muestran ahora un desglose por tipo: ej. "3 partidas, 1 evento" en lugar del genérico "4 partidas"
+
+**Archivos modificados:**
+- `client/src/pages/Events.tsx` - `typeFilter` por defecto cambiado de `'PARTIDA'` a `''`
+- `client/src/components/events/EventCalendar.tsx` - contador desglosado por tipo en las celdas del mes
 
 ---
 
@@ -312,4 +335,4 @@ Incluye:
 
 ---
 
-**Última actualización:** 22 de Febrero de 2026
+**Última actualización:** 28 de Febrero de 2026

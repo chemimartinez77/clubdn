@@ -29,7 +29,7 @@ export default function Events() {
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [calendarView, setCalendarView] = useState<CalendarView>('month');
   const [statusFilter, setStatusFilter] = useState<EventStatus | ''>('');
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('PARTIDA');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('');
   const [capacityFilter, setCapacityFilter] = useState<CapacityFilter>('');
   const [search, setSearch] = useState('');
   const [participant, setParticipant] = useState('');

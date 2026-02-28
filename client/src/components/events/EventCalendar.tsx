@@ -91,11 +91,18 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
           {day}
         </div>
 
-        {hasEvents && (
-          <div className="text-[10px] text-[var(--color-textSecondary)]">
-            {dayEvents.length} {dayEvents.length === 1 ? 'partida' : 'partidas'}
-          </div>
-        )}
+        {hasEvents && (() => {
+          const partidas = dayEvents.filter(e => e.type === 'PARTIDA').length;
+          const otros = dayEvents.filter(e => e.type !== 'PARTIDA').length;
+          const parts: string[] = [];
+          if (partidas > 0) parts.push(`${partidas} ${partidas === 1 ? 'partida' : 'partidas'}`);
+          if (otros > 0) parts.push(`${otros} ${otros === 1 ? 'evento' : 'eventos'}`);
+          return (
+            <div className="text-[10px] text-[var(--color-textSecondary)]">
+              {parts.join(', ')}
+            </div>
+          );
+        })()}
       </div>
     );
   };
