@@ -84,12 +84,6 @@ interface SelectedSource {
 }
 
 function Factory({ tiles, index, selectedSource, onSelectTile, disabled }: FactoryProps) {
-  // Agrupar tiles por color para mostrarlas juntas
-  const colorGroups = tiles.reduce<Partial<Record<TileColor, number>>>((acc, t) => {
-    acc[t] = (acc[t] ?? 0) + 1;
-    return acc;
-  }, {});
-
   return (
     <div className="flex flex-col items-center gap-1">
       <span className="text-[10px] text-[var(--color-textSecondary)] font-mono">F{index + 1}</span>

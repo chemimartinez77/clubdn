@@ -745,7 +745,7 @@ export default function AzulLocal() {
               {gs.players.map((p, i) => `${PLAYER_NAMES[i]}: ${p.score} pts`).join(' · ')}
             </p>
             <button
-              onClick={handleReset}
+              onClick={() => handleReset()}
               className="mt-3 rounded-lg bg-white/20 hover:bg-white/30 px-4 py-1.5 text-white text-sm font-medium transition-colors"
             >
               Jugar de nuevo
