@@ -296,3 +296,24 @@ export const listGames = async (req: Request, res: Response) => {
     });
   }
 };
+
+/**
+ * Obtener info básica de un juego (solo BD, sin llamar a BGG)
+ * Usado para mostrar imagen/nombre en grids de navegación
+ */
+export const getGameBasicInfo = async (req: Request, res: Response) => {
+  try {
+    const { gameId } = req.params;
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      select: { id: true, name: true, image: true, thumbnail: true },
+    });
+    if (!game) {
+      return res.status(404).json({ success: false, message: 'Game not found' });
+    }
+    return res.json({ success: true, data: game });
+  } catch (error) {
+    console.error('[GAME] Error al obtener info del juego:', error);
+    return res.status(500).json({ success: false, message: 'Error fetching game info' });
+  }
+};

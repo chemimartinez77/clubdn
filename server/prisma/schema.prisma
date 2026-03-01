@@ -110,6 +110,8 @@ model User {
   badges            UserBadge[]
   gamePlayHistory   GamePlayHistory[]
   financialMovements FinancialMovement[] @relation("FinancialMovements")
+  azulGamesAsPlayer1 AzulGame[]          @relation("AzulGamesAsPlayer1")
+  azulGamesAsPlayer2 AzulGame[]          @relation("AzulGamesAsPlayer2")
 
   @@index([email])
   @@index([status])
@@ -821,6 +823,34 @@ model GamePlayHistory {
   @@index([eventId])
   @@index([gameCategory])
   @@index([playedAt])
+}
+
+// ==================== JUEGO AZUL ====================
+
+enum AzulGameStatus {
+  WAITING   // Esperando segundo jugador
+  ACTIVE    // Partida en curso
+  FINISHED  // Partida terminada
+}
+
+// Partida del juego de mesa Azul (2 jugadores, turnos online)
+model AzulGame {
+  id          String          @id @default(cuid())
+  player1Id   String
+  player1     User            @relation("AzulGamesAsPlayer1", fields: [player1Id], references: [id])
+  player2Id   String?
+  player2     User?           @relation("AzulGamesAsPlayer2", fields: [player2Id], references: [id])
+  gameState   Json            // Estado completo del tablero (factories, walls, scores, etc.)
+  currentTurn String?         // userId del jugador que tiene el turno
+  status      AzulGameStatus  @default(WAITING)
+  winnerId    String?         // userId del ganador (null si empate o no terminada)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([player1Id])
+  @@index([player2Id])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // ==================== GESTIÓN FINANCIERA ====================

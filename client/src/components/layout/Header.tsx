@@ -130,6 +130,13 @@ export default function Header() {
                     >
                       Buscados
                     </Link>
+                    <Link
+                      to="/azul/combatzone"
+                      className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                      onClick={() => setIsGamesMenuOpen(false)}
+                    >
+                      Combat Zone
+                    </Link>
                   </div>
                 </>
               )}
@@ -406,6 +413,13 @@ export default function Header() {
                       onClick={closeAllMenus}
                     >
                       Buscados
+                    </Link>
+                    <Link
+                      to="/azul/combatzone"
+                      className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                      onClick={closeAllMenus}
+                    >
+                      Combat Zone
                     </Link>
                   </div>
                 )}

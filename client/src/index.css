@@ -58,6 +58,51 @@ textarea::placeholder {
   animation: slide-in-right 0.3s ease-out;
 }
 
+/* ─── Azul: animaciones de puntuación ──────────────────────────────────── */
+
+/* Tile recién colocado en la pared: escala y brillo de entrada */
+@keyframes azul-tile-place {
+  0%   { transform: scale(0.4); opacity: 0; filter: brightness(2.5); }
+  60%  { transform: scale(1.18); opacity: 1; filter: brightness(1.6); }
+  80%  { transform: scale(0.95); filter: brightness(1.2); }
+  100% { transform: scale(1);    filter: brightness(1); }
+}
+.azul-tile-new {
+  animation: azul-tile-place 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Tiles adyacentes que suman puntos: pulso de brillo */
+@keyframes azul-tile-chain {
+  0%   { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); filter: brightness(1); }
+  30%  { box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.7); filter: brightness(1.5); }
+  70%  { box-shadow: 0 0 0 6px rgba(250, 204, 21, 0.3); filter: brightness(1.25); }
+  100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0);   filter: brightness(1); }
+}
+.azul-tile-chain {
+  animation: azul-tile-chain 1.1s ease-in-out forwards;
+}
+
+/* Badge de puntos flotante: zoom de 0 a 1 y luego sube y desaparece */
+@keyframes azul-score-pop {
+  0%   { transform: scale(0) translateY(0);    opacity: 0; }
+  25%  { transform: scale(1.3) translateY(-2px); opacity: 1; }
+  55%  { transform: scale(1)   translateY(-4px); opacity: 1; }
+  100% { transform: scale(0.8) translateY(-20px); opacity: 0; }
+}
+.azul-score-pop {
+  animation: azul-score-pop 2.0s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  pointer-events: none;
+}
+
+/* ─── Azul: bottom-sheet rival ──────────────────────────────────────────── */
+@keyframes azul-sheet-in {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.azul-sheet-enter {
+  animation: azul-sheet-in 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
 /* ─── Driver.js tour overrides ─────────────────────────────────────────── */
 
 /* Limitar ancho del popover en móvil para que no se salga del viewport */

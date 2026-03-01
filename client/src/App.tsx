@@ -26,6 +26,9 @@ import Ludoteca from './pages/Ludoteca';
 import Documentos from './pages/Documentos';
 import Feedback from './pages/Feedback';
 import AdminRoute from './components/routes/AdminRoute';
+import AzulLocal from './pages/azul/AzulLocal';
+import CombatZone from './pages/azul/CombatZone';
+import AzulGame from './pages/azul/AzulGame';
 
 // Componente para rutas protegidas
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -90,6 +93,8 @@ function App() {
             }
           />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          {/* Sandbox Azul — pública para pruebas sin login */}
+          <Route path="/azul/local" element={<AzulLocal />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
@@ -141,6 +146,24 @@ function App() {
             element={
               <ProtectedRoute>
                 <InviteValidation />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Dreadnought Combat Zone — Azul online */}
+          <Route
+            path="/azul/combatzone"
+            element={
+              <ProtectedRoute>
+                <CombatZone />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/azul/combatzone/:id"
+            element={
+              <ProtectedRoute>
+                <AzulGame />
               </ProtectedRoute>
             }
           />
