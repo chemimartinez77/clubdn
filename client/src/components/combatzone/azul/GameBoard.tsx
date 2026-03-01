@@ -1,7 +1,44 @@
 // client/src/components/combatzone/azul/GameBoard.tsx
-import { useState } from 'react';
-import { useGame, type TileColor, type TileOrNull } from '../../../hooks/useGame';
+import { useState, useEffect, useRef } from 'react';
+import { useGame, type TileColor, type TileOrNull, type PlayerState } from '../../../hooks/useGame';
 import { useAuth } from '../../../contexts/AuthContext';
+
+// ─── Tipos para el highlight del último movimiento ────────────────────────────
+
+interface LastMoveHighlight {
+  patternTiles: Array<{ row: number; col: number }>;
+  floorTiles: number[];
+  wallTiles: Array<{ row: number; col: number }>;
+}
+
+function computeDiff(prev: PlayerState, next: PlayerState): LastMoveHighlight | null {
+  const patternTiles: Array<{ row: number; col: number }> = [];
+  const floorTiles: number[] = [];
+  const wallTiles: Array<{ row: number; col: number }> = [];
+
+  next.patternLines.forEach((line, row) => {
+    line.forEach((tile, col) => {
+      if (tile !== null && (prev.patternLines[row]?.[col] ?? null) === null) {
+        patternTiles.push({ row, col });
+      }
+    });
+  });
+
+  for (let i = prev.floor.length; i < next.floor.length; i++) {
+    floorTiles.push(i);
+  }
+
+  next.wall.forEach((row, r) => {
+    row.forEach((tile, c) => {
+      if (tile !== null && (prev.wall[r]?.[c] ?? null) === null) {
+        wallTiles.push({ row: r, col: c });
+      }
+    });
+  });
+
+  if (!patternTiles.length && !floorTiles.length && !wallTiles.length) return null;
+  return { patternTiles, floorTiles, wallTiles };
+}
 
 const TILE_STYLES: Record<TileColor, { bg: string; border: string; label: string; img: string }> = {
   BLUE:   { bg: '#3b82f6', border: '#1d4ed8', label: 'Azul',     img: '/azulejo-azul.png'     },
@@ -172,17 +209,21 @@ function Center({ tiles, hasFirstPlayerMarker, selectedSource, onSelectTile, dis
 
 interface WallProps {
   wall: TileOrNull[][];
+  highlightTiles?: Array<{ row: number; col: number }>;
 }
 
-function Wall({ wall }: WallProps) {
+function Wall({ wall, highlightTiles }: WallProps) {
   return (
     <div className="flex flex-col gap-1">
       {wall.map((row, r) => (
         <div key={r} className="flex gap-1">
           {row.map((cell, c) => {
             const patternColor = WALL_PATTERN[r]![c]!;
+            const isHighlighted = highlightTiles?.some(t => t.row === r && t.col === c) ?? false;
             return cell ? (
-              <Tile key={c} color={cell} />
+              <div key={c} className={isHighlighted ? 'azul-last-move-wall rounded-sm' : undefined}>
+                <Tile color={cell} />
+              </div>
             ) : (
               <Tile key={c} color={patternColor} faded />
             );
@@ -201,9 +242,10 @@ interface PatternLinesProps {
   selectedColor: TileColor | null;
   onSelectLine: (lineIndex: number) => void;
   isMyBoard: boolean;
+  highlightTiles?: Array<{ row: number; col: number }>;
 }
 
-function PatternLines({ lines, wall, selectedColor, onSelectLine, isMyBoard }: PatternLinesProps) {
+function PatternLines({ lines, wall, selectedColor, onSelectLine, isMyBoard, highlightTiles }: PatternLinesProps) {
   return (
     <div className="flex flex-col gap-1">
       {lines.map((line, row) => {
@@ -211,8 +253,6 @@ function PatternLines({ lines, wall, selectedColor, onSelectLine, isMyBoard }: P
         const existingColor = line.find(t => t !== null) as TileColor | undefined;
         const isFull = line.every(t => t !== null);
 
-        // El slot está disponible si: hay un color seleccionado, la línea acepta ese color,
-        // y el color no está ya en esa fila de la pared
         const wallColorForRow = existingColor ?? selectedColor;
         const wallRowFull = wallColorForRow
           ? wall[row]?.[WALL_PATTERN[row]!.indexOf(wallColorForRow)] !== null
@@ -235,11 +275,13 @@ function PatternLines({ lines, wall, selectedColor, onSelectLine, isMyBoard }: P
                 : '',
             ].join(' ')}
           >
-            {/* Los slots van de derecha a izquierda visualmente */}
             {Array.from({ length: capacity }).map((_, i) => {
               const tile = line[i];
+              const isHighlighted = highlightTiles?.some(t => t.row === row && t.col === i) ?? false;
               return tile ? (
-                <Tile key={i} color={tile} />
+                <div key={i} className={isHighlighted ? 'azul-last-move rounded-sm' : undefined}>
+                  <Tile color={tile} />
+                </div>
               ) : (
                 <EmptySlot key={i} />
               );
@@ -259,9 +301,10 @@ interface FloorProps {
   selectedColor: TileColor | null;
   onSelectFloor: () => void;
   isMyBoard: boolean;
+  highlightIndices?: number[];
 }
 
-function Floor({ floor, hasMarker, selectedColor, onSelectFloor, isMyBoard }: FloorProps) {
+function Floor({ floor, hasMarker, selectedColor, onSelectFloor, isMyBoard, highlightIndices }: FloorProps) {
   return (
     <div
       onClick={() => isMyBoard && selectedColor !== null && onSelectFloor()}
@@ -278,12 +321,17 @@ function Floor({ floor, hasMarker, selectedColor, onSelectFloor, isMyBoard }: Fl
           1
         </div>
       )}
-      {floor.map((tile, i) => (
-        <div key={i} className="flex flex-col items-center">
-          <Tile color={tile} size="sm" />
-          <span className="text-[9px] text-red-500 font-mono">{FLOOR_PENALTIES[i]}</span>
-        </div>
-      ))}
+      {floor.map((tile, i) => {
+        const isHighlighted = highlightIndices?.includes(i) ?? false;
+        return (
+          <div key={i} className="flex flex-col items-center">
+            <div className={isHighlighted ? 'azul-last-move rounded-sm' : undefined}>
+              <Tile color={tile} size="sm" />
+            </div>
+            <span className="text-[9px] text-red-500 font-mono">{FLOOR_PENALTIES[i]}</span>
+          </div>
+        );
+      })}
       {Array.from({ length: 7 - floor.length - (hasMarker ? 1 : 0) }).map((_, i) => (
         <div key={`empty-${i}`} className="flex flex-col items-center opacity-40">
           <EmptySlot size="sm" />
@@ -304,6 +352,7 @@ interface PlayerBoardProps {
   selectedColor: TileColor | null;
   onSelectLine: (lineIndex: number) => void;
   onSelectFloor: () => void;
+  highlight?: LastMoveHighlight;
 }
 
 function PlayerBoard({
@@ -314,6 +363,7 @@ function PlayerBoard({
   selectedColor,
   onSelectLine,
   onSelectFloor,
+  highlight,
 }: PlayerBoardProps) {
   if (!state) return null;
 
@@ -350,8 +400,9 @@ function PlayerBoard({
           selectedColor={isMyBoard ? selectedColor : null}
           onSelectLine={onSelectLine}
           isMyBoard={isMyBoard}
+          highlightTiles={highlight?.patternTiles}
         />
-        <Wall wall={state.wall} />
+        <Wall wall={state.wall} highlightTiles={highlight?.wallTiles} />
       </div>
 
       {/* Suelo */}
@@ -365,6 +416,7 @@ function PlayerBoard({
           selectedColor={isMyBoard ? selectedColor : null}
           onSelectFloor={onSelectFloor}
           isMyBoard={isMyBoard}
+          highlightIndices={highlight?.floorTiles}
         />
       </div>
     </div>
@@ -400,6 +452,28 @@ export function GameBoard({ gameId }: GameBoardProps) {
     factoryIndex?: number;
     color: TileColor;
   } | null>(null);
+
+  // Highlight del último movimiento del rival
+  const prevOpponentState = useRef<PlayerState | undefined>(undefined);
+  const [lastMoveHighlight, setLastMoveHighlight] = useState<LastMoveHighlight | null>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const prev = prevOpponentState.current;
+    if (prev && opponentState) {
+      const diff = computeDiff(prev, opponentState);
+      if (diff) {
+        setLastMoveHighlight(diff);
+        if (highlightTimer.current) clearTimeout(highlightTimer.current);
+        highlightTimer.current = setTimeout(() => setLastMoveHighlight(null), 2200);
+      }
+    }
+    prevOpponentState.current = opponentState ? { ...opponentState } : undefined;
+  }, [opponentState]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => () => {
+    if (highlightTimer.current) clearTimeout(highlightTimer.current);
+  }, []);
 
   if (isLoading) {
     return (
@@ -596,6 +670,7 @@ export function GameBoard({ gameId }: GameBoardProps) {
             selectedColor={null}
             onSelectLine={() => {}}
             onSelectFloor={() => {}}
+            highlight={lastMoveHighlight ?? undefined}
           />
         )}
       </div>

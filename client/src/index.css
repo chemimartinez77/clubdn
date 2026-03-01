@@ -103,6 +103,30 @@ textarea::placeholder {
   animation: azul-sheet-in 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
+/* Highlight del último movimiento del rival (patternLines / floor) */
+@keyframes azul-last-move {
+  0%   { box-shadow: 0 0 0 3px #facc15, 0 0 10px 3px #facc1566; transform: scale(1.25); }
+  50%  { box-shadow: 0 0 0 2px #facc1588; transform: scale(1.08); }
+  100% { box-shadow: none; transform: scale(1); }
+}
+.azul-last-move {
+  animation: azul-last-move 2.2s ease-out forwards;
+  position: relative;
+  z-index: 10;
+}
+
+/* Highlight para tiles colocados en la pared */
+@keyframes azul-last-move-wall {
+  0%   { box-shadow: 0 0 0 3px #4ade80, 0 0 10px 3px #4ade8066; transform: scale(1.25); }
+  50%  { box-shadow: 0 0 0 2px #4ade8088; transform: scale(1.08); }
+  100% { box-shadow: none; transform: scale(1); }
+}
+.azul-last-move-wall {
+  animation: azul-last-move-wall 2.2s ease-out forwards;
+  position: relative;
+  z-index: 10;
+}
+
 /* ─── Driver.js tour overrides ─────────────────────────────────────────── */
 
 /* Limitar ancho del popover en móvil para que no se salga del viewport */
