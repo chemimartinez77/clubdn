@@ -241,7 +241,7 @@ export default function Events() {
           const estimatedDuration = formatEstimatedDuration(event.durationHours, event.durationMinutes);
           const timeRange = estimatedEndTime ? `${time}-${estimatedEndTime}` : time;
           const durationText = estimatedDuration ? ` (${estimatedDuration})` : '';
-          lines.push(`- \u{1F550} ${timeRange}${durationText} - ${event.title}`);
+          lines.push(`- 🕐 ${timeRange}${durationText} - ${event.title}`);
         });
       lines.push('');
     });
@@ -541,4 +541,3 @@ export default function Events() {
     </Layout>
   );
 }
-

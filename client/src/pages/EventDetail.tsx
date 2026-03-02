@@ -575,10 +575,10 @@ export default function EventDetail() {
     const durationText = estimatedDuration ? ` (${estimatedDuration})` : '';
 
     let message = `*${event.title}*\n\n`;
-    message += `\u{1F4C5} Fecha: ${formattedDate}\n`;
-    message += `\u{1F550} ${timeRange}${durationText}\n`;
+    message += `📅 ${formattedDate}\n`;
+    message += `🕐 ${timeRange}${durationText}\n`;
     if (event.type !== 'PARTIDA' && event.location) {
-      message += `\u{1F4CD} Lugar: ${event.location}\n`;
+      message += `📍 Lugar: ${event.location}\n`;
     }
     message += `\n${spotsText}\n`;
 
