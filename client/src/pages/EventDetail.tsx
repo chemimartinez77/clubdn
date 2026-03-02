@@ -551,8 +551,32 @@ export default function EventDetail() {
       ? `Plazas disponibles: ${spotsLeft} de ${event.maxAttendees}`
       : `COMPLETO (${registeredCount}/${event.maxAttendees})`;
 
+    const formatEstimatedDuration = (durationHours?: number | null, durationMinutes?: number | null) => {
+      const hours = durationHours ?? 0;
+      const minutes = durationMinutes ?? 0;
+
+      if (hours <= 0 && minutes <= 0) return null;
+      if (hours > 0 && minutes > 0) return `${hours}h ${minutes}min`;
+      if (hours > 0) return `${hours}h`;
+      return `${minutes}min`;
+    };
+
+    const estimatedDuration = formatEstimatedDuration(event.durationHours, event.durationMinutes);
+    const durationTotalMinutes = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
+    const estimatedEndTime = durationTotalMinutes > 0
+      ? new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit' }).format(
+        new Date(eventDate.getTime() + durationTotalMinutes * 60 * 1000)
+      )
+      : null;
+
     let message = `*${event.title}*\n\n`;
     message += `Fecha: ${formattedDate}\n`;
+    if (estimatedDuration) {
+      message += `Duración estimada: ${estimatedDuration}\n`;
+    }
+    if (estimatedEndTime) {
+      message += `Hora de fin estimada: ${estimatedEndTime}\n`;
+    }
     if (event.location) {
       message += `Lugar: ${event.location}\n`;
     }
@@ -1664,4 +1688,3 @@ export default function EventDetail() {
     </Layout>
   );
 }
-

@@ -198,13 +198,38 @@ export default function Events() {
       ''
     ];
 
+    const formatEstimatedDuration = (durationHours?: number | null, durationMinutes?: number | null) => {
+      const hours = durationHours ?? 0;
+      const minutes = durationMinutes ?? 0;
+
+      if (hours <= 0 && minutes <= 0) return null;
+      if (hours > 0 && minutes > 0) return `${hours}h ${minutes}min`;
+      if (hours > 0) return `${hours}h`;
+      return `${minutes}min`;
+    };
+
+    const formatEstimatedEndTime = (
+      eventDate: Date,
+      durationHours?: number | null,
+      durationMinutes?: number | null
+    ) => {
+      const totalMinutes = (durationHours ?? 0) * 60 + (durationMinutes ?? 0);
+      if (totalMinutes <= 0) return null;
+      return timeFormat.format(new Date(eventDate.getTime() + totalMinutes * 60 * 1000));
+    };
+
     days.forEach(day => {
       lines.push(`*${day.label}*`);
       day.events
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .forEach(event => {
-          const time = timeFormat.format(new Date(event.date));
-          lines.push(`- ${time} ${event.title}`);
+          const eventDate = new Date(event.date);
+          const time = timeFormat.format(eventDate);
+          const estimatedEndTime = formatEstimatedEndTime(eventDate, event.durationHours, event.durationMinutes);
+          const estimatedDuration = formatEstimatedDuration(event.durationHours, event.durationMinutes);
+          const timeRange = estimatedEndTime ? `${time}-${estimatedEndTime}` : time;
+          const durationText = estimatedDuration ? ` (${estimatedDuration})` : '';
+          lines.push(`- ${timeRange} ${event.title}${durationText}`);
         });
       lines.push('');
     });
@@ -503,4 +528,3 @@ export default function Events() {
     </Layout>
   );
 }
-
