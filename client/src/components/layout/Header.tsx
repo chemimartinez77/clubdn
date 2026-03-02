@@ -139,12 +139,12 @@ export default function Header() {
                         className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                         onClick={() => setIsGamesMenuOpen(false)}
                       >
-                        <span className="block leading-tight">Combat Zone</span>
+                        <span className="block leading-tight">⚠️ Combat Zone</span>
                         <span className="block text-[10px] opacity-70 leading-tight">Coming soon</span>
                       </Link>
                     ) : (
                       <div className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] opacity-60 cursor-not-allowed select-none">
-                        <span className="block leading-tight">Combat Zone</span>
+                        <span className="block leading-tight">⚠️Combat Zone</span>
                         <span className="block text-[10px] opacity-70 leading-tight">Coming soon</span>
                       </div>
                     )}
@@ -431,12 +431,12 @@ export default function Header() {
                         className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                         onClick={closeAllMenus}
                       >
-                        <span className="block leading-tight">Combat Zone</span>
+                        <span className="block leading-tight">⚠️ Combat Zone</span>
                         <span className="block text-[10px] opacity-70 leading-tight">Coming soon</span>
                       </Link>
                     ) : (
                       <div className="block px-4 py-2 text-[var(--color-textSecondary)] rounded-lg opacity-60 cursor-not-allowed select-none">
-                        <span className="block leading-tight">Combat Zone</span>
+                        <span className="block leading-tight">⚠️ Combat Zone</span>
                         <span className="block text-[10px] opacity-70 leading-tight">Coming soon</span>
                       </div>
                     )}
