@@ -321,7 +321,10 @@ function Factory({
   return (
     <div className="flex flex-col items-center gap-0.5">
       <span className="text-[10px] text-gray-400 font-mono">F{index + 1}</span>
-      <div className="w-20 h-20 rounded-full border-2 border-gray-200 bg-white flex flex-wrap items-center justify-center gap-1 p-2 shadow">
+      <div
+          className="w-20 h-20 rounded-full flex flex-wrap items-center justify-center gap-1 p-2 shadow"
+          style={{ backgroundImage: 'url(/azul-fabrica.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+        >
         {tiles.length === 0 ? (
           <span className="text-[10px] text-gray-300">—</span>
         ) : colors.map(color => {

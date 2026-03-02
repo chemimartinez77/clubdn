@@ -124,7 +124,10 @@ function Factory({ tiles, index, selectedSource, onSelectTile, disabled }: Facto
   return (
     <div className="flex flex-col items-center gap-1">
       <span className="text-[10px] text-[var(--color-textSecondary)] font-mono">F{index + 1}</span>
-      <div className="w-20 h-20 rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface)] flex flex-wrap items-center justify-center gap-1 p-2 shadow-md">
+      <div
+        className="w-20 h-20 rounded-full flex flex-wrap items-center justify-center gap-1 p-2 shadow-md"
+        style={{ backgroundImage: 'url(/azul-fabrica.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+      >
         {tiles.map((color, i) => {
           const isSelected =
             selectedSource?.source === 'factory' &&
