@@ -386,8 +386,8 @@ export default function Events() {
                   onChange={(e) => setSortOption(e.target.value as SortOption)}
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
-                  <option value="date_asc">Fecha (más próximas)</option>
-                  <option value="date_desc">Fecha (más lejanas)</option>
+                  <option value="date_asc">Fecha (ascendente)</option>
+                  <option value="date_desc">Fecha (descendente)</option>
                   <option value="name_asc">Nombre (A-Z)</option>
                   <option value="name_desc">Nombre (Z-A)</option>
                 </select>
