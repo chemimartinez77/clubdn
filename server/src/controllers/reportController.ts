@@ -268,9 +268,14 @@ export const toggleVote = async (req: Request, res: Response): Promise<void> => 
 export const updateReportAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { status, internalPriority, devResponse } = req.body;
+    const { status, internalPriority, devResponse, comment } = req.body;
+    const adminUserId = req.user?.userId;
     if (!id) {
       res.status(400).json({ success: false, message: 'ID de reporte inválido' });
+      return;
+    }
+    if (!adminUserId) {
+      res.status(401).json({ success: false, message: 'Usuario no autenticado' });
       return;
     }
 
@@ -315,14 +320,31 @@ export const updateReportAdmin = async (req: Request, res: Response): Promise<vo
       updateData.devResponse = devResponse ? String(devResponse).trim() : null;
     }
 
-    const report = await prisma.report.update({
-      where: { id },
-      data: updateData,
-      include: {
-        user: {
-          select: { id: true, name: true }
+    const trimmedComment = typeof comment === 'string' ? comment.trim() : '';
+
+    const report = await prisma.$transaction(async (tx) => {
+      const updatedReport = await tx.report.update({
+        where: { id },
+        data: updateData,
+        include: {
+          user: {
+            select: { id: true, name: true }
+          }
         }
+      });
+
+      if (trimmedComment) {
+        await tx.reportComment.create({
+          data: {
+            reportId: id,
+            userId: adminUserId,
+            content: trimmedComment,
+            imageUrls: []
+          }
+        });
       }
+
+      return updatedReport;
     });
 
     // Detectar cambios y notificar al creador del reporte (solo status y devResponse)
@@ -338,6 +360,9 @@ export const updateReportAdmin = async (req: Request, res: Response): Promise<vo
     }
     if (devResponse !== undefined && devResponse !== existingReport.devResponse && devResponse) {
       changes.push('Nueva respuesta del desarrollador');
+    }
+    if (trimmedComment) {
+      changes.push('Nuevo comentario del administrador');
     }
 
     if (changes.length > 0) {

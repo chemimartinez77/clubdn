@@ -1,4 +1,4 @@
-// client/src/pages/Events.tsx
+﻿// client/src/pages/Events.tsx
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
@@ -21,6 +21,7 @@ type CalendarView = 'month' | 'week' | 'day';
 type TypeFilter = 'PARTIDA' | 'EVENTOS' | '';
 type CapacityFilter = '' | 'available' | 'full';
 type SortOption = 'date_desc' | 'date_asc' | 'name_asc' | 'name_desc';
+type StatusFilter = EventStatus | '' | 'RECOMMENDED';
 
 export default function Events() {
   const { user, isAdmin } = useAuth();
@@ -28,13 +29,13 @@ export default function Events() {
   const { shouldShow: showTour, dismissTour } = useTour('calendar');
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [calendarView, setCalendarView] = useState<CalendarView>('month');
-  const [statusFilter, setStatusFilter] = useState<EventStatus | ''>('');
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('RECOMMENDED');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('PARTIDA');
   const [capacityFilter, setCapacityFilter] = useState<CapacityFilter>('');
   const [search, setSearch] = useState('');
   const [participant, setParticipant] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [sortOption, setSortOption] = useState<SortOption>('date_desc');
+  const [sortOption, setSortOption] = useState<SortOption>('date_asc');
 
   const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
   const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -44,9 +45,11 @@ export default function Events() {
     queryKey: ['events', statusFilter, typeFilter, search, participant, viewMode, monthKey],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (statusFilter) params.append('status', statusFilter);
-      if (search) params.append('search', search);
-      if (participant) params.append('participant', participant);
+      if (viewMode === 'list') {
+        if (statusFilter && statusFilter !== 'RECOMMENDED') params.append('status', statusFilter);
+        if (search) params.append('search', search);
+        if (participant) params.append('participant', participant);
+      }
       if (viewMode === 'calendar') {
         params.append('startDate', monthStart.toISOString());
         params.append('endDate', monthEnd.toISOString());
@@ -62,15 +65,24 @@ export default function Events() {
 
   // Filtrar eventos por tipo y capacidad en el cliente
   const allEvents = data?.events || [];
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
   const events = allEvents
+    .filter(event => {
+      if (viewMode !== 'list' || statusFilter !== 'RECOMMENDED') return true;
+      const eventDate = new Date(event.date);
+      return eventDate >= todayStart && event.status !== 'COMPLETED' && event.status !== 'CANCELLED';
+    })
     // Filtro por tipo: "PARTIDA" = solo partidas, "EVENTOS" = torneos y otros, "" = todos
     .filter(event => {
+      if (viewMode !== 'list') return true;
       if (typeFilter === 'PARTIDA') return event.type === 'PARTIDA';
       if (typeFilter === 'EVENTOS') return event.type !== 'PARTIDA';
       return true;
     })
     // Filtro por capacidad: "available" = con plazas, "full" = completas, "" = todas
     .filter(event => {
+      if (viewMode !== 'list') return true;
       const registeredCount = event.registeredCount || 0;
       const isFull = registeredCount >= event.maxAttendees;
       if (capacityFilter === 'available') return !isFull;
@@ -229,7 +241,7 @@ export default function Events() {
           const estimatedDuration = formatEstimatedDuration(event.durationHours, event.durationMinutes);
           const timeRange = estimatedEndTime ? `${time}-${estimatedEndTime}` : time;
           const durationText = estimatedDuration ? ` (${estimatedDuration})` : '';
-          lines.push(`- ${timeRange} ${event.title}${durationText}`);
+          lines.push(`- \u{1F550} ${timeRange}${durationText} - ${event.title}`);
         });
       lines.push('');
     });
@@ -324,9 +336,10 @@ export default function Events() {
                 </label>
                 <select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as EventStatus | '')}
+                  onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
+                  <option value="RECOMMENDED">Sugerido (desde hoy)</option>
                   <option value="">Todos los estados</option>
                   <option value="SCHEDULED">Programados</option>
                   <option value="ONGOING">En curso</option>
@@ -373,8 +386,8 @@ export default function Events() {
                   onChange={(e) => setSortOption(e.target.value as SortOption)}
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
-                  <option value="date_desc">Fecha (más recientes)</option>
-                  <option value="date_asc">Fecha (más antiguas)</option>
+                  <option value="date_asc">Fecha (más próximas)</option>
+                  <option value="date_desc">Fecha (más lejanas)</option>
                   <option value="name_asc">Nombre (A-Z)</option>
                   <option value="name_desc">Nombre (Z-A)</option>
                 </select>
@@ -420,7 +433,7 @@ export default function Events() {
                       No hay eventos
                     </h3>
                     <p className="text-[var(--color-textSecondary)]">
-                      {search || statusFilter
+                      {search || (statusFilter && statusFilter !== 'RECOMMENDED')
                         ? 'No se encontraron eventos con los filtros aplicados'
                         : 'Aún no hay eventos programados'}
                     </p>
@@ -528,3 +541,4 @@ export default function Events() {
     </Layout>
   );
 }
+

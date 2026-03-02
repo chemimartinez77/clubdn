@@ -1,4 +1,4 @@
-// client/src/pages/EventDetail.tsx
+﻿// client/src/pages/EventDetail.tsx
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -541,6 +541,8 @@ export default function EventDetail() {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
+    }).format(eventDate);
+    const startTime = new Intl.DateTimeFormat('es-ES', {
       hour: '2-digit',
       minute: '2-digit'
     }).format(eventDate);
@@ -569,16 +571,14 @@ export default function EventDetail() {
       )
       : null;
 
+    const timeRange = estimatedEndTime ? `${startTime}-${estimatedEndTime}` : startTime;
+    const durationText = estimatedDuration ? ` (${estimatedDuration})` : '';
+
     let message = `*${event.title}*\n\n`;
-    message += `Fecha: ${formattedDate}\n`;
-    if (estimatedDuration) {
-      message += `Duración estimada: ${estimatedDuration}\n`;
-    }
-    if (estimatedEndTime) {
-      message += `Hora de fin estimada: ${estimatedEndTime}\n`;
-    }
-    if (event.location) {
-      message += `Lugar: ${event.location}\n`;
+    message += `\u{1F4C5} Fecha: ${formattedDate}\n`;
+    message += `\u{1F550} ${timeRange}${durationText}\n`;
+    if (event.type !== 'PARTIDA' && event.location) {
+      message += `\u{1F4CD} Lugar: ${event.location}\n`;
     }
     message += `\n${spotsText}\n`;
 
@@ -1688,3 +1688,4 @@ export default function EventDetail() {
     </Layout>
   );
 }
+

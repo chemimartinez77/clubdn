@@ -90,21 +90,26 @@ function ReportAdminControls({ report }: { report: Report }) {
   const { success, error: showError } = useToast();
   const [status, setStatus] = useState<ReportStatus>(report.status);
   const [priority, setPriority] = useState<ReportPriority>(report.internalPriority);
+  const [adminComment, setAdminComment] = useState('');
   useEffect(() => {
     setStatus(report.status);
     setPriority(report.internalPriority);
-  }, [report.status, report.internalPriority]);
+    setAdminComment('');
+  }, [report.id, report.status, report.internalPriority]);
 
   const updateMutation = useMutation({
     mutationFn: async () => {
       const response = await api.patch(`/api/admin/reports/${report.id}`, {
         status,
         internalPriority: priority,
+        comment: adminComment.trim() || undefined,
       });
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['report-comments', report.id] });
+      setAdminComment('');
       success('Reporte actualizado');
     },
     onError: (err: any) => {
@@ -140,6 +145,18 @@ function ReportAdminControls({ report }: { report: Report }) {
             ))}
           </select>
         </div>
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-[var(--color-textSecondary)] mb-1">
+          Comentario al guardar (opcional)
+        </label>
+        <textarea
+          value={adminComment}
+          onChange={(e) => setAdminComment(e.target.value)}
+          rows={2}
+          placeholder="Ej: Corregido en producción. Avisad si vuelve a ocurrir."
+          className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+        />
       </div>
       <Button
         onClick={() => updateMutation.mutate()}

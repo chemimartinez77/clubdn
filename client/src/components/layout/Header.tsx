@@ -38,6 +38,9 @@ export default function Header() {
       : user?.membership?.type === 'COLABORADOR'
       ? 'Colaborador'
       : 'Miembro';
+  const isCombatZoneEnabledForUser =
+    user?.id === 'cmlnolhj4000oo175283glccj' ||
+    user?.email?.toLowerCase() === 'chemimartinez@gmail.com';
 
   return (
     <header className="bg-[var(--color-cardBackground)] shadow-sm border-b border-[var(--color-cardBorder)]">
@@ -130,13 +133,21 @@ export default function Header() {
                     >
                       Buscados
                     </Link>
-                    <Link
-                      to="/azul/combatzone"
-                      className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
-                      onClick={() => setIsGamesMenuOpen(false)}
-                    >
-                      Combat Zone
-                    </Link>
+                    {isCombatZoneEnabledForUser ? (
+                      <Link
+                        to="/azul/combatzone"
+                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                        onClick={() => setIsGamesMenuOpen(false)}
+                      >
+                        <span className="block leading-tight">Combat Zone</span>
+                        <span className="block text-[10px] opacity-70 leading-tight">Coming soon</span>
+                      </Link>
+                    ) : (
+                      <div className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] opacity-60 cursor-not-allowed select-none">
+                        <span className="block leading-tight">Combat Zone</span>
+                        <span className="block text-[10px] opacity-70 leading-tight">Coming soon</span>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -414,13 +425,21 @@ export default function Header() {
                     >
                       Buscados
                     </Link>
-                    <Link
-                      to="/azul/combatzone"
-                      className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
-                      onClick={closeAllMenus}
-                    >
-                      Combat Zone
-                    </Link>
+                    {isCombatZoneEnabledForUser ? (
+                      <Link
+                        to="/azul/combatzone"
+                        className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                        onClick={closeAllMenus}
+                      >
+                        <span className="block leading-tight">Combat Zone</span>
+                        <span className="block text-[10px] opacity-70 leading-tight">Coming soon</span>
+                      </Link>
+                    ) : (
+                      <div className="block px-4 py-2 text-[var(--color-textSecondary)] rounded-lg opacity-60 cursor-not-allowed select-none">
+                        <span className="block leading-tight">Combat Zone</span>
+                        <span className="block text-[10px] opacity-70 leading-tight">Coming soon</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
