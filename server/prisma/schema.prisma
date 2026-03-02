@@ -49,6 +49,11 @@ enum ReportSeverity {
   BLOQUEANTE
 }
 
+enum ReportPlatform {
+  MOVIL
+  PC
+}
+
 // Tipos de membresía
 enum MembershipType {
   SOCIO        // 19€/mes, con llave, requiere 1 año como COLABORADOR + aprobación
@@ -639,6 +644,8 @@ model Report {
   status           ReportStatus   @default(NUEVO)
   internalPriority ReportPriority @default(MEDIA)
   perceivedSeverity ReportSeverity
+  platform         ReportPlatform @default(MOVIL)
+  mobileOs         String?
   devResponse      String?        @db.Text
   votesCount       Int            @default(0)
 

@@ -2,7 +2,7 @@
 import { Request, Response } from 'express';
 import { v2 as cloudinary } from 'cloudinary';
 import { prisma } from '../config/database';
-import { ReportPriority, ReportStatus, ReportType, ReportSeverity } from '@prisma/client';
+import { ReportPriority, ReportStatus, ReportType, ReportSeverity, ReportPlatform } from '@prisma/client';
 import {
   notifyReportCreated,
   notifyReportUpdated,
@@ -33,7 +33,7 @@ export const createReport = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const { type, title, description, perceivedSeverity, originUrl } = req.body;
+    const { type, title, description, perceivedSeverity, originUrl, platform, mobileOs } = req.body;
     const file = req.file;
 
     if (!type || !title || !description || !perceivedSeverity) {
@@ -53,6 +53,14 @@ export const createReport = async (req: Request, res: Response): Promise<void> =
       res.status(400).json({ success: false, message: 'Gravedad percibida inválida' });
       return;
     }
+
+    const resolvedPlatform: ReportPlatform =
+      platform === 'PC' ? ReportPlatform.PC : ReportPlatform.MOVIL;
+
+    const resolvedMobileOs: string | null =
+      resolvedPlatform === ReportPlatform.MOVIL
+        ? (mobileOs === 'IOS' ? 'IOS' : 'ANDROID')
+        : null;
 
     let screenshotUrl: string | undefined;
     if (file) {
@@ -96,6 +104,8 @@ export const createReport = async (req: Request, res: Response): Promise<void> =
         title: title.trim(),
         description: description.trim(),
         perceivedSeverity,
+        platform: resolvedPlatform,
+        mobileOs: resolvedMobileOs,
         screenshotUrl,
         originUrl: getOriginUrl(req, originUrl)
       },

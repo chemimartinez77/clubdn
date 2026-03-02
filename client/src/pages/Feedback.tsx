@@ -15,6 +15,8 @@ type ReportType = 'BUG' | 'MEJORA';
 type ReportStatus = 'NUEVO' | 'EN_REVISION' | 'EN_PROGRESO' | 'HECHO';
 type ReportPriority = 'BAJA' | 'MEDIA' | 'ALTA' | 'CRITICA';
 type ReportSeverity = 'NO_URGE' | 'ME_MOLESTA' | 'BLOQUEANTE';
+type ReportPlatform = 'MOVIL' | 'PC';
+type MobileOs = 'ANDROID' | 'IOS';
 
 interface Report {
   id: string;
@@ -26,6 +28,8 @@ interface Report {
   status: ReportStatus;
   internalPriority: ReportPriority;
   perceivedSeverity: ReportSeverity;
+  platform: ReportPlatform;
+  mobileOs?: string | null;
   devResponse?: string | null;
   votesCount: number;
   createdAt: string;
@@ -179,6 +183,8 @@ export default function Feedback() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState<ReportSeverity>('ME_MOLESTA');
+  const [platform, setPlatform] = useState<ReportPlatform>('MOVIL');
+  const [mobileOs, setMobileOs] = useState<MobileOs>('ANDROID');
   const [screenshot, setScreenshot] = useState<File | null>(null);
 
   const [filterMine, setFilterMine] = useState(false);
@@ -240,6 +246,8 @@ export default function Feedback() {
       setDescription('');
       setSeverity('ME_MOLESTA');
       setType('BUG');
+      setPlatform('MOVIL');
+      setMobileOs('ANDROID');
       setScreenshot(null);
     },
     onError: (err: any) => {
@@ -325,6 +333,8 @@ export default function Feedback() {
     formData.append('title', title.trim());
     formData.append('description', description.trim());
     formData.append('perceivedSeverity', severity);
+    formData.append('platform', platform);
+    if (platform === 'MOVIL') formData.append('mobileOs', mobileOs);
     formData.append('originUrl', window.location.href);
     if (screenshot) {
       formData.append('screenshot', screenshot);
@@ -373,6 +383,32 @@ export default function Feedback() {
                   <option value="BLOQUEANTE">Bloqueante</option>
                 </select>
               </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Plataforma</label>
+                <select
+                  value={platform}
+                  onChange={(e) => setPlatform(e.target.value as ReportPlatform)}
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                >
+                  <option value="MOVIL">Móvil</option>
+                  <option value="PC">PC</option>
+                </select>
+              </div>
+              {platform === 'MOVIL' && (
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Sistema operativo</label>
+                  <select
+                    value={mobileOs}
+                    onChange={(e) => setMobileOs(e.target.value as MobileOs)}
+                    className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                  >
+                    <option value="ANDROID">Android</option>
+                    <option value="IOS">iOS</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             <div>
@@ -478,6 +514,11 @@ export default function Feedback() {
                           </span>
                           <span className="text-xs text-[var(--color-textSecondary)]">
                             {severityLabels[report.perceivedSeverity]}
+                          </span>
+                          <span className="px-2 py-1 rounded-full text-xs font-semibold bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)]">
+                            {report.platform === 'MOVIL'
+                              ? `Móvil${report.mobileOs ? ` · ${report.mobileOs === 'IOS' ? 'iOS' : 'Android'}` : ''}`
+                              : 'PC'}
                           </span>
                         </div>
                         <h3 className="text-lg font-semibold text-[var(--color-text)] mt-2">{report.title}</h3>
