@@ -621,7 +621,7 @@ export default function Feedback() {
                                       }
                                     </div>
                                     {/* Burbuja */}
-                                    <div className={`max-w-[75%] ${isOwnComment ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+                                    <div className={`${editingCommentId === comment.id ? 'flex-1' : 'max-w-[75%]'} ${isOwnComment ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                                       <div className="flex items-center gap-2 flex-wrap">
                                         {!isOwnComment && (
                                           <span className="text-xs font-semibold text-[var(--color-text)]">{comment.user.name}</span>
