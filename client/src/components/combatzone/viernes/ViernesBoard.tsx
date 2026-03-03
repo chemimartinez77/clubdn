@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useViernesGame } from '../../../hooks/useViernesGame';
 import { calculateFightTotal } from '../../../logic/ViernesEngine';
-import type { HazardCard, RobinsonCard, PirateCard, FightState, ViernesGameState } from '../../../logic/ViernesEngine';
+import type { HazardCard, RobinsonCard, FightState, ViernesGameState } from '../../../logic/ViernesEngine';
 
 // ─── StatusBar ─────────────────────────────────────────────────────────────────
 
@@ -360,7 +360,7 @@ function RobinsonStatus({ gs }: { gs: ViernesGameState }) {
 
 // ─── GameOverBanner ────────────────────────────────────────────────────────────
 
-function GameOverBanner({ gs, gameId }: { gs: ViernesGameState; gameId: string }) {
+function GameOverBanner({ gs }: { gs: ViernesGameState }) {
   const navigate = useNavigate();
   return (
     <div className={`flex flex-col items-center gap-4 p-8 rounded-2xl border-2 text-center
@@ -459,7 +459,7 @@ export default function ViernesBoard({ gameId }: ViernesBoardProps) {
         )}
 
         {gs.phase === 'FINISHED' && (
-          <GameOverBanner gs={gs} gameId={gameId} />
+          <GameOverBanner gs={gs} />
         )}
       </div>
 
