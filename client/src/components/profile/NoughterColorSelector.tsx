@@ -40,7 +40,7 @@ export default function NoughterColorSelector({ selectedColor, onChange }: Nough
                 type="button"
                 onClick={() => onChange(option.value)}
                 className={`
-                  relative flex items-center gap-3 p-3 rounded-lg border-2 transition-all
+                  relative flex items-center gap-3 p-3 rounded-lg border-2 transition-all overflow-hidden
                   ${isSelected
                     ? 'border-[var(--color-primary)] bg-[var(--color-primary-50)]'
                     : 'border-[var(--color-cardBorder)] hover:border-[var(--color-inputBorder)] bg-[var(--color-cardBackground)]'
@@ -64,15 +64,15 @@ export default function NoughterColorSelector({ selectedColor, onChange }: Nough
                 </div>
 
                 {/* Label */}
-                <div className="flex-1 text-left">
-                  <p className={`text-sm font-medium ${isSelected ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'}`}>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className={`text-sm font-medium break-words ${isSelected ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'}`}>
                     {option.label}
                   </p>
                 </div>
 
                 {/* Checkmark */}
                 {isSelected && (
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 ml-1">
                     <svg className="w-5 h-5 text-[var(--color-primary)]" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
@@ -103,4 +103,3 @@ export default function NoughterColorSelector({ selectedColor, onChange }: Nough
     </div>
   );
 }
-
