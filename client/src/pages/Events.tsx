@@ -209,6 +209,7 @@ export default function Events() {
       '_Solo partidas con socios_',
       ''
     ];
+    const emojiClock = String.fromCodePoint(0x1F550);
 
     const formatEstimatedDuration = (durationHours?: number | null, durationMinutes?: number | null) => {
       const hours = durationHours ?? 0;
@@ -241,7 +242,7 @@ export default function Events() {
           const estimatedDuration = formatEstimatedDuration(event.durationHours, event.durationMinutes);
           const timeRange = estimatedEndTime ? `${time}-${estimatedEndTime}` : time;
           const durationText = estimatedDuration ? ` (${estimatedDuration})` : '';
-          lines.push(`- 🕐 ${timeRange}${durationText} - ${event.title}`);
+          lines.push(`- ${emojiClock} ${timeRange}${durationText} - ${event.title}`);
         });
       lines.push('');
     });

@@ -602,6 +602,8 @@ export const getUserUpcomingEvents = async (req: Request, res: Response): Promis
             date: true,
             startHour: true,
             startMinute: true,
+            durationHours: true,
+            durationMinutes: true,
             location: true,
             status: true,
             game: {

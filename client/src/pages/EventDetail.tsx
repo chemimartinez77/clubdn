@@ -382,16 +382,53 @@ export default function EventDetail() {
     );
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDateOnly = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('es-ES', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     }).format(date);
+  };
+  const formatClockTime = (date: Date) =>
+    `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+  const resolveEventStartDate = (date: string, startHour?: number | null, startMinute?: number | null) => {
+    const baseDate = new Date(date);
+    if (startHour !== null && startHour !== undefined) {
+      baseDate.setHours(startHour, startMinute ?? 0, 0, 0);
+      return baseDate;
+    }
+
+    // Fallback: usar hora embebida en `date` si existe.
+    if (baseDate.getHours() === 0 && baseDate.getMinutes() === 0) {
+      return null;
+    }
+
+    return baseDate;
+  };
+  const formatDurationText = (durationHours?: number | null, durationMinutes?: number | null) => {
+    const hours = durationHours ?? 0;
+    const minutes = durationMinutes ?? 0;
+
+    if (hours <= 0 && minutes <= 0) return '';
+    if (hours > 0 && minutes > 0) return `${hours}h ${minutes}min`;
+    if (hours > 0) return `${hours}h`;
+    return `${minutes}min`;
+  };
+  const formatEventSchedule = (date: string, startHour?: number | null, startMinute?: number | null, durationHours?: number | null, durationMinutes?: number | null) => {
+    const start = resolveEventStartDate(date, startHour, startMinute);
+    if (!start) return '';
+
+    const startText = formatClockTime(start);
+    const totalMinutes = (durationHours ?? 0) * 60 + (durationMinutes ?? 0);
+    if (totalMinutes <= 0) return startText;
+
+    const end = new Date(start.getTime() + totalMinutes * 60 * 1000);
+    const endText = formatClockTime(end);
+    const durationText = formatDurationText(durationHours, durationMinutes);
+
+    return durationText ? `${startText}-${endText} (${durationText})` : `${startText}-${endText}`;
   };
   const formatNumber = (value?: number | null, digits = 2) =>
     typeof value === 'number' ? value.toFixed(digits) : '—';
@@ -439,10 +476,7 @@ export default function EventDetail() {
   };
 
   const isPartida = event.type === 'PARTIDA';
-  const eventStart = new Date(event.date);
-  if (event.startHour !== null && event.startHour !== undefined) {
-    eventStart.setHours(event.startHour, event.startMinute ?? 0, 0, 0);
-  }
+  const eventStart = resolveEventStartDate(event.date, event.startHour, event.startMinute) ?? new Date(event.date);
   const isPast = eventStart < new Date();
   const isFull = (event.registeredCount || 0) >= event.maxAttendees;
   const isPendingApproval = event.userRegistrationStatus === 'PENDING_APPROVAL';
@@ -479,6 +513,17 @@ export default function EventDetail() {
   const qrImageUrl = qrUrl
     ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrUrl)}`
     : null;
+  const eventDateText = formatDateOnly(event.date);
+  const eventScheduleText = formatEventSchedule(
+    event.date,
+    event.startHour,
+    event.startMinute,
+    event.durationHours,
+    event.durationMinutes
+  );
+  const emojiCalendar = String.fromCodePoint(0x1F4C5);
+  const emojiClock = String.fromCodePoint(0x1F550);
+  const emojiLocation = String.fromCodePoint(0x1F4CD);
 
   const handleCreateInvitation = () => {
     if (!guestFirstName.trim()) {
@@ -535,50 +580,25 @@ export default function EventDetail() {
   const handleShareWhatsApp = () => {
     if (!event) return;
 
-    const eventDate = new Date(event.date);
-    const formattedDate = new Intl.DateTimeFormat('es-ES', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }).format(eventDate);
-    const startTime = new Intl.DateTimeFormat('es-ES', {
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(eventDate);
-
     const registeredCount = event.registeredCount || 0;
     const spotsLeft = event.maxAttendees - registeredCount;
     const spotsText = spotsLeft > 0
       ? `Plazas disponibles: ${spotsLeft} de ${event.maxAttendees}`
       : `COMPLETO (${registeredCount}/${event.maxAttendees})`;
-
-    const formatEstimatedDuration = (durationHours?: number | null, durationMinutes?: number | null) => {
-      const hours = durationHours ?? 0;
-      const minutes = durationMinutes ?? 0;
-
-      if (hours <= 0 && minutes <= 0) return null;
-      if (hours > 0 && minutes > 0) return `${hours}h ${minutes}min`;
-      if (hours > 0) return `${hours}h`;
-      return `${minutes}min`;
-    };
-
-    const estimatedDuration = formatEstimatedDuration(event.durationHours, event.durationMinutes);
-    const durationTotalMinutes = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
-    const estimatedEndTime = durationTotalMinutes > 0
-      ? new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit' }).format(
-        new Date(eventDate.getTime() + durationTotalMinutes * 60 * 1000)
-      )
-      : null;
-
-    const timeRange = estimatedEndTime ? `${startTime}-${estimatedEndTime}` : startTime;
-    const durationText = estimatedDuration ? ` (${estimatedDuration})` : '';
+    const scheduleText = formatEventSchedule(
+      event.date,
+      event.startHour,
+      event.startMinute,
+      event.durationHours,
+      event.durationMinutes
+    );
+    const shareTimeText = scheduleText || 'Hora pendiente';
 
     let message = `*${event.title}*\n\n`;
-    message += `📅 ${formattedDate}\n`;
-    message += `🕐 ${timeRange}${durationText}\n`;
+    message += `${emojiCalendar} ${eventDateText}\n`;
+    message += `${emojiClock} ${shareTimeText}\n`;
     if (event.type !== 'PARTIDA' && event.location) {
-      message += `📍 Lugar: ${event.location}\n`;
+      message += `${emojiLocation} Lugar: ${event.location}\n`;
     }
     message += `\n${spotsText}\n`;
 
@@ -850,7 +870,10 @@ export default function EventDetail() {
                   </svg>
                   <div>
                     <p className="text-sm text-[var(--color-textSecondary)]">Fecha y hora</p>
-                    <p className="font-medium text-[var(--color-text)] capitalize">{formatDate(event.date)}</p>
+                    <p className="font-medium text-[var(--color-text)] capitalize">{eventDateText}</p>
+                    {eventScheduleText && (
+                      <p className="font-medium text-[var(--color-text)]">{eventScheduleText}</p>
+                    )}
                   </div>
                 </div>
 
