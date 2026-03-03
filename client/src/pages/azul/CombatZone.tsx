@@ -1,4 +1,5 @@
 // client/src/pages/azul/CombatZone.tsx
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../../components/layout/Layout';
@@ -39,10 +40,11 @@ const GAME_FALLBACK_EMOJI: Record<string, string> = {
   '43570':  '🏝️', // Viernes
 };
 
-function GameCard({ bggId, name, solo, onClick }: {
+function GameCard({ bggId, name, solo, isSelected, onClick }: {
   bggId: string;
   name: string;
   solo: boolean;
+  isSelected: boolean;
   onClick: () => void;
 }) {
   const { data } = useGameInfo(bggId);
@@ -51,7 +53,11 @@ function GameCard({ bggId, name, solo, onClick }: {
   return (
     <button
       onClick={onClick}
-      className="relative flex flex-col rounded-xl overflow-hidden border-2 border-gray-200 transition-all hover:border-purple-400 hover:shadow-md active:scale-[0.98] group"
+      className={`relative flex flex-col rounded-xl overflow-hidden border-2 transition-all hover:shadow-md active:scale-[0.98] group ${
+        isSelected
+          ? 'border-purple-500 shadow-md shadow-purple-200'
+          : 'border-gray-200 hover:border-purple-400'
+      }`}
     >
       {/* Imagen cuadrada */}
       <div className="aspect-square bg-gray-100 w-full overflow-hidden">
@@ -68,13 +74,21 @@ function GameCard({ bggId, name, solo, onClick }: {
         )}
       </div>
       {/* Nombre */}
-      <div className="px-2 py-1.5 text-xs font-semibold text-center bg-white text-gray-700 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+      <div className={`px-2 py-1.5 text-xs font-semibold text-center transition-colors ${
+        isSelected ? 'bg-purple-600 text-white' : 'bg-white text-gray-700 group-hover:bg-purple-600 group-hover:text-white'
+      }`}>
         {name}
       </div>
       {/* Badge solitario */}
       {solo && (
         <span className="absolute top-1.5 left-1.5 rounded-full bg-gray-700/70 text-white text-[9px] font-bold px-1.5 py-0.5">
           Solo
+        </span>
+      )}
+      {/* Check seleccionado */}
+      {isSelected && (
+        <span className="absolute top-1.5 right-1.5 rounded-full bg-purple-600 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center">
+          ✓
         </span>
       )}
     </button>
@@ -167,16 +181,24 @@ export default function CombatZone() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { games, isLoading, createGame, isCreating } = useAzulGameList();
+  const [selectedBggId, setSelectedBggId] = useState<string | null>(null);
 
   const myId = user?.id ?? '';
+  const selectedGame = COMBAT_ZONE_GAMES.find(g => g.bggId === selectedBggId) ?? null;
 
-  // Al crear partida nueva, navegar directamente a ella
-  const handleCreate = async () => {
-    try {
-      const game = await createGame();
-      navigate(`/azul/combatzone/${game.id}`);
-    } catch (err) {
-      console.error('[CombatZone] Error al crear partida:', err);
+  const handleNewGame = async () => {
+    if (!selectedGame) return;
+    if (selectedGame.solo) {
+      // Viernes: ir al hub donde se elige dificultad y se crea la partida
+      navigate(selectedGame.path);
+    } else {
+      // Azul: crear partida directamente
+      try {
+        const game = await createGame();
+        navigate(`/azul/combatzone/${game.id}`);
+      } catch (err) {
+        console.error('[CombatZone] Error al crear partida:', err);
+      }
     }
   };
 
@@ -195,37 +217,41 @@ export default function CombatZone() {
 
         {/* Grid de juegos disponibles */}
         <section className="flex flex-col gap-3">
-          <h2 className="text-xs font-mono uppercase tracking-widest text-gray-400">
-            Juegos disponibles
-          </h2>
+          <div className="flex items-end justify-between gap-4">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-gray-400">
+              Juegos disponibles
+            </h2>
+            <button
+              onClick={handleNewGame}
+              disabled={!selectedGame || isCreating}
+              className="rounded-lg bg-purple-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-purple-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              {isCreating ? 'Creando…' : selectedGame ? `+ Nueva partida de ${selectedGame.name}` : '+ Nueva partida'}
+            </button>
+          </div>
           <div className="flex gap-4">
             {COMBAT_ZONE_GAMES.map(g => (
-              <div key={g.bggId} className="w-32">
+              <div key={g.bggId} className="w-40">
                 <GameCard
                   bggId={g.bggId}
                   name={g.name}
                   solo={g.solo}
-                  onClick={() => navigate(g.path)}
+                  isSelected={selectedBggId === g.bggId}
+                  onClick={() => setSelectedBggId(prev => prev === g.bggId ? null : g.bggId)}
                 />
               </div>
             ))}
           </div>
+          {!selectedGame && (
+            <p className="text-xs text-gray-400 italic">Selecciona un juego para crear una nueva partida.</p>
+          )}
         </section>
 
         {/* Partidas de Azul */}
         <section className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-xs font-mono uppercase tracking-widest text-gray-400">
-              Azul — tus partidas
-            </h2>
-            <button
-              onClick={handleCreate}
-              disabled={isCreating}
-              className="rounded-lg bg-purple-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-purple-700 transition-colors disabled:opacity-60"
-            >
-              {isCreating ? 'Creando…' : '+ Nueva partida'}
-            </button>
-          </div>
+          <h2 className="text-xs font-mono uppercase tracking-widest text-gray-400">
+            Azul — tus partidas
+          </h2>
 
           {/* Partidas activas / en espera */}
           <div className="flex flex-col gap-2">
@@ -233,12 +259,7 @@ export default function CombatZone() {
               <div className="text-sm text-gray-400 py-4 text-center">Cargando…</div>
             ) : active.length === 0 ? (
               <div className="rounded-xl border border-dashed border-gray-200 py-8 text-center text-sm text-gray-400">
-                No tienes partidas activas.
-                <br />
-                <span className="text-purple-500 cursor-pointer hover:underline" onClick={handleCreate}>
-                  Crea una nueva
-                </span>
-                {' '}o espera a que un compañero te invite.
+                No tienes partidas activas de Azul.
               </div>
             ) : (
               active.map(game => (
