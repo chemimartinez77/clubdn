@@ -79,6 +79,8 @@ model User {
   resetPasswordToken String?    @unique
   resetPasswordExpiry DateTime?
 
+  calendarToken     String?     @unique
+
   approvedBy        String?
   approvedAt        DateTime?
   rejectedBy        String?

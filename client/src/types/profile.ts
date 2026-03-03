@@ -26,6 +26,7 @@ export interface UserProfile {
   notifyInvitations: boolean;
   allowEventInvitations: boolean;
   noughterColor: string | null;
+  calendarToken: string | null;
   tourDismissed: boolean;
   calendarTourDismissed: boolean;
   feedbackTourDismissed: boolean;

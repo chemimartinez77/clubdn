@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { getUserCalendar, generateCalendarToken } from '../controllers/calendarController';
+import { authenticate } from '../middleware/auth';
+
+const router = Router();
+
+// Público: suscripción por URL
+router.get('/:token', getUserCalendar);
+
+// Autenticado: generar/regenerar token
+router.post('/token', authenticate, generateCalendarToken);
+
+export default router;

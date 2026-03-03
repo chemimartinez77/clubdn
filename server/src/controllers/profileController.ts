@@ -76,9 +76,21 @@ export const getMyProfile = async (req: Request, res: Response): Promise<void> =
       });
     }
 
+    // Incluir calendarToken del usuario (campo nuevo, puede no existir en el cliente Prisma aún)
+    let calendarToken: string | null = null;
+    try {
+      const userRaw = await (prisma.user as any).findUnique({
+        where: { id: userId },
+        select: { calendarToken: true }
+      });
+      calendarToken = userRaw?.calendarToken ?? null;
+    } catch {
+      // Si el campo no existe aún en la BD (migración pendiente), devolvemos null
+    }
+
     res.status(200).json({
       success: true,
-      data: { profile }
+      data: { profile: { ...profile, calendarToken } }
     });
   } catch (error) {
     console.error('Error al obtener perfil:', error);

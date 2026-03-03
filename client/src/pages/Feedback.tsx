@@ -649,8 +649,8 @@ export default function Feedback() {
                                           <textarea
                                             value={editingCommentText}
                                             onChange={(e) => setEditingCommentText(e.target.value)}
-                                            rows={2}
-                                            className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg text-sm bg-[var(--color-inputBackground)] text-[var(--color-text)] resize-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                                            rows={4}
+                                            className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg text-sm bg-[var(--color-inputBackground)] text-[var(--color-text)] resize-y focus:ring-2 focus:ring-[var(--color-primary)]"
                                           />
                                           <div className="flex gap-2">
                                             <Button

@@ -577,6 +577,45 @@ export default function EventDetail() {
     setIsGameModalOpen(true);
   };
 
+  const handleAddToCalendar = () => {
+    if (!event) return;
+
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const toIcsDate = (d: Date) =>
+      `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+
+    const start = resolveEventStartDate(event.date, event.startHour, event.startMinute) ?? new Date(event.date);
+    const totalMinutes = (event.durationHours ?? 2) * 60 + (event.durationMinutes ?? 0);
+    const end = new Date(start.getTime() + totalMinutes * 60 * 1000);
+
+    const location = [event.location, event.address].filter(Boolean).join(', ');
+    const description = event.description ? event.description.replace(/\n/g, '\\n') : '';
+
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Club Dreadnought//ES',
+      'BEGIN:VEVENT',
+      `UID:${event.id}@clubdreadnought`,
+      `DTSTAMP:${toIcsDate(new Date())}`,
+      `DTSTART:${toIcsDate(start)}`,
+      `DTEND:${toIcsDate(end)}`,
+      `SUMMARY:${event.title}`,
+      location ? `LOCATION:${location}` : '',
+      description ? `DESCRIPTION:${description}` : '',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].filter(Boolean).join('\r\n');
+
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${event.title.replace(/[^a-z0-9]/gi, '_')}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleShareWhatsApp = () => {
     if (!event) return;
 
@@ -797,6 +836,19 @@ export default function EventDetail() {
                       </span>
                     </Button>
                   )}
+
+                  <Button
+                    onClick={handleAddToCalendar}
+                    className="w-full sm:w-auto transition-all duration-300"
+                    title="Añadir al calendario"
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      <span>Añadir al calendario</span>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </span>
+                  </Button>
 
                   <Button
                     onClick={handleShareWhatsApp}

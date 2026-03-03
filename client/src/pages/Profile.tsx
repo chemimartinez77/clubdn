@@ -21,6 +21,7 @@ export default function Profile() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [favoriteGamesInput, setFavoriteGamesInput] = useState('');
+  const [calendarCopied, setCalendarCopied] = useState(false);
 
   // Fetch profile
   const { data: profile, isLoading } = useQuery({
@@ -96,6 +97,23 @@ export default function Profile() {
         fileInputRef.current.value = '';
       }
     }
+  };
+
+  const generateCalendarTokenMutation = useMutation({
+    mutationFn: () => api.post<ApiResponse<{ token: string }>>('/api/calendar/token'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      success('URL de calendario generada');
+    },
+    onError: () => showError('Error al generar la URL del calendario')
+  });
+
+  const handleCopyCalendarUrl = (token: string) => {
+    const url = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/calendar/${token}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCalendarCopied(true);
+      setTimeout(() => setCalendarCopied(false), 2000);
+    });
   };
 
   const handleEdit = () => {
@@ -463,6 +481,51 @@ export default function Profile() {
                   </div>
                 </div>
 
+                {/* Calendario */}
+                <div>
+                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Sincronización de Calendario</h3>
+                  <p className="text-sm text-[var(--color-textSecondary)] mb-3">
+                    Suscríbete a tus partidas desde cualquier app de calendario (Google Calendar, Apple Calendar, Outlook...).
+                    La URL se actualiza automáticamente cuando cambian tus partidas.
+                  </p>
+                  {profile?.calendarToken ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/calendar/${profile.calendarToken}`}
+                          className="flex-1 px-3 py-2 text-xs border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)] truncate"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleCopyCalendarUrl(profile.calendarToken!)}
+                          className="px-3 py-2 text-sm font-medium border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] text-[var(--color-text)] whitespace-nowrap"
+                        >
+                          {calendarCopied ? 'Copiado' : 'Copiar URL'}
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => generateCalendarTokenMutation.mutate()}
+                        disabled={generateCalendarTokenMutation.isPending}
+                        className="text-xs text-[var(--color-textSecondary)] hover:text-[var(--color-text)] underline"
+                      >
+                        Regenerar URL (invalida la anterior)
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => generateCalendarTokenMutation.mutate()}
+                      disabled={generateCalendarTokenMutation.isPending}
+                      className="px-4 py-2 text-sm font-medium border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] text-[var(--color-text)]"
+                    >
+                      {generateCalendarTokenMutation.isPending ? 'Generando...' : 'Generar URL de calendario'}
+                    </button>
+                  )}
+                </div>
+
                 {/* Personalización */}
                 <div>
                   <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Personalización</h3>
@@ -610,6 +673,46 @@ export default function Profile() {
                         selectedColor={profile.noughterColor}
                         onChange={handleNoughterChange}
                       />
+                    </div>
+
+                    <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                      <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Sincronización de Calendario</p>
+                      {profile.calendarToken ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              readOnly
+                              value={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/calendar/${profile.calendarToken}`}
+                              className="flex-1 px-3 py-2 text-xs border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)] truncate"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleCopyCalendarUrl(profile.calendarToken!)}
+                              className="px-3 py-2 text-sm font-medium border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] text-[var(--color-text)] whitespace-nowrap"
+                            >
+                              {calendarCopied ? 'Copiado' : 'Copiar URL'}
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => generateCalendarTokenMutation.mutate()}
+                            disabled={generateCalendarTokenMutation.isPending}
+                            className="text-xs text-[var(--color-textSecondary)] hover:text-[var(--color-text)] underline"
+                          >
+                            Regenerar URL (invalida la anterior)
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => generateCalendarTokenMutation.mutate()}
+                          disabled={generateCalendarTokenMutation.isPending}
+                          className="px-4 py-2 text-sm font-medium border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] text-[var(--color-text)]"
+                        >
+                          {generateCalendarTokenMutation.isPending ? 'Generando...' : 'Generar URL de calendario'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
