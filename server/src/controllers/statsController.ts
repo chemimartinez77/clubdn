@@ -462,6 +462,8 @@ export const getUserEventsAttended = async (req: Request, res: Response): Promis
             date: true,
             startHour: true,
             startMinute: true,
+            durationHours: true,
+            durationMinutes: true,
             location: true,
             status: true,
             game: {
@@ -528,6 +530,8 @@ export const getUserGamesPlayed = async (req: Request, res: Response): Promise<v
             date: true,
             startHour: true,
             startMinute: true,
+            durationHours: true,
+            durationMinutes: true,
             location: true,
             status: true,
             game: {

@@ -52,6 +52,8 @@ export interface EventDetail {
   date: string;
   startHour: number | null;
   startMinute: number | null;
+  durationHours?: number | null;
+  durationMinutes?: number | null;
   location: string;
   status: string;
   // Relación con la tabla Game (URLs actualizadas)

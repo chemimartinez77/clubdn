@@ -39,8 +39,48 @@ export default function UpcomingEventsCard() {
   };
 
   const formatTime = (hour: number | null, minute: number | null) => {
-    if (hour === null || minute === null) return '';
-    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    if (hour === null) return '';
+    const safeMinute = minute ?? 0;
+    return `${hour}:${safeMinute.toString().padStart(2, '0')}`;
+  };
+
+  const getStartTime = (event: EventDetail) => {
+    if (event.startHour !== null) {
+      return { hour: event.startHour, minute: event.startMinute ?? 0 };
+    }
+
+    // Fallback: usar la hora embebida en `date` si no está en campos startHour/startMinute.
+    const parsed = new Date(event.date);
+    const fallbackHour = parsed.getHours();
+    const fallbackMinute = parsed.getMinutes();
+    if (fallbackHour === 0 && fallbackMinute === 0) return null;
+
+    return { hour: fallbackHour, minute: fallbackMinute };
+  };
+
+  const formatDuration = (hours?: number | null, minutes?: number | null) => {
+    const safeHours = hours ?? 0;
+    const safeMinutes = minutes ?? 0;
+    if (safeHours <= 0 && safeMinutes <= 0) return '';
+    if (safeHours > 0 && safeMinutes > 0) return ` (${safeHours}h ${safeMinutes}min)`;
+    if (safeHours > 0) return ` (${safeHours}h)`;
+    return ` (${safeMinutes}min)`;
+  };
+
+  const formatTimeWithDuration = (event: EventDetail) => {
+    const start = getStartTime(event);
+    if (!start) return '';
+
+    const startText = formatTime(start.hour, start.minute);
+    const durationMins = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
+    if (durationMins <= 0) return startText;
+
+    const startDate = new Date(event.date);
+    startDate.setHours(start.hour, start.minute, 0, 0);
+    const endDate = new Date(startDate.getTime() + durationMins * 60 * 1000);
+    const endText = formatTime(endDate.getHours(), endDate.getMinutes());
+
+    return `${startText}-${endText}${formatDuration(event.durationHours, event.durationMinutes)}`;
   };
 
   return (
@@ -55,37 +95,41 @@ export default function UpcomingEventsCard() {
           </div>
         ) : upcomingEvents && upcomingEvents.length > 0 ? (
           <div className="space-y-2">
-            {upcomingEvents.slice(0, 4).map((event) => (
-              <div
-                key={event.id}
-                className="p-3 border border-[var(--color-cardBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer hover:shadow-md"
-                onClick={() => navigate(`/events/${event.id}`)}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="shrink-0">
-                    <GameImage
-                      src={event.game?.image || event.game?.thumbnail || event.gameImage || null}
-                      alt={event.gameName || event.title}
-                      size="sm"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h5 className="font-semibold text-[var(--color-text)] truncate">{event.title}</h5>
-                    <div className="mt-1">
-                      <p className="text-sm text-[var(--color-textSecondary)]">{formatDate(event.date)}</p>
-                      {event.startHour !== null && (
-                        <p className="text-sm text-[var(--color-textSecondary)]">
-                          {formatTime(event.startHour, event.startMinute)}
-                        </p>
-                      )}
+            {upcomingEvents.slice(0, 4).map((event) => {
+              const scheduleText = formatTimeWithDuration(event);
+
+              return (
+                <div
+                  key={event.id}
+                  className="p-3 border border-[var(--color-cardBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer hover:shadow-md"
+                  onClick={() => navigate(`/events/${event.id}`)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="shrink-0">
+                      <GameImage
+                        src={event.game?.image || event.game?.thumbnail || event.gameImage || null}
+                        alt={event.gameName || event.title}
+                        size="sm"
+                      />
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <h5 className="font-semibold text-[var(--color-text)] truncate">{event.title}</h5>
+                      <div className="mt-1">
+                        <p className="text-sm text-[var(--color-textSecondary)]">{formatDate(event.date)}</p>
+                        {scheduleText && (
+                          <p className="text-sm text-[var(--color-textSecondary)]">
+                            {scheduleText}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusClass(event.status)}`}>
+                      {statusLabel(event.status)}
+                    </span>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusClass(event.status)}`}>
-                    {statusLabel(event.status)}
-                  </span>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p className="text-center text-[var(--color-textSecondary)] py-4">No tienes próximos eventos programados</p>
