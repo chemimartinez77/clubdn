@@ -313,6 +313,7 @@ export default function Feedback() {
     },
     onSuccess: () => {
       refetchComments();
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
       setCommentText('');
       setCommentImages([]);
       setCommentImagePreviews([]);

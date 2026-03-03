@@ -340,7 +340,7 @@ export default function Events() {
                   onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
-                  <option value="RECOMMENDED">Sugerido (desde hoy)</option>
+                  <option value="RECOMMENDED">Desde hoy</option>
                   <option value="">Todos los estados</option>
                   <option value="SCHEDULED">Programados</option>
                   <option value="ONGOING">En curso</option>

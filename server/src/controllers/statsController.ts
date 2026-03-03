@@ -12,8 +12,8 @@ import { checkAndUnlockBadges } from './badgeController';
 async function completePassedEvents(): Promise<void> {
   const now = new Date();
 
-  // Buscar eventos pasados que aún no están COMPLETED ni CANCELLED
-  const passedEvents = await prisma.event.findMany({
+  // Buscar eventos candidatos (fecha pasada) que aún no están COMPLETED ni CANCELLED
+  const candidateEvents = await prisma.event.findMany({
     where: {
       date: { lt: now },
       status: { notIn: [EventStatus.COMPLETED, EventStatus.CANCELLED] }
@@ -24,6 +24,16 @@ async function completePassedEvents(): Promise<void> {
         select: { userId: true }
       }
     }
+  });
+
+  // Filtrar solo los que ya han terminado según su hora fin real
+  const passedEvents = candidateEvents.filter(event => {
+    if (event.startHour == null) return true; // sin hora definida: basar solo en fecha
+    const endDate = new Date(event.date);
+    endDate.setHours(event.startHour, event.startMinute ?? 0, 0, 0);
+    const durationMinutes = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
+    endDate.setMinutes(endDate.getMinutes() + durationMinutes);
+    return endDate <= now;
   });
 
   if (passedEvents.length === 0) return;
