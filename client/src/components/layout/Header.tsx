@@ -168,9 +168,6 @@ export default function Header() {
               Feedback
             </Link>
 
-            {/* Notification Bell */}
-            <NotificationBell />
-
             {/* Menú Administración - Solo admin */}
             {isAdmin && (
               <div className="relative">
@@ -330,8 +327,8 @@ export default function Header() {
             </div>
           </nav>
 
-          {/* Mobile notification bell and menu button */}
-          <div className="md:hidden flex items-center gap-2">
+          {/* Right side: Bell (always once) + Mobile menu button */}
+          <div className="flex items-center gap-2">
             <NotificationBell />
             <button
               id="mobile-menu-button"
@@ -339,7 +336,7 @@ export default function Header() {
                 setIsMenuOpen(!isMenuOpen);
                 setIsMobileGamesOpen(false);
               }}
-              className="p-2 rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer"
+              className="md:hidden p-2 rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer"
             >
               <svg
                 className="w-6 h-6"
