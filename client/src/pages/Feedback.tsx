@@ -198,6 +198,7 @@ export default function Feedback() {
   const [commentImages, setCommentImages] = useState<File[]>([]);
   const [commentImagePreviews, setCommentImagePreviews] = useState<string[]>([]);
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const screenshotInputRef = useRef<HTMLInputElement>(null);
 
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] = useState('');
@@ -254,6 +255,7 @@ export default function Feedback() {
       setPlatform('MOVIL');
       setMobileOs('ANDROID');
       setScreenshot(null);
+      if (screenshotInputRef.current) screenshotInputRef.current.value = '';
     },
     onError: (err: any) => {
       showError(err.response?.data?.message || 'Error al enviar reporte');
@@ -457,6 +459,7 @@ export default function Feedback() {
             <div>
               <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Captura (opcional)</label>
               <input
+                ref={screenshotInputRef}
                 type="file"
                 accept="image/png,image/jpeg,image/webp,image/gif"
                 onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
