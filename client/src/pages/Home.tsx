@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/layout/Layout';
 import WelcomeCard from '../components/dashboard/WelcomeCard';
 import StatsCard from '../components/dashboard/StatsCard';
+import UpcomingEventsCard from '../components/dashboard/UpcomingEventsCard';
 import QuickActionsCard from '../components/dashboard/QuickActionsCard';
 import AppTour from '../components/tour/AppTour';
 import { useTour } from '../hooks/useTour';
@@ -23,8 +24,9 @@ export default function Home() {
 
         {/* Main Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Stats Card - Spans 2 columns */}
-          <div className="lg:col-span-2">
+          {/* Main Column - Upcoming + Stats */}
+          <div className="lg:col-span-2 space-y-6">
+            <UpcomingEventsCard />
             <StatsCard />
           </div>
 
