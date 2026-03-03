@@ -515,7 +515,7 @@ export default function Financiero() {
 
         {/* Modal Añadir Movimiento */}
         {showMovementModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-[var(--color-cardBackground)] rounded-lg shadow-xl max-w-md w-full p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-[var(--color-text)]">Añadir Movimiento</h2>
@@ -611,7 +611,7 @@ export default function Financiero() {
 
         {/* Modal Nueva Categoría */}
         {showCategoryModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-[var(--color-cardBackground)] rounded-lg shadow-xl max-w-md w-full p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-[var(--color-text)]">Nueva Categoría</h2>
@@ -706,4 +706,3 @@ export default function Financiero() {
     </Layout>
   );
 }
-

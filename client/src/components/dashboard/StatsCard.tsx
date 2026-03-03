@@ -67,14 +67,14 @@ export default function StatsCard() {
     enabled: openModal === 'gamesPlayed'
   });
 
-  // Obtener próximos eventos (solo cuando se abre el modal)
+  // Obtener próximos eventos (se muestran también en la home)
   const { data: upcomingEvents } = useQuery({
     queryKey: ['upcomingEvents'],
     queryFn: async () => {
       const response = await api.get<{ success: boolean; data: EventDetail[] }>('/api/stats/user/upcoming-events');
       return response.data.data;
     },
-    enabled: openModal === 'upcomingEvents'
+    enabled: true
   });
 
   // Obtener partidas jugadas para el modal de horario favorito (solo cuando se abre el modal)
@@ -97,6 +97,22 @@ export default function StatsCard() {
   const formatTime = (hour: number | null, minute: number | null) => {
     if (hour === null || minute === null) return '';
     return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  };
+
+  const statusLabel = (status: string) => {
+    if (status === 'SCHEDULED') return 'Programado';
+    if (status === 'ONGOING') return 'En curso';
+    if (status === 'COMPLETED') return 'Completado';
+    if (status === 'CANCELLED') return 'Cancelado';
+    return status;
+  };
+
+  const statusClass = (status: string) => {
+    if (status === 'SCHEDULED') return 'bg-blue-100 text-blue-700';
+    if (status === 'ONGOING') return 'bg-amber-100 text-amber-700';
+    if (status === 'COMPLETED') return 'bg-green-100 text-green-700';
+    if (status === 'CANCELLED') return 'bg-red-100 text-red-700';
+    return 'bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)]';
   };
 
   // Estadísticas básicas en tarjetas
@@ -212,6 +228,48 @@ export default function StatsCard() {
               );
             })}
           </div>
+
+          {/* Próximas partidas y eventos del miembro */}
+          {upcomingEvents && upcomingEvents.length > 0 && (
+            <div>
+              <h4 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-3">
+                Tus próximas partidas y eventos
+              </h4>
+              <div className="space-y-2">
+                {upcomingEvents.slice(0, 4).map((event) => (
+                  <div
+                    key={event.id}
+                    className="p-3 border border-[var(--color-cardBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer hover:shadow-md"
+                    onClick={() => navigate(`/events/${event.id}`)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="shrink-0">
+                        <GameImage
+                          src={event.game?.image || event.game?.thumbnail || event.gameImage || null}
+                          alt={event.gameName || event.title}
+                          size="sm"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h5 className="font-semibold text-[var(--color-text)] truncate">{event.title}</h5>
+                        <div className="mt-1">
+                          <p className="text-sm text-[var(--color-textSecondary)]">{formatDate(event.date)}</p>
+                          {event.startHour !== null && (
+                            <p className="text-sm text-[var(--color-textSecondary)]">
+                              {formatTime(event.startHour, event.startMinute)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusClass(event.status)}`}>
+                        {statusLabel(event.status)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Juegos más jugados por el usuario */}
           {userStats && userStats.topGames.length > 0 && (
@@ -587,5 +645,4 @@ function TimeRangeModalContent({ games, formatDate, formatTime, onEventClick }: 
     </div>
   );
 }
-
 

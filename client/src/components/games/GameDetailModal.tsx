@@ -26,7 +26,7 @@ export default function GameDetailModal({ gameId, isOpen, onClose }: GameDetailM
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-[var(--color-cardBackground)] rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col my-8">
         {/* Header */}
         <div className="p-6 border-b border-[var(--color-cardBorder)] flex items-start justify-between">
@@ -300,4 +300,3 @@ export default function GameDetailModal({ gameId, isOpen, onClose }: GameDetailM
     </div>
   );
 }
-

@@ -484,7 +484,7 @@ function RivalDetailSheet({
   if (!state) return null;
   return (
     <div className="fixed inset-0 z-50" aria-modal="true" role="dialog">
-      <div className="absolute inset-0 bg-black/50 cursor-pointer" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer" onClick={onClose} />
       <div className="azul-sheet-enter absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white shadow-2xl p-4 pb-10 max-h-[80vh] overflow-y-auto">
         <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
         <div className="flex items-center justify-between mb-4">

@@ -48,7 +48,7 @@ export default function NoughterColorSelector({ selectedColor, onChange }: Nough
                 `}
               >
                 {/* Preview */}
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 relative">
                   {option.preview === 'auto' ? (
                     <div className="w-10 h-10 rounded-full border-2 border-[var(--color-inputBorder)] flex items-center justify-center bg-gradient-to-br from-purple-400 via-blue-400 to-green-400">
                       <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -61,6 +61,14 @@ export default function NoughterColorSelector({ selectedColor, onChange }: Nough
                       style={{ backgroundColor: option.preview }}
                     />
                   )}
+
+                  {isSelected && (
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[var(--color-primary)] text-white shadow-sm flex items-center justify-center">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
 
                 {/* Label */}
@@ -70,14 +78,6 @@ export default function NoughterColorSelector({ selectedColor, onChange }: Nough
                   </p>
                 </div>
 
-                {/* Checkmark */}
-                {isSelected && (
-                  <div className="flex-shrink-0 ml-1">
-                    <svg className="w-5 h-5 text-[var(--color-primary)]" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                )}
               </button>
             );
           })}

@@ -69,7 +69,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-[var(--color-cardBackground)] rounded-lg max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-[var(--color-cardBorder)]">
@@ -239,4 +239,3 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
     </div>
   );
 }
-
