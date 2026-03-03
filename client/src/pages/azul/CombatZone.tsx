@@ -18,7 +18,7 @@ interface BoardGame {
 
 const COMBAT_ZONE_GAMES = [
   { bggId: '230802', name: 'Azul',    path: '/azul/combatzone', solo: false },
-  { bggId: '175494', name: 'Viernes', path: '/viernes',          solo: true  },
+  { bggId: '43570',  name: 'Viernes', path: '/viernes',          solo: true  },
 ] as const;
 
 function useGameInfo(bggId: string) {
@@ -36,7 +36,7 @@ function useGameInfo(bggId: string) {
 
 const GAME_FALLBACK_EMOJI: Record<string, string> = {
   '230802': '🟦', // Azul
-  '175494': '🏝️', // Viernes
+  '43570':  '🏝️', // Viernes
 };
 
 function GameCard({ bggId, name, solo, onClick }: {
