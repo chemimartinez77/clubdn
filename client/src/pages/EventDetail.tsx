@@ -521,9 +521,9 @@ export default function EventDetail() {
     event.durationHours,
     event.durationMinutes
   );
-  const emojiCalendar = String.fromCodePoint(0x1F4C5);
-  const emojiClock = String.fromCodePoint(0x1F550);
-  const emojiLocation = String.fromCodePoint(0x1F4CD);
+  const emojiCalendar = '📅';
+  const emojiClock = '🕙';
+  const emojiLocation = '📍';
 
   const handleCreateInvitation = () => {
     if (!guestFirstName.trim()) {
