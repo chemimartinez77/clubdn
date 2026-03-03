@@ -4,6 +4,72 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-03-03
+
+### ✨ Mejoras
+
+#### Feedback: comentarios abiertos a todos los usuarios con aviso de moderación
+- Cualquier usuario autenticado puede ahora escribir comentarios en cualquier reporte (antes solo el autor del reporte y los admins podían hacerlo)
+- Aparece un aviso bajo el textarea: *"Los comentarios están sujetos a moderación. Puedes editar o eliminar los tuyos propios."*
+
+**Archivos modificados:**
+- `server/src/controllers/reportController.ts` - eliminada comprobación `if (!isAdmin && !isCreator)` en `createReportComment`
+- `client/src/pages/Feedback.tsx` - condición de visibilidad del input cambiada de `(isAdmin || esAutor)` a `!!user`
+
+#### Feedback: edición de comentarios propios con historial
+- Cada usuario puede editar sus propios comentarios con un editor inline (textarea con botones Guardar/Cancelar)
+- Los comentarios editados muestran el indicador `(editado)` junto al timestamp
+- El contenido previo se guarda íntegramente en la tabla `ReportCommentHistory` para auditoría y moderación (no visible en la UI)
+- Nueva ruta `PATCH /api/reports/:id/comments/:commentId` para actualizar un comentario
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` - campo `editedAt DateTime?` en `ReportComment` + nuevo modelo `ReportCommentHistory`
+- `server/src/controllers/reportController.ts` - nueva función `updateReportComment` con guardado atómico del historial
+- `server/src/routes/reportRoutes.ts` - nueva ruta `PATCH /:id/comments/:commentId`
+- `client/src/pages/Feedback.tsx` - estado `editingCommentId/editingCommentText`, mutation `updateCommentMutation`, UI inline y badge `(editado)`
+
+#### Feedback: fecha y hora en reportes
+- El timestamp de cada reporte muestra ahora tanto la fecha como la hora (ej. `01/03/2026, 18:45`) en lugar de solo la fecha
+
+**Archivos modificados:**
+- `client/src/pages/Feedback.tsx` - `toLocaleDateString` → `toLocaleString` con opciones de hora
+
+#### Feedback: contador de comentarios en tiempo real
+- Al añadir un comentario, el contador `💬 Comentarios (N)` de la tarjeta se actualiza inmediatamente sin necesidad de recargar la página
+
+**Archivos modificados:**
+- `client/src/pages/Feedback.tsx` - `queryClient.invalidateQueries({ queryKey: ['reports'] })` en `createCommentMutation.onSuccess`
+
+#### Feedback: limpiar selector de archivo al enviar
+- Tras enviar un nuevo reporte con captura de pantalla adjunta, el campo de archivo se vacía automáticamente
+
+**Archivos modificados:**
+- `client/src/pages/Feedback.tsx` - `screenshotInputRef` + limpieza en `onSuccess`
+
+#### Notificaciones: badge hasta 99+
+- El globo rojo de notificaciones no leídas muestra el número exacto hasta 99; a partir de 100 muestra `99+` (antes el umbral era 9+)
+
+**Archivos modificados:**
+- `client/src/components/notifications/NotificationBell.tsx` - umbral cambiado de `> 9` a `> 99`
+
+### 🐛 Corrección de errores
+
+#### Notificaciones: doble llamada a `/api/notifications/unread-count`
+- **Problema:** `NotificationBell` estaba montado dos veces en el Header (uno para escritorio y otro para móvil), provocando dos peticiones simultáneas al intervalo de polling cada 30 segundos
+- **Solución:** Eliminadas las dos instancias y sustituidas por una sola en un contenedor compartido; el botón hamburguesa pasa a tener `md:hidden`
+
+**Archivos modificados:**
+- `client/src/components/layout/Header.tsx` - instancia única de `<NotificationBell />`
+
+#### Estadísticas: partidas jugadas contaban desde medianoche en lugar de la hora fin
+- **Problema:** `completePassedEvents()` comparaba solo la fecha del evento (medianoche) con el momento actual, de modo que los eventos se marcaban como completados nada más pasar la medianoche aunque la partida no hubiese terminado
+- **Solución:** Se calcula la hora fin real sumando `startHour + startMinute + durationHours + durationMinutes`; solo entonces se marca el evento como completado
+
+**Archivos modificados:**
+- `server/src/controllers/statsController.ts` - cálculo de `endDate` con hora de inicio y duración
+
+---
+
 ## 2026-02-28
 
 ### ✨ Mejoras
@@ -371,4 +437,4 @@ Incluye:
 
 ---
 
-**Última actualización:** 28 de Febrero de 2026
+**Última actualización:** 3 de Marzo de 2026
