@@ -34,10 +34,15 @@ function useGameInfo(bggId: string) {
 
 // ─── Card de juego ─────────────────────────────────────────────────────────────
 
-function GameCard({ bggId, name, isSelected, onClick }: {
+const GAME_FALLBACK_EMOJI: Record<string, string> = {
+  '230802': '🟦', // Azul
+  '175494': '🏝️', // Viernes
+};
+
+function GameCard({ bggId, name, solo, onClick }: {
   bggId: string;
   name: string;
-  isSelected: boolean;
+  solo: boolean;
   onClick: () => void;
 }) {
   const { data } = useGameInfo(bggId);
@@ -46,11 +51,7 @@ function GameCard({ bggId, name, isSelected, onClick }: {
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-col rounded-xl overflow-hidden border-2 transition-all hover:shadow-md active:scale-[0.98] ${
-        isSelected
-          ? 'border-purple-500 shadow-md shadow-purple-100'
-          : 'border-gray-200 hover:border-purple-300'
-      }`}
+      className="relative flex flex-col rounded-xl overflow-hidden border-2 border-gray-200 transition-all hover:border-purple-400 hover:shadow-md active:scale-[0.98] group"
     >
       {/* Imagen cuadrada */}
       <div className="aspect-square bg-gray-100 w-full overflow-hidden">
@@ -58,24 +59,22 @@ function GameCard({ bggId, name, isSelected, onClick }: {
           <img
             src={imgSrc}
             alt={name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-300 text-4xl">
-            ?
+          <div className="w-full h-full flex items-center justify-center text-5xl bg-gray-50">
+            {GAME_FALLBACK_EMOJI[bggId] ?? '🎲'}
           </div>
         )}
       </div>
       {/* Nombre */}
-      <div className={`px-2 py-1.5 text-xs font-semibold text-center ${
-        isSelected ? 'bg-purple-600 text-white' : 'bg-white text-gray-700'
-      }`}>
+      <div className="px-2 py-1.5 text-xs font-semibold text-center bg-white text-gray-700 group-hover:bg-purple-600 group-hover:text-white transition-colors">
         {name}
       </div>
-      {/* Badge seleccionado */}
-      {isSelected && (
-        <span className="absolute top-1.5 right-1.5 rounded-full bg-purple-600 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center">
-          ✓
+      {/* Badge solitario */}
+      {solo && (
+        <span className="absolute top-1.5 left-1.5 rounded-full bg-gray-700/70 text-white text-[9px] font-bold px-1.5 py-0.5">
+          Solo
         </span>
       )}
     </button>
@@ -205,7 +204,7 @@ export default function CombatZone() {
                 <GameCard
                   bggId={g.bggId}
                   name={g.name}
-                  isSelected={true}
+                  solo={g.solo}
                   onClick={() => navigate(g.path)}
                 />
               </div>
