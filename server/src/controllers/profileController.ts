@@ -54,7 +54,7 @@ export const getMyProfile = async (req: Request, res: Response): Promise<void> =
           userId,
           favoriteGames: [],
           notifications: true,
-          emailUpdates: true,
+          emailUpdates: false,
           notifyNewEvents: true,
           notifyEventChanges: true,
           notifyEventCancelled: true,
@@ -173,7 +173,6 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
       discord,
       telegram,
       notifications,
-      emailUpdates,
       notifyNewEvents,
       notifyEventChanges,
       notifyEventCancelled,
@@ -201,7 +200,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           discord,
           telegram,
           notifications: notifications ?? true,
-          emailUpdates: emailUpdates ?? true,
+          emailUpdates: false,
           notifyNewEvents: notifyNewEvents ?? true,
           notifyEventChanges: notifyEventChanges ?? true,
           notifyEventCancelled: notifyEventCancelled ?? true,
@@ -237,7 +236,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           ...(discord !== undefined && { discord }),
           ...(telegram !== undefined && { telegram }),
           ...(notifications !== undefined && { notifications }),
-          ...(emailUpdates !== undefined && { emailUpdates }),
+          emailUpdates: false,
           ...(notifyNewEvents !== undefined && { notifyNewEvents }),
           ...(notifyEventChanges !== undefined && { notifyEventChanges }),
           ...(notifyEventCancelled !== undefined && { notifyEventCancelled }),
@@ -367,7 +366,7 @@ export const uploadAvatar = async (req: Request, res: Response): Promise<void> =
         avatar: uploadResult.secure_url,
         favoriteGames: [],
         notifications: true,
-        emailUpdates: true
+        emailUpdates: false
       },
       update: {
         avatar: uploadResult.secure_url
@@ -434,7 +433,7 @@ export const dismissTour = async (req: Request, res: Response): Promise<void> =>
         userId,
         [field]: true,
         favoriteGames: [],
-        emailUpdates: true
+        emailUpdates: false
       }
     });
 

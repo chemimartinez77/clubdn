@@ -111,7 +111,7 @@ export default function Profile() {
         discord: profile.discord || '',
         telegram: profile.telegram || '',
         notifications: profile.notifications,
-        emailUpdates: profile.emailUpdates,
+        emailUpdates: false,
         notifyNewEvents: profile.notifyNewEvents,
         notifyEventChanges: profile.notifyEventChanges,
         notifyEventCancelled: profile.notifyEventCancelled,
@@ -386,11 +386,11 @@ export default function Profile() {
                         <label className="flex items-center gap-3">
                           <input
                             type="checkbox"
-                            checked={formData.emailUpdates ?? true}
-                            onChange={(e) => setFormData({ ...formData, emailUpdates: e.target.checked })}
-                            className="w-5 h-5 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)]"
+                            checked={false}
+                            disabled
+                            className="w-5 h-5 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] opacity-60 cursor-not-allowed"
                           />
-                          <span className="text-sm text-[var(--color-textSecondary)]">Recibir actualizaciones por email</span>
+                          <span className="text-sm text-[var(--color-textSecondary)] opacity-60">Recibir actualizaciones por email</span>
                         </label>
                       </div>
                     </div>

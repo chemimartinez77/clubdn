@@ -889,11 +889,10 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
       // Si requiere aprobación, notificar al organizador
       if (event.requiresApproval) {
         const { notifyRegistrationPending } = await import('../services/notificationService');
-        const { sendRegistrationPendingEmail } = await import('../services/emailService');
 
         const organizer = await prisma.user.findUnique({
           where: { id: event.createdBy },
-          select: { name: true, email: true }
+          select: { name: true }
         });
 
         const user = await prisma.user.findUnique({
@@ -903,7 +902,6 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
 
         if (organizer && user) {
           await notifyRegistrationPending(id, event.title, event.createdBy, user.name);
-          await sendRegistrationPendingEmail(organizer.email, organizer.name, event.title, user.name, id);
         }
 
         res.status(201).json({
@@ -1691,15 +1689,8 @@ export const approveRegistration = async (req: Request, res: Response): Promise<
 
     // Notificar usuario
     const { notifyRegistrationApproved } = await import('../services/notificationService');
-    const { sendRegistrationApprovedEmail } = await import('../services/emailService');
 
     await notifyRegistrationApproved(registration.userId, id, registration.event.title);
-    await sendRegistrationApprovedEmail(
-      registration.user.email,
-      registration.user.name,
-      registration.event.title,
-      id
-    );
 
     res.status(200).json({
       success: true,

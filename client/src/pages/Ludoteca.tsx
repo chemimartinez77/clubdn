@@ -84,6 +84,7 @@ export default function Ludoteca() {
   const [filters, setFilters] = useState<Filters | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedCondition, setSelectedCondition] = useState<string>('all');
   const [selectedOwner, setSelectedOwner] = useState<string>('all');
@@ -92,6 +93,39 @@ export default function Ludoteca() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileSearchActive, setMobileSearchActive] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const handleMediaQueryChange = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+
+    setIsMobile(mediaQuery.matches);
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleMediaQueryChange);
+      return () => mediaQuery.removeEventListener('change', handleMediaQueryChange);
+    }
+
+    mediaQuery.addListener(handleMediaQueryChange);
+    return () => mediaQuery.removeListener(handleMediaQueryChange);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileSearchActive(false);
+      setMobileFiltersOpen(false);
+    }
+  }, [isMobile]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery.trim());
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
 
   const loadStats = useCallback(async () => {
     try {
@@ -142,7 +176,7 @@ export default function Ludoteca() {
         limit: itemsPerPage === -1 ? '9999' : itemsPerPage.toString()
       });
 
-      if (searchQuery) params.append('search', searchQuery);
+      if (debouncedSearchQuery) params.append('search', debouncedSearchQuery);
       if (selectedType !== 'all') params.append('gameType', selectedType);
       if (selectedCondition !== 'all') params.append('condition', selectedCondition);
       if (selectedOwner !== 'all') params.append('ownerEmail', selectedOwner);
@@ -155,7 +189,12 @@ export default function Ludoteca() {
 
       if (response.ok) {
         const data = await response.json();
-        setItems(data.data.items);
+        const nextItems = data.data.items as LibraryItem[];
+        setItems(prev =>
+          isMobile && currentPage > 1
+            ? [...prev, ...nextItems]
+            : nextItems
+        );
         setTotalPages(data.data.pagination.totalPages);
         setTotalItems(data.data.pagination.total);
       } else {
@@ -169,7 +208,7 @@ export default function Ludoteca() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchQuery, selectedType, selectedCondition, selectedOwner, showError]);
+  }, [currentPage, itemsPerPage, debouncedSearchQuery, selectedType, selectedCondition, selectedOwner, showError, isMobile]);
 
   // Cargar estadísticas y filtros
   useEffect(() => {
@@ -187,6 +226,13 @@ export default function Ludoteca() {
     setCurrentPage(1);
   };
 
+  const resetMobileFilters = () => {
+    setSelectedType('all');
+    setSelectedCondition('all');
+    setSelectedOwner('all');
+    setCurrentPage(1);
+  };
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto space-y-6">
@@ -197,9 +243,57 @@ export default function Ludoteca() {
             <p className="text-[var(--color-textSecondary)] mt-1">Catálogo de juegos disponibles en el club</p>
           </div>
         </div>
-
+        {/* Buscador móvil sticky */}
+        <div className="md:hidden sticky top-0 z-20 -mx-4 px-4 py-3 bg-[var(--color-background)] border-b border-[var(--color-cardBorder)]">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onFocus={() => setMobileSearchActive(true)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Buscar juegos..."
+                className="w-full px-4 py-2 pl-10 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+              />
+              <svg
+                className="w-5 h-5 text-[var(--color-textSecondary)] absolute left-3 top-1/2 transform -translate-y-1/2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMobileFiltersOpen(true)}
+              className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg text-sm font-medium text-[var(--color-text)]"
+            >
+              Filtros
+            </button>
+            {mobileSearchActive && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileSearchActive(false);
+                  setSearchQuery('');
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-2 text-sm text-[var(--color-textSecondary)]"
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-[var(--color-textSecondary)] mt-2">
+            {loading && items.length === 0 ? 'Buscando...' : `${totalItems} resultados`}
+          </p>
+        </div>
         {/* Estadísticas */}
-        {stats && (
+        {stats && (!isMobile || !mobileSearchActive) && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-6">
@@ -266,7 +360,7 @@ export default function Ludoteca() {
         )}
 
         {/* Filtros y búsqueda */}
-        <Card>
+        <Card className="hidden md:block">
           <CardContent className="p-6">
             <form onSubmit={handleSearch} className="space-y-4">
               <div className="flex flex-col md:flex-row gap-4">
@@ -275,7 +369,7 @@ export default function Ludoteca() {
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                     placeholder="Buscar por nombre, descripción o ID..."
                     className="w-full px-4 py-2 pl-10 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   />
@@ -322,7 +416,7 @@ export default function Ludoteca() {
                   <option value="all">Todos los propietarios</option>
                   {filters?.owners.map(owner => (
                     <option key={owner} value={owner}>
-                      🏛️ {getOwnerDisplayName(owner === 'club' ? null : owner)}
+                      {getOwnerDisplayName(owner === 'club' ? null : owner)}
                     </option>
                   ))}
                 </select>
@@ -356,9 +450,80 @@ export default function Ludoteca() {
             </form>
           </CardContent>
         </Card>
+        {/* Sheet de filtros móvil */}
+        {mobileFiltersOpen && (
+          <div className="md:hidden fixed inset-0 z-40">
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setMobileFiltersOpen(false)}
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-[var(--color-cardBackground)] rounded-t-2xl border-t border-[var(--color-cardBorder)] p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold text-[var(--color-text)]">Filtros</h3>
+                <button
+                  type="button"
+                  onClick={() => setMobileFiltersOpen(false)}
+                  className="text-sm text-[var(--color-textSecondary)]"
+                >
+                  Cerrar
+                </button>
+              </div>
+
+              <select
+                value={selectedType}
+                onChange={(e) => { setSelectedType(e.target.value); setCurrentPage(1); }}
+                className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+              >
+                <option value="all">Todos los tipos</option>
+                {filters?.gameTypes.map(type => (
+                  <option key={type} value={type}>{gameTypeIcons[type]} {gameTypeLabels[type]}</option>
+                ))}
+              </select>
+
+              <select
+                value={selectedCondition}
+                onChange={(e) => { setSelectedCondition(e.target.value); setCurrentPage(1); }}
+                className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+              >
+                <option value="all">Todas las condiciones</option>
+                {filters?.conditions.map(condition => (
+                  <option key={condition} value={condition}>{conditionLabels[condition]}</option>
+                ))}
+              </select>
+
+              <select
+                value={selectedOwner}
+                onChange={(e) => { setSelectedOwner(e.target.value); setCurrentPage(1); }}
+                className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+              >
+                <option value="all">Todos los propietarios</option>
+                {filters?.owners.map(owner => (
+                  <option key={owner} value={owner}>{getOwnerDisplayName(owner === 'club' ? null : owner)}</option>
+                ))}
+              </select>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={resetMobileFilters}
+                  className="flex-1 px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg text-sm text-[var(--color-text)]"
+                >
+                  Limpiar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileFiltersOpen(false)}
+                  className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[var(--color-primary)]"
+                >
+                  Aplicar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Lista de juegos */}
-        {loading ? (
+        {loading && items.length === 0 ? (
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]"></div>
           </div>
@@ -446,7 +611,7 @@ export default function Ludoteca() {
 
             {/* Paginación */}
             {totalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-6">
+              <div className="hidden md:flex justify-center gap-2 mt-6">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
@@ -466,11 +631,23 @@ export default function Ludoteca() {
                 </button>
               </div>
             )}
+
+            {isMobile && currentPage < totalPages && (
+              <div className="flex justify-center mt-6">
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={loading}
+                  className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Cargando...' : 'Cargar más'}
+                </button>
+              </div>
+            )}
           </>
         )}
 
         {/* Sección informativa */}
-        <Card>
+        <Card className={isMobile && mobileSearchActive ? 'hidden' : ''}>
           <CardContent className="p-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
@@ -502,4 +679,3 @@ export default function Ludoteca() {
     </Layout>
   );
 }
-
