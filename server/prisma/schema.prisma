@@ -117,6 +117,7 @@ model User {
   financialMovements FinancialMovement[] @relation("FinancialMovements")
   azulGamesAsPlayer1 AzulGame[]          @relation("AzulGamesAsPlayer1")
   azulGamesAsPlayer2 AzulGame[]          @relation("AzulGamesAsPlayer2")
+  viernesGames       ViernesGame[]       @relation("ViernesGamesAsPlayer")
 
   @@index([email])
   @@index([status])
@@ -856,6 +857,30 @@ model AzulGame {
 
   @@index([player1Id])
   @@index([player2Id])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ==================== JUEGO VIERNES ====================
+
+enum ViernesGameStatus {
+  ACTIVE    // Partida en curso (solitario: activa desde el momento de creación)
+  FINISHED  // Partida terminada
+}
+
+// Partida del juego solitario Viernes (Friday/Freitag de Friedemann Friese)
+model ViernesGame {
+  id         String             @id @default(cuid())
+  playerId   String
+  player     User               @relation("ViernesGamesAsPlayer", fields: [playerId], references: [id])
+  gameState  Json               // ViernesGameState completo
+  difficulty Int                // 1-4 (nivel de dificultad)
+  status     ViernesGameStatus  @default(ACTIVE)
+  won        Boolean?           // null hasta terminar
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@index([playerId])
   @@index([status])
   @@index([createdAt])
 }

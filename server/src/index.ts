@@ -21,6 +21,7 @@ import badgeRoutes from './routes/badgeRoutes';
 import reportRoutes from './routes/reportRoutes';
 import financialRoutes from './routes/financial';
 import azulRoutes from './routes/azulRoutes';
+import viernesRoutes from './routes/viernesRoutes';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -90,6 +91,7 @@ app.use('/api/badges', badgeRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/financial', financialRoutes);
 app.use('/api/azul', azulRoutes);
+app.use('/api/viernes', viernesRoutes);
 
 // Ruta 404
 app.use((_req, res) => {

@@ -29,6 +29,8 @@ import AdminRoute from './components/routes/AdminRoute';
 import AzulLocal from './pages/azul/AzulLocal';
 import CombatZone from './pages/azul/CombatZone';
 import AzulGame from './pages/azul/AzulGame';
+import ViernesHub from './pages/viernes/ViernesHub';
+import ViernesGame from './pages/viernes/ViernesGame';
 
 // Componente para rutas protegidas
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -190,6 +192,24 @@ function App() {
             element={
               <CombatZoneRoute>
                 <AzulGame />
+              </CombatZoneRoute>
+            }
+          />
+
+          {/* Dreadnought Combat Zone — Viernes (solitario) */}
+          <Route
+            path="/viernes"
+            element={
+              <CombatZoneRoute>
+                <ViernesHub />
+              </CombatZoneRoute>
+            }
+          />
+          <Route
+            path="/viernes/:id"
+            element={
+              <CombatZoneRoute>
+                <ViernesGame />
               </CombatZoneRoute>
             }
           />

@@ -17,7 +17,8 @@ interface BoardGame {
 }
 
 const COMBAT_ZONE_GAMES = [
-  { bggId: '230802', name: 'Azul', path: '/azul/combatzone' },
+  { bggId: '230802', name: 'Azul',    path: '/azul/combatzone', solo: false },
+  { bggId: '175494', name: 'Viernes', path: '/viernes',          solo: true  },
 ] as const;
 
 function useGameInfo(bggId: string) {
@@ -205,7 +206,7 @@ export default function CombatZone() {
                   bggId={g.bggId}
                   name={g.name}
                   isSelected={true}
-                  onClick={() => {}}
+                  onClick={() => navigate(g.path)}
                 />
               </div>
             ))}
