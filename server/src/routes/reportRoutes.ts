@@ -7,7 +7,8 @@ import {
   listReports,
   toggleVote,
   getReportComments,
-  createReportComment
+  createReportComment,
+  updateReportComment
 } from '../controllers/reportController';
 
 const router = Router();
@@ -33,5 +34,8 @@ router.get('/:id/comments', getReportComments);
 
 // POST /api/reports/:id/comments
 router.post('/:id/comments', upload.array('images', 2), createReportComment);
+
+// PATCH /api/reports/:id/comments/:commentId
+router.patch('/:id/comments/:commentId', updateReportComment);
 
 export default router;

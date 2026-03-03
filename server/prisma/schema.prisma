@@ -682,18 +682,31 @@ model ReportVote {
 
 // Comentarios en reportes (threading)
 model ReportComment {
-  id        String   @id @default(cuid())
+  id        String                 @id @default(cuid())
   reportId  String
-  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  report    Report                 @relation(fields: [reportId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  content   String   @db.Text
-  imageUrls String[] @default([])
-  createdAt DateTime @default(now())
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String                 @db.Text
+  imageUrls String[]               @default([])
+  createdAt DateTime               @default(now())
+  editedAt  DateTime?
+  history   ReportCommentHistory[]
 
   @@index([reportId])
   @@index([userId])
   @@index([createdAt])
+}
+
+model ReportCommentHistory {
+  id        String        @id @default(cuid())
+  commentId String
+  comment   ReportComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  content   String        @db.Text
+  imageUrls String[]      @default([])
+  editedAt  DateTime      @default(now())
+
+  @@index([commentId])
 }
 
 enum EventAuditAction {

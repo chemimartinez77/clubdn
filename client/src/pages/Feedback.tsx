@@ -49,6 +49,8 @@ interface ReportComment {
   content: string;
   imageUrls: string[];
   createdAt: string;
+  editedAt?: string | null;
+  history?: { content: string; imageUrls: string[]; editedAt: string }[];
   user: {
     id: string;
     name: string;
@@ -197,6 +199,9 @@ export default function Feedback() {
   const [commentImagePreviews, setCommentImagePreviews] = useState<string[]>([]);
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentText, setEditingCommentText] = useState('');
+
   const [searchParams] = useSearchParams();
   const scrolledRef = useRef(false);
 
@@ -321,6 +326,21 @@ export default function Feedback() {
     },
     onError: (err: any) => {
       showError(err.response?.data?.message || 'Error al añadir comentario');
+    }
+  });
+
+  const updateCommentMutation = useMutation({
+    mutationFn: async ({ reportId, commentId, content }: { reportId: string; commentId: string; content: string }) => {
+      return await api.patch(`/api/reports/${reportId}/comments/${commentId}`, { content });
+    },
+    onSuccess: () => {
+      refetchComments();
+      setEditingCommentId(null);
+      setEditingCommentText('');
+      success('Comentario editado');
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || 'Error al editar comentario');
     }
   });
 
@@ -599,7 +619,7 @@ export default function Feedback() {
                                     </div>
                                     {/* Burbuja */}
                                     <div className={`max-w-[75%] ${isOwnComment ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-2 flex-wrap">
                                         {!isOwnComment && (
                                           <span className="text-xs font-semibold text-[var(--color-text)]">{comment.user.name}</span>
                                         )}
@@ -609,25 +629,62 @@ export default function Feedback() {
                                         <span className="text-xs text-[var(--color-textSecondary)]">
                                           {new Date(comment.createdAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                         </span>
-                                      </div>
-                                      <div className={`px-4 py-2.5 rounded-2xl text-sm whitespace-pre-wrap leading-relaxed ${
-                                        isOwnComment
-                                          ? 'bg-[var(--color-primary)] text-white rounded-tr-sm'
-                                          : isAdminComment
-                                            ? 'bg-[var(--color-tableRowHover)] text-[var(--color-text)] border border-[var(--color-primary)] rounded-tl-sm'
-                                            : 'bg-[var(--color-tableRowHover)] text-[var(--color-text)] rounded-tl-sm'
-                                      }`}>
-                                        {comment.content}
-                                        {comment.imageUrls?.length > 0 && (
-                                          <div className="flex flex-wrap gap-2 mt-2">
-                                            {comment.imageUrls.map((url, i) => (
-                                              <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                                                <img src={url} alt={`imagen ${i + 1}`} className="max-h-48 rounded-lg object-cover border border-white/20 hover:opacity-90 transition-opacity cursor-zoom-in" />
-                                              </a>
-                                            ))}
-                                          </div>
+                                        {comment.editedAt && (
+                                          <span className="text-xs text-[var(--color-textSecondary)] italic">(editado)</span>
+                                        )}
+                                        {isOwnComment && editingCommentId !== comment.id && (
+                                          <button
+                                            onClick={() => { setEditingCommentId(comment.id); setEditingCommentText(comment.content); }}
+                                            className="text-xs text-[var(--color-textSecondary)] hover:text-[var(--color-primary)] transition-colors"
+                                          >
+                                            Editar
+                                          </button>
                                         )}
                                       </div>
+                                      {editingCommentId === comment.id ? (
+                                        <div className="flex flex-col gap-2 w-full">
+                                          <textarea
+                                            value={editingCommentText}
+                                            onChange={(e) => setEditingCommentText(e.target.value)}
+                                            rows={2}
+                                            className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg text-sm bg-[var(--color-inputBackground)] text-[var(--color-text)] resize-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                                          />
+                                          <div className="flex gap-2">
+                                            <Button
+                                              onClick={() => updateCommentMutation.mutate({ reportId: report.id, commentId: comment.id, content: editingCommentText })}
+                                              disabled={!editingCommentText.trim() || updateCommentMutation.isPending}
+                                              variant="primary"
+                                            >
+                                              {updateCommentMutation.isPending ? '...' : 'Guardar'}
+                                            </Button>
+                                            <Button
+                                              onClick={() => { setEditingCommentId(null); setEditingCommentText(''); }}
+                                              variant="outline"
+                                            >
+                                              Cancelar
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className={`px-4 py-2.5 rounded-2xl text-sm whitespace-pre-wrap leading-relaxed ${
+                                          isOwnComment
+                                            ? 'bg-[var(--color-primary)] text-white rounded-tr-sm'
+                                            : isAdminComment
+                                              ? 'bg-[var(--color-tableRowHover)] text-[var(--color-text)] border border-[var(--color-primary)] rounded-tl-sm'
+                                              : 'bg-[var(--color-tableRowHover)] text-[var(--color-text)] rounded-tl-sm'
+                                        }`}>
+                                          {comment.content}
+                                          {comment.imageUrls?.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                              {comment.imageUrls.map((url, i) => (
+                                                <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                                                  <img src={url} alt={`imagen ${i + 1}`} className="max-h-48 rounded-lg object-cover border border-white/20 hover:opacity-90 transition-opacity cursor-zoom-in" />
+                                                </a>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 );
@@ -636,7 +693,7 @@ export default function Feedback() {
                           </div>
 
                           {/* Input de comentario */}
-                          {(isAdmin || report.user.id === user?.id) && (
+                          {!!user && (
                             <div className="flex flex-col gap-2 pt-2 border-t border-[var(--color-cardBorder)]">
                               {/* Previews de imágenes */}
                               {commentImagePreviews.length > 0 && (
@@ -696,7 +753,7 @@ export default function Feedback() {
                                   </Button>
                                 </div>
                               </div>
-                              <p className="text-xs text-[var(--color-textSecondary)]">Puedes pegar (Ctrl+V), arrastrar o adjuntar hasta 2 imágenes</p>
+                              <p className="text-xs text-[var(--color-textSecondary)]">Puedes pegar (Ctrl+V), arrastrar o adjuntar hasta 2 imágenes · Los comentarios están sujetos a moderación</p>
                             </div>
                           )}
 

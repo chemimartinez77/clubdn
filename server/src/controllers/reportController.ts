@@ -434,6 +434,10 @@ export const getReportComments = async (req: Request, res: Response): Promise<vo
             role: true,
             profile: { select: { avatar: true } }
           }
+        },
+        history: {
+          orderBy: { editedAt: 'asc' },
+          select: { content: true, imageUrls: true, editedAt: true }
         }
       }
     });
@@ -501,16 +505,6 @@ export const createReportComment = async (req: Request, res: Response): Promise<
     }
 
     const isAdmin = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN';
-    const isCreator = report.userId === userId;
-
-    // Solo el creador o admins pueden comentar
-    if (!isAdmin && !isCreator) {
-      res.status(403).json({
-        success: false,
-        message: 'No tienes permiso para comentar en este reporte'
-      });
-      return;
-    }
 
     // Subir imágenes a Cloudinary si las hay
     const imageUrls: string[] = [];
@@ -584,5 +578,72 @@ export const createReportComment = async (req: Request, res: Response): Promise<
       success: false,
       message: 'Error al crear comentario'
     });
+  }
+};
+
+export const updateReportComment = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id, commentId } = req.params;
+    const userId = req.user?.userId;
+    const { content } = req.body;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+      return;
+    }
+
+    if (!content || !content.trim()) {
+      res.status(400).json({ success: false, message: 'El contenido no puede estar vacío' });
+      return;
+    }
+
+    const comment = await prisma.reportComment.findUnique({
+      where: { id: commentId },
+      select: { id: true, reportId: true, userId: true, content: true, imageUrls: true }
+    });
+
+    if (!comment || comment.reportId !== id) {
+      res.status(404).json({ success: false, message: 'Comentario no encontrado' });
+      return;
+    }
+
+    if (comment.userId !== userId) {
+      res.status(403).json({ success: false, message: 'Solo puedes editar tus propios comentarios' });
+      return;
+    }
+
+    const now = new Date();
+
+    const updated = await prisma.$transaction(async (tx) => {
+      // Guardar versión anterior en historial
+      await tx.reportCommentHistory.create({
+        data: {
+          commentId: comment.id,
+          content: comment.content,
+          imageUrls: comment.imageUrls,
+          editedAt: now
+        }
+      });
+
+      // Actualizar comentario
+      return tx.reportComment.update({
+        where: { id: commentId },
+        data: { content: content.trim(), editedAt: now },
+        include: {
+          user: {
+            select: { id: true, name: true, role: true, profile: { select: { avatar: true } } }
+          },
+          history: {
+            orderBy: { editedAt: 'asc' },
+            select: { content: true, imageUrls: true, editedAt: true }
+          }
+        }
+      });
+    });
+
+    res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    console.error('Error al editar comentario:', error);
+    res.status(500).json({ success: false, message: 'Error al editar comentario' });
   }
 };
