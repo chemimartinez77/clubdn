@@ -231,7 +231,7 @@ export default function NotificationBell() {
 
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div className="fixed inset-0 z-10 cursor-pointer" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 mt-2 w-80 bg-[var(--color-cardBackground)] rounded-lg shadow-lg border border-[var(--color-cardBorder)] z-20 max-h-[32rem] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-[var(--color-cardBorder)]">
               <h3 className="text-lg font-semibold text-[var(--color-text)]">Notificaciones</h3>
@@ -316,4 +316,3 @@ export default function NotificationBell() {
     </div>
   );
 }
-
