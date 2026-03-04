@@ -31,6 +31,7 @@ import CombatZone from './pages/azul/CombatZone';
 import AzulGame from './pages/azul/AzulGame';
 import ViernesHub from './pages/viernes/ViernesHub';
 import ViernesGame from './pages/viernes/ViernesGame';
+import CombatZoneComingSoon from './pages/CombatZoneComingSoon';
 
 // Componente para rutas protegidas
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -71,7 +72,7 @@ function CombatZoneRoute({ children }: { children: React.ReactNode }) {
     user.email?.toLowerCase() === 'chemimartinez@gmail.com';
 
   if (!isAllowedUser) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/azul/combatzone/coming-soon" replace />;
   }
 
   return <>{children}</>;
@@ -174,6 +175,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <InviteValidation />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Combat Zone — Coming Soon (accesible a todos los usuarios) */}
+          <Route
+            path="/azul/combatzone/coming-soon"
+            element={
+              <ProtectedRoute>
+                <CombatZoneComingSoon />
               </ProtectedRoute>
             }
           />
