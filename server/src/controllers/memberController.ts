@@ -198,7 +198,7 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
           userId: user.id,
           favoriteGames: [],
           notifications: true,
-          emailUpdates: true
+          emailUpdates: false
         }
       });
     }
@@ -358,7 +358,7 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
           imageConsentSocial: !!imageConsentSocial,
           favoriteGames: [],
           notifications: true,
-          emailUpdates: true
+          emailUpdates: false
         },
         update: {
           avatar: avatar ?? null,
@@ -831,7 +831,7 @@ export const uploadMemberAvatar = async (req: Request, res: Response): Promise<v
         avatar: uploadResult.secure_url,
         favoriteGames: [],
         notifications: true,
-        emailUpdates: true
+        emailUpdates: false
       },
       update: {
         avatar: uploadResult.secure_url

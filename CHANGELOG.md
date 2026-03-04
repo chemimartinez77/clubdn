@@ -6,6 +6,31 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-03-03
 
+### ✨ Nuevas funcionalidades
+
+#### Suscripción a calendario ICS personal
+- Cada usuario puede generar una URL única y privada desde su perfil que devuelve un archivo `.ics` con todas sus partidas confirmadas/aprobadas
+- La URL es compatible con Google Calendar, Apple Calendar y Outlook como suscripción: el calendario se actualiza automáticamente cada hora sin ninguna acción manual
+- El usuario puede regenerar la URL en cualquier momento para invalidar la anterior (revocación de acceso)
+- El endpoint es público (sin JWT) pero protegido mediante el token UUID único por usuario
+
+**Archivos modificados/creados:**
+- `server/prisma/schema.prisma` - campo `calendarToken String? @unique` en modelo `User`
+- `server/prisma/migrations/20260303000001_add_calendar_token/` - `ALTER TABLE` + índice único
+- `server/src/controllers/calendarController.ts` - nuevo: endpoints `GET /api/calendar/:token` y `POST /api/calendar/token`
+- `server/src/routes/calendarRoutes.ts` - nuevo: rutas del calendario
+- `server/src/index.ts` - registro de `calendarRoutes` en `app.use('/api/calendar', ...)`
+- `server/src/controllers/profileController.ts` - incluye `calendarToken` en la respuesta de `getMyProfile`
+- `client/src/types/profile.ts` - campo `calendarToken: string | null` en interfaz `UserProfile`
+- `client/src/pages/Profile.tsx` - sección "Sincronización de Calendario" con botón generar, copiar URL y regenerar; visible en modo lectura y edición
+
+#### Exportar evento al calendario (ICS por evento)
+- Botón "Añadir al calendario" en el detalle de cada evento que descarga un `.ics` con ese evento concreto
+- Compatible con cualquier app de calendario estándar; no requiere suscripción
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` - función `handleAddToCalendar` y botón junto al de WhatsApp
+
 ### ✨ Mejoras
 
 #### Feedback: comentarios abiertos a todos los usuarios con aviso de moderación
@@ -53,6 +78,12 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 - `client/src/components/notifications/NotificationBell.tsx` - umbral cambiado de `> 9` a `> 99`
 
 ### 🐛 Corrección de errores
+
+#### Feedback: textarea de edición de comentarios demasiado pequeño
+- El textarea al editar un comentario pasa de 2 filas a 4 y cambia de `resize-none` a `resize-y`, permitiendo al usuario redimensionarlo manualmente
+
+**Archivos modificados:**
+- `client/src/pages/Feedback.tsx` - `rows={4}` y clase `resize-y`
 
 #### Notificaciones: doble llamada a `/api/notifications/unread-count`
 - **Problema:** `NotificationBell` estaba montado dos veces en el Header (uno para escritorio y otro para móvil), provocando dos peticiones simultáneas al intervalo de polling cada 30 segundos

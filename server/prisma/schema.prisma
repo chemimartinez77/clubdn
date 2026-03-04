@@ -79,6 +79,8 @@ model User {
   resetPasswordToken String?    @unique
   resetPasswordExpiry DateTime?
 
+  calendarToken     String?     @unique
+
   approvedBy        String?
   approvedAt        DateTime?
   rejectedBy        String?
@@ -152,7 +154,7 @@ model UserProfile {
 
   // Configuración
   notifications   Boolean  @default(true)
-  emailUpdates    Boolean  @default(true)
+  emailUpdates    Boolean  @default(false)
 
   // Preferencias de notificaciones
   notifyNewEvents       Boolean @default(true)   // Notificar nuevas partidas

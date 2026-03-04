@@ -54,7 +54,7 @@ export const getMyProfile = async (req: Request, res: Response): Promise<void> =
           userId,
           favoriteGames: [],
           notifications: true,
-          emailUpdates: true,
+          emailUpdates: false,
           notifyNewEvents: true,
           notifyEventChanges: true,
           notifyEventCancelled: true,
@@ -76,9 +76,21 @@ export const getMyProfile = async (req: Request, res: Response): Promise<void> =
       });
     }
 
+    // Incluir calendarToken del usuario (campo nuevo, puede no existir en el cliente Prisma aún)
+    let calendarToken: string | null = null;
+    try {
+      const userRaw = await (prisma.user as any).findUnique({
+        where: { id: userId },
+        select: { calendarToken: true }
+      });
+      calendarToken = userRaw?.calendarToken ?? null;
+    } catch {
+      // Si el campo no existe aún en la BD (migración pendiente), devolvemos null
+    }
+
     res.status(200).json({
       success: true,
-      data: { profile }
+      data: { profile: { ...profile, calendarToken } }
     });
   } catch (error) {
     console.error('Error al obtener perfil:', error);
@@ -173,7 +185,6 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
       discord,
       telegram,
       notifications,
-      emailUpdates,
       notifyNewEvents,
       notifyEventChanges,
       notifyEventCancelled,
@@ -201,7 +212,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           discord,
           telegram,
           notifications: notifications ?? true,
-          emailUpdates: emailUpdates ?? true,
+          emailUpdates: false,
           notifyNewEvents: notifyNewEvents ?? true,
           notifyEventChanges: notifyEventChanges ?? true,
           notifyEventCancelled: notifyEventCancelled ?? true,
@@ -237,7 +248,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           ...(discord !== undefined && { discord }),
           ...(telegram !== undefined && { telegram }),
           ...(notifications !== undefined && { notifications }),
-          ...(emailUpdates !== undefined && { emailUpdates }),
+          emailUpdates: false,
           ...(notifyNewEvents !== undefined && { notifyNewEvents }),
           ...(notifyEventChanges !== undefined && { notifyEventChanges }),
           ...(notifyEventCancelled !== undefined && { notifyEventCancelled }),
@@ -367,7 +378,7 @@ export const uploadAvatar = async (req: Request, res: Response): Promise<void> =
         avatar: uploadResult.secure_url,
         favoriteGames: [],
         notifications: true,
-        emailUpdates: true
+        emailUpdates: false
       },
       update: {
         avatar: uploadResult.secure_url
@@ -434,7 +445,7 @@ export const dismissTour = async (req: Request, res: Response): Promise<void> =>
         userId,
         [field]: true,
         favoriteGames: [],
-        emailUpdates: true
+        emailUpdates: false
       }
     });
 
