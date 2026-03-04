@@ -175,9 +175,9 @@ export function createInitialState(difficulty: Difficulty): ViernesGameState {
 
   // Mazo de Robinson inicial
   const robinsonCards: RobinsonCard[] = [
-    ...Array.from({ length: 8 }, (_, i) => ({ id: makeId('rob', i),    type: 'MISFORTUNE' as const, name: 'Verhängnis', value: 0 })),
-    ...Array.from({ length: 3 }, (_, i) => ({ id: makeId('rob', 8 + i), type: 'SATISFIED'  as const, name: 'Satt',       value: 1 })),
-    { id: makeId('rob', 11), type: 'GENIUS' as const, name: 'Genie', value: 4 },
+    ...Array.from({ length: 8 }, (_, i) => ({ id: makeId('rob', i),     type: 'MISFORTUNE' as const, name: 'Normal',      value: 0 })),
+    ...Array.from({ length: 3 }, (_, i) => ({ id: makeId('rob', 8 + i), type: 'SATISFIED'  as const, name: 'Concentrado', value: 1 })),
+    { id: makeId('rob', 11), type: 'GENIUS' as const, name: 'Genial', value: 4 },
   ];
   const robinsonDeck = shuffleArray(robinsonCards);
 

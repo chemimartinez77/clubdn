@@ -3,6 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useViernesGame } from '../../../hooks/useViernesGame';
 import { calculateFightTotal } from '../../../logic/ViernesEngine';
 import type { HazardCard, RobinsonCard, FightState, ViernesGameState } from '../../../logic/ViernesEngine';
+import {
+  getRobinsonCardImage,
+  getAgingCardImage,
+  getPirateCardImage,
+  getHazardWonCardImage,
+  HAZARD_BACK_IMAGE,
+} from '../../../logic/ViernesImages';
 
 // ─── StatusBar ─────────────────────────────────────────────────────────────────
 
@@ -83,37 +90,48 @@ function HazardCardView({ hazard, onChoose, disabled }: {
     <div
       onClick={isClickable ? onChoose : undefined}
       className={`
-        relative flex flex-col rounded-2xl border-2 p-4 w-44 transition-all select-none
+        relative flex flex-col rounded-2xl border-2 overflow-hidden w-36 transition-all select-none
         ${isClickable
           ? 'border-[var(--color-primary)] cursor-pointer hover:scale-105 hover:shadow-lg hover:shadow-[var(--color-primary)]/30'
           : 'border-[var(--color-border)]'}
         bg-[var(--color-surface)]
       `}
     >
-      {/* Valor de peligro */}
-      <div className="self-start mb-2">
-        <span className="text-2xl font-black text-red-400">{hazard.hazardValue}</span>
-        <span className="text-xs text-[var(--color-text-muted)] ml-1">peligro</span>
-      </div>
-
-      {/* Nombre */}
-      <p className="text-base font-bold text-[var(--color-text)] text-center flex-1 flex items-center justify-center">
-        {hazard.name}
-      </p>
-
-      {/* Valor superviviente */}
-      <div className="self-end mt-2">
-        <span className="text-lg font-bold text-green-400">{hazard.survivorValue}</span>
-        <span className="text-xs text-[var(--color-text-muted)] ml-1">si ganas</span>
+      {/* Imagen de la carta (reverso genérico con overlay de stats) */}
+      <div className="relative">
+        <img
+          src={HAZARD_BACK_IMAGE}
+          alt={hazard.name}
+          className="w-full object-cover"
+          style={{ height: '160px' }}
+        />
+        {/* Overlay con stats */}
+        <div className="absolute inset-0 bg-black/50 flex flex-col justify-between p-2">
+          <span className="text-xl font-black text-red-400 drop-shadow">{hazard.hazardValue}</span>
+          <p className="text-sm font-bold text-white text-center drop-shadow leading-tight">
+            {hazard.name}
+          </p>
+          <div className="text-right">
+            <span className="text-base font-bold text-green-400 drop-shadow">+{hazard.survivorValue}</span>
+          </div>
+        </div>
       </div>
 
       {isClickable && (
-        <div className="absolute inset-x-0 bottom-0 rounded-b-2xl py-1 text-center text-xs font-semibold text-white bg-[var(--color-primary)]">
+        <div className="py-1.5 text-center text-xs font-semibold text-white bg-[var(--color-primary)]">
           Elegir
         </div>
       )}
     </div>
   );
+}
+
+// ─── Resolución de imagen de carta Robinson ────────────────────────────────────
+
+function resolveRobinsonImage(card: RobinsonCard): string {
+  if (card.type === 'AGING')      return getAgingCardImage(card.name);
+  if (card.type === 'HAZARD_WON') return getHazardWonCardImage(card.hazardName ?? card.name);
+  return getRobinsonCardImage(card.name);
 }
 
 // ─── RobinsonCardView ──────────────────────────────────────────────────────────
@@ -124,31 +142,39 @@ function RobinsonCardView({ card, onDestroy, canDestroyThis, lifePoints }: {
   canDestroyThis: boolean;
   lifePoints: number;
 }) {
-  const isAging = card.type === 'AGING';
-  const isStop  = isAging && card.agingEffect === 'STOP';
-  const valueColor = card.value < 0 ? 'text-red-400' : card.value === 0 ? 'text-gray-400' : 'text-green-400';
-  const borderColor = isStop ? 'border-red-500' : isAging ? 'border-orange-400' : 'border-[var(--color-border)]';
+  const isAging    = card.type === 'AGING';
+  const isStop     = isAging && card.agingEffect === 'STOP';
+  const valueColor = card.value < 0 ? 'text-red-400' : card.value === 0 ? 'text-gray-300' : 'text-green-400';
+  const ringColor  = isStop ? 'ring-red-500' : isAging ? 'ring-orange-400' : 'ring-[var(--color-border)]';
+  const imgSrc     = resolveRobinsonImage(card);
 
   return (
-    <div className={`relative flex flex-col items-center rounded-xl border-2 p-2 w-20 ${borderColor} bg-[var(--color-surface)]`}>
-      <span className={`text-xl font-black ${valueColor}`}>
-        {card.value > 0 ? `+${card.value}` : card.value}
-      </span>
-      <p className="text-[10px] text-center text-[var(--color-text-muted)] mt-1 leading-tight line-clamp-2">
+    <div className={`relative flex flex-col items-center rounded-xl overflow-hidden ring-2 ${ringColor} w-20 bg-[var(--color-surface)]`}>
+      {/* Imagen */}
+      <div className="relative w-full">
+        <img src={imgSrc} alt={card.name} className="w-full object-cover" style={{ height: '96px' }} />
+        {/* Badge de valor */}
+        <span className={`absolute top-1 left-1 text-sm font-black drop-shadow-md ${valueColor}`}>
+          {card.value > 0 ? `+${card.value}` : card.value}
+        </span>
+        {isAging && (
+          <span className="absolute top-1 right-1 text-[8px] bg-orange-600/80 text-white rounded px-0.5 font-bold">
+            ENV
+          </span>
+        )}
+      </div>
+      {/* Nombre */}
+      <p className="text-[9px] text-center text-[var(--color-text-muted)] px-1 py-0.5 leading-tight line-clamp-2 w-full">
         {card.name}
       </p>
-      {isAging && (
-        <span className="text-[9px] bg-orange-500/20 text-orange-400 rounded px-1 mt-1">
-          {card.agingEffect}
-        </span>
-      )}
+      {/* Botón destruir */}
       {canDestroyThis && onDestroy && lifePoints >= 2 && (
         <button
           onClick={() => onDestroy(card.id)}
-          className="mt-1 text-[9px] text-red-400 hover:text-red-300 underline"
+          className="w-full py-0.5 text-[9px] text-red-400 hover:bg-red-500/20 font-semibold transition-colors"
           title="Destruir (−2 vida)"
         >
-          Destruir
+          −2♥ Destruir
         </button>
       )}
     </div>
@@ -175,15 +201,18 @@ function FightPanel({ gs, fight, onBuy, onResolve, onDestroy, isSending }: {
     <div className="flex flex-col gap-4">
       {/* Objetivo del combate */}
       <div className="flex items-center gap-4 p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-        <div className="flex flex-col items-center">
-          {fight.isPirateFight ? (
-            <span className="text-3xl">☠️</span>
-          ) : (
-            <span className="text-3xl">⚠️</span>
-          )}
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">
-            {fight.isPirateFight ? 'Pirata' : 'Peligro'}
-          </p>
+        {/* Imagen de la carta objetivo */}
+        <div className="relative flex-shrink-0 rounded-xl overflow-hidden ring-2 ring-red-500/50" style={{ width: 64, height: 80 }}>
+          <img
+            src={fight.isPirateFight
+              ? getPirateCardImage(('name' in targetCard ? (targetCard as any).name : ''))
+              : HAZARD_BACK_IMAGE}
+            alt={'name' in targetCard ? (targetCard as any).name : ''}
+            className="w-full h-full object-cover"
+          />
+          <span className="absolute bottom-0 inset-x-0 text-center text-xs font-black text-white bg-black/60 py-0.5">
+            {fight.isPirateFight ? '☠' : '⚠'}
+          </span>
         </div>
 
         <div className="flex-1">
@@ -279,16 +308,27 @@ function PirateChoosePanel({ gs, onChoose, isSending }: {
           <div
             key={pirate.id}
             onClick={() => !isSending && onChoose(i as 0 | 1)}
-            className="flex flex-col items-center rounded-2xl border-2 border-[var(--color-primary)] p-5 w-44
+            className="flex flex-col items-center rounded-2xl border-2 border-[var(--color-primary)] overflow-hidden w-40
                        cursor-pointer hover:scale-105 hover:shadow-lg hover:shadow-[var(--color-primary)]/30 transition-all
                        bg-[var(--color-surface)] select-none"
           >
-            <span className="text-4xl mb-2">☠️</span>
-            <p className="text-base font-bold text-[var(--color-text)]">{pirate.name}</p>
-            <p className="text-2xl font-black text-red-400 mt-2">{pirate.fightValue}</p>
-            <p className="text-xs text-[var(--color-text-muted)]">puntos a superar</p>
-            <div className="mt-3 w-full py-1 rounded-lg bg-[var(--color-primary)] text-white text-xs font-semibold text-center">
-              Enfrentar primero
+            <div className="relative w-full">
+              <img
+                src={getPirateCardImage(pirate.name)}
+                alt={pirate.name}
+                className="w-full object-cover"
+                style={{ height: '140px' }}
+              />
+              <span className="absolute top-2 left-2 text-2xl font-black text-red-400 drop-shadow-md">
+                {pirate.fightValue}
+              </span>
+            </div>
+            <div className="p-3 w-full text-center">
+              <p className="text-sm font-bold text-[var(--color-text)]">{pirate.name}</p>
+              <p className="text-xs text-[var(--color-text-muted)] mb-2">puntos a superar</p>
+              <div className="w-full py-1 rounded-lg bg-[var(--color-primary)] text-white text-xs font-semibold text-center">
+                Enfrentar primero
+              </div>
             </div>
           </div>
         ))}
