@@ -217,6 +217,42 @@ export const notifyNewEvent = async (
 };
 
 /**
+ * Notificar al organizador cuando alguien se une directamente (sin aprobación)
+ */
+export const notifyRegistrationConfirmed = async (
+  eventId: string,
+  eventTitle: string,
+  organizerId: string,
+  userName: string
+) => {
+  return await createNotification({
+    userId: organizerId,
+    type: 'REGISTRATION_PENDING',
+    title: 'Nuevo asistente en tu partida',
+    message: `${userName} se ha apuntado a "${eventTitle}".`,
+    metadata: { eventId, eventTitle, userName },
+  });
+};
+
+/**
+ * Notificar al organizador cuando alguien abandona su partida
+ */
+export const notifyRegistrationCancelled = async (
+  eventId: string,
+  eventTitle: string,
+  organizerId: string,
+  userName: string
+) => {
+  return await createNotification({
+    userId: organizerId,
+    type: 'REGISTRATION_PENDING',
+    title: 'Un asistente ha abandonado tu partida',
+    message: `${userName} ha abandonado "${eventTitle}".`,
+    metadata: { eventId, eventTitle, userName },
+  });
+};
+
+/**
  * Notificar al organizador sobre una solicitud de registro pendiente
  */
 export const notifyRegistrationPending = async (

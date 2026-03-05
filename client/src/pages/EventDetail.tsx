@@ -12,10 +12,11 @@ import { GameImage } from '../components/events/EventCard';
 import EventPhotoGallery from '../components/events/EventPhotoGallery';
 import GameSearchModal from '../components/events/GameSearchModal';
 import { useAuth } from '../contexts/AuthContext';
-import type { Event, BGGGame, UpdateEventData } from '../types/event';
+import type { Event, BGGGame, UpdateEventData, PendingInvitation } from '../types/event';
 import type { ApiResponse } from '../types/auth';
 import type { Invitation, InvitationCreateResponse } from '../types/invitation';
 import { getCategoryDisplayName, getCategoryIcon } from '../types/badge';
+import { displayName, fullNameTooltip } from '../utils/displayName';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -294,6 +295,49 @@ export default function EventDetail() {
     enabled: !!id && isOrganizerOrAdmin
   });
 
+  // Fetch pending invitations (visible para todos los asistentes)
+  const { data: pendingInvitations = [], refetch: refetchPendingInvitations } = useQuery<PendingInvitation[]>({
+    queryKey: ['pending-invitations', id],
+    queryFn: async () => {
+      const response = await api.get(`/api/events/${id}/pending-invitations`);
+      return response.data.data || [];
+    },
+    enabled: !!id && !!user
+  });
+
+  const approveInvitationMutation = useMutation({
+    mutationFn: async (invitationId: string) => {
+      const response = await api.post(`/api/events/${id}/invitations/${invitationId}/approve`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: ['pending-invitations', id] });
+      queryClient.invalidateQueries({ queryKey: ['invitations', id] });
+      refetchPendingInvitations();
+      success(data.message || 'Invitación aprobada');
+    },
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, 'Error al aprobar la invitación'));
+    }
+  });
+
+  const rejectInvitationMutation = useMutation({
+    mutationFn: async (invitationId: string) => {
+      const response = await api.post(`/api/events/${id}/invitations/${invitationId}/reject`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: ['pending-invitations', id] });
+      refetchPendingInvitations();
+      success(data.message || 'Invitación rechazada');
+    },
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, 'Error al rechazar la invitación'));
+    }
+  });
+
   const createInvitationMutation = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -310,12 +354,13 @@ export default function EventDetail() {
       queryClient.invalidateQueries({ queryKey: ['invitations', id] });
       queryClient.invalidateQueries({ queryKey: ['event', id] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-invitations', id] });
       setGuestFirstName('');
       setGuestLastName('');
       setGuestDni('');
       setIsExceptional(false);
-      setQrUrl(data.data?.qrUrl || null);
-      setExpandedInviteId(data.data?.invitation.id || null);
+      setQrUrl(data.data?.pendingApproval ? null : (data.data?.qrUrl || null));
+      setExpandedInviteId(data.data?.pendingApproval ? null : (data.data?.invitation.id || null));
       success(data.message || 'Invitacion creada');
     },
     onError: (err: unknown) => {
@@ -460,12 +505,14 @@ export default function EventDetail() {
   };
   const invitationStatusLabels: Record<string, string> = {
     PENDING: 'Pendiente',
+    PENDING_APPROVAL: 'Pend. aprobación',
     USED: 'Usada',
     EXPIRED: 'Expirada',
     CANCELLED: 'Cancelada'
   };
   const invitationStatusStyles: Record<string, string> = {
     PENDING: 'text-amber-700 bg-amber-100',
+    PENDING_APPROVAL: 'text-orange-700 bg-orange-100',
     USED: 'text-emerald-700 bg-emerald-100',
     EXPIRED: 'text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)]',
     CANCELLED: 'text-red-700 bg-red-100'
@@ -1007,12 +1054,17 @@ export default function EventDetail() {
                           />
                         ) : (
                           <span className="text-[var(--color-primary)] font-semibold text-sm">
-                            {registration.user?.name?.charAt(0).toUpperCase() || '?'}
+                            {displayName(registration.user?.name || '', registration.user?.profile?.nick).charAt(0).toUpperCase() || '?'}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-2 flex-1">
-                        <span className="text-[var(--color-text)]">{registration.user?.name}</span>
+                        <span
+                          className="text-[var(--color-text)]"
+                          title={fullNameTooltip(registration.user?.name || '', registration.user?.profile?.nick)}
+                        >
+                          {displayName(registration.user?.name || '', registration.user?.profile?.nick)}
+                        </span>
                         {registration.user?.membership?.type &&
                           membershipLabels[registration.user.membership.type] && (
                             <span className="text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
@@ -1087,12 +1139,17 @@ export default function EventDetail() {
                           />
                         ) : (
                           <span className="text-yellow-600 font-semibold text-sm">
-                            {registration.user?.name?.charAt(0).toUpperCase() || '?'}
+                            {displayName(registration.user?.name || '', registration.user?.profile?.nick).charAt(0).toUpperCase() || '?'}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-2 flex-1">
-                        <span className="text-[var(--color-text)]">{registration.user?.name}</span>
+                        <span
+                          className="text-[var(--color-text)]"
+                          title={fullNameTooltip(registration.user?.name || '', registration.user?.profile?.nick)}
+                        >
+                          {displayName(registration.user?.name || '', registration.user?.profile?.nick)}
+                        </span>
                         {registration.user?.membership?.type &&
                           membershipLabels[registration.user.membership.type] && (
                             <span className="text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
@@ -1148,11 +1205,16 @@ export default function EventDetail() {
                         />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center font-semibold">
-                          {registration.user.name.charAt(0).toUpperCase()}
+                          {displayName(registration.user.name, registration.user.profile?.nick).charAt(0).toUpperCase()}
                         </div>
                       )}
                       <div>
-                        <p className="font-medium text-[var(--color-text)]">{registration.user.name}</p>
+                        <p
+                          className="font-medium text-[var(--color-text)]"
+                          title={fullNameTooltip(registration.user.name, registration.user.profile?.nick)}
+                        >
+                          {displayName(registration.user.name, registration.user.profile?.nick)}
+                        </p>
                         <p className="text-xs text-[var(--color-textSecondary)]">
                           Solicitó el {new Date(registration.createdAt).toLocaleDateString('es-ES', {
                             day: 'numeric',
@@ -1184,6 +1246,69 @@ export default function EventDetail() {
                         {rejectRegistrationMutation.isPending ? 'Rechazando...' : 'Rechazar'}
                       </Button>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Invitados pendientes de aprobación - visible para todos los asistentes */}
+        {event.requiresApproval && pendingInvitations.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Invitados pendientes de aprobación ({pendingInvitations.length})</span>
+                <span className="text-sm font-normal text-[var(--color-textSecondary)]">Por orden de invitación</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {pendingInvitations.map((inv) => (
+                  <div
+                    key={inv.id}
+                    className="flex items-center justify-between p-4 bg-[var(--color-tableRowHover)] rounded-lg border border-[var(--color-cardBorder)]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-semibold text-sm shrink-0">
+                        {inv.guestFirstName.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium text-[var(--color-text)]">
+                          {inv.guestFirstName} {inv.guestLastName}
+                        </p>
+                        <p className="text-xs text-[var(--color-textSecondary)]">
+                          Invitado por <span className="font-medium">{inv.inviter.name}</span>
+                          {' · '}
+                          {new Date(inv.createdAt).toLocaleString('es-ES', {
+                            day: '2-digit', month: '2-digit', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    {isOrganizerOrAdmin && (
+                      <div className="flex gap-2 shrink-0">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => approveInvitationMutation.mutate(inv.id)}
+                          disabled={approveInvitationMutation.isPending || rejectInvitationMutation.isPending}
+                          className="!bg-green-600 hover:!bg-green-700"
+                        >
+                          {approveInvitationMutation.isPending ? '...' : 'Aprobar'}
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => rejectInvitationMutation.mutate(inv.id)}
+                          disabled={approveInvitationMutation.isPending || rejectInvitationMutation.isPending}
+                          className="!bg-red-600 hover:!bg-red-700"
+                        >
+                          {rejectInvitationMutation.isPending ? '...' : 'Rechazar'}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1450,7 +1575,7 @@ export default function EventDetail() {
                     </Button>
                   </div>
                   <p className="text-xs text-[var(--color-textSecondary)]">
-                    Comparte este QR con el invitado. Es de un solo uso y valido solo para hoy.
+                    Comparte este QR con el invitado. Es de un solo uso y válido solo para el {eventDateText}.
                   </p>
                 </div>
               </div>

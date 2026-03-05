@@ -5,6 +5,7 @@ export interface UserProfile {
   id: string;
   userId: string;
   avatar: string | null;
+  nick: string | null;
   firstName?: string | null;
   lastName?: string | null;
   dni?: string | null;
@@ -38,6 +39,7 @@ export interface UserProfile {
 
 export interface UpdateProfileData {
   avatar?: string;
+  nick?: string | null;
   phone?: string;
   birthDate?: string;
   bio?: string;

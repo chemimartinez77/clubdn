@@ -432,7 +432,7 @@ export const getReportComments = async (req: Request, res: Response): Promise<vo
             id: true,
             name: true,
             role: true,
-            profile: { select: { avatar: true } }
+            profile: { select: { avatar: true, nick: true } }
           }
         },
         history: {
@@ -631,7 +631,7 @@ export const updateReportComment = async (req: Request, res: Response): Promise<
         data: { content: content.trim(), editedAt: now },
         include: {
           user: {
-            select: { id: true, name: true, role: true, profile: { select: { avatar: true } } }
+            select: { id: true, name: true, role: true, profile: { select: { avatar: true, nick: true } } }
           },
           history: {
             orderBy: { editedAt: 'asc' },

@@ -137,6 +137,8 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
           status: true,
           title: true,
           maxAttendees: true,
+          requiresApproval: true,
+          createdBy: true,
           registrations: {
             where: { status: 'CONFIRMED' },
             select: { id: true }
@@ -220,10 +222,11 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
     }
 
     const token = generateInvitationToken();
+    const needsApproval = !!event.requiresApproval;
 
-      const invitationResult = await prisma.$transaction(async (tx) => {
-        const created = await tx.invitation.create({
-          data: {
+    const invitationResult = await prisma.$transaction(async (tx) => {
+      const created = await tx.invitation.create({
+        data: {
           token,
           memberId: userId,
           guestFirstName: normalizeText(guestFirstName),
@@ -232,16 +235,18 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
           guestDniNormalized: normalizedDni,
           eventId: event.id,
           validDate: eventDay,
-          status: InvitationStatus.PENDING,
+          status: needsApproval ? InvitationStatus.PENDING_APPROVAL : InvitationStatus.PENDING,
           isExceptional: !!isExceptional
         },
-          include: {
-            event: { select: { id: true, title: true, date: true } },
-            member: { select: { id: true, name: true } }
-          }
-        });
+        include: {
+          event: { select: { id: true, title: true, date: true } },
+          member: { select: { id: true, name: true } }
+        }
+      });
 
-        const guest = await tx.eventGuest.create({
+      let guest = null;
+      if (!needsApproval) {
+        guest = await tx.eventGuest.create({
           data: {
             eventId: event.id,
             invitationId: created.id,
@@ -250,26 +255,40 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
             guestDni: created.guestDni
           }
         });
+      }
 
-        return { created, guest };
-      });
+      return { created, guest };
+    });
 
-      await prisma.eventAuditLog.create({
-        data: {
-          eventId: event.id,
-          actorId: userId,
-          action: 'INVITE',
-          targetGuestId: invitationResult.guest.id
-        }
-      });
+    await prisma.eventAuditLog.create({
+      data: {
+        eventId: event.id,
+        actorId: userId,
+        action: 'INVITE',
+        targetGuestId: invitationResult.guest?.id ?? null
+      }
+    });
 
-      res.status(201).json({
-        success: true,
-        data: {
-          invitation: mapInvitation(invitationResult.created, { includeQr: true }),
-          qrUrl: buildQrUrl(token)
+    if (needsApproval) {
+      const { notifyRegistrationPending } = await import('../services/notificationService');
+      await notifyRegistrationPending(
+        event.id,
+        event.title,
+        event.createdBy,
+        `${normalizeText(guestFirstName)} ${normalizeText(guestLastName)} (invitado por ${invitationResult.created.member?.name ?? 'un socio'})`
+      );
+    }
+
+    res.status(201).json({
+      success: true,
+      data: {
+        invitation: mapInvitation(invitationResult.created, { includeQr: !needsApproval }),
+        qrUrl: needsApproval ? undefined : buildQrUrl(token),
+        pendingApproval: needsApproval
       },
-      message: 'Invitacion creada'
+      message: needsApproval
+        ? 'Invitación enviada. Pendiente de aprobación del organizador.'
+        : 'Invitacion creada'
     });
   } catch (error) {
     console.error('[INVITATION] Error al crear invitacion:', error);
@@ -349,7 +368,7 @@ export const cancelInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    if (invitation.status !== InvitationStatus.PENDING) {
+    if (invitation.status !== InvitationStatus.PENDING && invitation.status !== InvitationStatus.PENDING_APPROVAL) {
       res.status(400).json({ success: false, message: 'Invitacion ya usada o expirada' });
       return;
     }
@@ -547,5 +566,202 @@ export const expireInvitations = async (_req: Request, res: Response): Promise<v
   } catch (error) {
     console.error('[INVITATION] Error al expirar invitaciones:', error);
     res.status(500).json({ success: false, message: 'Error al expirar invitaciones' });
+  }
+};
+
+// ── Aprobación de invitaciones pendientes ──────────────────────────────────
+
+export const getPendingInvitations = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id: eventId } = req.params;
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'No autenticado' });
+      return;
+    }
+
+    const pendingInvitations = await prisma.invitation.findMany({
+      where: { eventId, status: InvitationStatus.PENDING_APPROVAL },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        member: {
+          select: {
+            id: true,
+            name: true,
+            profile: { select: { avatar: true, nick: true } }
+          }
+        }
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: pendingInvitations.map(inv => ({
+        id: inv.id,
+        guestFirstName: inv.guestFirstName,
+        guestLastName: inv.guestLastName,
+        guestDniMasked: maskDni(inv.guestDni),
+        createdAt: inv.createdAt,
+        inviter: { id: inv.member.id, name: inv.member.name, nick: inv.member.profile?.nick ?? null, avatar: inv.member.profile?.avatar ?? null }
+      }))
+    });
+  } catch (error) {
+    console.error('[INVITATION] Error al obtener pendientes:', error);
+    res.status(500).json({ success: false, message: 'Error al obtener invitaciones pendientes' });
+  }
+};
+
+export const approveInvitation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id: eventId, invitationId } = req.params;
+    const userId = req.user?.userId;
+    const userRole = req.user?.role;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'No autenticado' });
+      return;
+    }
+
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { id: true, title: true, createdBy: true, maxAttendees: true }
+    });
+
+    if (!event) {
+      res.status(404).json({ success: false, message: 'Evento no encontrado' });
+      return;
+    }
+
+    const isAdmin = userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN;
+    if (!isAdmin && event.createdBy !== userId) {
+      res.status(403).json({ success: false, message: 'No autorizado' });
+      return;
+    }
+
+    const invitation = await prisma.invitation.findUnique({
+      where: { id: invitationId },
+      include: { member: { select: { id: true, name: true } } }
+    });
+
+    if (!invitation || invitation.eventId !== eventId) {
+      res.status(404).json({ success: false, message: 'Invitación no encontrada' });
+      return;
+    }
+
+    if (invitation.status !== InvitationStatus.PENDING_APPROVAL) {
+      res.status(400).json({ success: false, message: 'Esta invitación ya fue procesada' });
+      return;
+    }
+
+    // Verificar capacidad (solo CONFIRMED + PENDING|USED, sin contar PENDING_APPROVAL)
+    const [confirmedCount, activeInvitations] = await Promise.all([
+      prisma.eventRegistration.count({ where: { eventId, status: 'CONFIRMED' } }),
+      prisma.invitation.count({ where: { eventId, status: { in: [InvitationStatus.PENDING, InvitationStatus.USED] } } })
+    ]);
+
+    if (confirmedCount + activeInvitations >= event.maxAttendees) {
+      res.status(400).json({ success: false, message: 'El evento está completo' });
+      return;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.invitation.update({
+        where: { id: invitationId },
+        data: {
+          status: InvitationStatus.PENDING,
+          approvedById: userId,
+          approvedAt: new Date()
+        }
+      });
+
+      const newGuest = await tx.eventGuest.create({
+        data: {
+          eventId,
+          invitationId: invitationId!,
+          guestFirstName: invitation.guestFirstName,
+          guestLastName: invitation.guestLastName,
+          guestDni: invitation.guestDni
+        }
+      });
+
+      await tx.eventAuditLog.create({
+        data: { eventId, actorId: userId, action: 'INVITE', targetGuestId: newGuest.id }
+      });
+    });
+
+    const { notifyRegistrationApproved } = await import('../services/notificationService');
+    await notifyRegistrationApproved(
+      invitation.memberId,
+      eventId,
+      event.title
+    );
+
+    res.status(200).json({ success: true, message: 'Invitación aprobada' });
+  } catch (error) {
+    console.error('[INVITATION] Error al aprobar invitación:', error);
+    res.status(500).json({ success: false, message: 'Error al aprobar la invitación' });
+  }
+};
+
+export const rejectInvitation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id: eventId, invitationId } = req.params;
+    const userId = req.user?.userId;
+    const userRole = req.user?.role;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'No autenticado' });
+      return;
+    }
+
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { id: true, title: true, createdBy: true }
+    });
+
+    if (!event) {
+      res.status(404).json({ success: false, message: 'Evento no encontrado' });
+      return;
+    }
+
+    const isAdmin = userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN;
+    if (!isAdmin && event.createdBy !== userId) {
+      res.status(403).json({ success: false, message: 'No autorizado' });
+      return;
+    }
+
+    const invitation = await prisma.invitation.findUnique({
+      where: { id: invitationId }
+    });
+
+    if (!invitation || invitation.eventId !== eventId) {
+      res.status(404).json({ success: false, message: 'Invitación no encontrada' });
+      return;
+    }
+
+    if (invitation.status !== InvitationStatus.PENDING_APPROVAL) {
+      res.status(400).json({ success: false, message: 'Esta invitación ya fue procesada' });
+      return;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.invitation.update({
+        where: { id: invitationId },
+        data: { status: InvitationStatus.CANCELLED }
+      });
+
+      await tx.eventAuditLog.create({
+        data: { eventId, actorId: userId, action: 'CANCEL_INVITE', targetGuestId: null }
+      });
+    });
+
+    const { notifyRegistrationRejected } = await import('../services/notificationService');
+    await notifyRegistrationRejected(invitation.memberId, eventId, event.title);
+
+    res.status(200).json({ success: true, message: 'Invitación rechazada' });
+  } catch (error) {
+    console.error('[INVITATION] Error al rechazar invitación:', error);
+    res.status(500).json({ success: false, message: 'Error al rechazar la invitación' });
   }
 };

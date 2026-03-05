@@ -11,6 +11,7 @@ import ChangePasswordSection from '../components/profile/ChangePasswordSection';
 import { useToast } from '../hooks/useToast';
 import { api } from '../api/axios';
 import type { UserProfile, UpdateProfileData } from '../types/profile';
+import { displayName, fullNameTooltip } from '../utils/displayName';
 import type { ApiResponse } from '../types/auth';
 import type { UserBadgesResponse } from '../types/badge';
 
@@ -249,6 +250,7 @@ export default function Profile() {
       setFavoriteGamesInput((profile.favoriteGames || []).join(', '));
       setFormData({
         avatar: profile.avatar || '',
+        nick: profile.nick || '',
         phone: profile.phone || '',
         birthDate: profile.birthDate ? profile.birthDate.split('T')[0] : '',
         bio: profile.bio || '',
@@ -393,7 +395,15 @@ export default function Profile() {
                 />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-[var(--color-text)]">{profile.user?.name}</h2>
+                <h2
+                  className="text-2xl font-bold text-[var(--color-text)]"
+                  title={fullNameTooltip(profile.user?.name ?? '', profile.nick)}
+                >
+                  {displayName(profile.user?.name ?? '', profile.nick)}
+                </h2>
+                {profile.nick && (
+                  <p className="text-sm text-[var(--color-textSecondary)]">{profile.user?.name}</p>
+                )}
                 <p className="text-[var(--color-textSecondary)]">{profile.user?.email}</p>
                 <p className="text-xs text-[var(--color-textSecondary)] mt-1">Pasa el cursor sobre la foto para cambiarla</p>
               </div>
@@ -407,6 +417,22 @@ export default function Profile() {
                 <div>
                   <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Información Personal</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
+                        Nick (nombre visible en partidas y comentarios)
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.nick || ''}
+                        onChange={(e) => setFormData({ ...formData, nick: e.target.value })}
+                        className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                        placeholder="Ej: Llorx, Chemi, Worf..."
+                        maxLength={30}
+                      />
+                      <p className="text-xs text-[var(--color-textSecondary)] mt-1">
+                        Si lo rellenas, este nombre aparecerá en toda la web. El nombre real siempre estará disponible para administración.
+                      </p>
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                         Teléfono

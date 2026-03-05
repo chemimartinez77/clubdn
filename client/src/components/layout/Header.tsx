@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
 import Modal from '../ui/Modal';
 import NotificationBell from '../notifications/NotificationBell';
+import { displayName, fullNameTooltip } from '../../utils/displayName';
 
 export default function Header() {
   const { user, logout, isAdmin } = useAuth();
@@ -273,11 +274,13 @@ export default function Header() {
                     />
                   ) : (
                     <span className="text-primary font-semibold text-sm">
-                      {user?.name?.charAt(0).toUpperCase() || '?'}
+                      {displayName(user?.name || '', user?.profile?.nick).charAt(0).toUpperCase() || '?'}
                     </span>
                   )}
                 </div>
-                <span className="font-medium">{user?.name}</span>
+                <span className="font-medium" title={fullNameTooltip(user?.name || '', user?.profile?.nick)}>
+                  {displayName(user?.name || '', user?.profile?.nick)}
+                </span>
                 <svg
                   className={`w-4 h-4 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`}
                   fill="none"
@@ -297,7 +300,8 @@ export default function Header() {
                   />
                   <div className="absolute right-0 mt-2 w-48 bg-[var(--color-cardBackground)] rounded-lg shadow-lg border border-[var(--color-cardBorder)] py-1 z-20">
                     <div className="px-4 py-2 border-b border-[var(--color-cardBorder)]">
-                      <p className="text-sm font-medium text-[var(--color-text)]">{user?.name}</p>
+                      <p className="text-sm font-medium text-[var(--color-text)]">{displayName(user?.name || '', user?.profile?.nick)}</p>
+                      {user?.profile?.nick && <p className="text-xs text-[var(--color-textSecondary)]">{user.name}</p>}
                       <p className="text-xs text-[var(--color-textSecondary)]">{user?.email}</p>
                       <p className="text-xs text-primary mt-1 font-medium">
                         {user?.role === 'SUPER_ADMIN' ? 'Super Administrador' : user?.role === 'ADMIN' ? 'Administrador' : 'Usuario'}
@@ -563,13 +567,19 @@ export default function Header() {
           ) : (
             <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border border-[var(--color-cardBorder)]">
               <span className="text-3xl font-semibold text-primary">
-                {user?.name?.charAt(0).toUpperCase()}
+                {displayName(user?.name || '', user?.profile?.nick).charAt(0).toUpperCase()}
               </span>
             </div>
           )}
 
           <div className="space-y-1">
-            <p className="text-lg font-semibold text-[var(--color-text)]">{user?.name}</p>
+            <p
+              className="text-lg font-semibold text-[var(--color-text)]"
+              title={fullNameTooltip(user?.name || '', user?.profile?.nick)}
+            >
+              {displayName(user?.name || '', user?.profile?.nick)}
+            </p>
+            {user?.profile?.nick && <p className="text-xs text-[var(--color-textSecondary)]">{user.name}</p>}
             <p className="text-sm text-[var(--color-textSecondary)]">{membershipLabel}</p>
           </div>
 

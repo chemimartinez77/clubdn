@@ -6,6 +6,7 @@ import { api } from '../../api/axios';
 import type { User } from '../../types/auth';
 import type { UserProfile } from '../../types/profile';
 import type { ApiResponse } from '../../types/auth';
+import { displayName } from '../../utils/displayName';
 
 interface WelcomeCardProps {
   user: User;
@@ -58,7 +59,7 @@ export default function WelcomeCard({ user }: WelcomeCardProps) {
           <div className="flex-1">
             <div>
               <h2 className="text-2xl font-bold mb-1">
-                {getGreeting()}, {user.name}!
+                {getGreeting()}, {displayName(user.name, profile?.nick)}!
               </h2>
               <p className="text-white/80">
                 Bienvenido al Club Dreadnought

@@ -20,6 +20,7 @@ export interface User {
   } | null;
   profile?: {
     avatar?: string | null;
+    nick?: string | null;
   } | null;
 }
 

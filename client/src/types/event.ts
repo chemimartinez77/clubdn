@@ -92,8 +92,17 @@ export interface EventInvitation {
   id: string;
   guestFirstName: string;
   guestLastName: string;
-  status: 'PENDING' | 'USED' | 'EXPIRED' | 'CANCELLED';
+  status: 'PENDING' | 'PENDING_APPROVAL' | 'USED' | 'EXPIRED' | 'CANCELLED';
   inviterId?: string | null;
+}
+
+export interface PendingInvitation {
+  id: string;
+  guestFirstName: string;
+  guestLastName: string;
+  guestDniMasked: string;
+  createdAt: string;
+  inviter: { id: string; name: string; nick: string | null; avatar: string | null };
 }
 
 export interface EventRegistration {
@@ -111,6 +120,7 @@ export interface EventRegistration {
     } | null;
     profile?: {
       avatar?: string | null;
+      nick?: string | null;
     } | null;
   };
 }

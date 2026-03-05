@@ -19,6 +19,7 @@ import {
   completeEvent
 } from '../controllers/eventController';
 import { authenticate, requireAdmin } from '../middleware/auth';
+import { getPendingInvitations, approveInvitation, rejectInvitation } from '../controllers/invitationController';
 
 const router = Router();
 
@@ -42,6 +43,11 @@ router.post('/:id/add-member', authenticate, addMemberToEvent);
 router.get('/:id/pending-registrations', authenticate, getPendingRegistrations);
 router.post('/:id/registrations/:registrationId/approve', authenticate, approveRegistration);
 router.post('/:id/registrations/:registrationId/reject', authenticate, rejectRegistration);
+
+// Aprobación de invitaciones pendientes (organizador o admin)
+router.get('/:id/pending-invitations', authenticate, getPendingInvitations);
+router.post('/:id/invitations/:invitationId/approve', authenticate, approveInvitation);
+router.post('/:id/invitations/:invitationId/reject', authenticate, rejectInvitation);
 
 // CRUD
 router.post('/', authenticate, createEvent); // Usuarios pueden crear PARTIDA, admins todo

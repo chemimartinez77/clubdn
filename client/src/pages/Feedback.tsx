@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import FeedbackTour from '../components/tour/FeedbackTour';
 import { useTour } from '../hooks/useTour';
+import { displayName, fullNameTooltip } from '../utils/displayName';
 
 type ReportType = 'BUG' | 'MEJORA';
 type ReportStatus = 'NUEVO' | 'EN_REVISION' | 'EN_PROGRESO' | 'HECHO';
@@ -55,7 +56,7 @@ interface ReportComment {
     id: string;
     name: string;
     role: string;
-    profile?: { avatar?: string | null } | null;
+    profile?: { avatar?: string | null; nick?: string | null } | null;
   };
 }
 
@@ -192,6 +193,7 @@ export default function Feedback() {
   const [filterMine, setFilterMine] = useState(false);
   const [filterStatus, setFilterStatus] = useState<ReportStatus | 'ALL' | 'ALL_EXCEPT_HECHO'>('ALL_EXCEPT_HECHO');
   const [sortByVotes, setSortByVotes] = useState(false);
+  const [reportSort, setReportSort] = useState<'newest' | 'oldest'>('newest');
 
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
@@ -202,6 +204,7 @@ export default function Feedback() {
 
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] = useState('');
+  const [commentSort, setCommentSort] = useState<'oldest' | 'newest'>('oldest');
 
   const [searchParams] = useSearchParams();
   const scrolledRef = useRef(false);
@@ -224,9 +227,15 @@ export default function Feedback() {
   });
 
   const visibleReports = useMemo(() => {
-    if (filterStatus === 'ALL_EXCEPT_HECHO') return reports.filter(r => r.status !== 'HECHO');
-    return reports;
-  }, [reports, filterStatus]);
+    const filtered = filterStatus === 'ALL_EXCEPT_HECHO'
+      ? reports.filter(r => r.status !== 'HECHO')
+      : reports;
+    if (sortByVotes) return filtered;
+    return [...filtered].sort((a, b) => {
+      const diff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return reportSort === 'newest' ? diff : -diff;
+    });
+  }, [reports, filterStatus, sortByVotes, reportSort]);
 
   useEffect(() => {
     const reportId = searchParams.get('report');
@@ -284,6 +293,15 @@ export default function Feedback() {
     },
     enabled: !!selectedReport
   });
+
+  const sortedComments = useMemo(() => {
+    if (commentSort === 'newest') {
+      return [...comments].sort((a: ReportComment, b: ReportComment) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    }
+    return comments;
+  }, [comments, commentSort]);
 
   const addCommentImages = (files: FileList | File[]) => {
     const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
@@ -501,6 +519,22 @@ export default function Feedback() {
               >
                 Más votados
               </Button>
+              <div className="flex rounded-lg overflow-hidden border border-[var(--color-inputBorder)]">
+                <button
+                  onClick={() => setReportSort('newest')}
+                  disabled={sortByVotes}
+                  className={`px-3 py-2 text-sm transition-colors ${reportSort === 'newest' && !sortByVotes ? 'bg-[var(--color-primary)] text-white' : 'bg-[var(--color-cardBackground)] text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)]'} disabled:opacity-40 disabled:cursor-not-allowed`}
+                >
+                  Más recientes
+                </button>
+                <button
+                  onClick={() => setReportSort('oldest')}
+                  disabled={sortByVotes}
+                  className={`px-3 py-2 text-sm border-l border-[var(--color-inputBorder)] transition-colors ${reportSort === 'oldest' && !sortByVotes ? 'bg-[var(--color-primary)] text-white' : 'bg-[var(--color-cardBackground)] text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)]'} disabled:opacity-40 disabled:cursor-not-allowed`}
+                >
+                  Más antiguos
+                </button>
+              </div>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as ReportStatus | 'ALL' | 'ALL_EXCEPT_HECHO')}
@@ -593,13 +627,29 @@ export default function Feedback() {
                       {selectedReport === report.id && (
                         <div className="px-6 pb-6 space-y-3">
                           {/* Hilo de comentarios */}
+                            {comments.length > 1 && (
+                            <div className="flex gap-2 pt-2">
+                              <button
+                                onClick={() => setCommentSort('oldest')}
+                                className={`text-xs px-3 py-1 rounded-full border transition-colors ${commentSort === 'oldest' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'border-[var(--color-cardBorder)] text-[var(--color-textSecondary)] hover:border-[var(--color-primary)]'}`}
+                              >
+                                Más antiguos
+                              </button>
+                              <button
+                                onClick={() => setCommentSort('newest')}
+                                className={`text-xs px-3 py-1 rounded-full border transition-colors ${commentSort === 'newest' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'border-[var(--color-cardBorder)] text-[var(--color-textSecondary)] hover:border-[var(--color-primary)]'}`}
+                              >
+                                Más recientes
+                              </button>
+                            </div>
+                          )}
                           <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                             {comments.length === 0 ? (
                               <p className="text-sm text-[var(--color-textSecondary)] text-center py-6">
                                 No hay comentarios aún.
                               </p>
                             ) : (
-                              comments.map((comment: ReportComment) => {
+                              sortedComments.map((comment: ReportComment) => {
                                 const isAdminComment = comment.user.role === 'ADMIN' || comment.user.role === 'SUPER_ADMIN';
                                 const isOwnComment = comment.user.id === user?.id;
                                 return (
@@ -617,14 +667,19 @@ export default function Feedback() {
                                     }`}>
                                       {comment.user.profile?.avatar
                                         ? <img src={comment.user.profile.avatar} alt={comment.user.name} className="w-full h-full object-cover" />
-                                        : comment.user.name.charAt(0).toUpperCase()
+                                        : displayName(comment.user.name, comment.user.profile?.nick).charAt(0).toUpperCase()
                                       }
                                     </div>
                                     {/* Burbuja */}
                                     <div className={`${editingCommentId === comment.id ? 'flex-1' : 'max-w-[75%]'} ${isOwnComment ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                                       <div className="flex items-center gap-2 flex-wrap">
                                         {!isOwnComment && (
-                                          <span className="text-xs font-semibold text-[var(--color-text)]">{comment.user.name}</span>
+                                          <span
+                                            className="text-xs font-semibold text-[var(--color-text)]"
+                                            title={fullNameTooltip(comment.user.name, comment.user.profile?.nick)}
+                                          >
+                                            {displayName(comment.user.name, comment.user.profile?.nick)}
+                                          </span>
                                         )}
                                         {isAdminComment && (
                                           <span className="text-xs px-1.5 py-0.5 bg-[var(--color-primary)] text-white rounded font-medium">Admin</span>

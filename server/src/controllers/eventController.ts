@@ -930,6 +930,15 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
         await checkAndUnlockBadges(userId, event.gameCategory);
       }
 
+      // Notificar al organizador (si no es el mismo que se apunta)
+      if (event.createdBy !== userId) {
+        const { notifyRegistrationConfirmed } = await import('../services/notificationService');
+        const joiningUser = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+        if (joiningUser) {
+          await notifyRegistrationConfirmed(id, event.title, event.createdBy, joiningUser.name);
+        }
+      }
+
       res.status(201).json({
         success: true,
         data: { registration },
@@ -970,8 +979,13 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
       include: {
         event: {
           select: {
-            date: true
+            date: true,
+            title: true,
+            createdBy: true
           }
+        },
+        user: {
+          select: { name: true }
         }
       }
     });
@@ -1060,6 +1074,12 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
           }
         }
       }
+    }
+
+    // Notificar al organizador (si el que se va no es el propio organizador)
+    if (registration.event.createdBy !== userId) {
+      const { notifyRegistrationCancelled } = await import('../services/notificationService');
+      await notifyRegistrationCancelled(id, registration.event.title, registration.event.createdBy, registration.user.name);
     }
 
     res.status(200).json({
@@ -1299,7 +1319,7 @@ export const searchMembersForEvent = async (req: Request, res: Response): Promis
         id: true,
         name: true,
         membership: { select: { type: true } },
-        profile: { select: { avatar: true } }
+        profile: { select: { avatar: true, nick: true } }
       },
       take: 10
     });

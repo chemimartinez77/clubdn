@@ -177,6 +177,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
 
     const {
       avatar,
+      nick,
       phone,
       birthDate,
       bio,
@@ -204,6 +205,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
         data: {
           userId,
           avatar,
+          nick: nick?.trim() || null,
           phone,
           birthDate: birthDate ? new Date(birthDate) : null,
           bio,
@@ -240,6 +242,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
         where: { userId },
         data: {
           ...(avatar !== undefined && { avatar }),
+          ...(nick !== undefined && { nick: nick?.trim() || null }),
           ...(phone !== undefined && { phone }),
           ...(birthDate !== undefined && { birthDate: birthDate ? new Date(birthDate) : null }),
           ...(bio !== undefined && { bio }),
