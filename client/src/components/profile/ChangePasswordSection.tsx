@@ -58,7 +58,7 @@ export default function ChangePasswordSection() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-[var(--color-text)]">Seguridad</h3>
+        <h3 className="text-lg font-semibold text-[var(--color-text)]">Contraseña</h3>
         {!isChangingPassword && (
           <Button
             variant="outline"
