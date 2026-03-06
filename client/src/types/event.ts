@@ -63,6 +63,7 @@ export interface Event {
     name: string;
     email: string;
     profile?: { nick?: string | null };
+    membership?: { type: string } | null;
   };
 
   // Datos calculados

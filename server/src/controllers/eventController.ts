@@ -71,7 +71,8 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
             id: true,
             name: true,
             email: true,
-            profile: { select: { nick: true } }
+            profile: { select: { nick: true } },
+            membership: { select: { type: true } }
           }
         },
           registrations: {
@@ -85,6 +86,12 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
                   membership: {
                     select: {
                       type: true
+                    }
+                  },
+                  profile: {
+                    select: {
+                      nick: true,
+                      avatar: true
                     }
                   }
                 }
@@ -212,7 +219,8 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
             id: true,
             name: true,
             email: true,
-            profile: { select: { nick: true } }
+            profile: { select: { nick: true } },
+            membership: { select: { type: true } }
           }
         },
         registrations: {

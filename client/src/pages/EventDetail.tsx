@@ -1015,7 +1015,14 @@ export default function EventDetail() {
                   </svg>
                   <div>
                     <p className="text-sm text-[var(--color-textSecondary)]">Organizador</p>
-                    <p className="font-medium text-[var(--color-text)]">{event.organizer ? (event.organizer.profile?.nick || event.organizer.name) : ''}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-[var(--color-text)]">{event.organizer ? (event.organizer.profile?.nick || event.organizer.name) : ''}</p>
+                      {event.organizer?.membership?.type && membershipLabels[event.organizer.membership.type] && (
+                        <span className="text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
+                          {membershipLabels[event.organizer.membership.type]}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
