@@ -229,7 +229,8 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
                 },
                 profile: {
                   select: {
-                    avatar: true
+                    avatar: true,
+                    nick: true
                   }
                 }
               }
@@ -1582,7 +1583,8 @@ export const getPendingRegistrations = async (req: Request, res: Response): Prom
             email: true,
             profile: {
               select: {
-                avatar: true
+                avatar: true,
+                nick: true
               }
             }
           }
