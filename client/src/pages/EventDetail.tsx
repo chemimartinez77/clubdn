@@ -1021,6 +1021,7 @@ export default function EventDetail() {
                         userId={event.organizer.id}
                         name={event.organizer.name}
                         nick={event.organizer.profile?.nick}
+                        avatar={event.organizer.profile?.avatar}
                         membershipType={event.organizer.membership?.type}
                       >
                         <span className="font-medium text-[var(--color-text)]">
@@ -1036,7 +1037,13 @@ export default function EventDetail() {
             {/* Description */}
             <div>
               <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Descripción</h3>
-              <p className="text-[var(--color-textSecondary)] whitespace-pre-line">{event.description}</p>
+              {event.description ? (
+                <p className="text-[var(--color-textSecondary)] whitespace-pre-line">{event.description}</p>
+              ) : (
+                <p className="text-[var(--color-textSecondary)] italic">
+                  {event.organizer?.profile?.nick || event.organizer?.name || 'El organizador'} no ha considerado necesario proporcionar una descripción para esta partida
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

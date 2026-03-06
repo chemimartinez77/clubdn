@@ -62,7 +62,7 @@ export interface Event {
     id: string;
     name: string;
     email: string;
-    profile?: { nick?: string | null };
+    profile?: { nick?: string | null; avatar?: string | null };
     membership?: { type: string } | null;
   };
 
