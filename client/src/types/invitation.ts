@@ -38,4 +38,5 @@ export interface CreateInvitationPayload {
 export interface InvitationCreateResponse {
   invitation: Invitation;
   qrUrl: string;
+  pendingApproval?: boolean;
 }
