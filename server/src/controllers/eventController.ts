@@ -7,6 +7,68 @@ import { checkAndUnlockBadges } from './badgeController';
 const REGISTRATION_COOLDOWN_MS = 30000; // 30 segundos
 
 /**
+ * Comprueba si el usuario ya tiene una partida confirmada que solapa con el intervalo dado.
+ * Devuelve el título del evento conflictivo o null si no hay conflicto.
+ */
+async function getScheduleConflict(
+  userId: string,
+  eventDate: Date,
+  startHour: number | null,
+  startMinute: number | null,
+  durationHours: number | null,
+  durationMinutes: number | null,
+  excludeEventId?: string
+): Promise<string | null> {
+  // Si el evento no tiene hora de inicio definida, no podemos detectar conflicto
+  if (startHour === null || startHour === undefined) return null;
+
+  const sm = startMinute ?? 0;
+  const newStart = startHour * 60 + sm;
+  const totalDuration = (durationHours ?? 0) * 60 + (durationMinutes ?? 0);
+  // Si no hay duración definida, asumimos mínimo 1 minuto para detectar coincidencia exacta
+  const newEnd = newStart + (totalDuration > 0 ? totalDuration : 1);
+
+  // Fecha del evento (solo la parte de fecha, sin hora)
+  const dayStart = new Date(eventDate);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(dayStart);
+  dayEnd.setDate(dayEnd.getDate() + 1);
+
+  // Buscar registros confirmados del usuario en el mismo día
+  const registrations = await prisma.eventRegistration.findMany({
+    where: {
+      userId,
+      status: { in: ['CONFIRMED', 'WAITLIST'] },
+      event: {
+        date: { gte: dayStart, lt: dayEnd },
+        status: { notIn: ['CANCELLED', 'COMPLETED'] },
+        ...(excludeEventId ? { id: { not: excludeEventId } } : {})
+      }
+    },
+    include: {
+      event: {
+        select: { title: true, startHour: true, startMinute: true, durationHours: true, durationMinutes: true }
+      }
+    }
+  });
+
+  for (const reg of registrations) {
+    const ev = reg.event;
+    if (ev.startHour === null || ev.startHour === undefined) continue;
+    const evSm = ev.startMinute ?? 0;
+    const evStart = ev.startHour * 60 + evSm;
+    const evDuration = (ev.durationHours ?? 0) * 60 + (ev.durationMinutes ?? 0);
+    const evEnd = evStart + (evDuration > 0 ? evDuration : 1);
+
+    // Solapan si un intervalo empieza antes de que acabe el otro
+    const overlaps = newStart < evEnd && evStart < newEnd;
+    if (overlaps) return ev.title;
+  }
+
+  return null;
+}
+
+/**
  * GET /api/events - Listar eventos con filtros
  */
 export const getEvents = async (req: Request, res: Response): Promise<void> => {
@@ -438,6 +500,26 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
     const shouldAttend =
       attend === undefined ? true : attend === true || attend === 'true' || attend === 'on';
     if (shouldAttend) {
+      // Validar conflicto horario antes de registrar al organizador
+      const conflictTitle = await getScheduleConflict(
+        userId,
+        eventDate,
+        startHour !== undefined ? parseInt(startHour) : null,
+        startMinute !== undefined ? parseInt(startMinute) : null,
+        durationHours !== undefined ? parseInt(durationHours) : null,
+        durationMinutes !== undefined ? parseInt(durationMinutes) : null,
+        event.id
+      );
+      if (conflictTitle) {
+        // La partida se crea igualmente pero sin apuntar al organizador
+        // (el organizador puede apuntarse manualmente si lo desea, pero no se le registra automáticamente)
+        return res.status(201).json({
+          success: true,
+          data: { event },
+          message: `Partida creada. No se te ha apuntado automáticamente porque tienes conflicto horario con "${conflictTitle}"`
+        });
+      }
+
       await prisma.eventRegistration.create({
         data: {
           eventId: event.id,
@@ -781,6 +863,24 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
       res.status(400).json({
         success: false,
         message: 'No puedes registrarte a un evento pasado'
+      });
+      return;
+    }
+
+    // Validar conflicto horario
+    const conflictTitle = await getScheduleConflict(
+      userId,
+      event.date,
+      event.startHour,
+      event.startMinute,
+      event.durationHours,
+      event.durationMinutes,
+      id
+    );
+    if (conflictTitle) {
+      res.status(409).json({
+        success: false,
+        message: `Ya tienes una partida en ese horario: "${conflictTitle}"`
       });
       return;
     }
