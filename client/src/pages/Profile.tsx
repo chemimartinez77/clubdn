@@ -539,120 +539,6 @@ export default function Profile() {
                   </div>
                 </div>
 
-                {/* Notifications */}
-                <div>
-                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Notificaciones</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Configuración General</p>
-                      <div className="space-y-3">
-                        <NotifToggle
-                          value={formData.notifications ?? true}
-                          label="Recibir notificaciones en la aplicación"
-                          onToggle={() => setFormData({ ...formData, notifications: !(formData.notifications ?? true) })}
-                        />
-                        <NotifToggle
-                          value={false}
-                          label="Recibir actualizaciones por email"
-                          disabled
-                          tooltip="De momento no disponible"
-                          muted
-                        />
-                      </div>
-                    </div>
-
-                    <div className="border-t border-[var(--color-cardBorder)] pt-4">
-                      <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Preferencias de Notificaciones</p>
-                      <div className="space-y-3">
-                        <NotifToggle
-                          value={formData.notifyNewEvents ?? true}
-                          label="Nuevas partidas creadas"
-                          description="Recibir notificaciones cuando se cree una nueva partida"
-                          onToggle={() => setFormData({ ...formData, notifyNewEvents: !(formData.notifyNewEvents ?? true) })}
-                        />
-                        <NotifToggle
-                          value={formData.notifyEventChanges ?? true}
-                          label="Cambios en eventos inscritos"
-                          description="Notificar cuando se modifique una partida en la que estás inscrito"
-                          onToggle={() => setFormData({ ...formData, notifyEventChanges: !(formData.notifyEventChanges ?? true) })}
-                        />
-                        <NotifToggle
-                          value={formData.notifyEventCancelled ?? true}
-                          label="Eventos cancelados"
-                          description="Notificar cuando se cancele una partida en la que estás inscrito"
-                          onToggle={() => setFormData({ ...formData, notifyEventCancelled: !(formData.notifyEventCancelled ?? true) })}
-                        />
-                        <NotifToggle
-                          value={formData.notifyInvitations ?? true}
-                          label="Estado de invitaciones"
-                          description="Notificar cuando tus invitaciones sean validadas o rechazadas"
-                          onToggle={() => setFormData({ ...formData, notifyInvitations: !(formData.notifyInvitations ?? true) })}
-                        />
-                        <NotifToggle
-                          value={formData.allowEventInvitations ?? true}
-                          label="Permitir invitaciones a partidas"
-                          description="Permite que los organizadores te apunten directamente a sus partidas"
-                          onToggle={() => setFormData({ ...formData, allowEventInvitations: !(formData.allowEventInvitations ?? true) })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Calendario */}
-                <div>
-                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Sincronización de Calendario</h3>
-                  <p className="text-sm text-[var(--color-textSecondary)] mb-3">
-                    Suscríbete a tus partidas desde cualquier app de calendario (Google Calendar, Apple Calendar, Outlook...).
-                    La URL se actualiza automáticamente cuando cambian tus partidas.
-                  </p>
-                  {profile?.calendarToken ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          readOnly
-                          value={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/calendar/${profile.calendarToken}`}
-                          className="flex-1 px-3 py-2 text-xs border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)] truncate"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleCopyCalendarUrl(profile.calendarToken!)}
-                          className="px-3 py-2 text-sm font-medium border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] text-[var(--color-text)] whitespace-nowrap"
-                        >
-                          {calendarCopied ? 'Copiado' : 'Copiar URL'}
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => generateCalendarTokenMutation.mutate()}
-                        disabled={generateCalendarTokenMutation.isPending}
-                        className="text-xs text-[var(--color-textSecondary)] hover:text-[var(--color-text)] underline"
-                      >
-                        Regenerar URL (invalida la anterior)
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => generateCalendarTokenMutation.mutate()}
-                      disabled={generateCalendarTokenMutation.isPending}
-                      className="px-4 py-2 text-sm font-medium border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] text-[var(--color-text)]"
-                    >
-                      {generateCalendarTokenMutation.isPending ? 'Generando...' : 'Generar URL de calendario'}
-                    </button>
-                  )}
-                </div>
-
-                {/* Personalización */}
-                <div>
-                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Personalización</h3>
-                  <NoughterColorSelector
-                    selectedColor={formData.noughterColor ?? null}
-                    onChange={(color) => setFormData({ ...formData, noughterColor: color === null ? null : (color || undefined) })}
-                  />
-                </div>
-
                 {/* Actions */}
                 <div className="flex gap-3 pt-4 border-t border-[var(--color-cardBorder)]">
                   <Button type="submit" variant="primary" disabled={updateMutation.isPending}>
@@ -668,6 +554,28 @@ export default function Profile() {
                 {/* Personal Information */}
                 <div>
                   <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Información Personal</h3>
+                  <div className="mb-4">
+                    <FieldRow
+                      label="Nick"
+                      fieldKey="nick"
+                      display={profile.nick || 'No especificado'}
+                      editingField={editingField}
+                      onEdit={() => startEditField('nick', profile.nick || '')}
+                      onSave={() => saveField('nick', fieldValue)}
+                      onCancel={() => setEditingField(null)}
+                      isSaving={updateMutation.isPending}
+                    >
+                      <input
+                        type="text"
+                        value={fieldValue}
+                        onChange={e => setFieldValue(e.target.value)}
+                        className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                        placeholder="Ej: Llorx, Chemi, Worf..."
+                        maxLength={30}
+                        autoFocus
+                      />
+                    </FieldRow>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FieldRow
                       label="Teléfono"
@@ -838,6 +746,11 @@ export default function Profile() {
                   </div>
                 </div>
 
+                {/* Change Password */}
+                <div>
+                  <ChangePasswordSection />
+                </div>
+
                 {/* Settings */}
                 <div>
                   <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Configuración</h3>
@@ -955,15 +868,6 @@ export default function Profile() {
             )}
           </CardContent>
         </Card>
-
-        {/* Change Password Section */}
-        {!isEditing && (
-          <Card>
-            <CardContent>
-              <ChangePasswordSection />
-            </CardContent>
-          </Card>
-        )}
 
         {/* Badges Section */}
         {!isEditing && (
