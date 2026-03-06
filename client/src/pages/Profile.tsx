@@ -558,7 +558,11 @@ export default function Profile() {
                     <FieldRow
                       label="Nick"
                       fieldKey="nick"
-                      display={profile.nick || 'No especificado'}
+                      display={
+                        <span title={profile.nick ? profile.user?.name : undefined}>
+                          {profile.nick || 'No especificado'}
+                        </span>
+                      }
                       editingField={editingField}
                       onEdit={() => startEditField('nick', profile.nick || '')}
                       onSave={() => saveField('nick', fieldValue)}
