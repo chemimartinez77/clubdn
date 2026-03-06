@@ -68,7 +68,7 @@ function FieldRow({
             type="button"
             onClick={onEdit}
             title="Editar"
-            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)] hover:text-[var(--color-text)] flex-shrink-0 mt-0.5"
+            className="opacity-40 hover:opacity-100 transition-opacity p-1 rounded hover:bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)] hover:text-[var(--color-text)] flex-shrink-0 mt-0.5"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -549,352 +549,367 @@ export default function Profile() {
                   </Button>
                 </div>
               </form>
-            ) : (
-              <div className="space-y-6">
-                {/* Personal Information */}
-                <div>
-                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Información Personal</h3>
-                  <div className="mb-4">
-                    <FieldRow
-                      label="Nick"
-                      fieldKey="nick"
-                      display={
-                        <span title={profile.nick ? profile.user?.name : undefined}>
-                          {profile.nick || 'No especificado'}
-                        </span>
-                      }
-                      editingField={editingField}
-                      onEdit={() => startEditField('nick', profile.nick || '')}
-                      onSave={() => saveField('nick', fieldValue)}
-                      onCancel={() => setEditingField(null)}
-                      isSaving={updateMutation.isPending}
-                    >
-                      <input
-                        type="text"
-                        value={fieldValue}
-                        onChange={e => setFieldValue(e.target.value)}
-                        className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
-                        placeholder="Ej: Llorx, Chemi, Worf..."
-                        maxLength={30}
-                        autoFocus
-                      />
-                    </FieldRow>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FieldRow
-                      label="Teléfono"
-                      fieldKey="phone"
-                      display={profile.phone || 'No especificado'}
-                      editingField={editingField}
-                      onEdit={() => startEditField('phone', profile.phone || '')}
-                      onSave={() => saveField('phone', fieldValue)}
-                      onCancel={() => setEditingField(null)}
-                      isSaving={updateMutation.isPending}
-                    >
-                      <input
-                        type="tel"
-                        value={fieldValue}
-                        onChange={e => setFieldValue(e.target.value)}
-                        className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
-                        placeholder="+34 600 000 000"
-                        autoFocus
-                      />
-                    </FieldRow>
-                    <FieldRow
-                      label="Fecha de Nacimiento"
-                      fieldKey="birthDate"
-                      display={formatDate(profile.birthDate)}
-                      editingField={editingField}
-                      onEdit={() => startEditField('birthDate', profile.birthDate ? profile.birthDate.split('T')[0] : '')}
-                      onSave={() => saveField('birthDate', fieldValue || null)}
-                      onCancel={() => setEditingField(null)}
-                      isSaving={updateMutation.isPending}
-                    >
-                      <input
-                        type="date"
-                        value={fieldValue}
-                        onChange={e => setFieldValue(e.target.value)}
-                        className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
-                        autoFocus
-                      />
-                    </FieldRow>
-                  </div>
-                  <div className="mt-4">
-                    <FieldRow
-                      label="Biografía"
-                      fieldKey="bio"
-                      display={profile.bio || 'No especificado'}
-                      editingField={editingField}
-                      onEdit={() => startEditField('bio', profile.bio || '')}
-                      onSave={() => saveField('bio', fieldValue)}
-                      onCancel={() => setEditingField(null)}
-                      isSaving={updateMutation.isPending}
-                    >
-                      <textarea
-                        value={fieldValue}
-                        onChange={e => setFieldValue(e.target.value)}
-                        rows={3}
-                        className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)] resize-y"
-                        placeholder="Cuéntanos sobre ti..."
-                        autoFocus
-                      />
-                    </FieldRow>
-                  </div>
-                </div>
+            ) : null}
+          </CardContent>
+        </Card>
 
-                {/* Gaming Preferences */}
-                <div>
-                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Preferencias de Juego</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FieldRow
-                      label="Juegos Favoritos"
-                      fieldKey="favoriteGames"
-                      display={
-                        profile.favoriteGames.length > 0 ? (
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {profile.favoriteGames.map((game, idx) => (
-                              <span key={idx} className="px-3 py-1 bg-[var(--color-primary-100)] text-[var(--color-primary-800)] rounded-full text-sm">
-                                {game}
-                              </span>
-                            ))}
-                          </div>
-                        ) : 'No especificado'
-                      }
-                      editingField={editingField}
-                      onEdit={() => startEditField('favoriteGames', (profile.favoriteGames || []).join(', '))}
-                      onSave={() => saveField('favoriteGames', fieldValue.split(/[;,]/).map(g => g.trim()).filter(g => g))}
-                      onCancel={() => setEditingField(null)}
-                      isSaving={updateMutation.isPending}
-                    >
-                      <>
+        {!isEditing && (
+          <>
+            {/* Block 1: Información Personal + Preferencias de Juego + Redes Sociales */}
+            <Card>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Personal Information */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Información Personal</h3>
+                    <div className="mb-4">
+                      <FieldRow
+                        label="Nick"
+                        fieldKey="nick"
+                        display={
+                          <span title={profile.nick ? profile.user?.name : undefined}>
+                            {profile.nick || 'No especificado'}
+                          </span>
+                        }
+                        editingField={editingField}
+                        onEdit={() => startEditField('nick', profile.nick || '')}
+                        onSave={() => saveField('nick', fieldValue)}
+                        onCancel={() => setEditingField(null)}
+                        isSaving={updateMutation.isPending}
+                      >
                         <input
                           type="text"
                           value={fieldValue}
                           onChange={e => setFieldValue(e.target.value)}
                           className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
-                          placeholder="Catan, Ticket to Ride, Pandemic"
+                          placeholder="Ej: Llorx, Chemi, Worf..."
+                          maxLength={30}
                           autoFocus
                         />
-                        <p className="text-xs text-[var(--color-textSecondary)]">Separados por comas o punto y coma</p>
-                      </>
-                    </FieldRow>
-                    <FieldRow
-                      label="Estilo de Juego"
-                      fieldKey="playStyle"
-                      display={profile.playStyle || 'No especificado'}
-                      editingField={editingField}
-                      onEdit={() => startEditField('playStyle', profile.playStyle || '')}
-                      onSave={() => saveField('playStyle', fieldValue)}
-                      onCancel={() => setEditingField(null)}
-                      isSaving={updateMutation.isPending}
-                    >
-                      <select
-                        value={fieldValue}
-                        onChange={e => setFieldValue(e.target.value)}
-                        className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
-                        autoFocus
+                      </FieldRow>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FieldRow
+                        label="Teléfono"
+                        fieldKey="phone"
+                        display={profile.phone || 'No especificado'}
+                        editingField={editingField}
+                        onEdit={() => startEditField('phone', profile.phone || '')}
+                        onSave={() => saveField('phone', fieldValue)}
+                        onCancel={() => setEditingField(null)}
+                        isSaving={updateMutation.isPending}
                       >
-                        <option value="">Selecciona...</option>
-                        <option value="Competitivo">Competitivo</option>
-                        <option value="Casual">Casual</option>
-                        <option value="Social">Social</option>
-                        <option value="Estratégico">Estratégico</option>
-                        <option value="Party Games">Party Games</option>
-                      </select>
-                    </FieldRow>
+                        <input
+                          type="tel"
+                          value={fieldValue}
+                          onChange={e => setFieldValue(e.target.value)}
+                          className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                          placeholder="+34 600 000 000"
+                          autoFocus
+                        />
+                      </FieldRow>
+                      <FieldRow
+                        label="Fecha de Nacimiento"
+                        fieldKey="birthDate"
+                        display={formatDate(profile.birthDate)}
+                        editingField={editingField}
+                        onEdit={() => startEditField('birthDate', profile.birthDate ? profile.birthDate.split('T')[0] : '')}
+                        onSave={() => saveField('birthDate', fieldValue || null)}
+                        onCancel={() => setEditingField(null)}
+                        isSaving={updateMutation.isPending}
+                      >
+                        <input
+                          type="date"
+                          value={fieldValue}
+                          onChange={e => setFieldValue(e.target.value)}
+                          className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                          autoFocus
+                        />
+                      </FieldRow>
+                    </div>
+                    <div className="mt-4">
+                      <FieldRow
+                        label="Biografía"
+                        fieldKey="bio"
+                        display={profile.bio || 'No especificado'}
+                        editingField={editingField}
+                        onEdit={() => startEditField('bio', profile.bio || '')}
+                        onSave={() => saveField('bio', fieldValue)}
+                        onCancel={() => setEditingField(null)}
+                        isSaving={updateMutation.isPending}
+                      >
+                        <textarea
+                          value={fieldValue}
+                          onChange={e => setFieldValue(e.target.value)}
+                          rows={3}
+                          className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)] resize-y"
+                          placeholder="Cuéntanos sobre ti..."
+                          autoFocus
+                        />
+                      </FieldRow>
+                    </div>
                   </div>
-                </div>
 
-                {/* Social */}
-                <div>
-                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Redes Sociales</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FieldRow
-                      label="Discord"
-                      fieldKey="discord"
-                      display={profile.discord || 'No especificado'}
-                      editingField={editingField}
-                      onEdit={() => startEditField('discord', profile.discord || '')}
-                      onSave={() => saveField('discord', fieldValue)}
-                      onCancel={() => setEditingField(null)}
-                      isSaving={updateMutation.isPending}
-                    >
-                      <input
-                        type="text"
-                        value={fieldValue}
-                        onChange={e => setFieldValue(e.target.value)}
-                        className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
-                        placeholder="usuario#1234"
-                        autoFocus
-                      />
-                    </FieldRow>
-                    <FieldRow
-                      label="Telegram"
-                      fieldKey="telegram"
-                      display={profile.telegram || 'No especificado'}
-                      editingField={editingField}
-                      onEdit={() => startEditField('telegram', profile.telegram || '')}
-                      onSave={() => saveField('telegram', fieldValue)}
-                      onCancel={() => setEditingField(null)}
-                      isSaving={updateMutation.isPending}
-                    >
-                      <input
-                        type="text"
-                        value={fieldValue}
-                        onChange={e => setFieldValue(e.target.value)}
-                        className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
-                        placeholder="@usuario"
-                        autoFocus
-                      />
-                    </FieldRow>
-                  </div>
-                </div>
-
-                {/* Change Password */}
-                <div>
-                  <ChangePasswordSection />
-                </div>
-
-                {/* Settings */}
-                <div>
-                  <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Configuración</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">General</p>
-                      <div className="space-y-2">
-                        <NotifToggle
-                          value={profile.notifications}
-                          label="Notificaciones en la aplicación"
-                          onToggle={() => updateMutation.mutate({ notifications: !profile.notifications })}
-                          disabled={updateMutation.isPending}
-                        />
-                        <NotifToggle
-                          value={false}
-                          label="Actualizaciones por email"
-                          disabled
-                          tooltip="De momento no disponible"
-                          muted
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-[var(--color-cardBorder)]">
-                      <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Preferencias de Notificaciones</p>
-                      <div className="space-y-2">
-                        <NotifToggle
-                          value={profile.notifyNewEvents}
-                          label="Nuevas partidas creadas"
-                          onToggle={() => updateMutation.mutate({ notifyNewEvents: !profile.notifyNewEvents })}
-                          disabled={updateMutation.isPending}
-                        />
-                        <NotifToggle
-                          value={profile.notifyEventChanges}
-                          label="Cambios en eventos inscritos"
-                          onToggle={() => updateMutation.mutate({ notifyEventChanges: !profile.notifyEventChanges })}
-                          disabled={updateMutation.isPending}
-                        />
-                        <NotifToggle
-                          value={profile.notifyEventCancelled}
-                          label="Eventos cancelados"
-                          onToggle={() => updateMutation.mutate({ notifyEventCancelled: !profile.notifyEventCancelled })}
-                          disabled={updateMutation.isPending}
-                        />
-                        <NotifToggle
-                          value={profile.notifyInvitations}
-                          label="Estado de invitaciones"
-                          onToggle={() => updateMutation.mutate({ notifyInvitations: !profile.notifyInvitations })}
-                          disabled={updateMutation.isPending}
-                        />
-                        <NotifToggle
-                          value={profile.allowEventInvitations}
-                          label="Permitir invitaciones a partidas"
-                          onToggle={() => updateMutation.mutate({ allowEventInvitations: !profile.allowEventInvitations })}
-                          disabled={updateMutation.isPending}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-[var(--color-cardBorder)]">
-                      <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Tema de la aplicación</p>
-                      <ThemeSelector />
-                    </div>
-
-                    <div className="pt-4 border-t border-[var(--color-cardBorder)]">
-                      <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Personalización</p>
-                      <NoughterColorSelector
-                        selectedColor={profile.noughterColor}
-                        onChange={handleNoughterChange}
-                      />
-                    </div>
-
-                    <div className="pt-4 border-t border-[var(--color-cardBorder)]">
-                      <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Sincronización de Calendario</p>
-                      {profile.calendarToken ? (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              readOnly
-                              value={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/calendar/${profile.calendarToken}`}
-                              className="flex-1 px-3 py-2 text-xs border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)] truncate"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleCopyCalendarUrl(profile.calendarToken!)}
-                              className="px-3 py-2 text-sm font-medium border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] text-[var(--color-text)] whitespace-nowrap"
-                            >
-                              {calendarCopied ? 'Copiado' : 'Copiar URL'}
-                            </button>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => generateCalendarTokenMutation.mutate()}
-                            disabled={generateCalendarTokenMutation.isPending}
-                            className="text-xs text-[var(--color-textSecondary)] hover:text-[var(--color-text)] underline"
-                          >
-                            Regenerar URL (invalida la anterior)
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => generateCalendarTokenMutation.mutate()}
-                          disabled={generateCalendarTokenMutation.isPending}
-                          className="px-4 py-2 text-sm font-medium border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] text-[var(--color-text)]"
+                  {/* Gaming Preferences */}
+                  <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                    <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Preferencias de Juego</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FieldRow
+                        label="Juegos Favoritos"
+                        fieldKey="favoriteGames"
+                        display={
+                          profile.favoriteGames.length > 0 ? (
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {profile.favoriteGames.map((game, idx) => (
+                                <span key={idx} className="px-3 py-1 bg-[var(--color-primary-100)] text-[var(--color-primary-800)] rounded-full text-sm">
+                                  {game}
+                                </span>
+                              ))}
+                            </div>
+                          ) : 'No especificado'
+                        }
+                        editingField={editingField}
+                        onEdit={() => startEditField('favoriteGames', (profile.favoriteGames || []).join(', '))}
+                        onSave={() => saveField('favoriteGames', fieldValue.split(/[;,]/).map(g => g.trim()).filter(g => g))}
+                        onCancel={() => setEditingField(null)}
+                        isSaving={updateMutation.isPending}
+                      >
+                        <>
+                          <input
+                            type="text"
+                            value={fieldValue}
+                            onChange={e => setFieldValue(e.target.value)}
+                            className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                            placeholder="Catan, Ticket to Ride, Pandemic"
+                            autoFocus
+                          />
+                          <p className="text-xs text-[var(--color-textSecondary)]">Separados por comas o punto y coma</p>
+                        </>
+                      </FieldRow>
+                      <FieldRow
+                        label="Estilo de Juego"
+                        fieldKey="playStyle"
+                        display={profile.playStyle || 'No especificado'}
+                        editingField={editingField}
+                        onEdit={() => startEditField('playStyle', profile.playStyle || '')}
+                        onSave={() => saveField('playStyle', fieldValue)}
+                        onCancel={() => setEditingField(null)}
+                        isSaving={updateMutation.isPending}
+                      >
+                        <select
+                          value={fieldValue}
+                          onChange={e => setFieldValue(e.target.value)}
+                          className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                          autoFocus
                         >
-                          {generateCalendarTokenMutation.isPending ? 'Generando...' : 'Generar URL de calendario'}
-                        </button>
-                      )}
+                          <option value="">Selecciona...</option>
+                          <option value="Competitivo">Competitivo</option>
+                          <option value="Casual">Casual</option>
+                          <option value="Social">Social</option>
+                          <option value="Estratégico">Estratégico</option>
+                          <option value="Party Games">Party Games</option>
+                        </select>
+                      </FieldRow>
+                    </div>
+                  </div>
+
+                  {/* Social */}
+                  <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                    <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Redes Sociales</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FieldRow
+                        label="Discord"
+                        fieldKey="discord"
+                        display={profile.discord || 'No especificado'}
+                        editingField={editingField}
+                        onEdit={() => startEditField('discord', profile.discord || '')}
+                        onSave={() => saveField('discord', fieldValue)}
+                        onCancel={() => setEditingField(null)}
+                        isSaving={updateMutation.isPending}
+                      >
+                        <input
+                          type="text"
+                          value={fieldValue}
+                          onChange={e => setFieldValue(e.target.value)}
+                          className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                          placeholder="usuario#1234"
+                          autoFocus
+                        />
+                      </FieldRow>
+                      <FieldRow
+                        label="Telegram"
+                        fieldKey="telegram"
+                        display={profile.telegram || 'No especificado'}
+                        editingField={editingField}
+                        onEdit={() => startEditField('telegram', profile.telegram || '')}
+                        onSave={() => saveField('telegram', fieldValue)}
+                        onCancel={() => setEditingField(null)}
+                        isSaving={updateMutation.isPending}
+                      >
+                        <input
+                          type="text"
+                          value={fieldValue}
+                          onChange={e => setFieldValue(e.target.value)}
+                          className="w-full px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                          placeholder="@usuario"
+                          autoFocus
+                        />
+                      </FieldRow>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        {/* Badges Section */}
-        {!isEditing && (
-          <Card>
-            <CardContent>
-              {isLoadingBadges ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]"></div>
+            {/* Block 1.5: Sincronización de Calendario */}
+            <Card>
+              <CardContent>
+                <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Sincronización de Calendario</h3>
+                {profile.calendarToken ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/calendar/${profile.calendarToken}`}
+                        className="flex-1 px-3 py-2 text-xs border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)] truncate"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCalendarUrl(profile.calendarToken!)}
+                        className="px-3 py-2 text-sm font-medium border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] text-[var(--color-text)] whitespace-nowrap"
+                      >
+                        {calendarCopied ? 'Copiado' : 'Copiar URL'}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => generateCalendarTokenMutation.mutate()}
+                      disabled={generateCalendarTokenMutation.isPending}
+                      className="text-xs text-[var(--color-textSecondary)] hover:text-[var(--color-text)] underline"
+                    >
+                      Regenerar URL (invalida la anterior)
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => generateCalendarTokenMutation.mutate()}
+                    disabled={generateCalendarTokenMutation.isPending}
+                    className="px-4 py-2 text-sm font-medium border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] text-[var(--color-text)]"
+                  >
+                    {generateCalendarTokenMutation.isPending ? 'Generando...' : 'Generar URL de calendario'}
+                  </button>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Block 2: Seguridad */}
+            <Card>
+              <CardContent>
+                <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Seguridad</h3>
+                <ChangePasswordSection />
+              </CardContent>
+            </Card>
+
+            {/* Block 3: Configuración */}
+            <Card>
+              <CardContent>
+                <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Configuración</h3>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Notificaciones</p>
+                    <div className="space-y-2">
+                      <NotifToggle
+                        value={profile.notifications}
+                        label="Notificaciones en la aplicación"
+                        onToggle={() => updateMutation.mutate({ notifications: !profile.notifications })}
+                        disabled={updateMutation.isPending}
+                      />
+                      <NotifToggle
+                        value={false}
+                        label="Actualizaciones por email"
+                        disabled
+                        tooltip="De momento no disponible"
+                        muted
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Preferencias de Notificaciones</p>
+                    <div className="space-y-2">
+                      <NotifToggle
+                        value={profile.notifyNewEvents}
+                        label="Nuevas partidas creadas"
+                        onToggle={() => updateMutation.mutate({ notifyNewEvents: !profile.notifyNewEvents })}
+                        disabled={updateMutation.isPending}
+                      />
+                      <NotifToggle
+                        value={profile.notifyEventChanges}
+                        label="Cambios en eventos inscritos"
+                        onToggle={() => updateMutation.mutate({ notifyEventChanges: !profile.notifyEventChanges })}
+                        disabled={updateMutation.isPending}
+                      />
+                      <NotifToggle
+                        value={profile.notifyEventCancelled}
+                        label="Eventos cancelados"
+                        onToggle={() => updateMutation.mutate({ notifyEventCancelled: !profile.notifyEventCancelled })}
+                        disabled={updateMutation.isPending}
+                      />
+                      <NotifToggle
+                        value={profile.notifyInvitations}
+                        label="Estado de invitaciones"
+                        onToggle={() => updateMutation.mutate({ notifyInvitations: !profile.notifyInvitations })}
+                        disabled={updateMutation.isPending}
+                      />
+                      <NotifToggle
+                        value={profile.allowEventInvitations}
+                        label="Permitir invitaciones a partidas"
+                        onToggle={() => updateMutation.mutate({ allowEventInvitations: !profile.allowEventInvitations })}
+                        disabled={updateMutation.isPending}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Tema de la aplicación</p>
+                    <ThemeSelector />
+                  </div>
+
+                  <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Personalización</p>
+                    <NoughterColorSelector
+                      selectedColor={profile.noughterColor}
+                      onChange={handleNoughterChange}
+                    />
+                  </div>
                 </div>
-              ) : badgesData ? (
-                <BadgeGrid
-                  allBadges={badgesData.allBadges}
-                  unlockedBadges={badgesData.unlockedBadges}
-                  progress={badgesData.progress}
-                  userId={profile?.userId}
-                />
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-[var(--color-textSecondary)]">No se pudieron cargar los badges</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* Block 4: Logros y Badges */}
+            <Card>
+              <CardContent>
+                {isLoadingBadges ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]"></div>
+                  </div>
+                ) : badgesData ? (
+                  <BadgeGrid
+                    allBadges={badgesData.allBadges}
+                    unlockedBadges={badgesData.unlockedBadges}
+                    progress={badgesData.progress}
+                    userId={profile?.userId}
+                  />
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-[var(--color-textSecondary)]">No se pudieron cargar los badges</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
         )}
       </div>
     </Layout>

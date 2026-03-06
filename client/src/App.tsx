@@ -25,6 +25,7 @@ import Financiero from './pages/Financiero';
 import Ludoteca from './pages/Ludoteca';
 import Documentos from './pages/Documentos';
 import Feedback from './pages/Feedback';
+import UserProfile from './pages/UserProfile';
 import AdminRoute from './components/routes/AdminRoute';
 import AzulLocal from './pages/azul/AzulLocal';
 import CombatZone from './pages/azul/CombatZone';
@@ -141,6 +142,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/users/:userId"
+            element={
+              <ProtectedRoute>
+                <UserProfile />
               </ProtectedRoute>
             }
           />

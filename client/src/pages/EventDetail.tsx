@@ -17,6 +17,7 @@ import type { ApiResponse } from '../types/auth';
 import type { Invitation, InvitationCreateResponse } from '../types/invitation';
 import { getCategoryDisplayName, getCategoryIcon } from '../types/badge';
 import { displayName, fullNameTooltip } from '../utils/displayName';
+import UserPopover from '../components/ui/UserPopover';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -1015,14 +1016,18 @@ export default function EventDetail() {
                   </svg>
                   <div>
                     <p className="text-sm text-[var(--color-textSecondary)]">Organizador</p>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-[var(--color-text)]">{event.organizer ? (event.organizer.profile?.nick || event.organizer.name) : ''}</p>
-                      {event.organizer?.membership?.type && membershipLabels[event.organizer.membership.type] && (
-                        <span className="text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
-                          {membershipLabels[event.organizer.membership.type]}
+                    {event.organizer ? (
+                      <UserPopover
+                        userId={event.organizer.id}
+                        name={event.organizer.name}
+                        nick={event.organizer.profile?.nick}
+                        membershipType={event.organizer.membership?.type}
+                      >
+                        <span className="font-medium text-[var(--color-text)]">
+                          {event.organizer.profile?.nick || event.organizer.name}
                         </span>
-                      )}
-                    </div>
+                      </UserPopover>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -1066,12 +1071,19 @@ export default function EventDetail() {
                         )}
                       </div>
                       <div className="flex items-center gap-2 flex-1">
-                        <span
-                          className="text-[var(--color-text)]"
-                          title={fullNameTooltip(registration.user?.name || '', registration.user?.profile?.nick)}
-                        >
-                          {displayName(registration.user?.name || '', registration.user?.profile?.nick)}
-                        </span>
+                        {registration.user ? (
+                          <UserPopover
+                            userId={registration.userId}
+                            name={registration.user.name}
+                            nick={registration.user.profile?.nick}
+                            avatar={registration.user.profile?.avatar}
+                            membershipType={registration.user.membership?.type}
+                          >
+                            <span className="text-[var(--color-text)]">
+                              {displayName(registration.user.name, registration.user.profile?.nick)}
+                            </span>
+                          </UserPopover>
+                        ) : null}
                         {registration.user?.membership?.type &&
                           membershipLabels[registration.user.membership.type] && (
                             <span className="text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
@@ -1151,12 +1163,19 @@ export default function EventDetail() {
                         )}
                       </div>
                       <div className="flex items-center gap-2 flex-1">
-                        <span
-                          className="text-[var(--color-text)]"
-                          title={fullNameTooltip(registration.user?.name || '', registration.user?.profile?.nick)}
-                        >
-                          {displayName(registration.user?.name || '', registration.user?.profile?.nick)}
-                        </span>
+                        {registration.user ? (
+                          <UserPopover
+                            userId={registration.userId}
+                            name={registration.user.name}
+                            nick={registration.user.profile?.nick}
+                            avatar={registration.user.profile?.avatar}
+                            membershipType={registration.user.membership?.type}
+                          >
+                            <span className="text-[var(--color-text)]">
+                              {displayName(registration.user.name, registration.user.profile?.nick)}
+                            </span>
+                          </UserPopover>
+                        ) : null}
                         {registration.user?.membership?.type &&
                           membershipLabels[registration.user.membership.type] && (
                             <span className="text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
