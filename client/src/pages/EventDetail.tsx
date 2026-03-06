@@ -1015,7 +1015,7 @@ export default function EventDetail() {
                   </svg>
                   <div>
                     <p className="text-sm text-[var(--color-textSecondary)]">Organizador</p>
-                    <p className="font-medium text-[var(--color-text)]">{event.organizer?.name}</p>
+                    <p className="font-medium text-[var(--color-text)]">{event.organizer ? (event.organizer.profile?.nick || event.organizer.name) : ''}</p>
                   </div>
                 </div>
               </div>

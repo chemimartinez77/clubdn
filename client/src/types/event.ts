@@ -62,6 +62,7 @@ export interface Event {
     id: string;
     name: string;
     email: string;
+    profile?: { nick?: string | null };
   };
 
   // Datos calculados

@@ -70,7 +70,8 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            profile: { select: { nick: true } }
           }
         },
           registrations: {
@@ -210,7 +211,8 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            profile: { select: { nick: true } }
           }
         },
         registrations: {
