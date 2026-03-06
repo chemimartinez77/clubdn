@@ -463,6 +463,26 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
+    // Validar conflicto horario si el organizador va a participar
+    const willAttend = attend === undefined ? true : attend === true || attend === 'true' || attend === 'on';
+    if (willAttend) {
+      const conflictTitle = await getScheduleConflict(
+        userId,
+        eventDate,
+        startHour !== undefined ? parseInt(startHour) : null,
+        startMinute !== undefined ? parseInt(startMinute) : null,
+        durationHours !== undefined ? parseInt(durationHours) : null,
+        durationMinutes !== undefined ? parseInt(durationMinutes) : null
+      );
+      if (conflictTitle) {
+        res.status(409).json({
+          success: false,
+          message: `No puedes participar en esta partida porque tienes conflicto horario con "${conflictTitle}"`
+        });
+        return;
+      }
+    }
+
     const normalizedLocation =
       typeof location === 'string' && location.trim().length > 0 ? location.trim() : 'Club DN';
 
@@ -497,29 +517,7 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
       }
     });
 
-    const shouldAttend =
-      attend === undefined ? true : attend === true || attend === 'true' || attend === 'on';
-    if (shouldAttend) {
-      // Validar conflicto horario antes de registrar al organizador
-      const conflictTitle = await getScheduleConflict(
-        userId,
-        eventDate,
-        startHour !== undefined ? parseInt(startHour) : null,
-        startMinute !== undefined ? parseInt(startMinute) : null,
-        durationHours !== undefined ? parseInt(durationHours) : null,
-        durationMinutes !== undefined ? parseInt(durationMinutes) : null,
-        event.id
-      );
-      if (conflictTitle) {
-        // La partida se crea igualmente pero sin apuntar al organizador
-        // (el organizador puede apuntarse manualmente si lo desea, pero no se le registra automáticamente)
-        return res.status(201).json({
-          success: true,
-          data: { event },
-          message: `Partida creada. No se te ha apuntado automáticamente porque tienes conflicto horario con "${conflictTitle}"`
-        });
-      }
-
+    if (willAttend) {
       await prisma.eventRegistration.create({
         data: {
           eventId: event.id,
