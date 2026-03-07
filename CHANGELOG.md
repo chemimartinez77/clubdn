@@ -4,6 +4,47 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-03-07
+
+### ✨ Nuevas funcionalidades
+
+#### Impersonación de usuarios (SUPER_ADMIN)
+- Un `SUPER_ADMIN` puede ver la aplicación exactamente como la ve cualquier otro usuario sin cambiar nada en la base de datos
+- Botón "Ver como" en el listado de miembros (visible solo para `SUPER_ADMIN`)
+- Banner amarillo en la cabecera mientras se está impersonando, con el nombre y email del usuario impersonado y un botón "Volver a mi cuenta"
+- El token de impersonación tiene una validez de 2 horas; al volver se restaura el token original del admin
+- No se puede impersonar a otro `SUPER_ADMIN`
+
+**Archivos modificados:**
+- `server/src/controllers/memberController.ts` - nuevo: `impersonateMember` (`POST /api/admin/members/:memberId/impersonate`)
+- `server/src/routes/adminRoutes.ts` - registro de la nueva ruta
+- `server/src/middleware/auth.ts` - añadido campo `impersonatedBy` al payload JWT
+- `server/src/types/express.d.ts` - añadido `impersonatedBy?: string` al tipo `req.user`
+- `client/src/contexts/AuthContext.tsx` - funciones `impersonate` y `stopImpersonating`
+- `client/src/types/auth.ts` - interfaz `AuthContextType` actualizada
+- `client/src/components/layout/Header.tsx` - banner de impersonación
+- `client/src/pages/admin/Members.tsx` - botón "Ver como" por fila
+
+#### Cambio de rol de usuario (admin)
+- Nuevo endpoint para cambiar el rol de un usuario desde el panel de administración
+- `SUPER_ADMIN` puede asignar `USER`, `ADMIN` o `SUPER_ADMIN`; un `ADMIN` solo puede asignar `USER`
+- Nadie puede cambiar su propio rol
+
+**Archivos modificados:**
+- `server/src/controllers/memberController.ts` - nuevo: `changeMemberRole` (`PATCH /api/admin/members/:memberId/role`)
+- `server/src/routes/adminRoutes.ts` - registro de la nueva ruta
+
+### 🔒 Mejoras de seguridad
+
+#### Restricción de invitaciones a asistentes confirmados
+- Solo pueden crear invitaciones para un evento quienes sean admin, organizador del evento o asistente con inscripción confirmada
+- Antes cualquier socio autenticado podía invitar a cualquier evento aunque no estuviera inscrito
+
+**Archivos modificados:**
+- `server/src/controllers/invitationController.ts` - comprobación de `isAdmin || isOrganizer || isAttendee` antes de crear invitación
+
+---
+
 ## 2026-03-03
 
 ### ✨ Nuevas funcionalidades

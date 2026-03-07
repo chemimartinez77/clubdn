@@ -7,6 +7,7 @@ interface JwtPayload {
   userId: string;
   email: string;
   role: UserRole;
+  impersonatedBy?: string;
 }
 
 export const authenticate = async (

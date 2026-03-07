@@ -141,7 +141,7 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
           createdBy: true,
           registrations: {
             where: { status: 'CONFIRMED' },
-            select: { id: true }
+            select: { id: true, userId: true }
           },
           invitations: {
             where: { status: { in: [InvitationStatus.PENDING, InvitationStatus.USED] } },
@@ -174,7 +174,16 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    if (isExceptional && userRole !== UserRole.ADMIN && userRole !== UserRole.SUPER_ADMIN) {
+    const isAdmin = userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN;
+    const isOrganizer = event.createdBy === userId;
+    const isAttendee = event.registrations.some(r => r.userId === userId);
+
+    if (!isAdmin && !isOrganizer && !isAttendee) {
+      res.status(403).json({ success: false, message: 'Solo los asistentes confirmados pueden invitar' });
+      return;
+    }
+
+    if (isExceptional && !isAdmin) {
       res.status(403).json({ success: false, message: 'No autorizado para invitaciones excepcionales' });
       return;
     }

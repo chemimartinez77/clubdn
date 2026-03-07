@@ -7,12 +7,14 @@ import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import { useMembers } from '../../hooks/useMembers';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../api/axios';
 import type { MemberData, MemberFilters, MemberProfileResponse } from '../../types/members';
 import type { ApiResponse } from '../../types/auth';
 
 export default function Members() {
   const { success, error } = useToast();
+  const { user: currentUser, impersonate } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -572,6 +574,15 @@ export default function Members() {
                                   disabled={isReactivating}
                                 >
                                   Reactivar
+                                </Button>
+                              )}
+                              {currentUser?.role === 'SUPER_ADMIN' && member.id !== currentUser.id && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => impersonate(member.id).catch(() => error('Error al impersonar usuario'))}
+                                >
+                                  Ver como
                                 </Button>
                               )}
                             </div>

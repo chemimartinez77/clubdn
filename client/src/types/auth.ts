@@ -29,9 +29,12 @@ export interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  impersonating: { id: string; name: string; email: string } | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   refetchUser: () => void;
+  impersonate: (memberId: string) => Promise<void>;
+  stopImpersonating: () => void;
 }
 
 export interface RegisterData {

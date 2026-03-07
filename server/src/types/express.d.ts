@@ -8,6 +8,7 @@ declare global {
         userId: string;
         email: string;
         role: UserRole;
+        impersonatedBy?: string;
       };
       membership?: {
         id: string;

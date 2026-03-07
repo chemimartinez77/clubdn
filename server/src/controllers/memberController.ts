@@ -1,6 +1,7 @@
 // server/src/controllers/memberController.ts
 import { Request, Response } from 'express';
 import { v2 as cloudinary } from 'cloudinary';
+import jwt from 'jsonwebtoken';
 import { prisma } from '../config/database';
 import { MemberData, MembersResponse } from '../types/members';
 import { getPaymentStatus } from '../utils/paymentStatus';
@@ -849,5 +850,129 @@ export const uploadMemberAvatar = async (req: Request, res: Response): Promise<v
       success: false,
       message: 'Error al subir avatar'
     });
+  }
+};
+
+/**
+ * PATCH /api/admin/members/:memberId/role
+ * Cambiar el rol de un miembro.
+ * - SUPER_ADMIN puede asignar cualquier rol (USER, ADMIN, SUPER_ADMIN).
+ * - ADMIN solo puede asignar USER.
+ * - Nadie puede cambiar su propio rol.
+ */
+export const changeMemberRole = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const actorId = req.user?.userId;
+    const actorRole = req.user?.role;
+    const { memberId } = req.params;
+    const { role: newRole } = req.body;
+
+    if (!actorId) {
+      res.status(401).json({ success: false, message: 'No autenticado' });
+      return;
+    }
+
+    if (actorId === memberId) {
+      res.status(403).json({ success: false, message: 'No puedes cambiar tu propio rol' });
+      return;
+    }
+
+    const validRoles = ['USER', 'ADMIN', 'SUPER_ADMIN'];
+    if (!newRole || !validRoles.includes(newRole)) {
+      res.status(400).json({ success: false, message: `Rol inválido. Valores permitidos: ${validRoles.join(', ')}` });
+      return;
+    }
+
+    const isSuperAdmin = actorRole === 'SUPER_ADMIN';
+    if (!isSuperAdmin && (newRole === 'ADMIN' || newRole === 'SUPER_ADMIN')) {
+      res.status(403).json({ success: false, message: 'Solo un SUPER_ADMIN puede asignar roles de administrador' });
+      return;
+    }
+
+    const target = await prisma.user.findUnique({
+      where: { id: memberId },
+      select: { id: true, name: true, role: true }
+    });
+
+    if (!target) {
+      res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+      return;
+    }
+
+    if (target.role === newRole) {
+      res.status(400).json({ success: false, message: `El usuario ya tiene el rol ${newRole}` });
+      return;
+    }
+
+    await prisma.user.update({
+      where: { id: memberId },
+      data: { role: newRole }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { memberId, previousRole: target.role, newRole },
+      message: `Rol actualizado a ${newRole}`
+    });
+  } catch (error) {
+    console.error('[MEMBER] Error al cambiar rol:', error);
+    res.status(500).json({ success: false, message: 'Error al cambiar el rol' });
+  }
+};
+
+/**
+ * POST /api/admin/members/:memberId/impersonate
+ * Genera un token JWT temporal para que un SUPER_ADMIN pueda ver la app como otro usuario.
+ * El token incluye impersonatedBy con el id del admin real.
+ */
+export const impersonateMember = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const actorId = req.user?.userId;
+    const actorRole = req.user?.role;
+    const { memberId } = req.params;
+
+    if (!actorId) {
+      res.status(401).json({ success: false, message: 'No autenticado' });
+      return;
+    }
+
+    if (actorRole !== 'SUPER_ADMIN') {
+      res.status(403).json({ success: false, message: 'Solo SUPER_ADMIN puede impersonar usuarios' });
+      return;
+    }
+
+    if (actorId === memberId) {
+      res.status(400).json({ success: false, message: 'No puedes impersonarte a ti mismo' });
+      return;
+    }
+
+    const target = await prisma.user.findUnique({
+      where: { id: memberId },
+      select: { id: true, email: true, role: true, status: true, name: true }
+    });
+
+    if (!target) {
+      res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+      return;
+    }
+
+    if (target.role === 'SUPER_ADMIN') {
+      res.status(403).json({ success: false, message: 'No puedes impersonar a otro SUPER_ADMIN' });
+      return;
+    }
+
+    const token = jwt.sign(
+      { userId: target.id, email: target.email, role: target.role, impersonatedBy: actorId },
+      process.env.JWT_SECRET!,
+      { expiresIn: '2h' }
+    );
+
+    res.status(200).json({
+      success: true,
+      data: { token, impersonatedUser: { id: target.id, name: target.name, email: target.email, role: target.role } }
+    });
+  } catch (error) {
+    console.error('[MEMBER] Error al impersonar usuario:', error);
+    res.status(500).json({ success: false, message: 'Error al impersonar usuario' });
   }
 };

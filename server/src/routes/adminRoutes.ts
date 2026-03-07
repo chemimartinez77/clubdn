@@ -15,7 +15,9 @@ import {
   reactivateMember,
   exportMembersCSV,
   uploadMemberAvatar,
-  getMembershipHistory
+  getMembershipHistory,
+  changeMemberRole,
+  impersonateMember
 } from '../controllers/memberController';
 import { updateReportAdmin } from '../controllers/reportController';
 
@@ -85,6 +87,18 @@ router.post('/members/:memberId/avatar', upload.single('avatar'), uploadMemberAv
  */
 router.post('/members/:memberId/mark-baja', markMemberAsBaja);
 router.post('/members/:memberId/reactivate', reactivateMember);
+
+/**
+ * PATCH /api/admin/members/:memberId/role
+ * Cambiar el rol de un miembro
+ */
+router.patch('/members/:memberId/role', changeMemberRole);
+
+/**
+ * POST /api/admin/members/:memberId/impersonate
+ * Generar token de impersonación (solo SUPER_ADMIN)
+ */
+router.post('/members/:memberId/impersonate', impersonateMember);
 
 /**
  * GET /api/admin/members/export/csv

@@ -8,7 +8,7 @@ import NotificationBell from '../notifications/NotificationBell';
 import { displayName, fullNameTooltip } from '../../utils/displayName';
 
 export default function Header() {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, impersonating, stopImpersonating } = useAuth();
   const { themeMode } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
@@ -44,6 +44,18 @@ export default function Header() {
     user?.email?.toLowerCase() === 'chemimartinez@gmail.com';
 
   return (
+    <>
+    {impersonating && (
+      <div className="bg-amber-500 text-white text-sm px-4 py-2 flex items-center justify-between">
+        <span>Viendo como <strong>{impersonating.name}</strong> ({impersonating.email})</span>
+        <button
+          onClick={stopImpersonating}
+          className="ml-4 underline font-semibold hover:text-amber-100"
+        >
+          Volver a mi cuenta
+        </button>
+      </div>
+    )}
     <header className="bg-[var(--color-cardBackground)] shadow-sm border-b border-[var(--color-cardBorder)]">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
@@ -600,5 +612,6 @@ export default function Header() {
         </div>
       </Modal>
     </header>
+    </>
   );
 }
