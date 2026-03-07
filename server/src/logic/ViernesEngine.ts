@@ -6,12 +6,16 @@
 
 export type Difficulty = 1 | 2 | 3 | 4;
 
-export type AgingEffect = 'MINUS_1' | 'STOP' | 'DOUBLE_MINUS_1';
+export type AgingEffect = 'MINUS_1' | 'STOP' | 'MINUS_2' | 'HIGHEST_ZERO';
+
+// Paso actual de la partida (determina qué valor de peligro se usa)
+export type GameStep = 'GREEN' | 'YELLOW' | 'RED';
 
 export type RobinsonCardType =
-  | 'MISFORTUNE'  // Verhängnis — valor 0
-  | 'SATISFIED'   // Satt — valor 1
-  | 'GENIUS'      // Genie — valor 4
+  | 'MISFORTUNE'  // Normal — valor 0 (sin habilidad)
+  | 'SATISFIED'   // Concentrado — valor 1 (sin habilidad)
+  | 'GENIUS'      // Genial — valor 2
+  | 'FOOD'        // Comiendo — valor 0, +2 vida
   | 'HAZARD_WON'  // Carta de peligro ganada; usa survivorValue
   | 'AGING';      // Carta de envejecimiento (efecto negativo)
 
@@ -30,22 +34,29 @@ export interface RobinsonCard {
 
 export interface HazardCard {
   id: string;
-  name: string;
-  hazardValue: number;
-  survivorValue: number;
+  name: string;          // Nombre del peligro (ej: "Animales Salvajes")
+  skillName: string;     // Nombre de la habilidad ganada (ej: "Visión")
+  hazardGreen: number;   // Valor de peligro en paso verde
+  hazardYellow: number;  // Valor de peligro en paso amarillo
+  hazardRed: number;     // Valor de peligro en paso rojo
+  freeCards: number;     // Cartas gratis al enfrentarse a este peligro
+  survivorValue: number; // Valor de lucha cuando se gana (cara habilidad)
+  imageFile: string;     // Nombre del archivo PNG (ej: "carta_06_08.png")
 }
 
 export interface PirateCard {
   id: string;
   name: string;
   fightValue: number;
+  freeCards: number;
   specialEffect?: string;
 }
 
 export interface FightState {
-  hazardCard: HazardCard | null;    // La carta de peligro actual (null si es pirata)
-  pirateCard: PirateCard | null;    // El pirata actual (null si es peligro)
-  hazardValue: number;              // El número a superar
+  hazardCard: HazardCard | null;
+  pirateCard: PirateCard | null;
+  hazardValue: number;       // El número a superar (ya calculado según paso)
+  freeCards: number;         // Cartas que se pueden robar gratis
   isPirateFight: boolean;
   drawnCards: RobinsonCard[];
   extraCardsBought: number;
@@ -53,14 +64,15 @@ export interface FightState {
 }
 
 export type GamePhase =
-  | 'HAZARD_CHOOSE'  // Elegir entre 2 cartas de peligro reveladas
-  | 'HAZARD_FIGHT'   // Combate activo contra un peligro
-  | 'PIRATE_CHOOSE'  // Elegir el orden en que enfrentarse a los piratas
-  | 'PIRATE_FIGHT'   // Combate activo contra un pirata
-  | 'FINISHED';      // Partida terminada
+  | 'HAZARD_CHOOSE'
+  | 'HAZARD_FIGHT'
+  | 'PIRATE_CHOOSE'
+  | 'PIRATE_FIGHT'
+  | 'FINISHED';
 
 export interface ViernesGameState {
   difficulty: Difficulty;
+  step: GameStep;
   lifePoints: number;
   maxLifePoints: number;
 
@@ -70,7 +82,7 @@ export interface ViernesGameState {
 
   hazardDeck: HazardCard[];
   hazardDone: HazardCard[];
-  hazardClearCount: number;     // 0, 1 → se baraja de nuevo; 2 → fase piratas
+  hazardClearCount: number;  // 0→paso verde, 1→amarillo, 2→rojo, 3→piratas
 
   revealedHazards: [HazardCard, HazardCard] | null;
 
@@ -78,7 +90,7 @@ export interface ViernesGameState {
   agingDiscard: RobinsonCard[];
 
   pirates: PirateCard[];
-  pirateIndex: number;          // -1 hasta que se elige orden; luego 0 o 1
+  pirateIndex: number;
 
   currentFight: FightState | null;
   destroyedCards: RobinsonCard[];
@@ -106,45 +118,68 @@ export interface ActionResult {
 
 const LIFE_BY_DIFFICULTY: Record<Difficulty, number> = { 1: 22, 2: 20, 3: 18, 4: 16 };
 
-const HAZARD_DEFS: Array<{ name: string; hazardValue: number; survivorValue: number }> = [
-  { name: 'Hambre',      hazardValue: 0,  survivorValue: 1 },
-  { name: 'Lluvia',      hazardValue: 1,  survivorValue: 2 },
-  { name: 'Fuego',       hazardValue: 2,  survivorValue: 2 },
-  { name: 'Enfermedad',  hazardValue: 3,  survivorValue: 3 },
-  { name: 'Debilidad',   hazardValue: 4,  survivorValue: 3 },
-  { name: 'Araña',       hazardValue: 4,  survivorValue: 4 },
-  { name: 'Serpiente',   hazardValue: 5,  survivorValue: 4 },
-  { name: 'Humo',        hazardValue: 5,  survivorValue: 4 },
-  { name: 'Oso',         hazardValue: 6,  survivorValue: 5 },
-  { name: 'Jabalí',      hazardValue: 7,  survivorValue: 5 },
-  { name: 'Gorila',      hazardValue: 7,  survivorValue: 6 },
-  { name: 'Cocodrilo',   hazardValue: 8,  survivorValue: 6 },
-  { name: 'Podrido',     hazardValue: 8,  survivorValue: 6 },
-  { name: 'Caza',        hazardValue: 9,  survivorValue: 7 },
-  { name: 'Tornado',     hazardValue: 9,  survivorValue: 7 },
-  { name: 'Agotamiento', hazardValue: 10, survivorValue: 8 },
-  { name: 'Traición',    hazardValue: 11, survivorValue: 8 },
-  { name: 'Catástrofe',  hazardValue: 14, survivorValue: 9 },
+// 30 cartas de peligro/habilidad reales del juego
+// name = nombre del peligro (lado inferior), skillName = habilidad ganada (lado superior)
+// hazardGreen/Yellow/Red = valores según paso
+// freeCards = cartas gratis al enfrentarse
+// survivorValue = valor de lucha de la habilidad ganada
+const HAZARD_DEFS: Array<Omit<HazardCard, 'id'>> = [
+  // ── Explorar Profundidades de la Isla (verde:2 / amarillo:5 / rojo:8, gratis:3) ──
+  { name: 'Explorar Profundidades de la Isla', skillName: 'Repetición',   hazardGreen: 2, hazardYellow: 5, hazardRed: 8, freeCards: 3, survivorValue: 2, imageFile: 'carta_01_01.png' },
+  { name: 'Explorar Profundidades de la Isla', skillName: 'Nutrición',    hazardGreen: 2, hazardYellow: 5, hazardRed: 8, freeCards: 3, survivorValue: 2, imageFile: 'carta_01_02.png' },
+  { name: 'Explorar Profundidades de la Isla', skillName: 'Estrategia',   hazardGreen: 2, hazardYellow: 5, hazardRed: 8, freeCards: 3, survivorValue: 2, imageFile: 'carta_01_03.png' },
+  { name: 'Explorar Profundidades de la Isla', skillName: 'Visión',       hazardGreen: 2, hazardYellow: 5, hazardRed: 8, freeCards: 3, survivorValue: 2, imageFile: 'carta_07_01.png' },
+  { name: 'Explorar Profundidades de la Isla', skillName: 'Conocimiento', hazardGreen: 2, hazardYellow: 5, hazardRed: 8, freeCards: 3, survivorValue: 2, imageFile: 'carta_07_02.png' },
+  { name: 'Explorar Profundidades de la Isla', skillName: 'Experiencia',  hazardGreen: 2, hazardYellow: 5, hazardRed: 8, freeCards: 3, survivorValue: 2, imageFile: 'carta_07_03.png' },
+  // ── Explorar Isla (verde:1 / amarillo:3 / rojo:6, gratis:2) ──
+  { name: 'Explorar Isla', skillName: 'Arma',          hazardGreen: 1, hazardYellow: 3, hazardRed: 6, freeCards: 2, survivorValue: 2, imageFile: 'carta_01_04.png' },
+  { name: 'Explorar Isla', skillName: 'Arma',          hazardGreen: 1, hazardYellow: 3, hazardRed: 6, freeCards: 2, survivorValue: 2, imageFile: 'carta_01_05.png' },
+  { name: 'Explorar Isla', skillName: 'Nutrición',     hazardGreen: 1, hazardYellow: 3, hazardRed: 6, freeCards: 2, survivorValue: 1, imageFile: 'carta_01_06.png' },
+  { name: 'Explorar Isla', skillName: 'Conocimiento',  hazardGreen: 1, hazardYellow: 3, hazardRed: 6, freeCards: 2, survivorValue: 1, imageFile: 'carta_06_02.png' },
+  { name: 'Explorar Isla', skillName: 'Mimetismo',     hazardGreen: 1, hazardYellow: 3, hazardRed: 6, freeCards: 2, survivorValue: 1, imageFile: 'carta_06_03.png' },
+  { name: 'Explorar Isla', skillName: 'Nutrición',     hazardGreen: 1, hazardYellow: 3, hazardRed: 6, freeCards: 2, survivorValue: 1, imageFile: 'carta_07_04.png' },
+  { name: 'Explorar Isla', skillName: 'Truco',         hazardGreen: 1, hazardYellow: 3, hazardRed: 6, freeCards: 2, survivorValue: 1, imageFile: 'carta_07_05.png' },
+  { name: 'Explorar Isla', skillName: 'Repetición',    hazardGreen: 1, hazardYellow: 3, hazardRed: 6, freeCards: 2, survivorValue: 1, imageFile: 'carta_07_06.png' },
+  // ── Con la balsa al naufragio (verde:0 / amarillo:0 / rojo:3, gratis:1) ──
+  { name: 'Con la balsa al naufragio', skillName: 'Estrategia',   hazardGreen: 0, hazardYellow: 0, hazardRed: 3, freeCards: 1, survivorValue: 0, imageFile: 'carta_01_07.png' },
+  { name: 'Con la balsa al naufragio', skillName: 'Equipamiento', hazardGreen: 0, hazardYellow: 0, hazardRed: 3, freeCards: 1, survivorValue: 0, imageFile: 'carta_01_08.png' },
+  { name: 'Con la balsa al naufragio', skillName: 'Equipamiento', hazardGreen: 0, hazardYellow: 0, hazardRed: 3, freeCards: 1, survivorValue: 0, imageFile: 'carta_01_09.png' },
+  { name: 'Con la balsa al naufragio', skillName: 'Conocimiento', hazardGreen: 0, hazardYellow: 0, hazardRed: 3, freeCards: 1, survivorValue: 0, imageFile: 'carta_01_10.png' },
+  { name: 'Con la balsa al naufragio', skillName: 'Truco',        hazardGreen: 0, hazardYellow: 0, hazardRed: 3, freeCards: 1, survivorValue: 0, imageFile: 'carta_02_01.png' },
+  { name: 'Con la balsa al naufragio', skillName: 'Lectura',      hazardGreen: 0, hazardYellow: 0, hazardRed: 3, freeCards: 1, survivorValue: 0, imageFile: 'carta_02_02.png' },
+  { name: 'Con la balsa al naufragio', skillName: 'Estrategia',   hazardGreen: 0, hazardYellow: 0, hazardRed: 3, freeCards: 1, survivorValue: 0, imageFile: 'carta_06_04.png' },
+  { name: 'Con la balsa al naufragio', skillName: 'Nutrición',    hazardGreen: 0, hazardYellow: 0, hazardRed: 3, freeCards: 1, survivorValue: 0, imageFile: 'carta_06_05.png' },
+  { name: 'Con la balsa al naufragio', skillName: 'Nutrición',    hazardGreen: 0, hazardYellow: 0, hazardRed: 3, freeCards: 1, survivorValue: 0, imageFile: 'carta_06_06.png' },
+  { name: 'Con la balsa al naufragio', skillName: 'Mimetismo',    hazardGreen: 0, hazardYellow: 0, hazardRed: 3, freeCards: 1, survivorValue: 0, imageFile: 'carta_06_07.png' },
+  // ── Animales Salvajes (verde:3 / amarillo:6 / rojo:11, gratis:4) ──
+  { name: 'Animales Salvajes', skillName: 'Visión',       hazardGreen: 3, hazardYellow: 6, hazardRed: 11, freeCards: 4, survivorValue: 3, imageFile: 'carta_06_08.png' },
+  { name: 'Animales Salvajes', skillName: 'Experiencia',  hazardGreen: 3, hazardYellow: 6, hazardRed: 11, freeCards: 4, survivorValue: 3, imageFile: 'carta_06_09.png' },
+  { name: 'Animales Salvajes', skillName: 'Conocimiento', hazardGreen: 3, hazardYellow: 6, hazardRed: 11, freeCards: 4, survivorValue: 3, imageFile: 'carta_06_10.png' },
+  { name: 'Animales Salvajes', skillName: 'Estrategia',   hazardGreen: 3, hazardYellow: 6, hazardRed: 11, freeCards: 4, survivorValue: 3, imageFile: 'carta_07_09.png' },
+  // ── Caníbales (verde:4 / amarillo:6 / rojo:11, gratis:5) ──
+  { name: 'Caníbales', skillName: 'Arma', hazardGreen: 4, hazardYellow: 6, hazardRed: 11, freeCards: 5, survivorValue: 4, imageFile: 'carta_07_07.png' },
+  { name: 'Caníbales', skillName: 'Arma', hazardGreen: 4, hazardYellow: 6, hazardRed: 11, freeCards: 5, survivorValue: 4, imageFile: 'carta_07_08.png' },
 ];
 
 const AGING_MILD_DEFS: Array<Omit<RobinsonCard, 'id'>> = [
-  { type: 'AGING', name: 'Hambre leve',      value: -1, agingEffect: 'MINUS_1' },
-  { type: 'AGING', name: 'Hambre leve',      value: -1, agingEffect: 'MINUS_1' },
-  { type: 'AGING', name: 'Enfermedad leve',  value:  0, agingEffect: 'STOP', canDestroy: true },
-  { type: 'AGING', name: 'Agotamiento leve', value: -2, agingEffect: 'DOUBLE_MINUS_1' },
+  { type: 'AGING', name: 'Desconcentrado',   value: -1, agingEffect: 'MINUS_1' },
+  { type: 'AGING', name: 'Desconcentrado',   value: -1, agingEffect: 'MINUS_1' },
+  { type: 'AGING', name: 'Muy Estúpido',     value: -2, agingEffect: 'MINUS_2' },
+  { type: 'AGING', name: 'Muy Estúpido',     value: -2, agingEffect: 'MINUS_2' },
+  { type: 'AGING', name: 'Asustado',         value:  0, agingEffect: 'HIGHEST_ZERO' },
+  { type: 'AGING', name: 'Asustado',         value:  0, agingEffect: 'HIGHEST_ZERO' },
+  { type: 'AGING', name: 'Muy cansado',      value:  0, agingEffect: 'STOP', canDestroy: true },
 ];
 
 const AGING_SEVERE_DEFS: Array<Omit<RobinsonCard, 'id'>> = [
-  { type: 'AGING', name: 'Enfermedad grave',  value:  0, agingEffect: 'STOP' },
-  { type: 'AGING', name: 'Hambre grave (-2)', value: -2, agingEffect: 'MINUS_1' },
-  { type: 'AGING', name: 'Hambre grave (-3)', value: -3, agingEffect: 'MINUS_1' },
-  { type: 'AGING', name: 'Agotamiento grave', value: -3, agingEffect: 'DOUBLE_MINUS_1' },
-  { type: 'AGING', name: 'Muerte',            value: -5, agingEffect: 'MINUS_1' },
+  { type: 'AGING', name: 'Hambriento',       value: -1, agingEffect: 'MINUS_1' },
+  { type: 'AGING', name: 'Muy hambriento',   value: -2, agingEffect: 'MINUS_2' },
+  { type: 'AGING', name: 'Suicida',          value: -5, agingEffect: 'MINUS_1' },
 ];
 
 const PIRATE_DEFS: Array<Omit<PirateCard, 'id'>> = [
-  { name: 'Pirata Viejo',   fightValue: 20 },
-  { name: 'Capitán Pirata', fightValue: 25 },
+  { name: 'Pirata Viejo',   fightValue: 20, freeCards: 2 },
+  { name: 'Capitán Pirata', fightValue: 25, freeCards: 2 },
 ];
 
 // ─── Utilidades ───────────────────────────────────────────────────────────────
@@ -168,37 +203,51 @@ function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
 
+function hazardValueForStep(card: HazardCard, step: GameStep): number {
+  if (step === 'GREEN')  return card.hazardGreen;
+  if (step === 'YELLOW') return card.hazardYellow;
+  return card.hazardRed;
+}
+
 // ─── Inicialización ───────────────────────────────────────────────────────────
 
 export function createInitialState(difficulty: Difficulty): ViernesGameState {
   const maxLife = LIFE_BY_DIFFICULTY[difficulty];
 
-  // Mazo de Robinson inicial
+  // 18 cartas iniciales Robinson: 1×Genial(2), 3×Concentrado(1), 8×Normal(0), 5×Desconcentrado(-1), 1×Comiendo(0,+2vida)
   const robinsonCards: RobinsonCard[] = [
-    ...Array.from({ length: 8 }, (_, i) => ({ id: makeId('rob', i),     type: 'MISFORTUNE' as const, name: 'Normal',      value: 0 })),
-    ...Array.from({ length: 3 }, (_, i) => ({ id: makeId('rob', 8 + i), type: 'SATISFIED'  as const, name: 'Concentrado', value: 1 })),
-    { id: makeId('rob', 11), type: 'GENIUS' as const, name: 'Genial', value: 4 },
+    { id: makeId('rob', 0),  type: 'GENIUS'     as const, name: 'Genial',       value: 2 },
+    ...Array.from({ length: 3  }, (_, i) => ({ id: makeId('rob', 1 + i),  type: 'SATISFIED'  as const, name: 'Concentrado', value: 1 })),
+    ...Array.from({ length: 8  }, (_, i) => ({ id: makeId('rob', 4 + i),  type: 'MISFORTUNE' as const, name: 'Normal',      value: 0 })),
+    ...Array.from({ length: 5  }, (_, i) => ({ id: makeId('rob', 12 + i), type: 'MISFORTUNE' as const, name: 'Desconcentrado', value: -1 })),
+    { id: makeId('rob', 17), type: 'FOOD'       as const, name: 'Comiendo',     value: 0 },
   ];
   const robinsonDeck = shuffleArray(robinsonCards);
 
-  // Mazo de peligros
+  // 30 cartas de peligro
   const hazardCards: HazardCard[] = HAZARD_DEFS.map((def, i) => ({ id: makeId('hz', i), ...def }));
   const hazardDeck = shuffleArray(hazardCards);
 
-  // Revelar dos cartas de peligro iniciales
+  // Revelar dos cartas iniciales
   const card1 = hazardDeck.shift()!;
   const card2 = hazardDeck.shift()!;
 
-  // Cartas de envejecimiento: suaves primero (arriba), severas en el fondo
+  // Cartas de envejecimiento: suaves primero, severas al fondo
   const agingDeck: RobinsonCard[] = [
-    ...shuffleArray(AGING_MILD_DEFS.map((def, i) => ({ id: makeId('age-mild', i),   ...def }))),
-    ...shuffleArray(AGING_SEVERE_DEFS.map((def, i) => ({ id: makeId('age-sev', i),  ...def }))),
+    ...shuffleArray(AGING_MILD_DEFS.map((def, i) => ({ id: makeId('age-mild', i), ...def }))),
+    ...shuffleArray(AGING_SEVERE_DEFS.map((def, i) => ({ id: makeId('age-sev', i), ...def }))),
   ];
 
-  const pirates: PirateCard[] = PIRATE_DEFS.map((def, i) => ({ id: makeId('pir', i), ...def }));
+  // Nivel 1: retirar "Muy Estúpido" del juego
+  const filteredAgingDeck = difficulty === 1
+    ? agingDeck.filter(c => c.name !== 'Muy Estúpido').slice(0, 10)
+    : agingDeck;
+
+  const pirates: PirateCard[] = shuffleArray(PIRATE_DEFS.map((def, i) => ({ id: makeId('pir', i), ...def }))).slice(0, 2);
 
   return {
     difficulty,
+    step: 'GREEN',
     lifePoints: maxLife,
     maxLifePoints: maxLife,
     robinsonDeck,
@@ -208,7 +257,7 @@ export function createInitialState(difficulty: Difficulty): ViernesGameState {
     hazardDone: [],
     hazardClearCount: 0,
     revealedHazards: [card1, card2],
-    agingDeck,
+    agingDeck: filteredAgingDeck,
     agingDiscard: [],
     pirates,
     pirateIndex: -1,
@@ -231,25 +280,18 @@ export function fightIsWinning(fight: FightState): boolean {
 
 // ─── Robar cartas de Robinson ─────────────────────────────────────────────────
 
-/**
- * Roba `count` cartas del mazo de Robinson para el combate activo.
- * Si el mazo se agota, baraja el descarte y añade una carta de envejecimiento.
- * Para si se saca una carta STOP.
- */
 function drawForFight(s: ViernesGameState, count: number): ViernesGameState {
   for (let i = 0; i < count; i++) {
     if (s.currentFight!.stoppedByAging) break;
 
-    // Barajar si el mazo está vacío
     if (s.robinsonDeck.length === 0) {
       if (s.robinsonDiscard.length === 0) break;
       s.reshuffleCount += 1;
       s.robinsonDeck = shuffleArray(s.robinsonDiscard);
       s.robinsonDiscard = [];
-      // Insertar carta de envejecimiento aleatoriamente en el nuevo mazo
       if (s.agingDeck.length > 0) {
         const aging = s.agingDeck.shift()!;
-        s.agingDiscard.push({ ...aging }); // registro de las añadidas
+        s.agingDiscard.push({ ...aging });
         const pos = Math.floor(Math.random() * (s.robinsonDeck.length + 1));
         s.robinsonDeck.splice(pos, 0, aging);
       }
@@ -271,10 +313,10 @@ function drawForFight(s: ViernesGameState, count: number): ViernesGameState {
 export function applyAction(state: ViernesGameState, action: ViernesAction): ActionResult {
   const s = deepClone(state);
   switch (action.type) {
-    case 'CHOOSE_HAZARD':      return handleChooseHazard(s, action);
-    case 'BUY_CARD':           return handleBuyCard(s);
-    case 'DESTROY_CARD':       return handleDestroyCard(s, action);
-    case 'RESOLVE_FIGHT':      return handleResolveFight(s);
+    case 'CHOOSE_HAZARD':       return handleChooseHazard(s, action);
+    case 'BUY_CARD':            return handleBuyCard(s);
+    case 'DESTROY_CARD':        return handleDestroyCard(s, action);
+    case 'RESOLVE_FIGHT':       return handleResolveFight(s);
     case 'CHOOSE_PIRATE_ORDER': return handleChoosePirateOrder(s, action);
     default:
       return { success: false, error: 'Acción desconocida' };
@@ -290,24 +332,22 @@ function handleChooseHazard(
   if (s.phase !== 'HAZARD_CHOOSE' || !s.revealedHazards) {
     return { success: false, error: 'No es el momento de elegir peligro' };
   }
-  if (action.hazardIndex !== 0 && action.hazardIndex !== 1) {
-    return { success: false, error: 'Índice de hazard inválido' };
-  }
 
   const chosen = s.revealedHazards[action.hazardIndex];
   const other  = s.revealedHazards[action.hazardIndex === 0 ? 1 : 0];
 
-  // La no elegida va al fondo del mazo de peligros
-  // Si era la misma (caso borde con 1 sola carta) no la duplicamos
   if (chosen.id !== other.id) {
     s.hazardDeck.push(other);
   }
   s.revealedHazards = null;
 
+  const hazardValue = hazardValueForStep(chosen, s.step);
+
   s.currentFight = {
     hazardCard: chosen,
     pirateCard: null,
-    hazardValue: chosen.hazardValue,
+    hazardValue,
+    freeCards: chosen.freeCards,
     isPirateFight: false,
     drawnCards: [],
     extraCardsBought: 0,
@@ -315,7 +355,7 @@ function handleChooseHazard(
   };
   s.phase = 'HAZARD_FIGHT';
 
-  return { success: true, newState: drawForFight(s, 2) };
+  return { success: true, newState: drawForFight(s, chosen.freeCards) };
 }
 
 // ─── BUY_CARD ─────────────────────────────────────────────────────────────────
@@ -358,17 +398,22 @@ function handleResolveFight(s: ViernesGameState): ActionResult {
   const total = calculateFightTotal(fight.drawnCards);
   const win   = total >= fight.hazardValue;
 
-  // Las cartas sacadas van al descarte de Robinson
   s.robinsonDiscard.push(...fight.drawnCards);
   s.currentFight = null;
 
   if (fight.isPirateFight) {
     if (!win) {
-      s.phase = 'FINISHED';
-      s.won = false;
-      return { success: true, newState: s, gameOver: true, won: false };
+      // En combate pirata: hay que pagar vida, no se puede perder voluntariamente
+      const lifeLost = Math.max(1, fight.hazardValue - total);
+      s.lifePoints = Math.max(0, s.lifePoints - lifeLost);
+      if (s.lifePoints <= 0) {
+        s.phase = 'FINISHED';
+        s.won = false;
+        return { success: true, newState: s, gameOver: true, won: false };
+      }
+      // Volver a intentar el mismo pirata
+      return { success: true, newState: startPirateFight(s) };
     }
-    // Pirata derrotado
     if (s.pirateIndex < s.pirates.length - 1) {
       s.pirateIndex += 1;
       return { success: true, newState: startPirateFight(s) };
@@ -383,11 +428,10 @@ function handleResolveFight(s: ViernesGameState): ActionResult {
   const hazard = fight.hazardCard!;
 
   if (win) {
-    // Añadir la carta ganada al descarte de Robinson
     const wonCard: RobinsonCard = {
       id: `won-${hazard.id}`,
       type: 'HAZARD_WON',
-      name: hazard.name,
+      name: hazard.skillName,
       value: hazard.survivorValue,
       survivorValue: hazard.survivorValue,
       hazardName: hazard.name,
@@ -395,7 +439,9 @@ function handleResolveFight(s: ViernesGameState): ActionResult {
     s.robinsonDiscard.push(wonCard);
     s.hazardDone.push(hazard);
   } else {
-    const lifeLost = Math.max(1, hazard.hazardValue - total);
+    const lifeLost = Math.max(1, hazard.hazardGreen === 0 && hazard.hazardYellow === 0 && hazard.hazardRed === 0
+      ? 1
+      : Math.max(1, fight.hazardValue - total));
     s.lifePoints = Math.max(0, s.lifePoints - lifeLost);
     s.hazardDone.push(hazard);
 
@@ -436,19 +482,19 @@ function startPirateFight(s: ViernesGameState): ViernesGameState {
     hazardCard: null,
     pirateCard: pirate,
     hazardValue: pirate.fightValue,
+    freeCards: pirate.freeCards,
     isPirateFight: true,
     drawnCards: [],
     extraCardsBought: 0,
     stoppedByAging: false,
   };
   s.phase = 'PIRATE_FIGHT';
-  return drawForFight(s, 2);
+  return drawForFight(s, pirate.freeCards);
 }
 
 // ─── Avance de fase de peligros ───────────────────────────────────────────────
 
 function advanceHazardPhase(s: ViernesGameState): ViernesGameState {
-  // Intentar revelar dos nuevas cartas de peligro
   if (s.hazardDeck.length >= 2) {
     s.revealedHazards = [s.hazardDeck.shift()!, s.hazardDeck.shift()!];
     s.phase = 'HAZARD_CHOOSE';
@@ -456,19 +502,23 @@ function advanceHazardPhase(s: ViernesGameState): ViernesGameState {
   }
 
   if (s.hazardDeck.length === 1) {
-    // Solo queda una carta: se enfrenta directamente (sin elección)
     const solo = s.hazardDeck.shift()!;
-    s.revealedHazards = [solo, solo]; // índice 0 = la única carta
+    s.revealedHazards = [solo, solo];
     s.phase = 'HAZARD_CHOOSE';
     return s;
   }
 
-  // Mazo de peligros vacío
+  // Mazo vacío: avanzar paso
   s.hazardClearCount += 1;
 
-  if (s.hazardClearCount < 2) {
-    // Primera limpieza: barajar peligros descartados
-    s.hazardDeck = shuffleArray(s.hazardDone);
+  if (s.hazardClearCount === 1) {
+    s.step = 'YELLOW';
+  } else if (s.hazardClearCount === 2) {
+    s.step = 'RED';
+  }
+
+  if (s.hazardClearCount < 3) {
+    s.hazardDeck = shuffleArray([...s.hazardDone]);
     s.hazardDone = [];
 
     if (s.hazardDeck.length >= 2) {
@@ -479,7 +529,6 @@ function advanceHazardPhase(s: ViernesGameState): ViernesGameState {
     }
     s.phase = 'HAZARD_CHOOSE';
   } else {
-    // Segunda limpieza: fase de piratas
     s.phase = 'PIRATE_CHOOSE';
     s.pirateIndex = -1;
   }
