@@ -1,6 +1,7 @@
 // client/src/App.tsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { usePageTracking } from './hooks/usePageTracking';
 import { ToastProvider } from './contexts/ToastContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Register from './pages/Register';
@@ -98,12 +99,18 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function PageTracker() {
+  usePageTracking();
+  return null;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
         <ToastProvider position="top-right">
           <AuthProvider>
+            <PageTracker />
             <Routes>
           {/* Rutas públicas */}
           <Route

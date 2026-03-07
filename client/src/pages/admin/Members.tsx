@@ -582,7 +582,7 @@ export default function Members() {
                                   size="sm"
                                   onClick={() => impersonate(member.id).catch(() => error('Error al impersonar usuario'))}
                                 >
-                                  Ver como
+                                  Login as
                                 </Button>
                               )}
                             </div>

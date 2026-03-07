@@ -43,6 +43,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 **Archivos modificados:**
 - `server/src/controllers/invitationController.ts` - comprobación de `isAdmin || isOrganizer || isAttendee` antes de crear invitación
 
+#### Analytics de navegación (page views)
+- Registro automático de las páginas visitadas por cada usuario autenticado, almacenado en base de datos
+- Se ignoran rutas de administración (`/admin`) y sesiones de impersonación
+- Dashboard de analytics en el panel de admin con: total de visitas, usuarios activos en 30 días, usuarios sin actividad en 30+ días, top 10 páginas más visitadas (con barra de progreso relativa), historial de periodos archivados
+- Búsqueda de historial de navegación por usuario: input con autocompletado por nombre o email (debounce 300ms), dropdown de sugerencias con avatar, y detalle de páginas visitadas con número de visitas y última fecha
+- Botón "Archivar y resetear" para guardar un snapshot del periodo actual en `PageViewArchive` y empezar a contar desde cero
+
+**Archivos modificados/creados:**
+- `server/prisma/schema.prisma` - modelos `PageView` y `PageViewArchive`; campo `pageViewCollectionStartedAt` en `ClubConfig`
+- `server/prisma/migrations/20260307000000_add_page_views/migration.sql` - migración manual
+- `server/src/controllers/pageViewController.ts` - nuevo: `trackPageView`, `getAnalytics`, `getUserPageViews`, `archiveAndReset`
+- `server/src/routes/pageViewRoutes.ts` - nuevo: rutas `/api/pageviews`
+- `server/src/index.ts` - registro de `pageViewRoutes`
+- `client/src/hooks/usePageTracking.ts` - nuevo: hook que dispara POST fire-and-forget en cada cambio de ruta
+- `client/src/App.tsx` - componente `PageTracker` dentro de `AuthProvider`
+- `client/src/pages/admin/Dashboard.tsx` - sección de analytics con buscador de usuario por nombre/email
+
 ---
 
 ## 2026-03-03

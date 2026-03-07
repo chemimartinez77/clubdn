@@ -121,6 +121,7 @@ model User {
   azulGamesAsPlayer1 AzulGame[]          @relation("AzulGamesAsPlayer1")
   azulGamesAsPlayer2 AzulGame[]          @relation("AzulGamesAsPlayer2")
   viernesGames       ViernesGame[]       @relation("ViernesGamesAsPlayer")
+  pageViews          PageView[]
 
   @@index([email])
   @@index([status])
@@ -528,6 +529,9 @@ model ClubConfig {
   inviteMaxMonthly Int    @default(10)
   inviteMaxGuestYear Int  @default(5)
   inviteAllowSelfValidation Boolean @default(false)
+
+  // Analytics de navegación
+  pageViewCollectionStartedAt DateTime? // Fecha desde la que se recogen datos de navegación
 
   // Metadatos
   createdAt      DateTime @default(now())
@@ -942,4 +946,28 @@ model FinancialMovement {
   @@index([year, month])
   @@index([date])
   @@index([createdBy])
+}
+
+// ==================== ANALYTICS DE NAVEGACIÓN ====================
+
+model PageView {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  path        String   // Ruta visitada, ej: /events, /profile
+  visitedAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([path])
+  @@index([visitedAt])
+}
+
+// Archivo histórico de analytics (tras un reset)
+model PageViewArchive {
+  id          String   @id @default(cuid())
+  archivedAt  DateTime @default(now())
+  fromDate    DateTime // Fecha de inicio del periodo archivado
+  toDate      DateTime // Fecha de fin del periodo archivado
+  totalViews  Int      // Total de registros archivados
+  data        Json     // Snapshot agregado: top páginas, usuarios activos, etc.
 }
