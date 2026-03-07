@@ -307,7 +307,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Búsqueda por usuario */}
-          <Card>
+          <Card style={{ overflow: 'visible' }}>
             <CardHeader>
               <h3 className="text-lg font-semibold text-[var(--color-text)]">Historial de un usuario</h3>
             </CardHeader>
