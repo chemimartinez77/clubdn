@@ -55,15 +55,17 @@ export function useViernesGame(gameId: string) {
     },
     onSuccess: (updatedGame) => {
       queryClient.setQueryData<ViernesGame>(['viernes-game', gameId], updatedGame);
+      queryClient.invalidateQueries({ queryKey: ['viernes-games'] });
     },
   });
 
   const abandonMutation = useMutation({
     mutationFn: async () => {
-      await api.delete(`/api/viernes/games/${gameId}`);
+      const res = await api.delete<{ success: boolean; data: ViernesGame }>(`/api/viernes/games/${gameId}`);
+      return res.data.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['viernes-game', gameId] });
+    onSuccess: (updatedGame) => {
+      queryClient.setQueryData<ViernesGame>(['viernes-game', gameId], updatedGame);
       queryClient.invalidateQueries({ queryKey: ['viernes-games'] });
     },
   });

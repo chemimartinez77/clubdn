@@ -8,6 +8,27 @@ import {
   type ViernesAction,
 } from '../logic/ViernesEngine';
 
+function isViernesAction(payload: unknown): payload is ViernesAction {
+  if (!payload || typeof payload !== 'object') return false;
+
+  const action = payload as Record<string, unknown>;
+  switch (action.type) {
+    case 'CHOOSE_HAZARD':
+      return action.hazardIndex === 0 || action.hazardIndex === 1;
+    case 'SKIP_SINGLE_HAZARD':
+    case 'BUY_CARD':
+    case 'RESOLVE_FIGHT':
+    case 'CONFIRM_DEFEAT':
+      return true;
+    case 'DESTROY_CARD':
+      return typeof action.cardId === 'string' && action.cardId.length > 0;
+    case 'CHOOSE_PIRATE_ORDER':
+      return action.firstPirateIndex === 0 || action.firstPirateIndex === 1;
+    default:
+      return false;
+  }
+}
+
 // ─── POST /api/viernes/games ──────────────────────────────────────────────────
 // Crea una partida nueva. Solitario: activa inmediatamente.
 export const createGame = async (req: Request, res: Response) => {
@@ -98,7 +119,7 @@ export const makeMove = async (req: Request, res: Response) => {
     const { id } = req.params;
     const action = req.body as ViernesAction;
 
-    if (!action || !action.type) {
+    if (!isViernesAction(action)) {
       return res.status(400).json({ success: false, message: 'Acción inválida' });
     }
 
@@ -165,9 +186,17 @@ export const abandonGame = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'La partida ya ha terminado' });
     }
 
+    const finishedState = {
+      ...(game.gameState as Record<string, unknown>),
+      currentFight: null,
+      revealedHazards: null,
+      phase: 'FINISHED',
+      won: false,
+    };
+
     const updated = await (prisma as any).viernesGame.update({
       where: { id },
-      data: { status: 'FINISHED', won: false },
+      data: { status: 'FINISHED', won: false, gameState: finishedState },
       include: {
         player: { select: { id: true, name: true } },
       },

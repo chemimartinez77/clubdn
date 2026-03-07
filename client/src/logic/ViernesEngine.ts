@@ -57,15 +57,18 @@ export interface FightState {
   pirateCard: PirateCard | null;
   hazardValue: number;       // El número a superar (ya calculado según paso)
   freeCards: number;         // Cartas que se pueden robar gratis
+  freeCardsDrawn: number;
   isPirateFight: boolean;
   drawnCards: RobinsonCard[];
   extraCardsBought: number;
   stoppedByAging: boolean;
+  lossDestructionPoints: number;
 }
 
 export type GamePhase =
   | 'HAZARD_CHOOSE'
   | 'HAZARD_FIGHT'
+  | 'HAZARD_DEFEAT'
   | 'PIRATE_CHOOSE'
   | 'PIRATE_FIGHT'
   | 'FINISHED';
@@ -101,9 +104,11 @@ export interface ViernesGameState {
 
 export type ViernesAction =
   | { type: 'CHOOSE_HAZARD'; hazardIndex: 0 | 1 }
+  | { type: 'SKIP_SINGLE_HAZARD' }
   | { type: 'BUY_CARD' }
   | { type: 'DESTROY_CARD'; cardId: string }
   | { type: 'RESOLVE_FIGHT' }
+  | { type: 'CONFIRM_DEFEAT' }
   | { type: 'CHOOSE_PIRATE_ORDER'; firstPirateIndex: 0 | 1 };
 
 export interface ActionResult {
@@ -116,7 +121,8 @@ export interface ActionResult {
 
 // ─── Constantes del juego ─────────────────────────────────────────────────────
 
-const LIFE_BY_DIFFICULTY: Record<Difficulty, number> = { 1: 22, 2: 20, 3: 18, 4: 16 };
+const MAX_LIFE_POINTS = 22;
+const STARTING_LIFE_BY_DIFFICULTY: Record<Difficulty, number> = { 1: 20, 2: 20, 3: 20, 4: 18 };
 
 // 30 cartas de peligro/habilidad reales del juego
 // name = nombre del peligro (lado inferior), skillName = habilidad ganada (lado superior)
@@ -212,7 +218,7 @@ function hazardValueForStep(card: HazardCard, step: GameStep): number {
 // ─── Inicialización ───────────────────────────────────────────────────────────
 
 export function createInitialState(difficulty: Difficulty): ViernesGameState {
-  const maxLife = LIFE_BY_DIFFICULTY[difficulty];
+  const startingLife = STARTING_LIFE_BY_DIFFICULTY[difficulty];
 
   // 18 cartas iniciales Robinson: 1×Genial(2), 3×Concentrado(1), 8×Normal(0), 5×Desconcentrado(-1), 1×Comiendo(0,+2vida)
   const robinsonCards: RobinsonCard[] = [
@@ -222,7 +228,6 @@ export function createInitialState(difficulty: Difficulty): ViernesGameState {
     ...Array.from({ length: 5  }, (_, i) => ({ id: makeId('rob', 12 + i), type: 'MISFORTUNE' as const, name: 'Desconcentrado', value: -1 })),
     { id: makeId('rob', 17), type: 'FOOD'       as const, name: 'Comiendo',     value: 0 },
   ];
-  const robinsonDeck = shuffleArray(robinsonCards);
 
   // 30 cartas de peligro
   const hazardCards: HazardCard[] = HAZARD_DEFS.map((def, i) => ({ id: makeId('hz', i), ...def }));
@@ -238,18 +243,23 @@ export function createInitialState(difficulty: Difficulty): ViernesGameState {
     ...shuffleArray(AGING_SEVERE_DEFS.map((def, i) => ({ id: makeId('age-sev', i), ...def }))),
   ];
 
-  // Nivel 1: retirar "Muy Estúpido" del juego
-  const filteredAgingDeck = difficulty === 1
-    ? agingDeck.filter(c => c.name !== 'Muy Estúpido').slice(0, 10)
+  // Nivel 1-2: retirar "Muy Estúpido" del juego; niveles 2-4 mezclan 1 envejecimiento inicial.
+  const filteredAgingDeck = difficulty <= 2
+    ? agingDeck.filter(c => c.name !== 'Muy Estúpido')
     : agingDeck;
 
+  if (difficulty >= 2 && filteredAgingDeck.length > 0) {
+    robinsonCards.push(filteredAgingDeck.shift() as RobinsonCard);
+  }
+
+  const robinsonDeck = shuffleArray(robinsonCards);
   const pirates: PirateCard[] = shuffleArray(PIRATE_DEFS.map((def, i) => ({ id: makeId('pir', i), ...def }))).slice(0, 2);
 
   return {
     difficulty,
     step: 'GREEN',
-    lifePoints: maxLife,
-    maxLifePoints: maxLife,
+    lifePoints: startingLife,
+    maxLifePoints: MAX_LIFE_POINTS,
     robinsonDeck,
     robinsonDiscard: [],
     reshuffleCount: 0,
@@ -271,7 +281,17 @@ export function createInitialState(difficulty: Difficulty): ViernesGameState {
 // ─── Total de combate ─────────────────────────────────────────────────────────
 
 export function calculateFightTotal(cards: RobinsonCard[]): number {
-  return cards.reduce((sum, c) => sum + c.value, 0);
+  const values = cards.map((card) => card.value).sort((a, b) => b - a);
+  const highestZeroCount = cards.filter(
+    (card) => card.type === 'AGING' && card.agingEffect === 'HIGHEST_ZERO'
+  ).length;
+
+  let total = values.reduce((sum, value) => sum + value, 0);
+  for (let i = 0; i < highestZeroCount && i < values.length; i++) {
+    total -= values[i] as number;
+  }
+
+  return total;
 }
 
 export function fightIsWinning(fight: FightState): boolean {
@@ -280,9 +300,38 @@ export function fightIsWinning(fight: FightState): boolean {
 
 // ─── Robar cartas de Robinson ─────────────────────────────────────────────────
 
-function drawForFight(s: ViernesGameState, count: number): ViernesGameState {
+function extraDrawCost(fight: FightState): number {
+  return fight.isPirateFight && fight.pirateCard?.specialEffect === 'EXTRA_DRAW_COST_2' ? 2 : 1;
+}
+
+function destroyCost(card: RobinsonCard): number {
+  return card.type === 'AGING' ? 2 : 1;
+}
+
+function calculateAgingLifePenalty(cards: RobinsonCard[]): number {
+  return cards.reduce((sum, card) => {
+    if (card.type !== 'AGING') return sum;
+    if (card.agingEffect === 'MINUS_1') return sum + 1;
+    if (card.agingEffect === 'MINUS_2') return sum + 2;
+    return sum;
+  }, 0);
+}
+
+function maybeFinishPirateFightIfBlocked(s: ViernesGameState): ViernesGameState {
+  if (!s.currentFight?.isPirateFight) return s;
+  if (fightIsWinning(s.currentFight)) return s;
+  if (s.lifePoints >= extraDrawCost(s.currentFight)) return s;
+
+  s.currentFight = null;
+  s.phase = 'FINISHED';
+  s.won = false;
+
+  return s;
+}
+
+function drawForFight(s: ViernesGameState, count: number, isFreeDraw: boolean): ViernesGameState {
   for (let i = 0; i < count; i++) {
-    if (s.currentFight!.stoppedByAging) break;
+    if (isFreeDraw && s.currentFight!.stoppedByAging) break;
 
     if (s.robinsonDeck.length === 0) {
       if (s.robinsonDiscard.length === 0) break;
@@ -299,13 +348,16 @@ function drawForFight(s: ViernesGameState, count: number): ViernesGameState {
 
     const card = s.robinsonDeck.shift()!;
     s.currentFight!.drawnCards.push(card);
+    if (isFreeDraw) {
+      s.currentFight!.freeCardsDrawn += 1;
+    }
 
-    if (card.type === 'AGING' && card.agingEffect === 'STOP') {
+    if (isFreeDraw && card.type === 'AGING' && card.agingEffect === 'STOP') {
       s.currentFight!.stoppedByAging = true;
       break;
     }
   }
-  return s;
+  return maybeFinishPirateFightIfBlocked(s);
 }
 
 // ─── Dispatcher principal ─────────────────────────────────────────────────────
@@ -314,9 +366,11 @@ export function applyAction(state: ViernesGameState, action: ViernesAction): Act
   const s = deepClone(state);
   switch (action.type) {
     case 'CHOOSE_HAZARD':       return handleChooseHazard(s, action);
+    case 'SKIP_SINGLE_HAZARD':  return handleSkipSingleHazard(s);
     case 'BUY_CARD':            return handleBuyCard(s);
     case 'DESTROY_CARD':        return handleDestroyCard(s, action);
     case 'RESOLVE_FIGHT':       return handleResolveFight(s);
+    case 'CONFIRM_DEFEAT':      return handleConfirmDefeat(s);
     case 'CHOOSE_PIRATE_ORDER': return handleChoosePirateOrder(s, action);
     default:
       return { success: false, error: 'Acción desconocida' };
@@ -335,9 +389,12 @@ function handleChooseHazard(
 
   const chosen = s.revealedHazards[action.hazardIndex];
   const other  = s.revealedHazards[action.hazardIndex === 0 ? 1 : 0];
+  if (!chosen || !other) {
+    return { success: false, error: 'Peligro inválido' };
+  }
 
   if (chosen.id !== other.id) {
-    s.hazardDeck.push(other);
+    s.hazardDone.push(other);
   }
   s.revealedHazards = null;
 
@@ -348,26 +405,57 @@ function handleChooseHazard(
     pirateCard: null,
     hazardValue,
     freeCards: chosen.freeCards,
+    freeCardsDrawn: 0,
     isPirateFight: false,
     drawnCards: [],
     extraCardsBought: 0,
     stoppedByAging: false,
+    lossDestructionPoints: 0,
   };
   s.phase = 'HAZARD_FIGHT';
 
-  return { success: true, newState: drawForFight(s, chosen.freeCards) };
+  return { success: true, newState: drawForFight(s, chosen.freeCards, true) };
+}
+
+function handleSkipSingleHazard(s: ViernesGameState): ActionResult {
+  if (s.phase !== 'HAZARD_CHOOSE' || !s.revealedHazards) {
+    return { success: false, error: 'No hay un peligro único para descartar' };
+  }
+
+  const [solo, mirror] = s.revealedHazards;
+  if (solo.id !== mirror.id) {
+    return { success: false, error: 'Solo puedes descartar el último peligro del paso' };
+  }
+
+  s.hazardDone.push(solo);
+  s.revealedHazards = null;
+
+  return { success: true, newState: advanceHazardPhase(s) };
 }
 
 // ─── BUY_CARD ─────────────────────────────────────────────────────────────────
 
 function handleBuyCard(s: ViernesGameState): ActionResult {
   if (!s.currentFight) return { success: false, error: 'No hay combate activo' };
-  if (s.currentFight.stoppedByAging) return { success: false, error: 'El envejecimiento ha detenido el robo' };
-  if (s.lifePoints < 1) return { success: false, error: 'Sin puntos de vida suficientes' };
+  if (s.phase === 'HAZARD_DEFEAT') return { success: false, error: 'La lucha ya se ha resuelto' };
 
-  s.lifePoints -= 1;
+  const cost = extraDrawCost(s.currentFight);
+  if (!s.currentFight.isPirateFight && s.currentFight.stoppedByAging) {
+    return { success: false, error: 'El envejecimiento ha detenido el robo gratis' };
+  }
+  if (s.lifePoints < cost) {
+    if (s.currentFight.isPirateFight) {
+      s.currentFight = null;
+      s.phase = 'FINISHED';
+      s.won = false;
+      return { success: true, newState: s, gameOver: true, won: false };
+    }
+    return { success: false, error: 'Sin puntos de vida suficientes' };
+  }
+
+  s.lifePoints -= cost;
   s.currentFight.extraCardsBought += 1;
-  return { success: true, newState: drawForFight(s, 1) };
+  return { success: true, newState: drawForFight(s, 1, false) };
 }
 
 // ─── DESTROY_CARD ─────────────────────────────────────────────────────────────
@@ -376,15 +464,22 @@ function handleDestroyCard(
   s: ViernesGameState,
   action: Extract<ViernesAction, { type: 'DESTROY_CARD' }>
 ): ActionResult {
-  if (!s.currentFight) return { success: false, error: 'No hay combate activo' };
-  if (s.lifePoints < 2) return { success: false, error: 'Necesitas 2 puntos de vida para destruir' };
+  if (s.phase !== 'HAZARD_DEFEAT' || !s.currentFight) {
+    return { success: false, error: 'Solo puedes destruir cartas tras perder un peligro' };
+  }
 
   const idx = s.currentFight.drawnCards.findIndex(c => c.id === action.cardId);
   if (idx === -1) return { success: false, error: 'Carta no encontrada' };
 
+  const target = s.currentFight.drawnCards[idx] as RobinsonCard;
+  const cost = destroyCost(target);
+  if (s.currentFight.lossDestructionPoints < cost) {
+    return { success: false, error: 'No quedan puntos suficientes para destruir esa carta' };
+  }
+
   const removed = s.currentFight.drawnCards.splice(idx, 1);
   if (removed[0]) s.destroyedCards.push(removed[0]);
-  s.lifePoints -= 2;
+  s.currentFight.lossDestructionPoints -= cost;
 
   return { success: true, newState: s };
 }
@@ -397,37 +492,47 @@ function handleResolveFight(s: ViernesGameState): ActionResult {
   const fight = s.currentFight;
   const total = calculateFightTotal(fight.drawnCards);
   const win   = total >= fight.hazardValue;
-
-  s.robinsonDiscard.push(...fight.drawnCards);
-  s.currentFight = null;
+  const agingLifePenalty = calculateAgingLifePenalty(fight.drawnCards);
 
   if (fight.isPirateFight) {
     if (!win) {
-      // En combate pirata: hay que pagar vida, no se puede perder voluntariamente
-      const lifeLost = Math.max(1, fight.hazardValue - total);
-      s.lifePoints = Math.max(0, s.lifePoints - lifeLost);
-      if (s.lifePoints <= 0) {
-        s.phase = 'FINISHED';
-        s.won = false;
-        return { success: true, newState: s, gameOver: true, won: false };
-      }
-      // Volver a intentar el mismo pirata
-      return { success: true, newState: startPirateFight(s) };
+      return { success: false, error: 'Contra los piratas debes seguir robando hasta poder ganar' };
     }
+
+    s.robinsonDiscard.push(...fight.drawnCards);
+    s.currentFight = null;
+
+    if (s.lifePoints < agingLifePenalty) {
+      s.phase = 'FINISHED';
+      s.won = false;
+      return { success: true, newState: s, gameOver: true, won: false };
+    }
+    s.lifePoints -= agingLifePenalty;
+
     if (s.pirateIndex < s.pirates.length - 1) {
       s.pirateIndex += 1;
       return { success: true, newState: startPirateFight(s) };
-    } else {
-      s.phase = 'FINISHED';
-      s.won = true;
-      return { success: true, newState: s, gameOver: true, won: true };
     }
+
+    s.phase = 'FINISHED';
+    s.won = true;
+    return { success: true, newState: s, gameOver: true, won: true };
   }
 
   // Combate de peligro
   const hazard = fight.hazardCard!;
 
   if (win) {
+    s.robinsonDiscard.push(...fight.drawnCards);
+    s.currentFight = null;
+
+    if (s.lifePoints < agingLifePenalty) {
+      s.phase = 'FINISHED';
+      s.won = false;
+      return { success: true, newState: s, gameOver: true, won: false };
+    }
+    s.lifePoints -= agingLifePenalty;
+
     const wonCard: RobinsonCard = {
       id: `won-${hazard.id}`,
       type: 'HAZARD_WON',
@@ -437,20 +542,32 @@ function handleResolveFight(s: ViernesGameState): ActionResult {
       hazardName: hazard.name,
     };
     s.robinsonDiscard.push(wonCard);
-    s.hazardDone.push(hazard);
   } else {
-    const lifeLost = Math.max(1, hazard.hazardGreen === 0 && hazard.hazardYellow === 0 && hazard.hazardRed === 0
-      ? 1
-      : Math.max(1, fight.hazardValue - total));
-    s.lifePoints = Math.max(0, s.lifePoints - lifeLost);
-    s.hazardDone.push(hazard);
-
-    if (s.lifePoints <= 0) {
+    const lifeLost = fight.hazardValue - total;
+    if (s.lifePoints < lifeLost + agingLifePenalty) {
+      s.currentFight = null;
       s.phase = 'FINISHED';
       s.won = false;
       return { success: true, newState: s, gameOver: true, won: false };
     }
+
+    s.lifePoints -= lifeLost + agingLifePenalty;
+    s.currentFight.lossDestructionPoints = lifeLost;
+    s.phase = 'HAZARD_DEFEAT';
+    return { success: true, newState: s };
   }
+
+  return { success: true, newState: advanceHazardPhase(s) };
+}
+
+function handleConfirmDefeat(s: ViernesGameState): ActionResult {
+  if (s.phase !== 'HAZARD_DEFEAT' || !s.currentFight?.hazardCard) {
+    return { success: false, error: 'No hay una derrota pendiente de confirmar' };
+  }
+
+  s.robinsonDiscard.push(...s.currentFight.drawnCards);
+  s.hazardDone.push(s.currentFight.hazardCard);
+  s.currentFight = null;
 
   return { success: true, newState: advanceHazardPhase(s) };
 }
@@ -483,13 +600,15 @@ function startPirateFight(s: ViernesGameState): ViernesGameState {
     pirateCard: pirate,
     hazardValue: pirate.fightValue,
     freeCards: pirate.freeCards,
+    freeCardsDrawn: 0,
     isPirateFight: true,
     drawnCards: [],
     extraCardsBought: 0,
     stoppedByAging: false,
+    lossDestructionPoints: 0,
   };
   s.phase = 'PIRATE_FIGHT';
-  return drawForFight(s, pirate.freeCards);
+  return drawForFight(s, pirate.freeCards, true);
 }
 
 // ─── Avance de fase de peligros ───────────────────────────────────────────────

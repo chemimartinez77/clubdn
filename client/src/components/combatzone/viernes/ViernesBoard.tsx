@@ -3,16 +3,46 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useViernesGame } from '../../../hooks/useViernesGame';
 import { calculateFightTotal } from '../../../logic/ViernesEngine';
-import type { HazardCard, RobinsonCard, FightState, ViernesGameState } from '../../../logic/ViernesEngine';
+import type {
+  FightState,
+  HazardCard,
+  RobinsonCard,
+  ViernesGameState,
+} from '../../../logic/ViernesEngine';
 import {
-  getRobinsonCardImage,
   getAgingCardImage,
-  getPirateCardImage,
-  getSkillCardImage,
   getHazardCardImage,
+  getPirateCardImage,
+  getRobinsonCardImage,
+  getSkillCardImage,
 } from '../../../logic/ViernesImages';
 
-// ─── StatusBar ─────────────────────────────────────────────────────────────────
+function revealedHazardCount(gs: ViernesGameState): number {
+  if (!gs.revealedHazards) return 0;
+  const [first, second] = gs.revealedHazards;
+  return first.id === second.id ? 1 : 2;
+}
+
+function destroyCost(card: RobinsonCard): number {
+  return card.type === 'AGING' ? 2 : 1;
+}
+
+function resolveRobinsonImage(card: RobinsonCard): string {
+  if (card.type === 'AGING') return getAgingCardImage(card.name);
+  if (card.type === 'HAZARD_WON') return getSkillCardImage(card.name);
+  return getRobinsonCardImage(card.name);
+}
+
+function resolveActionError(error: unknown): string | null {
+  if (!error || typeof error !== 'object') return null;
+
+  const maybeAxios = error as {
+    response?: { data?: { message?: string } };
+    message?: string;
+  };
+
+  return maybeAxios.response?.data?.message ?? maybeAxios.message ?? null;
+}
 
 function StatusBar({ gs, onAbandon, isAbandoning }: {
   gs: ViernesGameState;
@@ -21,25 +51,23 @@ function StatusBar({ gs, onAbandon, isAbandoning }: {
 }) {
   const pct = (gs.lifePoints / gs.maxLifePoints) * 100;
   const barColor = pct > 50 ? 'bg-green-500' : pct > 25 ? 'bg-yellow-400' : 'bg-red-500';
-
   const stepLabel: Record<string, { label: string; color: string }> = {
-    GREEN:  { label: 'Paso Verde',    color: 'text-green-400' },
+    GREEN: { label: 'Paso Verde', color: 'text-green-400' },
     YELLOW: { label: 'Paso Amarillo', color: 'text-yellow-400' },
-    RED:    { label: 'Paso Rojo',     color: 'text-red-400' },
+    RED: { label: 'Paso Rojo', color: 'text-red-400' },
+  };
+  const phaseLabel: Record<string, string> = {
+    HAZARD_CHOOSE: 'Elige un peligro',
+    HAZARD_FIGHT: 'En combate',
+    HAZARD_DEFEAT: 'Despues de perder',
+    PIRATE_CHOOSE: 'Orden de piratas',
+    PIRATE_FIGHT: 'Combate pirata',
+    FINISHED: gs.won ? 'Victoria' : 'Derrota',
   };
   const stepInfo = stepLabel[gs.step] ?? { label: gs.step, color: 'text-white' };
 
-  const phaseLabel: Record<string, string> = {
-    HAZARD_CHOOSE: 'Elige un peligro',
-    HAZARD_FIGHT:  'En combate',
-    PIRATE_CHOOSE: 'Elige el orden de piratas',
-    PIRATE_FIGHT:  'Combate pirata',
-    FINISHED:      gs.won ? '¡Victoria!' : 'Derrota',
-  };
-
   return (
     <div className="flex items-center gap-3 p-3 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] flex-wrap">
-      {/* Vida */}
       <div className="flex-1 min-w-[120px]">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xs font-medium text-[var(--color-text-muted)]">Vida</span>
@@ -55,24 +83,25 @@ function StatusBar({ gs, onAbandon, isAbandoning }: {
         </div>
       </div>
 
-      {/* Paso actual */}
       <div className="text-center px-2 py-1 rounded-lg bg-[var(--color-primary)]/10">
         <p className={`text-xs font-bold ${stepInfo.color}`}>{stepInfo.label}</p>
         <p className="text-[10px] text-[var(--color-text-muted)]">{phaseLabel[gs.phase] ?? gs.phase}</p>
       </div>
 
-      {/* Peligros */}
       <div className="text-center">
         <p className="text-xs text-[var(--color-text-muted)]">Peligros</p>
-        <p className="text-sm font-bold text-[var(--color-text)]">{gs.hazardDeck.length + (gs.revealedHazards ? 2 : 0)} restantes</p>
+        <p className="text-sm font-bold text-[var(--color-text)]">
+          {gs.hazardDeck.length + revealedHazardCount(gs)} restantes
+        </p>
       </div>
 
-      {/* Abandonar */}
       {gs.phase !== 'FINISHED' && (
         <button
-          onClick={() => { if (window.confirm('¿Abandonar la partida?')) onAbandon(); }}
+          onClick={() => {
+            if (window.confirm('Abandonar la partida?')) onAbandon();
+          }}
           disabled={isAbandoning}
-          className="text-xs text-red-400 hover:text-red-300 underline"
+          className="text-xs text-red-400 hover:text-red-300 underline disabled:opacity-50"
         >
           Abandonar
         </button>
@@ -80,8 +109,6 @@ function StatusBar({ gs, onAbandon, isAbandoning }: {
     </div>
   );
 }
-
-// ─── HazardCardView — carta de peligro con flip ────────────────────────────────
 
 function HazardCardView({ hazard, onChoose, disabled }: {
   hazard: HazardCard;
@@ -94,11 +121,9 @@ function HazardCardView({ hazard, onChoose, disabled }: {
 
   return (
     <div className="flex flex-col items-center gap-1">
-      {/* Carta con flip */}
       <div
         className={`
-          relative rounded-2xl border-2 overflow-hidden select-none
-          transition-all duration-200
+          relative rounded-2xl border-2 overflow-hidden select-none transition-all duration-200
           ${isClickable
             ? 'border-[var(--color-primary)] cursor-pointer hover:scale-105 hover:shadow-lg hover:shadow-[var(--color-primary)]/30'
             : 'border-[var(--color-border)]'}
@@ -106,7 +131,6 @@ function HazardCardView({ hazard, onChoose, disabled }: {
         `}
         style={{ width: 144 }}
       >
-        {/* Imagen: cara peligro (rotada 180°) o cara habilidad (normal) */}
         <div
           className="relative w-full overflow-hidden"
           style={{ height: 180 }}
@@ -116,17 +140,12 @@ function HazardCardView({ hazard, onChoose, disabled }: {
             src={imgSrc}
             alt={flipped ? hazard.skillName : hazard.name}
             className="w-full object-cover transition-transform duration-300"
-            style={{
-              height: '100%',
-              transform: flipped ? 'none' : 'rotate(180deg)',
-              objectPosition: flipped ? 'top' : 'top',
-            }}
+            style={{ height: '100%', transform: flipped ? 'none' : 'rotate(180deg)' }}
           />
-          {/* Overlay con valores cuando se muestra el peligro */}
           {!flipped && (
             <div className="absolute inset-0 bg-black/40 flex flex-col justify-between p-2 pointer-events-none">
               <div className="flex justify-between items-start">
-                <span className="text-base font-black text-white drop-shadow">{hazard.freeCards}✦</span>
+                <span className="text-base font-black text-white drop-shadow">{hazard.freeCards}x</span>
                 <div className="flex flex-col items-end gap-0.5">
                   <span className="text-xs font-bold text-green-400">{hazard.hazardGreen}</span>
                   <span className="text-xs font-bold text-yellow-400">{hazard.hazardYellow}</span>
@@ -138,24 +157,16 @@ function HazardCardView({ hazard, onChoose, disabled }: {
               </p>
             </div>
           )}
-          {/* Overlay con nombre de habilidad cuando se muestra el anverso */}
           {flipped && (
             <div className="absolute bottom-0 inset-x-0 bg-black/50 py-1 px-2 pointer-events-none">
-              <p className="text-[10px] font-bold text-white text-center">{hazard.skillName} (+{hazard.survivorValue})</p>
+              <p className="text-[10px] font-bold text-white text-center">
+                {hazard.skillName} (+{hazard.survivorValue})
+              </p>
             </div>
           )}
         </div>
 
-        {/* Botón elegir */}
-        {isClickable && !flipped && (
-          <button
-            onClick={onChoose}
-            className="w-full py-1.5 text-center text-xs font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 transition-opacity"
-          >
-            Elegir
-          </button>
-        )}
-        {isClickable && flipped && (
+        {isClickable && (
           <button
             onClick={onChoose}
             className="w-full py-1.5 text-center text-xs font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 transition-opacity"
@@ -165,9 +176,8 @@ function HazardCardView({ hazard, onChoose, disabled }: {
         )}
       </div>
 
-      {/* Botón voltear */}
       <button
-        onClick={() => setFlipped(f => !f)}
+        onClick={() => setFlipped((value) => !value)}
         className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] underline transition-colors"
       >
         {flipped ? 'Ver peligro' : 'Ver habilidad'}
@@ -176,32 +186,21 @@ function HazardCardView({ hazard, onChoose, disabled }: {
   );
 }
 
-// ─── Resolución de imagen de carta Robinson ────────────────────────────────────
-
-function resolveRobinsonImage(card: RobinsonCard): string {
-  if (card.type === 'AGING')      return getAgingCardImage(card.name);
-  if (card.type === 'HAZARD_WON') return getSkillCardImage(card.name);
-  return getRobinsonCardImage(card.name);
-}
-
-// ─── RobinsonCardView ──────────────────────────────────────────────────────────
-
-function RobinsonCardView({ card, onDestroy, canDestroyThis, lifePoints }: {
+function RobinsonCardView({ card, onDestroy, destroyPoints }: {
   card: RobinsonCard;
   onDestroy?: (id: string) => void;
-  canDestroyThis: boolean;
-  lifePoints: number;
+  destroyPoints?: number;
 }) {
-  const isAging    = card.type === 'AGING';
-  const isStop     = isAging && card.agingEffect === 'STOP';
+  const isAging = card.type === 'AGING';
+  const isStop = isAging && card.agingEffect === 'STOP';
   const valueColor = card.value < 0 ? 'text-red-400' : card.value === 0 ? 'text-gray-300' : 'text-green-400';
-  const ringColor  = isStop ? 'ring-red-500' : isAging ? 'ring-orange-400' : 'ring-[var(--color-border)]';
-  const imgSrc     = resolveRobinsonImage(card);
+  const ringColor = isStop ? 'ring-red-500' : isAging ? 'ring-orange-400' : 'ring-[var(--color-border)]';
+  const cost = destroyCost(card);
 
   return (
     <div className={`relative flex flex-col items-center rounded-xl overflow-hidden ring-2 ${ringColor} w-20 bg-[var(--color-surface)]`}>
       <div className="relative w-full">
-        <img src={imgSrc} alt={card.name} className="w-full object-cover" style={{ height: '96px' }} />
+        <img src={resolveRobinsonImage(card)} alt={card.name} className="w-full object-cover" style={{ height: '96px' }} />
         <span className={`absolute top-1 left-1 text-sm font-black drop-shadow-md ${valueColor}`}>
           {card.value > 0 ? `+${card.value}` : card.value}
         </span>
@@ -214,143 +213,191 @@ function RobinsonCardView({ card, onDestroy, canDestroyThis, lifePoints }: {
       <p className="text-[9px] text-center text-[var(--color-text-muted)] px-1 py-0.5 leading-tight line-clamp-2 w-full">
         {card.name}
       </p>
-      {canDestroyThis && onDestroy && lifePoints >= 2 && (
+      {onDestroy && (destroyPoints ?? 0) >= cost && (
         <button
           onClick={() => onDestroy(card.id)}
           className="w-full py-0.5 text-[9px] text-red-400 hover:bg-red-500/20 font-semibold transition-colors"
-          title="Destruir (−2 vida)"
+          title={`Destruir (${cost})`}
         >
-          −2♥ Destruir
+          {`-${cost} destruir`}
         </button>
       )}
     </div>
   );
 }
 
-// ─── FightPanel ────────────────────────────────────────────────────────────────
+function FightHeader({ fight, total }: { fight: FightState; total: number }) {
+  const winning = total >= fight.hazardValue;
+  const diff = total - fight.hazardValue;
 
-function FightPanel({ gs, fight, onBuy, onResolve, onDestroy, isSending }: {
+  return (
+    <div className="flex items-center gap-4 p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+      <div className="relative flex-shrink-0 rounded-xl overflow-hidden ring-2 ring-red-500/50" style={{ width: 64, height: 80 }}>
+        {fight.isPirateFight ? (
+          <img
+            src={getPirateCardImage(fight.pirateCard?.name ?? '')}
+            alt={fight.pirateCard?.name ?? ''}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <img
+            src={getHazardCardImage(fight.hazardCard?.imageFile ?? '')}
+            alt={fight.hazardCard?.name ?? ''}
+            className="w-full h-full object-cover"
+            style={{ transform: 'rotate(180deg)' }}
+          />
+        )}
+        <span className="absolute bottom-0 inset-x-0 text-center text-xs font-black text-white bg-black/60 py-0.5">
+          {fight.isPirateFight ? 'P' : 'H'}
+        </span>
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-[var(--color-text)] truncate">
+          {fight.isPirateFight ? fight.pirateCard?.name : fight.hazardCard?.name}
+        </p>
+        {!fight.isPirateFight && fight.hazardCard && (
+          <p className="text-[10px] text-[var(--color-text-muted)]">
+            Habilidad: {fight.hazardCard.skillName}
+          </p>
+        )}
+        <p className="text-3xl font-black text-red-400 mt-1">
+          {fight.hazardValue}
+          <span className="text-sm font-normal text-[var(--color-text-muted)] ml-2">a superar</span>
+        </p>
+        <p className="text-xs text-[var(--color-text-muted)]">
+          {fight.freeCards} cartas gratis
+        </p>
+      </div>
+
+      <div className={`flex flex-col items-center px-3 py-2 rounded-xl ${winning ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+        <span className={`text-2xl font-black ${winning ? 'text-green-400' : 'text-red-400'}`}>
+          {total}
+        </span>
+        <span className={`text-xs font-semibold ${winning ? 'text-green-300' : 'text-red-300'}`}>
+          {winning ? `+${diff}` : `${diff}`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function FightPanel({ gs, fight, onBuy, onResolve, isSending }: {
   gs: ViernesGameState;
   fight: FightState;
   onBuy: () => void;
   onResolve: () => void;
-  onDestroy: (id: string) => void;
   isSending: boolean;
 }) {
-  const total   = calculateFightTotal(fight.drawnCards);
+  const total = calculateFightTotal(fight.drawnCards);
   const winning = total >= fight.hazardValue;
-  const diff    = total - fight.hazardValue;
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Objetivo del combate */}
-      <div className="flex items-center gap-4 p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-        {/* Imagen de la carta objetivo */}
-        <div className="relative flex-shrink-0 rounded-xl overflow-hidden ring-2 ring-red-500/50" style={{ width: 64, height: 80 }}>
-          {fight.isPirateFight ? (
-            <img
-              src={getPirateCardImage(fight.pirateCard?.name ?? '')}
-              alt={fight.pirateCard?.name ?? ''}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <img
-              src={getHazardCardImage(fight.hazardCard?.imageFile ?? '')}
-              alt={fight.hazardCard?.name ?? ''}
-              className="w-full h-full object-cover"
-              style={{ transform: 'rotate(180deg)' }}
-            />
-          )}
-          <span className="absolute bottom-0 inset-x-0 text-center text-xs font-black text-white bg-black/60 py-0.5">
-            {fight.isPirateFight ? '☠' : '⚠'}
-          </span>
-        </div>
+      <FightHeader fight={fight} total={total} />
 
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-[var(--color-text)] truncate">
-            {fight.isPirateFight ? fight.pirateCard?.name : fight.hazardCard?.name}
-          </p>
-          {!fight.isPirateFight && fight.hazardCard && (
-            <p className="text-[10px] text-[var(--color-text-muted)]">
-              Habilidad: {fight.hazardCard.skillName}
-            </p>
-          )}
-          <p className="text-3xl font-black text-red-400 mt-1">
-            {fight.hazardValue}
-            <span className="text-sm font-normal text-[var(--color-text-muted)] ml-2">a superar</span>
-          </p>
-          <p className="text-xs text-[var(--color-text-muted)]">
-            {fight.freeCards} cartas gratis
-          </p>
-        </div>
-
-        {/* Total actual */}
-        <div className={`flex flex-col items-center px-3 py-2 rounded-xl ${winning ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-          <span className={`text-2xl font-black ${winning ? 'text-green-400' : 'text-red-400'}`}>
-            {total}
-          </span>
-          <span className={`text-xs font-semibold ${winning ? 'text-green-300' : 'text-red-300'}`}>
-            {winning ? `+${diff}` : `${diff}`}
-          </span>
-        </div>
-      </div>
-
-      {/* Cartas sacadas */}
       <div>
         <p className="text-sm font-semibold text-[var(--color-text-muted)] mb-2">
           Cartas sacadas ({fight.drawnCards.length}):
         </p>
         {fight.drawnCards.length === 0 ? (
-          <p className="text-sm italic text-[var(--color-text-muted)]">Sin cartas aún</p>
+          <p className="text-sm italic text-[var(--color-text-muted)]">Sin cartas aun</p>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {fight.drawnCards.map(card => (
-              <RobinsonCardView
-                key={card.id}
-                card={card}
-                onDestroy={onDestroy}
-                canDestroyThis={true}
-                lifePoints={gs.lifePoints}
-              />
+            {fight.drawnCards.map((card) => (
+              <RobinsonCardView key={card.id} card={card} />
             ))}
           </div>
         )}
-        {fight.stoppedByAging && (
+        {fight.stoppedByAging && !fight.isPirateFight && (
           <p className="mt-2 text-xs text-orange-400">
-            ⛔ El envejecimiento ha detenido el robo de cartas.
+            El envejecimiento ha detenido el robo gratis.
           </p>
         )}
       </div>
 
-      {/* Acciones */}
       <div className="flex gap-3 flex-wrap">
         <button
           onClick={onBuy}
-          disabled={isSending || gs.lifePoints < 1 || fight.stoppedByAging}
+          disabled={isSending || gs.lifePoints < 1 || (!fight.isPirateFight && fight.stoppedByAging)}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/40 text-yellow-300 font-semibold text-sm
                      hover:bg-yellow-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
-          <span>🃏</span> Sacar carta (−1 vida)
+          Sacar carta (-1 vida)
         </button>
 
         <button
           onClick={onResolve}
-          disabled={isSending}
+          disabled={isSending || (fight.isPirateFight && !winning)}
           className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[var(--color-primary)] text-white font-bold text-sm
                      hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
-          {winning ? '✅ Resolver (ganar)' : '❌ Resolver (perder)'}
+          {winning ? 'Resolver' : 'Perder el peligro'}
         </button>
       </div>
 
-      {gs.lifePoints < 1 && !fight.stoppedByAging && (
-        <p className="text-xs text-red-400">Sin vida para comprar más cartas.</p>
+      {fight.isPirateFight && !winning && (
+        <p className="text-xs text-orange-400">
+          Contra los piratas no puedes resolver perdiendo: debes seguir robando hasta ganar o quedarte sin vida.
+        </p>
       )}
     </div>
   );
 }
 
-// ─── PirateChoosePanel ─────────────────────────────────────────────────────────
+function DefeatPanel({ fight, onDestroy, onConfirm, isSending }: {
+  fight: FightState;
+  onDestroy: (id: string) => void;
+  onConfirm: () => void;
+  isSending: boolean;
+}) {
+  const total = calculateFightTotal(fight.drawnCards);
+  const missing = fight.hazardValue - total;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <FightHeader fight={fight} total={total} />
+
+      <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4">
+        <p className="text-sm font-bold text-red-300">Has perdido este peligro.</p>
+        <p className="text-xs text-[var(--color-text-muted)] mt-1">
+          Te faltaron {missing} puntos y puedes destruir cartas usadas por ese mismo valor.
+        </p>
+        <p className="text-xs text-[var(--color-text-muted)] mt-1">
+          Destruir envejecimiento cuesta 2; cualquier otra carta cuesta 1.
+        </p>
+        <p className="text-xs text-[var(--color-text-muted)] mt-1">
+          Puntos disponibles: {fight.lossDestructionPoints}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm font-semibold text-[var(--color-text-muted)] mb-2">
+          Cartas usadas ({fight.drawnCards.length}):
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {fight.drawnCards.map((card) => (
+            <RobinsonCardView
+              key={card.id}
+              card={card}
+              onDestroy={onDestroy}
+              destroyPoints={fight.lossDestructionPoints}
+            />
+          ))}
+        </div>
+      </div>
+
+      <button
+        onClick={onConfirm}
+        disabled={isSending}
+        className="self-start px-5 py-2 rounded-lg bg-[var(--color-primary)] text-white font-bold text-sm
+                   hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+      >
+        Continuar
+      </button>
+    </div>
+  );
+}
 
 function PirateChoosePanel({ gs, onChoose, isSending }: {
   gs: ViernesGameState;
@@ -360,13 +407,13 @@ function PirateChoosePanel({ gs, onChoose, isSending }: {
   return (
     <div className="flex flex-col items-center gap-4">
       <p className="text-lg font-bold text-[var(--color-text)]">
-        ¡Fase de piratas! Elige a quién enfrentarte primero:
+        Fase de piratas: elige a quien enfrentarte primero.
       </p>
       <div className="flex gap-6 flex-wrap justify-center">
-        {gs.pirates.map((pirate, i) => (
+        {gs.pirates.map((pirate, index) => (
           <div
             key={pirate.id}
-            onClick={() => !isSending && onChoose(i as 0 | 1)}
+            onClick={() => !isSending && onChoose(index as 0 | 1)}
             className="flex flex-col items-center rounded-2xl border-2 border-[var(--color-primary)] overflow-hidden w-40
                        cursor-pointer hover:scale-105 hover:shadow-lg hover:shadow-[var(--color-primary)]/30 transition-all
                        bg-[var(--color-surface)] select-none"
@@ -396,28 +443,25 @@ function PirateChoosePanel({ gs, onChoose, isSending }: {
   );
 }
 
-// ─── HazardChoosePanel ─────────────────────────────────────────────────────────
-
-function HazardChoosePanel({ gs, onChoose, isSending }: {
+function HazardChoosePanel({ gs, onChoose, onSkip, isSending }: {
   gs: ViernesGameState;
   onChoose: (idx: 0 | 1) => void;
+  onSkip: () => void;
   isSending: boolean;
 }) {
   if (!gs.revealedHazards) return null;
+
   const [h0, h1] = gs.revealedHazards;
   const isSame = h0.id === h1.id;
-
-  const stepValueLabel: Record<string, string> = {
-    GREEN: 'verde', YELLOW: 'amarillo', RED: 'rojo',
-  };
+  const stepValueLabel: Record<string, string> = { GREEN: 'verde', YELLOW: 'amarillo', RED: 'rojo' };
 
   return (
     <div className="flex flex-col items-center gap-4">
       <p className="text-base font-semibold text-[var(--color-text-muted)]">
-        {isSame ? 'Solo queda un peligro:' : 'Elige a qué peligro enfrentarte:'}
+        {isSame ? 'Solo queda un peligro:' : 'Elige a que peligro enfrentarte:'}
       </p>
       <p className="text-xs text-[var(--color-text-muted)]">
-        Paso {stepValueLabel[gs.step]} — valor activo del peligro resaltado
+        Paso {stepValueLabel[gs.step]} - valor activo del peligro resaltado
       </p>
       <div className="flex gap-6 flex-wrap justify-center">
         <HazardCardView hazard={h0} onChoose={() => !isSending && onChoose(0)} disabled={isSending} />
@@ -427,18 +471,26 @@ function HazardChoosePanel({ gs, onChoose, isSending }: {
       </div>
       {!isSame && (
         <p className="text-xs text-[var(--color-text-muted)]">
-          La carta no elegida irá al fondo del mazo de peligros.
+          La carta no elegida ira al descarte de peligros.
         </p>
+      )}
+      {isSame && (
+        <button
+          onClick={onSkip}
+          disabled={isSending}
+          className="px-4 py-2 rounded-lg border border-[var(--color-border)] text-sm text-[var(--color-text)]
+                     hover:bg-[var(--color-border)]/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+        >
+          Descartar y pasar al siguiente paso
+        </button>
       )}
     </div>
   );
 }
 
-// ─── RobinsonStatus ────────────────────────────────────────────────────────────
-
 function RobinsonStatus({ gs }: { gs: ViernesGameState }) {
-  const wonCards   = gs.robinsonDeck.concat(gs.robinsonDiscard).filter(c => c.type === 'HAZARD_WON').length;
-  const agingCards = gs.robinsonDeck.concat(gs.robinsonDiscard).filter(c => c.type === 'AGING').length;
+  const wonCards = gs.robinsonDeck.concat(gs.robinsonDiscard).filter((card) => card.type === 'HAZARD_WON').length;
+  const agingCards = gs.robinsonDeck.concat(gs.robinsonDiscard).filter((card) => card.type === 'AGING').length;
 
   return (
     <div className="grid grid-cols-4 gap-2 p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] text-center">
@@ -462,22 +514,22 @@ function RobinsonStatus({ gs }: { gs: ViernesGameState }) {
   );
 }
 
-// ─── GameOverBanner ────────────────────────────────────────────────────────────
-
 function GameOverBanner({ gs }: { gs: ViernesGameState }) {
   const navigate = useNavigate();
+
   return (
-    <div className={`flex flex-col items-center gap-4 p-8 rounded-2xl border-2 text-center
-      ${gs.won ? 'border-green-500 bg-green-500/10' : 'border-red-500 bg-red-500/10'}`}
+    <div
+      className={`flex flex-col items-center gap-4 p-8 rounded-2xl border-2 text-center ${
+        gs.won ? 'border-green-500 bg-green-500/10' : 'border-red-500 bg-red-500/10'
+      }`}
     >
-      <span className="text-6xl">{gs.won ? '🏝️' : '⚓'}</span>
       <h2 className={`text-2xl font-black ${gs.won ? 'text-green-400' : 'text-red-400'}`}>
-        {gs.won ? '¡Robinson sobrevive!' : 'Robinson fue derrotado'}
+        {gs.won ? 'Robinson sobrevive' : 'Robinson fue derrotado'}
       </h2>
       <p className="text-[var(--color-text-muted)]">
         {gs.won
           ? `Le quedan ${gs.lifePoints} puntos de vida.`
-          : 'Se quedó sin vida antes de derrotar a los piratas.'}
+          : 'La partida ha terminado antes de derrotar a los piratas.'}
       </p>
       <div className="flex gap-3 mt-2">
         <button
@@ -497,15 +549,22 @@ function GameOverBanner({ gs }: { gs: ViernesGameState }) {
   );
 }
 
-// ─── ViernesBoard (componente principal) ──────────────────────────────────────
-
 interface ViernesBoardProps {
   gameId: string;
 }
 
 export default function ViernesBoard({ gameId }: ViernesBoardProps) {
-  const { game, gs, isLoading, error, sendAction, isSending, abandonGame, isAbandoning } =
-    useViernesGame(gameId);
+  const {
+    game,
+    gs,
+    isLoading,
+    error,
+    sendAction,
+    isSending,
+    actionError,
+    abandonGame,
+    isAbandoning,
+  } = useViernesGame(gameId);
 
   if (isLoading) {
     return (
@@ -518,56 +577,80 @@ export default function ViernesBoard({ gameId }: ViernesBoardProps) {
   if (error || !game || !gs) {
     return (
       <div className="text-center text-red-400 py-10">
-        Error al cargar la partida. Intenta refrescar la página.
+        Error al cargar la partida. Intenta refrescar la pagina.
       </div>
     );
   }
 
+  const displayGs = game.status === 'FINISHED' && gs.phase !== 'FINISHED'
+    ? {
+        ...gs,
+        currentFight: null,
+        revealedHazards: null,
+        phase: 'FINISHED' as const,
+        won: game.won ?? false,
+      }
+    : gs;
+  const errorMessage = resolveActionError(actionError);
+
   return (
     <div className="max-w-2xl mx-auto flex flex-col gap-4 pb-8">
-      <StatusBar gs={gs} onAbandon={abandonGame} isAbandoning={isAbandoning} />
-      <RobinsonStatus gs={gs} />
+      <StatusBar gs={displayGs} onAbandon={abandonGame} isAbandoning={isAbandoning} />
+      <RobinsonStatus gs={displayGs} />
 
       <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-        {gs.phase === 'HAZARD_CHOOSE' && (
+        {displayGs.phase === 'HAZARD_CHOOSE' && (
           <HazardChoosePanel
-            gs={gs}
+            gs={displayGs}
             onChoose={(idx) => sendAction({ type: 'CHOOSE_HAZARD', hazardIndex: idx })}
+            onSkip={() => sendAction({ type: 'SKIP_SINGLE_HAZARD' })}
             isSending={isSending}
           />
         )}
 
-        {(gs.phase === 'HAZARD_FIGHT' || gs.phase === 'PIRATE_FIGHT') && gs.currentFight && (
+        {(displayGs.phase === 'HAZARD_FIGHT' || displayGs.phase === 'PIRATE_FIGHT') && displayGs.currentFight && (
           <FightPanel
-            gs={gs}
-            fight={gs.currentFight}
+            gs={displayGs}
+            fight={displayGs.currentFight}
             onBuy={() => sendAction({ type: 'BUY_CARD' })}
             onResolve={() => sendAction({ type: 'RESOLVE_FIGHT' })}
-            onDestroy={(cardId) => sendAction({ type: 'DESTROY_CARD', cardId })}
             isSending={isSending}
           />
         )}
 
-        {gs.phase === 'PIRATE_CHOOSE' && (
+        {displayGs.phase === 'HAZARD_DEFEAT' && displayGs.currentFight && (
+          <DefeatPanel
+            fight={displayGs.currentFight}
+            onDestroy={(cardId) => sendAction({ type: 'DESTROY_CARD', cardId })}
+            onConfirm={() => sendAction({ type: 'CONFIRM_DEFEAT' })}
+            isSending={isSending}
+          />
+        )}
+
+        {displayGs.phase === 'PIRATE_CHOOSE' && (
           <PirateChoosePanel
-            gs={gs}
+            gs={displayGs}
             onChoose={(idx) => sendAction({ type: 'CHOOSE_PIRATE_ORDER', firstPirateIndex: idx })}
             isSending={isSending}
           />
         )}
 
-        {gs.phase === 'FINISHED' && <GameOverBanner gs={gs} />}
+        {displayGs.phase === 'FINISHED' && <GameOverBanner gs={displayGs} />}
       </div>
 
-      {gs.phase !== 'FINISHED' && (
+      {errorMessage && (
+        <p className="text-center text-xs text-red-400">{errorMessage}</p>
+      )}
+
+      {displayGs.phase !== 'FINISHED' && (
         <div className="text-xs text-[var(--color-text-muted)] text-center">
-          Peligros en mazo: {gs.hazardDeck.length}
+          Peligros en mazo: {displayGs.hazardDeck.length}
           {' · '}
-          Dificultad: {['', 'Verde', 'Amarilla', 'Naranja', 'Roja'][gs.difficulty]}
+          Dificultad: {['', 'Verde', 'Amarilla', 'Naranja', 'Roja'][displayGs.difficulty]}
           {' · '}
-          Barajados: {gs.reshuffleCount}×
+          Barajados: {displayGs.reshuffleCount}x
           {' · '}
-          Envejecimiento restante: {gs.agingDeck.length}
+          Envejecimiento restante: {displayGs.agingDeck.length}
         </div>
       )}
 

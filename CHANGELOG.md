@@ -6,6 +6,25 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-03-07
 
+### Viernes: reglas base y flujo de partida
+
+- El motor de Viernes corrige el flujo base de peligros: el peligro no elegido va al descarte, el peligro ganado pasa a Robinson como carta de lucha y el ultimo peligro de una fase puede descartarse sin combatir para avanzar de paso.
+- Se anade una fase especifica de derrota (`HAZARD_DEFEAT`) para pagar la diferencia y destruir cartas usadas con presupuesto limitado, diferenciando el coste de cartas normales y de envejecimiento.
+- Los combates contra piratas ya no pueden resolverse perdiendo: obligan a seguir robando o a terminar la partida si no se puede pagar mas vida.
+- La UI del tablero y del hub refleja las nuevas fases de partida, actualiza mejor el estado al abandonar y corrige el refresco de partidas activas y finalizadas.
+- Se refuerza la validacion de acciones en backend para evitar movimientos invalidos enviados desde cliente.
+- Se incorpora una suite de pruebas del engine con una configuracion de Jest aislada del resto del servidor.
+
+**Archivos modificados/creados:**
+- `server/src/logic/ViernesEngine.ts` - correccion del flujo principal de peligros, derrotas y piratas
+- `server/src/controllers/viernesController.ts` - validacion de acciones y sincronizacion correcta al abandonar
+- `client/src/logic/ViernesEngine.ts` - alineacion de tipos, fases y acciones con el motor
+- `client/src/components/combatzone/viernes/ViernesBoard.tsx` - nueva UI para seleccion, combate, derrota y fin de partida
+- `client/src/hooks/useViernesGame.ts` - refresco de cache tras acciones y abandono
+- `client/src/pages/viernes/ViernesHub.tsx` - estados y resumenes actualizados
+- `server/src/logic/__tests__/ViernesEngine.test.ts` - nuevas pruebas unitarias del motor
+- `server/jest.logic.config.js` - configuracion de pruebas aislada para la logica de Viernes
+
 ### ✨ Nuevas funcionalidades
 
 #### Impersonación de usuarios (SUPER_ADMIN)
