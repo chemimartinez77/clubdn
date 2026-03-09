@@ -118,48 +118,44 @@ function HazardCardView({ hazard, onChoose, disabled }: {
   const [flipped, setFlipped] = useState(false);
   const isClickable = !!onChoose && !disabled;
   const imgSrc = getHazardCardImage(hazard.imageFile);
+  const frameClass = isClickable
+    ? 'bg-[var(--color-primary)] cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:shadow-[var(--color-primary)]/30'
+    : 'bg-[var(--color-border)]';
 
   return (
     <div className="flex flex-col items-center gap-1">
       <div
-        className={`
-          relative rounded-2xl border-2 overflow-hidden select-none transition-all duration-200
-          ${isClickable
-            ? 'border-[var(--color-primary)] cursor-pointer hover:scale-105 hover:shadow-lg hover:shadow-[var(--color-primary)]/30'
-            : 'border-[var(--color-border)]'}
-          bg-[var(--color-surface)]
-        `}
-        style={{ width: 144 }}
+        className={`relative rounded-[1.45rem] p-[3px] select-none transition-all duration-200 ${frameClass}`}
+        style={{ width: 'clamp(168px, 22vw, 212px)' }}
       >
         <div
-          className="relative w-full overflow-hidden"
-          style={{ height: 180 }}
+          className="relative w-full overflow-hidden rounded-[1.25rem] bg-[var(--color-surface)] aspect-[184/252]"
           onClick={isClickable && !flipped ? onChoose : undefined}
         >
           <img
             src={imgSrc}
             alt={flipped ? hazard.skillName : hazard.name}
-            className="w-full object-cover transition-transform duration-300"
-            style={{ height: '100%', transform: flipped ? 'none' : 'rotate(180deg)' }}
+            className="h-full w-full object-cover transition-transform duration-300"
+            style={{ transform: flipped ? 'none' : 'rotate(180deg)' }}
           />
           {!flipped && (
-            <div className="absolute inset-0 bg-black/40 flex flex-col justify-between p-2 pointer-events-none">
+            <div className="absolute inset-0 bg-black/35 flex flex-col justify-between p-2.5 pointer-events-none">
               <div className="flex justify-between items-start">
-                <span className="text-base font-black text-white drop-shadow">{hazard.freeCards}x</span>
+                <span className="text-xl sm:text-2xl font-black text-white drop-shadow">{hazard.freeCards}x</span>
                 <div className="flex flex-col items-end gap-0.5">
-                  <span className="text-xs font-bold text-green-400">{hazard.hazardGreen}</span>
-                  <span className="text-xs font-bold text-yellow-400">{hazard.hazardYellow}</span>
-                  <span className="text-xs font-bold text-red-400">{hazard.hazardRed}</span>
+                  <span className="text-sm sm:text-base font-bold text-green-400">{hazard.hazardGreen}</span>
+                  <span className="text-sm sm:text-base font-bold text-yellow-400">{hazard.hazardYellow}</span>
+                  <span className="text-sm sm:text-base font-bold text-red-400">{hazard.hazardRed}</span>
                 </div>
               </div>
-              <p className="text-xs font-bold text-white text-center drop-shadow leading-tight">
+              <p className="text-sm sm:text-base font-bold text-white text-center drop-shadow leading-tight">
                 {hazard.name}
               </p>
             </div>
           )}
           {flipped && (
-            <div className="absolute bottom-0 inset-x-0 bg-black/50 py-1 px-2 pointer-events-none">
-              <p className="text-[10px] font-bold text-white text-center">
+            <div className="absolute bottom-0 inset-x-0 bg-black/50 py-1.5 px-2 pointer-events-none">
+              <p className="text-xs font-bold text-white text-center">
                 {hazard.skillName} (+{hazard.survivorValue})
               </p>
             </div>
@@ -169,7 +165,7 @@ function HazardCardView({ hazard, onChoose, disabled }: {
         {isClickable && (
           <button
             onClick={onChoose}
-            className="w-full py-1.5 text-center text-xs font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 transition-opacity"
+            className="mt-[3px] w-full rounded-b-[1.2rem] py-2 sm:py-2.5 text-center text-sm sm:text-base font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 transition-opacity"
           >
             Elegir
           </button>
@@ -194,34 +190,36 @@ function RobinsonCardView({ card, onDestroy, destroyPoints }: {
   const isAging = card.type === 'AGING';
   const isStop = isAging && card.agingEffect === 'STOP';
   const valueColor = card.value < 0 ? 'text-red-400' : card.value === 0 ? 'text-gray-300' : 'text-green-400';
-  const ringColor = isStop ? 'ring-red-500' : isAging ? 'ring-orange-400' : 'ring-[var(--color-border)]';
+  const frameColor = isStop ? 'bg-red-500' : isAging ? 'bg-orange-400' : 'bg-[var(--color-border)]';
   const cost = destroyCost(card);
 
   return (
-    <div className={`relative flex flex-col items-center rounded-xl overflow-hidden ring-2 ${ringColor} w-20 bg-[var(--color-surface)]`}>
-      <div className="relative w-full">
-        <img src={resolveRobinsonImage(card)} alt={card.name} className="w-full object-cover" style={{ height: '96px' }} />
-        <span className={`absolute top-1 left-1 text-sm font-black drop-shadow-md ${valueColor}`}>
-          {card.value > 0 ? `+${card.value}` : card.value}
-        </span>
-        {isAging && (
-          <span className="absolute top-1 right-1 text-[8px] bg-orange-600/80 text-white rounded px-0.5 font-bold">
-            ENV
+    <div className={`relative flex flex-col items-center rounded-2xl p-[3px] w-24 sm:w-28 lg:w-32 ${frameColor}`}>
+      <div className="w-full rounded-[0.95rem] overflow-hidden bg-[var(--color-surface)]">
+        <div className="relative w-full aspect-[184/252]">
+          <img src={resolveRobinsonImage(card)} alt={card.name} className="h-full w-full object-cover" />
+          <span className={`absolute top-1.5 left-1.5 text-base sm:text-lg font-black drop-shadow-md ${valueColor}`}>
+            {card.value > 0 ? `+${card.value}` : card.value}
           </span>
+          {isAging && (
+            <span className="absolute top-1.5 right-1.5 text-[9px] bg-orange-600/85 text-white rounded px-1 py-0.5 font-bold">
+              ENV
+            </span>
+          )}
+        </div>
+        <p className="text-[10px] sm:text-[11px] lg:text-xs text-center text-[var(--color-text-muted)] px-1.5 py-1.5 leading-tight line-clamp-2 w-full min-h-[2.35rem]">
+          {card.name}
+        </p>
+        {onDestroy && (destroyPoints ?? 0) >= cost && (
+          <button
+            onClick={() => onDestroy(card.id)}
+            className="w-full py-1 text-[10px] text-red-400 hover:bg-red-500/20 font-semibold transition-colors"
+            title={`Destruir (${cost})`}
+          >
+            {`-${cost} destruir`}
+          </button>
         )}
       </div>
-      <p className="text-[9px] text-center text-[var(--color-text-muted)] px-1 py-0.5 leading-tight line-clamp-2 w-full">
-        {card.name}
-      </p>
-      {onDestroy && (destroyPoints ?? 0) >= cost && (
-        <button
-          onClick={() => onDestroy(card.id)}
-          className="w-full py-0.5 text-[9px] text-red-400 hover:bg-red-500/20 font-semibold transition-colors"
-          title={`Destruir (${cost})`}
-        >
-          {`-${cost} destruir`}
-        </button>
-      )}
     </div>
   );
 }
@@ -232,24 +230,26 @@ function FightHeader({ fight, total }: { fight: FightState; total: number }) {
 
   return (
     <div className="flex items-center gap-4 p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-      <div className="relative flex-shrink-0 rounded-xl overflow-hidden ring-2 ring-red-500/50" style={{ width: 64, height: 80 }}>
-        {fight.isPirateFight ? (
-          <img
-            src={getPirateCardImage(fight.pirateCard?.name ?? '')}
-            alt={fight.pirateCard?.name ?? ''}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <img
-            src={getHazardCardImage(fight.hazardCard?.imageFile ?? '')}
-            alt={fight.hazardCard?.name ?? ''}
-            className="w-full h-full object-cover"
-            style={{ transform: 'rotate(180deg)' }}
-          />
-        )}
-        <span className="absolute bottom-0 inset-x-0 text-center text-xs font-black text-white bg-black/60 py-0.5">
-          {fight.isPirateFight ? 'P' : 'H'}
-        </span>
+      <div className="flex-shrink-0 rounded-2xl bg-red-500/50 p-[3px]" style={{ width: 96 }}>
+        <div className="relative w-full rounded-[0.95rem] overflow-hidden aspect-[184/252] bg-[var(--color-surface)]">
+          {fight.isPirateFight ? (
+            <img
+              src={getPirateCardImage(fight.pirateCard?.name ?? '')}
+              alt={fight.pirateCard?.name ?? ''}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <img
+              src={getHazardCardImage(fight.hazardCard?.imageFile ?? '')}
+              alt={fight.hazardCard?.name ?? ''}
+              className="w-full h-full object-cover"
+              style={{ transform: 'rotate(180deg)' }}
+            />
+          )}
+          <span className="absolute bottom-0 inset-x-0 text-center text-xs font-black text-white bg-black/60 py-0.5">
+            {fight.isPirateFight ? 'P' : 'H'}
+          </span>
+        </div>
       </div>
 
       <div className="flex-1 min-w-0">
@@ -414,26 +414,27 @@ function PirateChoosePanel({ gs, onChoose, isSending }: {
           <div
             key={pirate.id}
             onClick={() => !isSending && onChoose(index as 0 | 1)}
-            className="flex flex-col items-center rounded-2xl border-2 border-[var(--color-primary)] overflow-hidden w-40
-                       cursor-pointer hover:scale-105 hover:shadow-lg hover:shadow-[var(--color-primary)]/30 transition-all
-                       bg-[var(--color-surface)] select-none"
+            className="flex flex-col items-center rounded-[1.45rem] p-[3px] w-[clamp(168px,23vw,224px)]
+                       cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:shadow-[var(--color-primary)]/30 transition-all
+                       bg-[var(--color-primary)] select-none"
           >
-            <div className="relative w-full">
-              <img
-                src={getPirateCardImage(pirate.name)}
-                alt={pirate.name}
-                className="w-full object-cover"
-                style={{ height: '140px' }}
-              />
-              <span className="absolute top-2 left-2 text-2xl font-black text-red-400 drop-shadow-md">
-                {pirate.fightValue}
-              </span>
-            </div>
-            <div className="p-3 w-full text-center">
-              <p className="text-sm font-bold text-[var(--color-text)]">{pirate.name}</p>
-              <p className="text-xs text-[var(--color-text-muted)] mb-2">{pirate.freeCards} cartas gratis</p>
-              <div className="w-full py-1 rounded-lg bg-[var(--color-primary)] text-white text-xs font-semibold text-center">
-                Enfrentar primero
+            <div className="w-full rounded-[1.25rem] overflow-hidden bg-[var(--color-surface)]">
+              <div className="relative w-full aspect-[184/252]">
+                <img
+                  src={getPirateCardImage(pirate.name)}
+                  alt={pirate.name}
+                  className="w-full h-full object-cover"
+                />
+                <span className="absolute top-2 left-2 text-2xl sm:text-3xl font-black text-red-400 drop-shadow-md">
+                  {pirate.fightValue}
+                </span>
+              </div>
+              <div className="p-3 w-full text-center">
+                <p className="text-base sm:text-lg font-bold text-[var(--color-text)]">{pirate.name}</p>
+                <p className="text-sm sm:text-base text-[var(--color-text-muted)] mb-2">{pirate.freeCards} cartas gratis</p>
+                <div className="w-full py-2 sm:py-2.5 rounded-lg bg-[var(--color-primary)] text-white text-sm sm:text-base font-semibold text-center">
+                  Enfrentar primero
+                </div>
               </div>
             </div>
           </div>
