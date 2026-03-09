@@ -231,7 +231,7 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
     }
 
     const token = generateInvitationToken();
-    const needsApproval = !!event.requiresApproval;
+    const needsApproval = !!event.requiresApproval && !isOrganizer && !isAdmin;
 
     const invitationResult = await prisma.$transaction(async (tx) => {
       const created = await tx.invitation.create({
