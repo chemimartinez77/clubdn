@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { InvitationStatus, UserRole } from '@prisma/client';
 import { prisma } from '../config/database';
 import { generateInvitationToken } from '../utils/invitationToken';
+import { normalizeDni, isValidSpanishDni } from '../utils/dni';
 
 const DEFAULT_INVITE_RULES = {
   inviteMaxActive: 5,
@@ -13,9 +14,6 @@ const DEFAULT_INVITE_RULES = {
 
 const normalizeText = (value: string) => value.trim().replace(/\s+/g, ' ');
 
-const normalizeDni = (value: string) => {
-  return value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-};
 
 const maskDni = (value: string) => {
   const normalized = normalizeDni(value);
@@ -123,8 +121,8 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    if (!guestDni || typeof guestDni !== 'string' || normalizeDni(guestDni).length < 5) {
-      res.status(400).json({ success: false, message: 'DNI requerido' });
+    if (!guestDni || typeof guestDni !== 'string' || !isValidSpanishDni(guestDni)) {
+      res.status(400).json({ success: false, message: 'DNI no válido' });
       return;
     }
 

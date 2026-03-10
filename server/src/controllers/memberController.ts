@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../config/database';
 import { MemberData, MembersResponse } from '../types/members';
 import { getPaymentStatus } from '../utils/paymentStatus';
+import { normalizeDni, isValidSpanishDni } from '../utils/dni';
 
 // Configurar Cloudinary
 cloudinary.config({
@@ -17,8 +18,6 @@ const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/web
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
 
 const normalizeText = (value: string) => value.trim().replace(/\s+/g, ' ');
-
-const normalizeDni = (value: string) => value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 
 /**
  * GET /api/admin/members
@@ -289,10 +288,10 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
       return;
     }
 
-    if (!dni || typeof dni !== 'string' || normalizeDni(dni).length < 5) {
+    if (!dni || typeof dni !== 'string' || !isValidSpanishDni(dni)) {
       res.status(400).json({
         success: false,
-        message: 'DNI requerido'
+        message: 'DNI no válido'
       });
       return;
     }
