@@ -63,7 +63,9 @@
       "Bash(node_modules/.bin/prisma generate)",
       "Bash(node_modules/.bin/tsx prisma/seeds/badgeDefinitions.ts)",
       "Bash(DATABASE_URL=\"postgresql://postgres:fDCKlQJhnjHZUwJdffFmBSvAWSXNZbxYG@metro.proxy.rlwy.net:31715/railway\" node_modules/.bin/tsx prisma/seeds/badgeDefinitions.ts)",
-      "Bash(python -c \":*)"
+      "Bash(python -c \":*)",
+      "Bash(npx jest src/tests/uat/tester1.uat.test.ts --no-coverage)",
+      "Bash(docker --version)"
     ]
   }
 }
