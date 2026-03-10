@@ -151,7 +151,11 @@ export const approveUser = async (req: Request, res: Response) => {
 
     // Enviar email de aprobaci�n
     const displayName: string = user.name ?? 'Usuario';
-    await sendApprovalEmail(userEmail, displayName, customMessage);
+    try {
+      await sendApprovalEmail(userEmail, displayName, customMessage);
+    } catch (emailError) {
+      console.error("Error al enviar email de aprobacion:", emailError);
+    }
 
     // Notificar al usuario
     const { notifyUserApproved } = await import('../services/notificationService');

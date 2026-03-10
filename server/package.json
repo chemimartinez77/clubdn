@@ -49,10 +49,10 @@
     "prisma:migrate": "prisma migrate deploy",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "test": "cross-env NODE_ENV=test jest",
-    "test:watch": "cross-env NODE_ENV=test jest --watch",
-    "test:uat": "cross-env NODE_ENV=test jest uat",
-    "test:coverage": "cross-env NODE_ENV=test jest --coverage"
+    "test": "cross-env NODE_ENV=test jest --runInBand",
+    "test:watch": "cross-env NODE_ENV=test jest --watch --runInBand",
+    "test:uat": "cross-env NODE_ENV=test jest uat --runInBand",
+    "test:coverage": "cross-env NODE_ENV=test jest --coverage --runInBand"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

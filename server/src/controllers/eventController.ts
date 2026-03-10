@@ -453,6 +453,16 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
+    // Validar maxAttendees
+    const parsedMaxAttendees = parseInt(maxAttendees);
+    if (isNaN(parsedMaxAttendees) || parsedMaxAttendees < 1) {
+      res.status(400).json({
+        success: false,
+        message: 'El número de plazas debe ser al menos 1'
+      });
+      return;
+    }
+
     // Validar fecha futura
     const eventDate = new Date(date);
     if (eventDate <= new Date()) {
@@ -493,7 +503,7 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
         date: eventDate,
         location: normalizedLocation,
         address,
-        maxAttendees: parseInt(maxAttendees),
+        maxAttendees: parsedMaxAttendees,
         type: eventType,
         gameName,
         gameImage,

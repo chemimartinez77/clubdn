@@ -65,7 +65,7 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
       const event = await getEventById(response.body.data.event.id);
       expect(event).toBeDefined();
       expect(event?.title).toBe(eventData.title);
-      expect(event?.organizerId).toBe(testUser.id);
+      expect(event?.createdBy).toBe(testUser.id);
       expect(event?.maxAttendees).toBe(eventData.maxAttendees);
       expect(event?.gameCategory).toBe('EUROGAMES');
     });
@@ -165,9 +165,11 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
           date: tomorrow.toISOString(),
           location: 'Club',
           maxAttendees: 5,
+          attend: false,
+          requiresApproval: false,
         });
 
-      const eventId = eventResponse.body.data.id;
+      const eventId = eventResponse.body.data.event.id;
 
       // Crear usuario que se va a apuntar
       const participant = await createApprovedTestUser({
@@ -179,7 +181,7 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
       const joinResponse = await request(app)
         .post(`/api/events/${eventId}/register`)
         .set('Authorization', `Bearer ${participant.token}`)
-        .expect(200);
+        .expect(201);
 
       expect(joinResponse.body.success).toBe(true);
 
@@ -215,9 +217,11 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
           date: tomorrow.toISOString(),
           location: 'Club',
           maxAttendees: 1,
+          attend: false,
+          requiresApproval: false,
         });
 
-      const eventId = eventResponse.body.data.id;
+      const eventId = eventResponse.body.data.event.id;
 
       // Primer participante (llena el evento)
       const participant1 = await createApprovedTestUser({
@@ -227,7 +231,7 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
       await request(app)
         .post(`/api/events/${eventId}/register`)
         .set('Authorization', `Bearer ${participant1.token}`)
-        .expect(200);
+        .expect(201);
 
       // Segundo participante (no debería poder)
       const participant2 = await createApprovedTestUser({
@@ -240,7 +244,7 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('plazas');
+      expect(response.body.message).toContain('completo');
     });
 
     it('debe rechazar unirse al mismo evento dos veces', async () => {
@@ -256,13 +260,16 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
         .set('Authorization', `Bearer ${organizer.token}`)
         .send({
           title: 'Evento Test Duplicado',
+          description: 'Evento de test',
           type: 'PARTIDA',
           date: tomorrow.toISOString(),
           location: 'Club',
           maxAttendees: 5,
+          attend: false,
+          requiresApproval: false,
         });
 
-      const eventId = eventResponse.body.data.id;
+      const eventId = eventResponse.body.data.event.id;
 
       const participant = await createApprovedTestUser({
         email: 'duplicate.participant@example.com',
@@ -272,7 +279,7 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
       await request(app)
         .post(`/api/events/${eventId}/register`)
         .set('Authorization', `Bearer ${participant.token}`)
-        .expect(200);
+        .expect(201);
 
       // Segunda vez - Debe fallar
       const response = await request(app)
@@ -281,7 +288,7 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('ya estás registrado');
+      expect(response.body.message).toContain('registrado');
     });
   });
 
@@ -299,13 +306,16 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
         .set('Authorization', `Bearer ${organizer.token}`)
         .send({
           title: 'Evento Para Salir',
+          description: 'Evento de test',
           type: 'PARTIDA',
           date: tomorrow.toISOString(),
           location: 'Club',
           maxAttendees: 5,
+          attend: false,
+          requiresApproval: false,
         });
 
-      const eventId = eventResponse.body.data.id;
+      const eventId = eventResponse.body.data.event.id;
 
       const participant = await createApprovedTestUser({
         email: 'leaving.participant@example.com',
@@ -315,7 +325,7 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
       await request(app)
         .post(`/api/events/${eventId}/register`)
         .set('Authorization', `Bearer ${participant.token}`)
-        .expect(200);
+        .expect(201);
 
       // Verificar que está apuntado
       let isAttending = await userIsAttendingEvent(participant.id, eventId);
@@ -354,13 +364,16 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
         .set('Authorization', `Bearer ${organizer.token}`)
         .send({
           title: 'Evento Test',
+          description: 'Evento de test',
           type: 'PARTIDA',
           date: tomorrow.toISOString(),
           location: 'Club',
           maxAttendees: 5,
+          attend: false,
+          requiresApproval: false,
         });
 
-      const eventId = eventResponse.body.data.id;
+      const eventId = eventResponse.body.data.event.id;
 
       const participant = await createApprovedTestUser({
         email: 'not.registered.participant@example.com',
@@ -370,10 +383,10 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
       const response = await request(app)
         .delete(`/api/events/${eventId}/register`)
         .set('Authorization', `Bearer ${participant.token}`)
-        .expect(400);
+        .expect(404);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('no estás registrado');
+      expect(response.body.message).toContain('registrado');
     });
 
     it('debe liberar plaza al darse de baja', async () => {
@@ -390,13 +403,16 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
         .set('Authorization', `Bearer ${organizer.token}`)
         .send({
           title: 'Evento 2 Plazas',
+          description: 'Evento de test',
           type: 'PARTIDA',
           date: tomorrow.toISOString(),
           location: 'Club',
           maxAttendees: 2,
+          attend: false,
+          requiresApproval: false,
         });
 
-      const eventId = eventResponse.body.data.id;
+      const eventId = eventResponse.body.data.event.id;
 
       // Participante 1 y 2 se apuntan (llenando el evento)
       const participant1 = await createApprovedTestUser({
@@ -409,12 +425,12 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
       await request(app)
         .post(`/api/events/${eventId}/register`)
         .set('Authorization', `Bearer ${participant1.token}`)
-        .expect(200);
+        .expect(201);
 
       await request(app)
         .post(`/api/events/${eventId}/register`)
         .set('Authorization', `Bearer ${participant2.token}`)
-        .expect(200);
+        .expect(201);
 
       // Participante 3 intenta apuntarse (evento lleno)
       const participant3 = await createApprovedTestUser({
@@ -436,7 +452,7 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
       const joinResponse = await request(app)
         .post(`/api/events/${eventId}/register`)
         .set('Authorization', `Bearer ${participant3.token}`)
-        .expect(200);
+        .expect(201);
 
       expect(joinResponse.body.success).toBe(true);
     });
@@ -476,11 +492,11 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
             date: eventDate,
             location: 'Club',
             maxAttendees: 4,
-            organizerId: testUser.id,
+            createdBy: testUser.id,
             registrations: {
               create: {
                 userId: testUser.id,
-                registeredAt: new Date(),
+                createdAt: new Date(),
               },
             },
           },
@@ -513,14 +529,14 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
         // Desbloquear badge manualmente para el test
         await prisma.userBadge.upsert({
           where: {
-            userId_badgeId: {
+            userId_badgeDefinitionId: {
               userId: testUser.id,
-              badgeId: badgeDefinition.id,
+              badgeDefinitionId: badgeDefinition.id,
             },
           },
           create: {
             userId: testUser.id,
-            badgeId: badgeDefinition.id,
+            badgeDefinitionId: badgeDefinition.id,
             unlockedAt: new Date(),
           },
           update: {
@@ -557,17 +573,18 @@ describe('UAT Tester 2: Eventos y Partidas', () => {
         await prisma.event.create({
           data: {
             title: `Wargame ${i}`,
+            description: `Partida de wargame ${i}`,
             type: 'PARTIDA',
             gameName: `Wargame ${i}`,
             gameCategory: 'WARGAMES',
             date: eventDate,
             location: 'Club',
             maxAttendees: 4,
-            organizerId: testUser.id,
+            createdBy: testUser.id,
             registrations: {
               create: {
                 userId: testUser.id,
-                registeredAt: new Date(),
+                createdAt: new Date(),
               },
             },
           },

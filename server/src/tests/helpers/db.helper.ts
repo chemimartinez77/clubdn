@@ -57,7 +57,7 @@ export async function getEventById(eventId: string) {
     where: { id: eventId },
     include: {
       registrations: true,
-      organizer: true,
+      organizer: { select: { id: true, name: true } },
     }
   });
 }
@@ -69,7 +69,8 @@ export async function userIsAttendingEvent(userId: string, eventId: string) {
   const attendance = await prisma.eventRegistration.findFirst({
     where: {
       userId,
-      eventId
+      eventId,
+      status: 'CONFIRMED'
     }
   });
   return attendance !== null;
@@ -80,7 +81,7 @@ export async function userIsAttendingEvent(userId: string, eventId: string) {
  */
 export async function countEventAttendees(eventId: string) {
   return prisma.eventRegistration.count({
-    where: { eventId }
+    where: { eventId, status: 'CONFIRMED' }
   });
 }
 
@@ -100,7 +101,7 @@ export async function getFeedbackReportById(reportId: string) {
   return prisma.report.findUnique({
     where: { id: reportId },
     include: {
-      reporter: true,
+      user: true,
       votes: true,
     }
   });
@@ -109,21 +110,21 @@ export async function getFeedbackReportById(reportId: string) {
 /**
  * Verificar que un usuario tiene un badge desbloqueado
  */
-export async function userHasBadge(userId: string, badgeId: string) {
+export async function userHasBadge(userId: string, badgeDefinitionId: string) {
   const userBadge = await prisma.userBadge.findFirst({
     where: {
       userId,
-      badgeId
+      badgeDefinitionId
     }
   });
   return userBadge !== null && userBadge.unlockedAt !== null;
 }
 
 /**
- * Obtener pagos de un usuario
+ * Obtener pagos de un usuario (con campo virtual paid=true ya que si existe el registro, está pagado)
  */
 export async function getUserPayments(userId: string, year: number) {
-  return prisma.payment.findMany({
+  const payments = await prisma.payment.findMany({
     where: {
       userId,
       year
@@ -132,10 +133,11 @@ export async function getUserPayments(userId: string, year: number) {
       month: 'asc'
     }
   });
+  return payments.map(p => ({ ...p, paid: true }));
 }
 
 /**
- * Verificar que un pago está marcado
+ * Verificar que un pago está marcado (el registro existe = pagado)
  */
 export async function paymentIsMarked(userId: string, year: number, month: number) {
   const payment = await prisma.payment.findFirst({
@@ -143,7 +145,6 @@ export async function paymentIsMarked(userId: string, year: number, month: numbe
       userId,
       year,
       month,
-      paid: true
     }
   });
   return payment !== null;

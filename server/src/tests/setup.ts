@@ -8,11 +8,11 @@ import '@jest/globals';
 dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
 
 // 🚨 SEGURIDAD CRÍTICA: Prevenir ejecución de tests contra producción
-if (!process.env.DATABASE_URL?.includes('test.db')) {
+if (!process.env.DATABASE_URL?.includes('clubdn_test')) {
   console.error('🚨 PELIGRO: Los tests NO pueden ejecutarse contra producción!');
   console.error(`DATABASE_URL actual: ${process.env.DATABASE_URL}`);
   throw new Error(
-    'Tests bloqueados: DATABASE_URL debe contener "test.db" (SQLite de test). ' +
+    'Tests bloqueados: DATABASE_URL debe apuntar a la base de datos de test (clubdn_test). ' +
     'Verifica que .env.test existe y se está cargando correctamente.'
   );
 }
@@ -25,26 +25,38 @@ beforeAll(async () => {
 
 // Cleanup después de cada test
 afterEach(async () => {
-  // Limpiar datos de test
-  const deleteOrders = [
-    prisma.financialMovement.deleteMany(),
-    prisma.financialCategory.deleteMany(),
-    prisma.reportVote.deleteMany(),
-    prisma.report.deleteMany(),
-    prisma.document.deleteMany(),
+  // Orden respetando FK: primero las tablas hijas
+  await prisma.$transaction([
+    prisma.eventAuditLog.deleteMany(),
+    prisma.eventGuest.deleteMany(),
+    prisma.invitation.deleteMany(),
     prisma.eventPhoto.deleteMany(),
     prisma.eventRegistration.deleteMany(),
     prisma.event.deleteMany(),
+    prisma.financialMovement.deleteMany(),
+    prisma.financialCategory.deleteMany(),
+    prisma.reportCommentHistory.deleteMany(),
+    prisma.reportComment.deleteMany(),
+    prisma.reportVote.deleteMany(),
+    prisma.report.deleteMany(),
+    prisma.document.deleteMany(),
     prisma.notification.deleteMany(),
     prisma.userBadge.deleteMany(),
     prisma.badgeDefinition.deleteMany(),
     prisma.payment.deleteMany(),
+    prisma.membershipChangeLog.deleteMany(),
     prisma.membership.deleteMany(),
+    prisma.azulGame.deleteMany(),
+    prisma.viernesGame.deleteMany(),
     prisma.game.deleteMany(),
+    prisma.gamePlayHistory.deleteMany(),
+    prisma.libraryItem.deleteMany(),
+    prisma.loginAttempt.deleteMany(),
+    prisma.pageViewArchive.deleteMany(),
+    prisma.pageView.deleteMany(),
+    prisma.userProfile.deleteMany(),
     prisma.user.deleteMany(),
-  ];
-
-  await prisma.$transaction(deleteOrders);
+  ]);
 });
 
 // Cleanup global después de todos los tests

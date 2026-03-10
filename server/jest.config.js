@@ -14,6 +14,7 @@ module.exports = {
     '!src/tests/**',
   ],
   moduleFileExtensions: ['ts', 'js', 'json'],
+  globalSetup: '<rootDir>/src/tests/globalSetup.ts',
   setupFilesAfterEnv: ['<rootDir>/src/tests/setup.ts'],
   testTimeout: 30000,
   verbose: true,

@@ -413,6 +413,15 @@ export const togglePayment = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
+    const currentYear = new Date().getFullYear();
+    if (year < 2020 || year > currentYear + 1) {
+      res.status(400).json({
+        success: false,
+        message: 'El año no es válido'
+      });
+      return;
+    }
+
     // Verificar que el usuario existe y tiene membresía
     const user = await prisma.user.findUnique({
       where: { id: userId },
