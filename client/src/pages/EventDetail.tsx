@@ -511,6 +511,13 @@ export default function EventDetail() {
     EXPIRED: 'Expirada',
     CANCELLED: 'Cancelada'
   };
+  const invitationStatusTooltips: Record<string, string> = {
+    PENDING: 'La invitación está lista para ser usada en la entrada',
+    PENDING_APPROVAL: 'El organizador debe aprobar esta invitación antes de que sea válida',
+    USED: 'El invitado ya accedió al evento con esta invitación',
+    EXPIRED: 'La invitación caducó sin ser utilizada',
+    CANCELLED: 'La invitación fue cancelada'
+  };
   const invitationStatusStyles: Record<string, string> = {
     PENDING: 'text-amber-700 bg-amber-100',
     PENDING_APPROVAL: 'text-orange-700 bg-orange-100',
@@ -1122,12 +1129,19 @@ export default function EventDetail() {
                       </div>
                       <span className="text-[var(--color-text)] flex-1">{guest.guestFirstName} {guest.guestLastName}</span>
                       <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Invitado</span>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${
-                          invitationStatusStyles[guest.status] || 'text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)]'
-                        }`}
-                      >
-                        {invitationStatusLabels[guest.status] || guest.status}
+                      <span className="relative group" tabIndex={0}>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full cursor-default select-none ${
+                            invitationStatusStyles[guest.status] || 'text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)]'
+                          }`}
+                        >
+                          {invitationStatusLabels[guest.status] || guest.status}
+                        </span>
+                        {invitationStatusTooltips[guest.status] && (
+                          <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[200px] rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50 text-center whitespace-normal">
+                            {invitationStatusTooltips[guest.status]}
+                          </span>
+                        )}
                       </span>
                       {(isAdmin || user?.id === event.createdBy || (guest.inviterId && user?.id === guest.inviterId)) && (
                         <button
@@ -1654,14 +1668,21 @@ export default function EventDetail() {
                           {new Date(invite.validDate).toLocaleDateString('es-ES')}
                         </p>
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        invite.status === 'USED'
-                          ? 'bg-green-100 text-green-800'
-                          : invite.status === 'EXPIRED' || invite.status === 'CANCELLED'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {invite.status}
+                      <span className="relative group" tabIndex={0}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium cursor-default select-none ${
+                          invite.status === 'USED'
+                            ? 'bg-green-100 text-green-800'
+                            : invite.status === 'EXPIRED' || invite.status === 'CANCELLED'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {invitationStatusLabels[invite.status] || invite.status}
+                        </span>
+                        {invitationStatusTooltips[invite.status] && (
+                          <span className="pointer-events-none absolute bottom-full right-0 mb-2 w-max max-w-[200px] rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50 text-center whitespace-normal">
+                            {invitationStatusTooltips[invite.status]}
+                          </span>
+                        )}
                       </span>
                     </div>
                   );
