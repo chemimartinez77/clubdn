@@ -105,6 +105,7 @@ model User {
   invitationsCreated   Invitation[]     @relation("InvitationsCreated")
   invitationsValidated Invitation[]     @relation("InvitationsValidated")
   invitationsApproved  Invitation[]     @relation("InvitationsApproved")
+  shareLinks           EventShareLink[] @relation("ShareLinksCreated")
   loginAttempts     LoginAttempt[]
   uploadedDocuments Document[]
   uploadedPhotos    EventPhoto[]
@@ -274,6 +275,7 @@ model Event {
   maxAttendees    Int
   registrations   EventRegistration[]
   invitations     Invitation[]
+  shareLinks      EventShareLink[]
   eventGuests     EventGuest[]
   photos          EventPhoto[]
   auditLogs       EventAuditLog[]
@@ -329,6 +331,19 @@ model Invitation {
   @@index([status])
   @@index([validDate])
   @@index([guestDniNormalized])
+}
+
+model EventShareLink {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    User     @relation("ShareLinksCreated", fields: [memberId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, memberId])
+  @@index([token])
 }
 
 model EventGuest {
@@ -759,6 +774,8 @@ enum BadgeCategory {
   WARHAMMER
   FILLERS_PARTY
   CATALOGADOR
+  ORGANIZADOR
+  REPETIDOR
 }
 
 // Tipos de notificaciones

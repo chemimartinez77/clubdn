@@ -34,6 +34,7 @@ export default function EventDetail() {
   const [expandedInviteId, setExpandedInviteId] = useState<string | null>(null);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isUnregisterModalOpen, setIsUnregisterModalOpen] = useState(false);
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name?: string } | null>(null);
 
@@ -671,7 +672,7 @@ export default function EventDetail() {
     URL.revokeObjectURL(url);
   };
 
-  const handleShareWhatsApp = () => {
+  const handleShareWhatsApp = async () => {
     if (!event) return;
 
     const registeredCount = event.registeredCount || 0;
@@ -687,6 +688,15 @@ export default function EventDetail() {
       event.durationMinutes
     );
     const shareTimeText = scheduleText || 'Hora pendiente';
+
+    // Obtener URL personalizada de invitación
+    let shareUrl = window.location.href;
+    try {
+      const res = await api.post<{ success: boolean; data: { url: string } }>('/api/share/generate', { eventId: event.id });
+      if (res.data.success) shareUrl = res.data.data.url;
+    } catch {
+      // Si falla, usar la URL normal
+    }
 
     let message = `*${event.title}*\n\n`;
     message += `${emojiCalendar} ${eventDateText}\n`;
@@ -709,7 +719,6 @@ export default function EventDetail() {
     if (confirmedRegistrations.length > 0 || confirmedInvitations.length > 0) {
       message += `\n*Participantes confirmados:*\n`;
 
-      // Añadir usuarios registrados
       confirmedRegistrations.forEach(reg => {
         message += `- ${reg.user?.name || 'Usuario'}`;
         if (reg.user?.membership?.type) {
@@ -719,13 +728,12 @@ export default function EventDetail() {
         message += '\n';
       });
 
-      // Añadir invitados
       confirmedInvitations.forEach(inv => {
         message += `- ${inv.guestFirstName} ${inv.guestLastName} (Invitado)\n`;
       });
     }
 
-    message += `\nVer mas detalles: ${window.location.href}`;
+    message += `\nApúntate aquí: ${shareUrl}`;
 
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
@@ -833,7 +841,7 @@ export default function EventDetail() {
 
                   {canUnregister && (
                     <Button
-                      onClick={() => unregisterMutation.mutate()}
+                      onClick={() => setIsUnregisterModalOpen(true)}
                       disabled={unregisterMutation.isPending}
                       className="w-full sm:w-auto !bg-slate-500 hover:!bg-slate-600 !text-white transition-all duration-300"
                     >
@@ -894,6 +902,7 @@ export default function EventDetail() {
 
                   <Button
                     onClick={handleAddToCalendar}
+                    disabled={event.status === 'ONGOING' || event.status === 'COMPLETED'}
                     className="w-full sm:w-auto transition-all duration-300"
                     title="Añadir al calendario"
                   >
@@ -907,6 +916,7 @@ export default function EventDetail() {
 
                   <Button
                     onClick={handleShareWhatsApp}
+                    disabled={event.status === 'ONGOING' || event.status === 'COMPLETED'}
                     className="w-full sm:w-auto !bg-green-600 hover:!bg-green-700 !text-white transition-all duration-300"
                     title="Compartir por WhatsApp"
                   >
@@ -1651,10 +1661,10 @@ export default function EventDetail() {
                     <div
                       key={invite.id}
                       onClick={() => handleToggleInviteQr(invite)}
-                      className={`flex items-center justify-between p-3 border rounded-lg ${
-                        invite.qrUrl ? 'cursor-pointer hover:bg-[var(--color-tableRowHover)]' : ''
+                      className={`flex items-center justify-between p-3 border rounded-lg bg-[var(--color-tableRowHover)] ${
+                        invite.qrUrl ? 'cursor-pointer hover:brightness-110' : ''
                       } ${
-                        isExpanded ? 'border-[var(--color-primary-300)] bg-[var(--color-primary-50)]' : 'border-[var(--color-cardBorder)]'
+                        isExpanded ? 'border-[var(--color-primary)]' : 'border-[var(--color-cardBorder)]'
                       }`}
                     >
                       <div>
@@ -1671,10 +1681,10 @@ export default function EventDetail() {
                       <span className="relative group" tabIndex={0}>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium cursor-default select-none ${
                           invite.status === 'USED'
-                            ? 'bg-green-100 text-green-800'
+                            ? 'bg-green-700 text-green-100'
                             : invite.status === 'EXPIRED' || invite.status === 'CANCELLED'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800'
+                            ? 'bg-red-700 text-red-100'
+                            : 'bg-yellow-700 text-yellow-100'
                         }`}>
                           {invitationStatusLabels[invite.status] || invite.status}
                         </span>
@@ -1935,6 +1945,37 @@ export default function EventDetail() {
               variant="danger"
             >
               {deleteEventMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de confirmación de abandono */}
+      <Modal
+        isOpen={isUnregisterModalOpen}
+        onClose={() => setIsUnregisterModalOpen(false)}
+        title="Abandonar partida"
+      >
+        <div className="space-y-4">
+          <p className="text-[var(--color-textSecondary)]">
+            ¿Estás seguro de que quieres abandonar esta partida? Se notificará al organizador y al resto de jugadores.
+          </p>
+          <div className="flex gap-3 justify-end">
+            <Button
+              onClick={() => setIsUnregisterModalOpen(false)}
+              variant="outline"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                unregisterMutation.mutate();
+                setIsUnregisterModalOpen(false);
+              }}
+              disabled={unregisterMutation.isPending}
+              variant="danger"
+            >
+              {unregisterMutation.isPending ? 'Abandonando...' : 'Abandonar partida'}
             </Button>
           </div>
         </div>

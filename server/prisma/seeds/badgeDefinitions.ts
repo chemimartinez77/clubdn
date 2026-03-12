@@ -67,6 +67,22 @@ const badgeDefinitions = [
   { category: BadgeCategory.CATALOGADOR, level: 4, name: 'Maestro Taxonomista', requiredCount: 40 },
   { category: BadgeCategory.CATALOGADOR, level: 5, name: 'Gran Bibliotecario', requiredCount: 70 },
   { category: BadgeCategory.CATALOGADOR, level: 6, name: 'Guardián del Saber Lúdico', requiredCount: 100 },
+
+  // ORGANIZADOR (por partidas organizadas)
+  { category: BadgeCategory.ORGANIZADOR, level: 1, name: 'Anfitrión Improvisado', requiredCount: 5 },
+  { category: BadgeCategory.ORGANIZADOR, level: 2, name: 'Convocador de Dados', requiredCount: 10 },
+  { category: BadgeCategory.ORGANIZADOR, level: 3, name: 'Maestro de Ceremonias', requiredCount: 20 },
+  { category: BadgeCategory.ORGANIZADOR, level: 4, name: 'Gran Coordinador del Tablero', requiredCount: 40 },
+  { category: BadgeCategory.ORGANIZADOR, level: 5, name: 'Arquitecto de Sesiones', requiredCount: 70 },
+  { category: BadgeCategory.ORGANIZADOR, level: 6, name: 'El que Siempre Pone la Mesa', requiredCount: 100 },
+
+  // REPETIDOR (por juegos distintos jugados 3+ veces)
+  { category: BadgeCategory.REPETIDOR, level: 1, name: 'Repite Plato', requiredCount: 5 },
+  { category: BadgeCategory.REPETIDOR, level: 2, name: 'Fiel a sus Dados', requiredCount: 10 },
+  { category: BadgeCategory.REPETIDOR, level: 3, name: 'Coleccionista de Clásicos', requiredCount: 20 },
+  { category: BadgeCategory.REPETIDOR, level: 4, name: 'Devoto del Tablero', requiredCount: 40 },
+  { category: BadgeCategory.REPETIDOR, level: 5, name: 'El que no Necesita Novedades', requiredCount: 70 },
+  { category: BadgeCategory.REPETIDOR, level: 6, name: 'Maestro de sus Obsesiones', requiredCount: 100 },
 ];
 
 export async function seedBadges() {

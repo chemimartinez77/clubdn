@@ -15,6 +15,7 @@ import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
 import CreatePartida from './pages/CreatePartida';
 import InviteValidation from './pages/InviteValidation';
+import JoinViaShareLink from './pages/JoinViaShareLink';
 import PendingApprovals from './pages/admin/PendingApprovals';
 import AdminDashboard from './pages/admin/Dashboard';
 import EventManagement from './pages/admin/EventManagement';
@@ -130,6 +131,8 @@ function App() {
             }
           />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          {/* Enlace de invitación por WhatsApp — público */}
+          <Route path="/join/:token" element={<JoinViaShareLink />} />
           {/* Sandbox Azul — pública para pruebas sin login */}
           <Route path="/azul/local" element={<AzulLocal />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

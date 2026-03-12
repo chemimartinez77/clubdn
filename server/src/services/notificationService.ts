@@ -253,6 +253,41 @@ export const notifyRegistrationCancelled = async (
 };
 
 /**
+ * Notificar al resto de jugadores cuando alguien abandona la partida
+ */
+export const notifyPlayersOfAbandonment = async (
+  eventId: string,
+  eventTitle: string,
+  leavingUserId: string,
+  leavingUserName: string
+) => {
+  try {
+    const registrations = await prisma.eventRegistration.findMany({
+      where: {
+        eventId,
+        status: 'CONFIRMED',
+        userId: { not: leavingUserId },
+      },
+      select: { userId: true },
+    });
+
+    const userIds = registrations.map(r => r.userId);
+    if (userIds.length === 0) return { success: true, count: 0 };
+
+    return await createBulkNotifications({
+      userIds,
+      type: 'REGISTRATION_PENDING',
+      title: 'Un jugador ha abandonado la partida',
+      message: `${leavingUserName} ha abandonado "${eventTitle}".`,
+      metadata: { eventId, eventTitle, userName: leavingUserName },
+    });
+  } catch (error) {
+    console.error('Error notificando abandono a jugadores:', error);
+    return { success: false, error };
+  }
+};
+
+/**
  * Notificar al organizador sobre una solicitud de registro pendiente
  */
 export const notifyRegistrationPending = async (

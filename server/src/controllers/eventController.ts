@@ -536,23 +536,6 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
         }
       });
 
-      // Tracking automático si el evento tiene nombre de juego y categoría
-      if (gameName && gameCategory) {
-        const { checkAndUnlockBadges } = await import('./badgeController');
-
-        // Registrar el juego jugado
-        await prisma.gamePlayHistory.create({
-          data: {
-            userId,
-            eventId: event.id,
-            gameName,
-            gameCategory
-          }
-        });
-
-        // Verificar y desbloquear badges
-        await checkAndUnlockBadges(userId, gameCategory);
-      }
     }
 
     // Notificar a usuarios con preferencia activada
@@ -943,24 +926,6 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
             }
           });
 
-          // Tracking automático de juego si el evento tiene categoría
-          if (event.gameName && event.gameCategory) {
-            const { checkAndUnlockBadges } = await import('./badgeController');
-
-            // Registrar el juego jugado
-            await prisma.gamePlayHistory.create({
-              data: {
-                userId,
-                eventId: id,
-                gameName: event.gameName,
-                gameCategory: event.gameCategory
-              }
-            });
-
-            // Verificar y desbloquear badges
-            await checkAndUnlockBadges(userId, event.gameCategory);
-          }
-
           res.status(200).json({
             success: true,
             data: { registration },
@@ -1029,24 +994,6 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
           message: 'Tu solicitud está pendiente de aprobación del organizador'
         });
         return;
-      }
-
-      // Solo hacer tracking de badges si está CONFIRMED
-      if (event.gameName && event.gameCategory) {
-        const { checkAndUnlockBadges } = await import('./badgeController');
-
-        // Registrar el juego jugado
-        await prisma.gamePlayHistory.create({
-          data: {
-            userId,
-            eventId: id,
-            gameName: event.gameName,
-            gameCategory: event.gameCategory
-          }
-        });
-
-        // Verificar y desbloquear badges
-        await checkAndUnlockBadges(userId, event.gameCategory);
       }
 
       // Notificar al organizador (si no es el mismo que se apunta)
@@ -1195,11 +1142,15 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
       }
     }
 
+    const { notifyRegistrationCancelled, notifyPlayersOfAbandonment } = await import('../services/notificationService');
+
     // Notificar al organizador (si el que se va no es el propio organizador)
     if (registration.event.createdBy !== userId) {
-      const { notifyRegistrationCancelled } = await import('../services/notificationService');
       await notifyRegistrationCancelled(id, registration.event.title, registration.event.createdBy, registration.user.name);
     }
+
+    // Notificar al resto de jugadores confirmados
+    await notifyPlayersOfAbandonment(id, registration.event.title, userId, registration.user.name);
 
     res.status(200).json({
       success: true,
@@ -1811,22 +1762,6 @@ export const approveRegistration = async (req: Request, res: Response): Promise<
       data: { status: 'CONFIRMED' }
     });
 
-    // Badge tracking si aplica
-    if (registration.event.gameName && registration.event.gameCategory) {
-      const { checkAndUnlockBadges } = await import('./badgeController');
-
-      await prisma.gamePlayHistory.create({
-        data: {
-          userId: registration.userId,
-          eventId: id,
-          gameName: registration.event.gameName,
-          gameCategory: registration.event.gameCategory
-        }
-      });
-
-      await checkAndUnlockBadges(registration.userId, registration.event.gameCategory);
-    }
-
     // Notificar usuario
     const { notifyRegistrationApproved } = await import('../services/notificationService');
 
@@ -1981,7 +1916,15 @@ export const completeEvent = async (req: Request, res: Response): Promise<void> 
           });
           await checkAndUnlockBadges(userId, gameCategory);
         }
+
+        // Check REPETIDOR para cada jugador
+        await checkAndUnlockBadges(userId, BadgeCategory.REPETIDOR);
       }
+    }
+
+    // Check ORGANIZADOR para el creador de la partida
+    if (event.type === 'PARTIDA') {
+      await checkAndUnlockBadges(event.createdBy, BadgeCategory.ORGANIZADOR);
     }
 
     res.status(200).json({ success: true, message: 'Evento marcado como completado' });

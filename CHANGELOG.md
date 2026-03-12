@@ -4,6 +4,152 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-03-12
+
+### ✨ Nuevas funcionalidades
+
+#### Enlace de invitación personalizado por WhatsApp
+- Al pulsar el botón de WhatsApp en el detalle de una partida, el sistema genera automáticamente un enlace único por socio/colaborador y partida (`/join/TOKEN`)
+- El externo que abre el enlace ve una página pública con la info de la partida, el banner "X te invita a esta partida" y un formulario para solicitar plaza (nombre, apellidos, DNI)
+- Si la partida requiere aprobación del organizador, la solicitud queda en estado `PENDING_APPROVAL`; si no, se crea directamente como `PENDING`
+- Si un socio del club abre el enlace estando logado, accede normalmente como miembro (el token se ignora)
+- El token es reutilizable mientras la partida esté activa; no expira mientras el evento no esté cancelado o pasado
+- Un mismo socio siempre recibe el mismo token para la misma partida (unique constraint `eventId + memberId`)
+- Si la generación del token falla (sin conexión, etc.), el botón de WhatsApp sigue funcionando con la URL normal como fallback
+
+**Archivos modificados/creados:**
+- `server/prisma/schema.prisma` - nuevo modelo `EventShareLink` con relaciones a `Event` y `User`
+- `server/src/controllers/shareLinkController.ts` - nuevo: `generateShareLink`, `getShareLink`, `requestViaShareLink`
+- `server/src/routes/shareLinkRoutes.ts` - nuevo: rutas `/api/share`
+- `server/src/index.ts` - registro de `shareLinkRoutes`
+- `client/src/pages/JoinViaShareLink.tsx` - nuevo: página pública `/join/:token`
+- `client/src/App.tsx` - nueva ruta pública `/join/:token`
+- `client/src/pages/EventDetail.tsx` - `handleShareWhatsApp` llama a `/api/share/generate` y usa la URL personalizada
+
+#### Nuevos logros: Organizador y Repetidor
+- **Organizador** (6 niveles): se desbloquea por número de partidas organizadas (creadas y no canceladas). Niveles: Anfitrión Improvisado (5), Convocador de Dados (10), Maestro de Ceremonias (20), Gran Coordinador del Tablero (40), Arquitecto de Sesiones (70), El que Siempre Pone la Mesa (100)
+- **Repetidor** (6 niveles): se desbloquea por número de juegos distintos jugados 3 o más veces. Mide fidelidad a los títulos favoritos independientemente del género. Niveles: Repite Plato (5), Fiel a sus Dados (10), Coleccionista de Clásicos (20), Devoto del Tablero (40), El que no Necesita Novedades (70), Maestro de sus Obsesiones (100)
+- Ambos logros se comprueban y desbloquean automáticamente al completar una partida
+
+**Archivos modificados/creados:**
+- `server/prisma/schema.prisma` - `ORGANIZADOR` y `REPETIDOR` añadidos al enum `BadgeCategory`
+- `server/prisma/seeds/badgeDefinitions.ts` - 12 nuevos badges (60 total)
+- `server/src/controllers/badgeController.ts` - nueva función `getCategoryCount` con lógica específica por categoría; `ORGANIZADOR` cuenta eventos creados, `REPETIDOR` usa `groupBy + having` para contar juegos con 3+ partidas
+- `server/src/controllers/eventController.ts` - `completeEvent` comprueba `ORGANIZADOR` para el creador y `REPETIDOR` para cada jugador
+
+### 🐛 Corrección de errores
+
+#### Cache de impersonación no se limpiaba al cambiar de usuario
+- Al iniciar o detener la impersonación, solo se eliminaba la query `currentUser` del cache de TanStack Query pero no el resto (eventos, listas, etc.), haciendo que los datos del usuario anterior persistieran
+- Ahora se llama a `queryClient.clear()` para limpiar todo el cache al impersonar y al dejar de impersonar
+
+**Archivos modificados:**
+- `client/src/contexts/AuthContext.tsx` - `queryClient.removeQueries` → `queryClient.clear()` en `impersonate` y `stopImpersonating`
+
+#### Tracking de logros ocurría al apuntarse en lugar de al jugar
+- El registro en `GamePlayHistory` y el desbloqueo de badges se realizaba en el momento de apuntarse a la partida, no cuando ésta ocurría, lo que permitía desbloquear logros de juegos que nunca se jugaron
+- Ahora el tracking solo ocurre en `completeEvent`, que ya tenía el guard `alreadyTracked` para evitar duplicados
+
+**Archivos modificados:**
+- `server/src/controllers/eventController.ts` - eliminados los bloques de tracking en `createEvent`, `registerToEvent` (re-registro) y `approveRegistration`; el único punto de tracking es `completeEvent`
+
+### 🎨 Mejoras de UI
+
+#### Estilos de invitaciones creadas adaptados al tema oscuro
+- Las tarjetas de invitaciones en el modal "Invitaciones creadas" usaban fondos claros (`bg-white`, `bg-primary-50`) y badges con colores claros (`bg-green-100`, `bg-red-100`, `bg-yellow-100`) que no encajaban con el tema oscuro
+- Ahora usan `bg-[var(--color-tableRowHover)]` como fondo base y variantes oscuras para los badges (`bg-green-700`, `bg-red-700`, `bg-yellow-700`)
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` - clases de fondo y badges de invitaciones creadas
+
+#### Botones de calendario y WhatsApp deshabilitados si la partida está empezada o finalizada
+- Los botones "Añadir al calendario" y "WhatsApp" ahora se deshabilitan cuando el estado del evento es `ONGOING` o `COMPLETED`
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` - atributo `disabled` en ambos botones
+
+#### Modal de confirmación al abandonar partida
+- El botón "No asistiré" ya no ejecuta directamente la cancelación del registro; abre un modal de confirmación informando que se notificará al organizador y al resto de jugadores
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` - estado `isUnregisterModalOpen`, modal de confirmación
+
+### 🔔 Notificaciones
+
+#### Notificación al resto de jugadores cuando alguien abandona
+- Al cancelar el registro en una partida, además de notificar al organizador (comportamiento previo), ahora también se notifica a todos los jugadores confirmados excepto al que abandona
+
+**Archivos modificados/creados:**
+- `server/src/services/notificationService.ts` - nueva función `notifyPlayersOfAbandonment`
+- `server/src/controllers/eventController.ts` - `unregisterFromEvent` llama a `notifyPlayersOfAbandonment`
+
+---
+
+## 2026-03-10
+
+### 🛠️ Infraestructura
+
+#### Tests de integración del backend con PostgreSQL local
+- Infraestructura completa de tests con Jest + Supertest contra una base de datos PostgreSQL real en Docker (puerto 5433), sin depender de Railway ni de SQLite
+- `globalSetup.ts` asegura que las variables de entorno de test se carguen antes de que Prisma inicialice su singleton
+- `setup.ts` actualizado con cleanup completo respetando el orden de FK y guard de seguridad para evitar ejecución contra producción
+- Tests UAT operativos: tester1 (19/19), tester2 (12/12) y tester4 (13/13); tester3 aplazado por dependencia de Cloudinary
+
+**Archivos modificados/creados:**
+- `server/.env.test` - configuración para PostgreSQL Docker
+- `server/jest.config.js` - registro de `globalSetup`
+- `server/package.json` - scripts de test con `--runInBand`
+- `server/src/tests/globalSetup.ts` - nuevo: carga `.env.test` antes de cualquier worker
+- `server/src/tests/setup.ts` - cleanup completo ordenado por FK, guard actualizado
+- `server/src/tests/helpers/db.helper.ts` - correcciones en filtros de status, campo `paid` virtual, campo `reporter` → `user`
+- `server/src/tests/uat/tester2.uat.test.ts` - múltiples correcciones para alinearse con la API real
+- `server/src/tests/uat/tester4.uat.test.ts` - correcciones en aprobación y pagos
+
+### 🐛 Corrección de errores
+
+#### Email de aprobación no propaga error al cliente
+- Si el envío del email de aprobación falla (ej. rate limit de Resend), la aprobación se completa igualmente en base de datos; el error queda registrado en consola pero no devuelve 500 al cliente
+
+**Archivos modificados:**
+- `server/src/controllers/adminController.ts` - `sendApprovalEmail` envuelto en try/catch no crítico
+
+#### Validación de `maxAttendees` mínimo 1 al crear evento
+- El backend rechazaba silenciosamente eventos con `maxAttendees: 0`; ahora devuelve 400 con mensaje claro
+
+**Archivos modificados:**
+- `server/src/controllers/eventController.ts` - validación `parsedMaxAttendees >= 1`
+
+#### Validación de año en toggle de pagos
+- El endpoint `POST /api/membership/payment/toggle` aceptaba cualquier año; ahora valida que esté entre 2020 y el año actual + 1
+
+**Archivos modificados:**
+- `server/src/controllers/membershipController.ts` - validación de rango de año en `togglePayment`
+
+### ✨ Mejoras
+
+#### Validación de DNI/NIE español al invitar y en perfil de miembro
+- Al crear una invitación a un evento o al guardar el DNI en el perfil de un miembro, se valida que el DNI/NIE sea estructuralmente correcto: formato numérico, longitud y letra de control según la tabla `TRWAGMYFPDXBNJZSQVHLCKE`; los NIE con prefijo X/Y/Z también se validan correctamente
+
+**Archivos modificados/creados:**
+- `server/src/utils/dni.ts` - nuevo: `normalizeDni` e `isValidSpanishDni` compartidos
+- `server/src/controllers/invitationController.ts` - usa `isValidSpanishDni` en lugar de comprobación de longitud
+- `server/src/controllers/memberController.ts` - idem
+
+#### El organizador/admin no necesita aprobación propia al invitar
+- Si el organizador o un admin crea una invitación para un evento con `requiresApproval`, la invitación se crea directamente como `PENDING` (lista para usar) sin pasar por la cola de aprobación, ya que no tiene sentido que el organizador apruebe sus propias invitaciones
+
+**Archivos modificados:**
+- `server/src/controllers/invitationController.ts` - `needsApproval` excluye organizador y admins
+
+#### Tooltip en badges de estado de invitación
+- En la lista de asistentes del detalle de evento y en el modal de "Invitaciones creadas", al pasar el ratón (desktop) o al pulsar (móvil, vía `tabIndex` + foco) sobre el badge de estado aparece una descripción del mismo: qué significa `Pendiente`, `Pend. aprobación`, `Usada`, `Expirada` o `Cancelada`
+- El modal de invitaciones creadas también corrige que mostraba el estado en inglés en bruto (`PENDING`, `USED`…) en lugar del texto traducido
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` - `invitationStatusTooltips`, badges con `group/focus-within`, etiquetas traducidas en modal
+
+---
+
 ## 2026-03-07
 
 ### Viernes: reglas base y flujo de partida
@@ -545,4 +691,4 @@ Incluye:
 
 ---
 
-**Última actualización:** 3 de Marzo de 2026
+**Última actualización:** 10 de Marzo de 2026

@@ -90,6 +90,23 @@ export const getUserBadgesById = async (req: Request, res: Response): Promise<vo
 /**
  * Calcular progreso de badges por categoría
  */
+async function getCategoryCount(userId: string, category: BadgeCategory): Promise<number> {
+  if (category === BadgeCategory.ORGANIZADOR) {
+    return prisma.event.count({
+      where: { createdBy: userId, status: { in: ['SCHEDULED', 'ONGOING', 'COMPLETED'] } }
+    });
+  }
+  if (category === BadgeCategory.REPETIDOR) {
+    const groups = await prisma.gamePlayHistory.groupBy({
+      by: ['gameName'],
+      where: { userId },
+      having: { gameName: { _count: { gte: 3 } } }
+    });
+    return groups.length;
+  }
+  return prisma.gamePlayHistory.count({ where: { userId, gameCategory: category } });
+}
+
 async function calculateBadgeProgress(userId: string) {
   const categoryRows = await prisma.badgeDefinition.findMany({
     select: { category: true },
@@ -99,29 +116,14 @@ async function calculateBadgeProgress(userId: string) {
   const progress: Record<string, { count: number; nextBadge?: any }> = {};
 
   for (const category of categories) {
-    // Contar partidas jugadas en esta categoría
-    const count = await prisma.gamePlayHistory.count({
-      where: {
-        userId,
-        gameCategory: category
-      }
-    });
+    const count = await getCategoryCount(userId, category);
 
-    // Encontrar el siguiente badge a desbloquear
     const nextBadge = await prisma.badgeDefinition.findFirst({
-      where: {
-        category,
-        requiredCount: { gt: count }
-      },
-      orderBy: {
-        requiredCount: 'asc'
-      }
+      where: { category, requiredCount: { gt: count } },
+      orderBy: { requiredCount: 'asc' }
     });
 
-    progress[category] = {
-      count,
-      nextBadge: nextBadge || undefined
-    };
+    progress[category] = { count, nextBadge: nextBadge || undefined };
   }
 
   return progress;
@@ -138,13 +140,7 @@ export const checkAndUnlockBadges = async (
   if (!gameCategory) return;
 
   try {
-    // Contar partidas jugadas en esta categoría
-    const count = await prisma.gamePlayHistory.count({
-      where: {
-        userId,
-        gameCategory
-      }
-    });
+    const count = await getCategoryCount(userId, gameCategory);
 
     // Encontrar badges que debería tener desbloqueados
     const eligibleBadges = await prisma.badgeDefinition.findMany({
@@ -373,7 +369,9 @@ function getCategoryDisplayName(category: BadgeCategory): string {
     [BadgeCategory.MINIATURAS]: 'Miniaturas',
     [BadgeCategory.WARHAMMER]: 'Warhammer',
     [BadgeCategory.FILLERS_PARTY]: 'Fillers / Party',
-    [BadgeCategory.CATALOGADOR]: 'Catalogador'
+    [BadgeCategory.CATALOGADOR]: 'Catalogador',
+    [BadgeCategory.ORGANIZADOR]: 'Organizador',
+    [BadgeCategory.REPETIDOR]: 'Repetidor'
   };
   return names[category];
 }

@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('token', data.token);
     localStorage.setItem('impersonating', JSON.stringify(data.impersonatedUser));
     setImpersonating(data.impersonatedUser);
-    queryClient.removeQueries({ queryKey: ['currentUser'] });
+    queryClient.clear();
     navigate('/');
   };
 
@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     localStorage.removeItem('impersonating');
     setImpersonating(null);
-    queryClient.removeQueries({ queryKey: ['currentUser'] });
+    queryClient.clear();
     navigate('/admin/members');
   };
 
