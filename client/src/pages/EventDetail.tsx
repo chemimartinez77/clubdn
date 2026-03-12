@@ -28,7 +28,7 @@ export default function EventDetail() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [guestFirstName, setGuestFirstName] = useState('');
   const [guestLastName, setGuestLastName] = useState('');
-  const [guestDni, setGuestDni] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
   const [isExceptional, setIsExceptional] = useState(false);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [expandedInviteId, setExpandedInviteId] = useState<string | null>(null);
@@ -346,7 +346,7 @@ export default function EventDetail() {
         eventId: id,
         guestFirstName: guestFirstName.trim(),
         guestLastName: guestLastName.trim(),
-        guestDni: guestDni.trim(),
+        guestPhone: guestPhone.trim(),
         ...(isAdmin && isExceptional ? { isExceptional: true } : {})
       };
       const response = await api.post<ApiResponse<InvitationCreateResponse>>('/api/invitations', payload);
@@ -590,8 +590,8 @@ export default function EventDetail() {
       showError('Apellidos requeridos');
       return;
     }
-    if (!guestDni.trim()) {
-      showError('DNI requerido');
+    if (!guestPhone.trim() || !/^\d{1,12}$/.test(guestPhone.trim())) {
+      showError('Teléfono no válido (solo dígitos, máximo 12)');
       return;
     }
     if (!id) {
@@ -1562,15 +1562,15 @@ export default function EventDetail() {
 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-[var(--color-textSecondary)]">
-                DNI *
+                Teléfono *
               </label>
               <input
                 type="text"
-                value={guestDni}
-                onChange={(e) => setGuestDni(e.target.value)}
-                minLength={5}
+                value={guestPhone}
+                onChange={(e) => setGuestPhone(e.target.value)}
+                maxLength={12}
                 className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-                placeholder="00000000A"
+                placeholder="612345678"
               />
             </div>
 
@@ -1587,7 +1587,7 @@ export default function EventDetail() {
                     createInvitationMutation.isPending ||
                     guestFirstName.trim().length < 2 ||
                     guestLastName.trim().length < 2 ||
-                    guestDni.trim().length < 5
+                    !/^\d{1,12}$/.test(guestPhone.trim())
                   }
                   variant="primary"
                 >
@@ -1671,8 +1671,8 @@ export default function EventDetail() {
                         <p className="text-sm font-medium text-[var(--color-text)]">
                           {invite.guestFirstName} {invite.guestLastName}
                         </p>
-                        {invite.guestDniMasked && (
-                          <p className="text-xs text-[var(--color-textSecondary)]">DNI {invite.guestDniMasked}</p>
+                        {invite.guestPhoneMasked && (
+                          <p className="text-xs text-[var(--color-textSecondary)]">Tel. {invite.guestPhoneMasked}</p>
                         )}
                         <p className="text-xs text-[var(--color-textSecondary)]">
                           {new Date(invite.validDate).toLocaleDateString('es-ES')}

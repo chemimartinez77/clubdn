@@ -16,7 +16,7 @@ export interface Invitation {
   id: string;
   guestFirstName: string;
   guestLastName: string;
-  guestDniMasked?: string;
+  guestPhoneMasked?: string;
   status: InvitationStatus;
   validDate: string;
   isExceptional?: boolean;
@@ -31,7 +31,7 @@ export interface CreateInvitationPayload {
   eventId: string;
   guestFirstName: string;
   guestLastName: string;
-  guestDni: string;
+  guestPhone: string;
   isExceptional?: boolean;
 }
 

@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { InvitationStatus, UserRole } from '@prisma/client';
 import { prisma } from '../config/database';
 import { generateInvitationToken } from '../utils/invitationToken';
-import { normalizeDni, isValidSpanishDni } from '../utils/dni';
+const isValidPhone = (value: string) => /^\d{1,12}$/.test(value);
 
 const DEFAULT_INVITE_RULES = {
   inviteMaxActive: 5,
@@ -15,12 +15,9 @@ const DEFAULT_INVITE_RULES = {
 const normalizeText = (value: string) => value.trim().replace(/\s+/g, ' ');
 
 
-const maskDni = (value: string) => {
-  const normalized = normalizeDni(value);
-  if (normalized.length <= 4) {
-    return normalized.padStart(4, '*');
-  }
-  return `${'*'.repeat(normalized.length - 4)}${normalized.slice(-4)}`;
+const maskPhone = (value: string) => {
+  if (value.length <= 3) return '*'.repeat(value.length);
+  return `${'*'.repeat(value.length - 3)}${value.slice(-3)}`;
 };
 
 const getDateKey = (date: Date) => {
@@ -72,7 +69,7 @@ const mapInvitation = (invitation: any, options?: { includeQr?: boolean }) => {
     id: invitation.id,
     guestFirstName: invitation.guestFirstName,
     guestLastName: invitation.guestLastName,
-    guestDniMasked: invitation.guestDni ? maskDni(invitation.guestDni) : undefined,
+    guestDniMasked: invitation.guestPhone ? maskPhone(invitation.guestPhone) : undefined,
     status: invitation.status,
     validDate: invitation.validDate,
     isExceptional: invitation.isExceptional,
@@ -99,7 +96,7 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
   try {
     const userId = req.user?.userId;
     const userRole = req.user?.role;
-    const { eventId, guestFirstName, guestLastName, guestDni, isExceptional } = req.body;
+    const { eventId, guestFirstName, guestLastName, guestPhone, isExceptional } = req.body;
 
     if (!userId) {
       res.status(401).json({ success: false, message: 'No autenticado' });
@@ -121,12 +118,10 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    if (!guestDni || typeof guestDni !== 'string' || !isValidSpanishDni(guestDni)) {
-      res.status(400).json({ success: false, message: 'DNI no válido' });
+    if (!guestPhone || typeof guestPhone !== 'string' || !isValidPhone(guestPhone)) {
+      res.status(400).json({ success: false, message: 'Teléfono no válido (solo dígitos, máximo 12)' });
       return;
     }
-
-    const normalizedDni = normalizeDni(guestDni);
       const event = await prisma.event.findUnique({
         where: { id: eventId },
         select: {
@@ -207,7 +202,7 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
       }),
       prisma.invitation.count({
         where: {
-          guestDniNormalized: normalizedDni,
+          guestDniNormalized: guestPhone,
           createdAt: { gte: yearStart }
         }
       })
@@ -238,8 +233,8 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
           memberId: userId,
           guestFirstName: normalizeText(guestFirstName),
           guestLastName: normalizeText(guestLastName),
-          guestDni: normalizeText(guestDni),
-          guestDniNormalized: normalizedDni,
+          guestPhone: guestPhone,
+          guestDniNormalized: guestPhone,
           eventId: event.id,
           validDate: eventDay,
           status: needsApproval ? InvitationStatus.PENDING_APPROVAL : InvitationStatus.PENDING,
@@ -259,7 +254,7 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
             invitationId: created.id,
             guestFirstName: created.guestFirstName,
             guestLastName: created.guestLastName,
-            guestDni: created.guestDni
+            guestPhone: created.guestPhone
           }
         });
       }
@@ -608,7 +603,7 @@ export const getPendingInvitations = async (req: Request, res: Response): Promis
         id: inv.id,
         guestFirstName: inv.guestFirstName,
         guestLastName: inv.guestLastName,
-        guestDniMasked: maskDni(inv.guestDni),
+        guestDniMasked: maskPhone(inv.guestPhone),
         createdAt: inv.createdAt,
         inviter: { id: inv.member.id, name: inv.member.name, nick: inv.member.profile?.nick ?? null, avatar: inv.member.profile?.avatar ?? null }
       }))
@@ -688,7 +683,7 @@ export const approveInvitation = async (req: Request, res: Response): Promise<vo
           invitationId: invitationId!,
           guestFirstName: invitation.guestFirstName,
           guestLastName: invitation.guestLastName,
-          guestDni: invitation.guestDni
+          guestPhone: invitation.guestPhone
         }
       });
 

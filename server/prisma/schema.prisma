@@ -310,7 +310,7 @@ model Invitation {
   member              User             @relation("InvitationsCreated", fields: [memberId], references: [id], onDelete: Cascade)
   guestFirstName      String
   guestLastName       String
-  guestDni            String
+  guestPhone          String
   guestDniNormalized  String
   eventId             String
   event               Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -330,7 +330,7 @@ model Invitation {
   @@index([memberId])
   @@index([status])
   @@index([validDate])
-  @@index([guestDniNormalized])
+  @@index([guestPhone])
 }
 
 model EventShareLink {
@@ -354,12 +354,12 @@ model EventGuest {
   invitation    Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
   guestFirstName String
   guestLastName  String
-  guestDni       String
+  guestPhone     String
   createdAt     DateTime   @default(now())
   auditLogs      EventAuditLog[]
 
   @@index([eventId])
-  @@index([guestDni])
+  @@index([guestPhone])
 }
 
 // Registro a eventos

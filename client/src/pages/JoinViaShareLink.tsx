@@ -56,7 +56,7 @@ export default function JoinViaShareLink() {
   const { token } = useParams<{ token: string }>();
   const { success, error: showError } = useToast();
 
-  const [form, setForm] = useState({ firstName: '', lastName: '', dni: '' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', phone: '' });
   const [submitted, setSubmitted] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
@@ -74,7 +74,7 @@ export default function JoinViaShareLink() {
       const res = await api.post(`/api/share/${token}/request`, {
         guestFirstName: form.firstName.trim(),
         guestLastName: form.lastName.trim(),
-        guestDni: form.dni.trim()
+        guestPhone: form.phone.trim()
       });
       return res.data;
     },
@@ -186,18 +186,19 @@ export default function JoinViaShareLink() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-[var(--color-textSecondary)] mb-1">DNI / NIE *</label>
+                <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Teléfono *</label>
                 <input
                   type="text"
-                  value={form.dni}
-                  onChange={e => setForm(f => ({ ...f, dni: e.target.value }))}
+                  value={form.phone}
+                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                  maxLength={12}
                   className="w-full rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)]"
-                  placeholder="12345678A"
+                  placeholder="612345678"
                 />
               </div>
               <button
                 onClick={() => requestMutation.mutate()}
-                disabled={requestMutation.isPending || !form.firstName.trim() || !form.lastName.trim() || !form.dni.trim()}
+                disabled={requestMutation.isPending || !form.firstName.trim() || !form.lastName.trim() || !/^\d{1,12}$/.test(form.phone.trim())}
                 className="w-full rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
               >
                 {requestMutation.isPending ? 'Enviando...' : event.requiresApproval ? 'Solicitar plaza' : 'Apuntarme'}

@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { InvitationStatus } from '@prisma/client';
 import { prisma } from '../config/database';
 import { generateInvitationToken } from '../utils/invitationToken';
-import { normalizeDni, isValidSpanishDni } from '../utils/dni';
+const isValidPhone = (value: string) => /^\d{1,12}$/.test(value);
 
 const startOfDay = (date: Date) => {
   const copy = new Date(date);
@@ -155,15 +155,15 @@ export const generateShareLink = async (req: Request, res: Response): Promise<vo
 export const requestViaShareLink = async (req: Request, res: Response): Promise<void> => {
   try {
     const { token } = req.params;
-    const { guestFirstName, guestLastName, guestDni } = req.body;
+    const { guestFirstName, guestLastName, guestPhone } = req.body;
 
     if (!guestFirstName?.trim() || !guestLastName?.trim()) {
       res.status(400).json({ success: false, message: 'Nombre y apellidos requeridos' });
       return;
     }
 
-    if (!guestDni || !isValidSpanishDni(guestDni)) {
-      res.status(400).json({ success: false, message: 'DNI no válido' });
+    if (!guestPhone || !isValidPhone(guestPhone)) {
+      res.status(400).json({ success: false, message: 'Teléfono no válido (solo dígitos, máximo 12)' });
       return;
     }
 
@@ -215,19 +215,17 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const normalizedDni = normalizeDni(guestDni);
-
-    // Verificar que ese DNI no tiene ya una invitación activa para este evento
+    // Verificar que ese teléfono no tiene ya una invitación activa para este evento
     const existingInvitation = await prisma.invitation.findFirst({
       where: {
         eventId: event.id,
-        guestDniNormalized: normalizedDni,
+        guestDniNormalized: guestPhone,
         status: { in: [InvitationStatus.PENDING, InvitationStatus.USED, InvitationStatus.PENDING_APPROVAL] }
       }
     });
 
     if (existingInvitation) {
-      res.status(400).json({ success: false, message: 'Ya existe una invitación para este DNI en esta partida' });
+      res.status(400).json({ success: false, message: 'Ya existe una invitación para este teléfono en esta partida' });
       return;
     }
 
@@ -240,8 +238,8 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
         memberId: link.memberId,
         guestFirstName: guestFirstName.trim(),
         guestLastName: guestLastName.trim(),
-        guestDni,
-        guestDniNormalized: normalizedDni,
+        guestPhone,
+        guestDniNormalized: guestPhone,
         eventId: event.id,
         validDate: new Date(event.date),
         status

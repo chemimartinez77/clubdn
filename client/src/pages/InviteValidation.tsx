@@ -113,8 +113,8 @@ export default function InviteValidation() {
               <p className="text-lg font-semibold text-[var(--color-text)]">
                 {invitation.guestFirstName} {invitation.guestLastName}
               </p>
-              {invitation.guestDniMasked && (
-                <p className="text-sm text-[var(--color-textSecondary)]">DNI {invitation.guestDniMasked}</p>
+              {invitation.guestPhoneMasked && (
+                <p className="text-sm text-[var(--color-textSecondary)]">Tel. {invitation.guestPhoneMasked}</p>
               )}
             </div>
 
