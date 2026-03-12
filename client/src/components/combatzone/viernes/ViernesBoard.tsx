@@ -490,31 +490,6 @@ function HazardChoosePanel({ gs, onChoose, onSkip, isSending }: {
   );
 }
 
-function RobinsonStatus({ gs }: { gs: ViernesGameState }) {
-  const wonCards = gs.robinsonDeck.concat(gs.robinsonDiscard).filter((card) => card.type === 'HAZARD_WON').length;
-  const agingCards = gs.robinsonDeck.concat(gs.robinsonDiscard).filter((card) => card.type === 'AGING').length;
-
-  return (
-    <div className="grid grid-cols-4 gap-2 p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] text-center">
-      <div>
-        <p className="text-lg font-black text-[var(--color-text)]">{gs.robinsonDeck.length}</p>
-        <p className="text-[10px] text-[var(--color-text-muted)]">Mazo</p>
-      </div>
-      <div>
-        <p className="text-lg font-black text-[var(--color-text)]">{gs.robinsonDiscard.length}</p>
-        <p className="text-[10px] text-[var(--color-text-muted)]">Descarte</p>
-      </div>
-      <div>
-        <p className="text-lg font-black text-green-400">{wonCards}</p>
-        <p className="text-[10px] text-[var(--color-text-muted)]">Ganadas</p>
-      </div>
-      <div>
-        <p className="text-lg font-black text-orange-400">{agingCards}</p>
-        <p className="text-[10px] text-[var(--color-text-muted)]">Envejec.</p>
-      </div>
-    </div>
-  );
-}
 
 function GameOverBanner({ gs }: { gs: ViernesGameState }) {
   const navigate = useNavigate();

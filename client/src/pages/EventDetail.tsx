@@ -359,7 +359,7 @@ export default function EventDetail() {
       queryClient.invalidateQueries({ queryKey: ['pending-invitations', id] });
       setGuestFirstName('');
       setGuestLastName('');
-      setGuestDni('');
+      setGuestPhone('');
       setIsExceptional(false);
       setQrUrl(data.data?.pendingApproval ? null : (data.data?.qrUrl || null));
       setExpandedInviteId(data.data?.pendingApproval ? null : (data.data?.invitation.id || null));
