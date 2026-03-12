@@ -1,8 +1,12 @@
 // client/src/App.tsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { usePageTracking } from './hooks/usePageTracking';
 import { ToastProvider } from './contexts/ToastContext';
+import TipOfTheDayModal from './components/tips/TipOfTheDayModal';
+import { getRandomTip, shouldShowTip } from './data/tips';
+import type { Tip } from './data/tips';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Register from './pages/Register';
 import Login from './pages/Login';
@@ -105,6 +109,28 @@ function PageTracker() {
   return null;
 }
 
+function TipController() {
+  const { user, isLoading } = useAuth();
+  const [tip, setTip] = useState<Tip | null>(null);
+  const prevUserRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isLoading) return;
+    const currentId = user?.id ?? null;
+    const wasLoggedOut = prevUserRef.current === null;
+    const isNowLoggedIn = currentId !== null;
+
+    if (wasLoggedOut && isNowLoggedIn && shouldShowTip()) {
+      setTip(getRandomTip());
+    }
+
+    prevUserRef.current = currentId;
+  }, [user, isLoading]);
+
+  if (!tip) return null;
+  return <TipOfTheDayModal tip={tip} onClose={() => setTip(null)} />;
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -112,6 +138,7 @@ function App() {
         <ToastProvider position="top-right">
           <AuthProvider>
             <PageTracker />
+            <TipController />
             <Routes>
           {/* Rutas públicas */}
           <Route

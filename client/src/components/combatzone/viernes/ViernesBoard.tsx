@@ -16,6 +16,7 @@ import {
   getRobinsonCardImage,
   getSkillCardImage,
 } from '../../../logic/ViernesImages';
+import ViernesBoardVisual from './ViernesBoardVisual';
 
 function revealedHazardCount(gs: ViernesGameState): number {
   if (!gs.revealedHazards) return 0;
@@ -597,7 +598,7 @@ export default function ViernesBoard({ gameId }: ViernesBoardProps) {
   return (
     <div className="max-w-2xl mx-auto flex flex-col gap-4 pb-8">
       <StatusBar gs={displayGs} onAbandon={abandonGame} isAbandoning={isAbandoning} />
-      <RobinsonStatus gs={displayGs} />
+      <ViernesBoardVisual gs={displayGs} />
 
       <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
         {displayGs.phase === 'HAZARD_CHOOSE' && (
