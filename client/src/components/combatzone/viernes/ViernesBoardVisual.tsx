@@ -259,10 +259,16 @@ interface ViernesBoardVisualProps {
 
 export default function ViernesBoardVisual({ gs }: ViernesBoardVisualProps) {
   return (
-    <div className="grid grid-cols-3 gap-2 w-full">
-      <TableroAmarillo gs={gs} />
-      <TableroAzul gs={gs} />
-      <TableroNiveles step={gs.step} />
+    <div className="flex flex-col gap-3 w-full items-center">
+      <div className="w-full max-w-sm">
+        <TableroAmarillo gs={gs} />
+      </div>
+      <div className="w-full max-w-sm">
+        <TableroAzul gs={gs} />
+      </div>
+      <div className="w-full max-w-sm">
+        <TableroNiveles step={gs.step} />
+      </div>
     </div>
   );
 }
