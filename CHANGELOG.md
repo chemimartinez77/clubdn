@@ -4,6 +4,72 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-03-13
+
+### ✨ Nuevas funcionalidades
+
+#### Juego Viernes — tableros visuales con cartas superpuestas
+- Los tres tableros físicos del juego (amarillo, azul y niveles de peligro) se muestran ahora como imágenes reales con las cartas renderizadas encima en sus posiciones correctas
+- Disposición vertical: un tablero por fila, totalmente responsive (`max-w-sm` centrado)
+- **Tablero amarillo**: mazo de peligros apilado e inclinado (arriba derecha), descarte de Robinson boca arriba (abajo izquierda), mazo de Robinson boca abajo (abajo derecha); cada pila muestra un contador numérico
+- **Tablero azul**: mazo de envejecimiento boca abajo con contador naranja, descarte aging boca arriba
+- **Tablero de niveles**: tres franjas (verde/amarillo/rojo) con la activa animada (`animate-pulse ring-2 ring-white`), las superadas oscurecidas y las futuras semitransparentes
+
+**Archivos modificados/creados:**
+- `client/public/viernes/tableroamarillo.jpg` - imagen del tablero Robinson/peligros
+- `client/public/viernes/tableroazul.jpg` - imagen del tablero de envejecimiento
+- `client/public/viernes/tableronivelespeligros.jpg` - imagen del tablero de niveles
+- `client/src/components/combatzone/viernes/ViernesBoardVisual.tsx` - nuevo: componentes `TableroAmarillo`, `TableroAzul`, `TableroNiveles` con posicionamiento absoluto porcentual
+- `client/src/components/combatzone/viernes/ViernesBoard.tsx` - reemplaza el panel de estado textual por `ViernesBoardVisual`
+
+#### Juego Viernes — habilidades especiales de cartas completamente implementadas
+- Todas las habilidades especiales de las cartas de Robinson (ganadas al superar peligros) y de Comiendo se aplican al robarlas durante el combate
+
+**Habilidades automáticas** (sin interacción, efecto inmediato al robar):
+- `+2 vida` (Comiendo): recupera 2 puntos de vida
+- `+1 vida` (Nutrición): recupera 1 punto de vida
+- `+1 carta gratis` (Experiencia): roba una carta extra sin coste
+- `Destruye aging` (Truco): descarta automáticamente la carta superior del mazo de envejecimiento
+- `-1 Paso dificultad` (Lectura): retrocede un paso de dificultad (ROJO→AMARILLO o AMARILLO→VERDE)
+
+**Habilidades interactivas** (pausan el combate en fase `SKILL_PENDING` hasta que el jugador decide):
+- `1x Destruir carta` (Conocimiento): elige una carta de la mano para destruirla permanentemente sin coste
+- `1x Copiar valor` (Mimetismo): la carta activadora copia el valor de otra carta en la mano
+- `2x Cambiar carta` (Estrategia): devuelve hasta 2 cartas de la mano y roba nuevas; se pueden usar 1 o 2 cambios
+- `1x Doblar valor` (Repetición): dobla el valor de una carta en la mano durante el combate
+- `Ordenar 3 cartas` (Visión): muestra las 3 próximas cartas del mazo y permite reordenarlas libremente
+- Todas las habilidades interactivas tienen botón "No usar habilidad" para descartarlas
+
+**Archivos modificados:**
+- `client/src/logic/ViernesEngine.ts` - nuevos tipos `SkillEffect`, `PendingSkillType`, `PendingSkill`; fase `SKILL_PENDING`; `applyCardDrawEffect` con efectos automáticos e interactivos; 6 nuevos handlers (`handleSkillDestroy`, `handleSkillCopy`, `handleSkillSwap`, `handleSkillDouble`, `handleSkillSort`, `handleSkillSkip`); `skillEffectLabel()` y `SKILL_EFFECT_BY_NAME` exportados; `HAZARD_DEFS` actualizado con `skillEffect` en todos los peligros
+- `server/src/logic/ViernesEngine.ts` - copia exacta del engine cliente
+- `client/src/components/combatzone/viernes/ViernesBoard.tsx` - nuevo `SkillPendingPanel`: muestra la habilidad activa, la carta activadora y los botones por carta elegible; para Visión muestra lista reordenable con flechas ▲▼
+- `server/src/controllers/viernesController.ts` - `isViernesAction` ampliado para validar los 6 nuevos tipos de acción `SKILL_*`
+
+#### Consejo del día
+- Al iniciar sesión aparece automáticamente un modal con un consejo aleatorio sobre juegos de mesa (se muestra una vez cada 24 horas máximo)
+- El modal también es accesible manualmente desde el menú de usuario ("Consejo del día") tanto en escritorio como en móvil
+- Dentro del modal se puede rotar el consejo ("Ver otro consejo") sin reiniciar el temporizador de 24 horas
+
+**Archivos modificados/creados:**
+- `client/src/data/tips.ts` - nuevo: 15 consejos, `getRandomTip()`, `shouldShowTip()`, `markTipShown()` (localStorage `lastTipShown`)
+- `client/src/components/tips/TipOfTheDayModal.tsx` - nuevo: modal con consejo rotable
+- `client/src/App.tsx` - `TipController` detecta el momento exacto de login con `useRef` y muestra el modal si han pasado más de 24h
+- `client/src/components/layout/Header.tsx` - botón "Consejo del día" en menú desktop y móvil
+
+### 🐛 Corrección de errores
+
+#### Campo de teléfono en invitaciones (migración DNI → teléfono)
+- Los formularios de invitación por enlace y el detalle de evento mostraban referencias a DNI que debían ser teléfono tras la migración anterior
+- Se completan los archivos que faltaban por actualizar y se corrige un `setGuestDni` residual que causaba error de build
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` - label, estado, validación y reset cambiados a `guestPhone`
+- `client/src/pages/JoinViaShareLink.tsx` - formulario usa `phone` en lugar de `dni`; payload envía `guestPhone`
+- `client/src/pages/InviteValidation.tsx` - muestra `guestPhoneMasked` en lugar de `guestDniMasked`
+
+---
+
 ## 2026-03-12
 
 ### ✨ Nuevas funcionalidades

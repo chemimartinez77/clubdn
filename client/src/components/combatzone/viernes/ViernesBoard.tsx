@@ -2,10 +2,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useViernesGame } from '../../../hooks/useViernesGame';
-import { calculateFightTotal } from '../../../logic/ViernesEngine';
+import { calculateFightTotal, skillEffectLabel } from '../../../logic/ViernesEngine';
 import type {
   FightState,
   HazardCard,
+  PendingSkill,
   RobinsonCard,
   ViernesGameState,
 } from '../../../logic/ViernesEngine';
@@ -60,6 +61,7 @@ function StatusBar({ gs, onAbandon, isAbandoning }: {
   const phaseLabel: Record<string, string> = {
     HAZARD_CHOOSE: 'Elige un peligro',
     HAZARD_FIGHT: 'En combate',
+    SKILL_PENDING: 'Habilidad pendiente',
     HAZARD_DEFEAT: 'Despues de perder',
     PIRATE_CHOOSE: 'Orden de piratas',
     PIRATE_FIGHT: 'Combate pirata',
@@ -491,6 +493,168 @@ function HazardChoosePanel({ gs, onChoose, onSkip, isSending }: {
 }
 
 
+function SkillPendingPanel({ fight, pendingSkill, onAction, isSending }: {
+  fight: FightState;
+  pendingSkill: PendingSkill;
+  onAction: (a: Parameters<typeof import('../../../logic/ViernesEngine').applyAction>[1]) => void;
+  isSending: boolean;
+}) {
+  const [sortOrder, setSortOrder] = useState<string[]>(
+    pendingSkill.sortCandidates?.map(c => c.id) ?? []
+  );
+
+  const type = pendingSkill.type;
+  const trigger = fight.drawnCards.find(c => c.id === pendingSkill.triggerCardId);
+  const otherCards = fight.drawnCards.filter(c => c.id !== pendingSkill.triggerCardId);
+
+  const skillLabel = trigger?.skillEffect ? skillEffectLabel(trigger.skillEffect) : type;
+  const swapsLeft = pendingSkill.swapsLeft ?? 1;
+
+  function moveSortCard(id: string, dir: -1 | 1) {
+    setSortOrder(prev => {
+      const i = prev.indexOf(id);
+      if (i < 0) return prev;
+      const next = [...prev];
+      const j = i + dir;
+      if (j < 0 || j >= next.length) return prev;
+      [next[i], next[j]] = [next[j] as string, next[i] as string];
+      return next;
+    });
+  }
+
+  if (type === 'SORT_3') {
+    const candidates = pendingSkill.sortCandidates ?? [];
+    const orderedCards = sortOrder.map(id => candidates.find(c => c.id === id)!).filter(Boolean);
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4">
+          <p className="text-sm font-bold text-yellow-300">Visión: Reordena las próximas {candidates.length} cartas del mazo</p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-1">
+            Arrastra o usa las flechas para establecer el orden (la primera se robará primero).
+          </p>
+        </div>
+        <div className="flex flex-col gap-2">
+          {orderedCards.map((card, i) => (
+            <div key={card.id} className="flex items-center gap-3 p-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)]">
+              <span className="text-xs text-[var(--color-text-muted)] w-4 text-center font-bold">{i + 1}</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-[var(--color-text)]">{card.name}</p>
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  {card.value > 0 ? `+${card.value}` : card.value}
+                  {card.skillEffect ? ` · ${skillEffectLabel(card.skillEffect)}` : ''}
+                </p>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <button
+                  onClick={() => moveSortCard(card.id, -1)}
+                  disabled={i === 0}
+                  className="text-xs px-2 py-0.5 rounded border border-[var(--color-border)] disabled:opacity-30 hover:bg-[var(--color-border)] transition-colors"
+                >▲</button>
+                <button
+                  onClick={() => moveSortCard(card.id, 1)}
+                  disabled={i === orderedCards.length - 1}
+                  className="text-xs px-2 py-0.5 rounded border border-[var(--color-border)] disabled:opacity-30 hover:bg-[var(--color-border)] transition-colors"
+                >▼</button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={() => onAction({ type: 'SKILL_SORT', orderedIds: sortOrder })}
+            disabled={isSending}
+            className="px-5 py-2 rounded-lg bg-[var(--color-primary)] text-white font-bold text-sm hover:opacity-90 disabled:opacity-40 transition-all"
+          >
+            Confirmar orden
+          </button>
+          <button
+            onClick={() => onAction({ type: 'SKILL_SKIP' })}
+            disabled={isSending}
+            className="px-4 py-2 rounded-lg border border-[var(--color-border)] text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-border)]/30 disabled:opacity-40 transition-all"
+          >
+            No usar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4">
+        <p className="text-sm font-bold text-yellow-300">
+          Habilidad activada: <span className="text-white">{skillLabel}</span>
+          {(type === 'SWAP_1' || type === 'SWAP_2') && swapsLeft > 0 && (
+            <span className="ml-2 text-yellow-200">({swapsLeft} restantes)</span>
+          )}
+        </p>
+        <p className="text-xs text-[var(--color-text-muted)] mt-1">
+          {type === 'DESTROY_IN_FIGHT' && 'Elige una carta para destruirla (se retira permanentemente).'}
+          {type === 'COPY'             && 'Elige una carta cuyo valor será copiado por la carta de Mimetismo.'}
+          {(type === 'SWAP_1' || type === 'SWAP_2') && 'Elige una carta para devolverla y robar una nueva.'}
+          {type === 'DOUBLE'           && 'Elige una carta para doblar su valor en este combate.'}
+        </p>
+      </div>
+
+      {/* Carta que activó la habilidad */}
+      {trigger && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[var(--color-text-muted)]">Carta activadora:</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+            <span className="text-sm font-bold text-yellow-300">{trigger.name}</span>
+            <span className="text-xs text-[var(--color-text-muted)]">
+              ({trigger.value > 0 ? `+${trigger.value}` : trigger.value})
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Cartas elegibles */}
+      {otherCards.length === 0 ? (
+        <p className="text-sm italic text-[var(--color-text-muted)]">No hay otras cartas en la mano.</p>
+      ) : (
+        <div>
+          <p className="text-sm font-semibold text-[var(--color-text-muted)] mb-2">Cartas disponibles:</p>
+          <div className="flex flex-wrap gap-2">
+            {otherCards.map(card => (
+              <button
+                key={card.id}
+                onClick={() => {
+                  if (type === 'DESTROY_IN_FIGHT') onAction({ type: 'SKILL_DESTROY', cardId: card.id });
+                  else if (type === 'COPY')        onAction({ type: 'SKILL_COPY',    cardId: card.id });
+                  else if (type === 'SWAP_1' || type === 'SWAP_2') onAction({ type: 'SKILL_SWAP', cardId: card.id });
+                  else if (type === 'DOUBLE')      onAction({ type: 'SKILL_DOUBLE',  cardId: card.id });
+                }}
+                disabled={isSending}
+                className={`flex flex-col items-center px-3 py-2 rounded-xl border transition-all
+                  ${card.value < 0
+                    ? 'border-red-400/60 bg-red-500/10 hover:bg-red-500/20'
+                    : 'border-[var(--color-primary)]/60 bg-[var(--color-primary)]/10 hover:bg-[var(--color-primary)]/20'}
+                  disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer`}
+              >
+                <span className={`text-lg font-black ${card.value < 0 ? 'text-red-400' : card.value === 0 ? 'text-gray-300' : 'text-green-400'}`}>
+                  {card.value > 0 ? `+${card.value}` : card.value}
+                </span>
+                <span className="text-[10px] text-[var(--color-text-muted)] text-center leading-tight max-w-[72px] line-clamp-2">
+                  {card.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <button
+        onClick={() => onAction({ type: 'SKILL_SKIP' })}
+        disabled={isSending}
+        className="self-start px-4 py-2 rounded-lg border border-[var(--color-border)] text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-border)]/30 disabled:opacity-40 transition-all"
+      >
+        No usar habilidad
+      </button>
+    </div>
+  );
+}
+
 function GameOverBanner({ gs }: { gs: ViernesGameState }) {
   const navigate = useNavigate();
 
@@ -591,6 +755,15 @@ export default function ViernesBoard({ gameId }: ViernesBoardProps) {
             fight={displayGs.currentFight}
             onBuy={() => sendAction({ type: 'BUY_CARD' })}
             onResolve={() => sendAction({ type: 'RESOLVE_FIGHT' })}
+            isSending={isSending}
+          />
+        )}
+
+        {displayGs.phase === 'SKILL_PENDING' && displayGs.currentFight && displayGs.currentFight.pendingSkill && (
+          <SkillPendingPanel
+            fight={displayGs.currentFight}
+            pendingSkill={displayGs.currentFight.pendingSkill}
+            onAction={(a) => sendAction(a)}
             isSending={isSending}
           />
         )}

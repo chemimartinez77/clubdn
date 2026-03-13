@@ -24,6 +24,15 @@ function isViernesAction(payload: unknown): payload is ViernesAction {
       return typeof action.cardId === 'string' && action.cardId.length > 0;
     case 'CHOOSE_PIRATE_ORDER':
       return action.firstPirateIndex === 0 || action.firstPirateIndex === 1;
+    case 'SKILL_DESTROY':
+    case 'SKILL_COPY':
+    case 'SKILL_SWAP':
+    case 'SKILL_DOUBLE':
+      return typeof action.cardId === 'string' && action.cardId.length > 0;
+    case 'SKILL_SORT':
+      return Array.isArray(action.orderedIds) && action.orderedIds.every((id: unknown) => typeof id === 'string');
+    case 'SKILL_SKIP':
+      return true;
     default:
       return false;
   }
