@@ -70,6 +70,43 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-03-14
+
+### 🔒 Seguridad
+
+#### Cabeceras HTTP seguras con Helmet
+- Se añade `helmet` como middleware global para configurar automáticamente cabeceras HTTP de seguridad: `X-Content-Type-Options`, `X-Frame-Options`, `Strict-Transport-Security`, `Content-Security-Policy`, etc.
+
+**Archivos modificados:**
+- `server/src/index.ts` - `app.use(helmet())`
+
+#### Rate limiting global y específico para autenticación
+- Rate limiter global: máximo 300 peticiones por IP cada 15 minutos
+- Rate limiter estricto en `/api/auth`: máximo 20 peticiones por IP cada 15 minutos para proteger contra ataques de fuerza bruta
+
+**Archivos modificados:**
+- `server/src/index.ts` - `globalLimiter` y `authLimiter` con `express-rate-limit`
+
+#### JWT_SECRET obligatorio al arrancar el servidor
+- Si `JWT_SECRET` no está definido en las variables de entorno, el servidor termina inmediatamente con un error fatal en lugar de usar el fallback `'default-secret-key'`
+- Se elimina el fallback inseguro del controlador de autenticación
+
+**Archivos modificados:**
+- `server/src/index.ts` - validación `process.exit(1)` si `JWT_SECRET` no está definido
+- `server/src/controllers/authController.ts` - eliminado `|| 'default-secret-key'`
+
+### 🌱 Seed de producción
+
+#### Script `seed-prod.ts` seguro para producción
+- Nuevo script que inicializa datos esenciales en la base de datos de producción sin borrar ni sobreescribir datos existentes
+- Crea `ClubConfig` (tipos de membresía, moneda) y las 60 `BadgeDefinition` de todas las categorías usando `upsert` idempotente
+- Seguro de re-ejecutar en cualquier momento
+
+**Archivos creados:**
+- `server/prisma/seed-prod.ts` - seed idempotente con upsert por `category_level`
+
+---
+
 ## 2026-03-12
 
 ### ✨ Nuevas funcionalidades

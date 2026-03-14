@@ -537,7 +537,7 @@ export default function EventDetail() {
   const isFull = (event.registeredCount || 0) >= event.maxAttendees;
   const isPendingApproval = event.userRegistrationStatus === 'PENDING_APPROVAL';
   const canRegister = event.status === 'SCHEDULED' && !isPast && !event.isUserRegistered && !isFull;
-  const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && !isPendingApproval;
+  const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && !isPendingApproval && !isPast;
   const canInvite = event.status !== 'CANCELLED' && !isPast && !isFull;
   const canDelete = isPartida && !isPast && event.status !== 'CANCELLED' && (isAdmin || user?.id === event.createdBy);
   const canEdit = isOrganizerOrAdmin && event.status !== 'CANCELLED' && !isPast;
@@ -902,7 +902,7 @@ export default function EventDetail() {
 
                   <Button
                     onClick={handleAddToCalendar}
-                    disabled={event.status === 'ONGOING' || event.status === 'COMPLETED'}
+                    disabled={isPast || event.status === 'ONGOING' || event.status === 'COMPLETED'}
                     className="w-full sm:w-auto transition-all duration-300"
                     title="Añadir al calendario"
                   >
@@ -916,7 +916,7 @@ export default function EventDetail() {
 
                   <Button
                     onClick={handleShareWhatsApp}
-                    disabled={event.status === 'ONGOING' || event.status === 'COMPLETED'}
+                    disabled={isPast || event.status === 'ONGOING' || event.status === 'COMPLETED'}
                     className="w-full sm:w-auto !bg-green-600 hover:!bg-green-700 !text-white transition-all duration-300"
                     title="Compartir por WhatsApp"
                   >
