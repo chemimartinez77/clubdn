@@ -292,7 +292,7 @@ export const login = async (req: Request, res: Response) => {
         email: user.email,
         role: user.role,
       },
-      process.env.JWT_SECRET || 'default-secret-key',
+      process.env.JWT_SECRET!,
       { expiresIn: '7d' }
     );
 

@@ -1,6 +1,8 @@
 // server/src/index.ts
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { prisma } from './config/database';
 import authRoutes from './routes/authRoutes';
@@ -29,8 +31,37 @@ import pageViewRoutes from './routes/pageViewRoutes';
 // Cargar variables de entorno
 dotenv.config();
 
+// Validar variables de entorno críticas
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET no está definido. El servidor no puede arrancar sin él.');
+  process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Security headers
+app.use(helmet());
+
+// Rate limiting global
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Demasiadas peticiones, intenta de nuevo en unos minutos' }
+});
+
+// Rate limiting estricto para auth
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Demasiados intentos de autenticación, intenta de nuevo en 15 minutos' }
+});
+
+app.use(globalLimiter);
 
 // Middleware CORS
 const allowedOrigins = [
@@ -76,7 +107,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 // Rutas de autenticación y administración
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/profile', profileRoutes);
