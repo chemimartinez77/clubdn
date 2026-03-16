@@ -256,6 +256,13 @@ export default function Header() {
                       >
                         Gestión Financiera
                       </Link>
+                      <Link
+                        to="/events/preview-semanal"
+                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                        onClick={() => setIsAdminMenuOpen(false)}
+                      >
+                        Preview semanal
+                      </Link>
                       <div className="border-t border-[var(--color-cardBorder)] my-1"></div>
                       <Link
                         to="/admin/config"
@@ -537,6 +544,13 @@ export default function Header() {
                     onClick={closeAllMenus}
                   >
                     Gestión Financiera
+                  </Link>
+                  <Link
+                    to="/events/preview-semanal"
+                    className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                    onClick={closeAllMenus}
+                  >
+                    Preview semanal
                   </Link>
                   <Link
                     to="/admin/config"
