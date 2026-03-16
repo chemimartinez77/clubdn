@@ -91,13 +91,18 @@ function layoutEventsForDay(events: Event[]): EventBlock[] {
   return blocks;
 }
 
+function formatHour(totalMinutes: number): string {
+  const h = Math.floor(totalMinutes / 60) % 24; // normalizar a 0-23
+  const m = totalMinutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
 function getTimeStr(event: Event, durationMinutes: number): string {
   const startH = event.startHour ?? 0;
   const startM = event.startMinute ?? 0;
-  const endTotalMin = startH * 60 + startM + durationMinutes;
-  const endH = Math.floor(endTotalMin / 60);
-  const endM = endTotalMin % 60;
-  return `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')} – ${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+  const startTotalMin = startH * 60 + startM;
+  const endTotalMin = startTotalMin + durationMinutes;
+  return `${formatHour(startTotalMin)} – ${formatHour(endTotalMin)}`;
 }
 
 function EventBlockView({ block }: { block: EventBlock }) {
@@ -147,9 +152,8 @@ function EventBlockView({ block }: { block: EventBlock }) {
 // Bloque "Club cerrado" que ocupa las horas vacías al inicio del día
 function ClosedBlock({ hoursUntilFirst }: { hoursUntilFirst: number }) {
   const height = hoursUntilFirst * HOUR_HEIGHT;
-  const startLabel = `${String(START_HOUR).padStart(2, '0')}:00`;
-  const endH = START_HOUR + hoursUntilFirst;
-  const endLabel = `${String(endH).padStart(2, '0')}:00`;
+  const startLabel = formatHour(START_HOUR * 60);
+  const endLabel = formatHour((START_HOUR + hoursUntilFirst) * 60);
 
   return (
     <div
@@ -441,7 +445,7 @@ export default function WeeklyPreview() {
                       paddingRight: '8px',
                     }}
                   >
-                    {String(h).padStart(2, '0')}:00
+                    {formatHour(h * 60)}
                   </div>
                 ))}
               </div>
