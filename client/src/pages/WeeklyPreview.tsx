@@ -187,7 +187,7 @@ function EventBlockView({ block }: { block: EventBlock }) {
       {height >= 32 && (
         <div style={{ opacity: 0.85, fontSize: '10px', marginTop: '1px' }}>{timeStr}</div>
       )}
-      {height >= 48 && event.gameName && (
+      {height >= 48 && event.gameName && event.gameName !== event.title && (
         <div style={{ opacity: 0.75, fontSize: '10px', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {event.gameName}
         </div>
