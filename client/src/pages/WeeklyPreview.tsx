@@ -10,7 +10,7 @@ import type { ApiResponse } from '../types/auth';
 
 const HOUR_HEIGHT = 56; // px por hora
 const START_HOUR = 9;
-const END_HOUR = 24;
+const END_HOUR = 28; // 28 = 4:00 AM del día siguiente
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 const CLOSED_GAP_HOURS = 2; // mínimo de horas libres al inicio para mostrar "Club cerrado"
 
@@ -183,13 +183,11 @@ function ClosedBlock({ hoursUntilFirst }: { hoursUntilFirst: number }) {
 
 // Sección de índice de eventos truncados (los que tienen totalColumns >= 2)
 function TruncatedIndex({ allBlocks }: { allBlocks: { day: Date; blocks: EventBlock[] }[] }) {
-  // Recoger eventos que se muestran en columnas (potencialmente cortados)
+  // Recoger todos los eventos de la semana
   const truncated: { day: Date; block: EventBlock }[] = [];
   for (const { day, blocks } of allBlocks) {
     for (const block of blocks) {
-      if (block.totalColumns >= 2) {
-        truncated.push({ day, block });
-      }
+      truncated.push({ day, block });
     }
   }
 
@@ -212,7 +210,7 @@ function TruncatedIndex({ allBlocks }: { allBlocks: { day: Date; blocks: EventBl
       }}
     >
       <div style={{ color: '#94a3b8', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
-        Detalle de partidas simultáneas
+        Detalle de eventos
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
         {Array.from(byDay.values()).map(({ day, blocks }) => (
@@ -309,7 +307,7 @@ export default function WeeklyPreview() {
   // Horas libres al inicio de cada día (para "Club cerrado")
   const closedHoursPerDay = useMemo(() => {
     return eventsByDay.map(dayEvents => {
-      if (dayEvents.length === 0) return 0; // sin eventos → no mostrar
+      if (dayEvents.length === 0) return TOTAL_HOURS; // sin eventos → todo el día cerrado
       const firstEventHour = Math.min(
         ...dayEvents.map(e => e.startHour ?? START_HOUR)
       );
