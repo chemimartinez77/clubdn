@@ -12,7 +12,7 @@ const HOUR_HEIGHT = 56; // px por hora
 const START_HOUR = 9;
 const END_HOUR = 28; // 28 = 4:00 AM del día siguiente
 const TOTAL_HOURS = END_HOUR - START_HOUR;
-const CLOSED_GAP_HOURS = 2; // mínimo de horas libres al inicio para mostrar "Club cerrado"
+const CLOSED_GAP_MINUTES = 60; // hueco mínimo (minutos) para mostrar bloque "Club cerrado"
 
 const DAY_NAMES = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
 
@@ -47,6 +47,12 @@ interface EventBlock {
   totalColumns: number;
 }
 
+// Intervalo libre donde no hay ningún evento activo
+interface ClosedGap {
+  startMinutes: number; // minutos desde START_HOUR
+  endMinutes: number;
+}
+
 function layoutEventsForDay(events: Event[]): EventBlock[] {
   const sorted = [...events].sort((a, b) => {
     const aStart = (a.startHour ?? 0) * 60 + (a.startMinute ?? 0);
@@ -74,8 +80,6 @@ function layoutEventsForDay(events: Event[]): EventBlock[] {
     blocks[i].column = col;
   }
 
-  // Calcular totalColumns por grupo de solapamiento real
-  // Para cada bloque, buscar cuántos se solapan simultáneamente con él
   for (let i = 0; i < blocks.length; i++) {
     let maxConcurrent = 1;
     for (let j = 0; j < blocks.length; j++) {
@@ -91,8 +95,51 @@ function layoutEventsForDay(events: Event[]): EventBlock[] {
   return blocks;
 }
 
+// Calcula los intervalos del día donde no hay ningún evento activo
+function getClosedGaps(events: Event[]): ClosedGap[] {
+  const totalMinutes = TOTAL_HOURS * 60;
+
+  if (events.length === 0) {
+    return [{ startMinutes: 0, endMinutes: totalMinutes }];
+  }
+
+  // Construir una línea de tiempo de "ocupado" por minuto usando intervalos
+  // Cada evento ocupa [startMin, endMin) en minutos desde START_HOUR
+  const occupied: [number, number][] = events.map(e => {
+    const start = ((e.startHour ?? START_HOUR) - START_HOUR) * 60 + (e.startMinute ?? 0);
+    const dur = (e.durationHours ?? 2) * 60 + (e.durationMinutes ?? 0);
+    return [Math.max(0, start), Math.min(totalMinutes, start + dur)];
+  });
+
+  // Fusionar intervalos solapados para obtener los rangos realmente ocupados
+  occupied.sort((a, b) => a[0] - b[0]);
+  const merged: [number, number][] = [];
+  for (const [s, e] of occupied) {
+    if (merged.length === 0 || s > merged[merged.length - 1][1]) {
+      merged.push([s, e]);
+    } else {
+      merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], e);
+    }
+  }
+
+  // Los huecos son los intervalos entre los rangos ocupados (y al principio/final)
+  const gaps: ClosedGap[] = [];
+  let cursor = 0;
+  for (const [s, e] of merged) {
+    if (s - cursor >= CLOSED_GAP_MINUTES) {
+      gaps.push({ startMinutes: cursor, endMinutes: s });
+    }
+    cursor = e;
+  }
+  if (totalMinutes - cursor >= CLOSED_GAP_MINUTES) {
+    gaps.push({ startMinutes: cursor, endMinutes: totalMinutes });
+  }
+
+  return gaps;
+}
+
 function formatHour(totalMinutes: number): string {
-  const h = Math.floor(totalMinutes / 60) % 24; // normalizar a 0-23
+  const h = Math.floor(totalMinutes / 60) % 24;
   const m = totalMinutes % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
@@ -149,17 +196,17 @@ function EventBlockView({ block }: { block: EventBlock }) {
   );
 }
 
-// Bloque "Club cerrado" que ocupa las horas vacías al inicio del día
-function ClosedBlock({ hoursUntilFirst }: { hoursUntilFirst: number }) {
-  const height = hoursUntilFirst * HOUR_HEIGHT;
-  const startLabel = formatHour(START_HOUR * 60);
-  const endLabel = formatHour((START_HOUR + hoursUntilFirst) * 60);
+function ClosedBlock({ gap }: { gap: ClosedGap }) {
+  const top = (gap.startMinutes / 60) * HOUR_HEIGHT;
+  const height = ((gap.endMinutes - gap.startMinutes) / 60) * HOUR_HEIGHT;
+  const startLabel = formatHour(START_HOUR * 60 + gap.startMinutes);
+  const endLabel = formatHour(START_HOUR * 60 + gap.endMinutes);
 
   return (
     <div
       style={{
         position: 'absolute',
-        top: 0,
+        top: `${top}px`,
         left: '1%',
         width: '98%',
         height: `${height}px`,
@@ -185,34 +232,17 @@ function ClosedBlock({ hoursUntilFirst }: { hoursUntilFirst: number }) {
   );
 }
 
-// Sección de índice de eventos truncados (los que tienen totalColumns >= 2)
-function TruncatedIndex({ allBlocks }: { allBlocks: { day: Date; blocks: EventBlock[] }[] }) {
-  // Recoger todos los eventos de la semana
-  const truncated: { day: Date; block: EventBlock }[] = [];
-  for (const { day, blocks } of allBlocks) {
-    for (const block of blocks) {
-      truncated.push({ day, block });
-    }
-  }
-
-  if (truncated.length === 0) return null;
-
-  // Agrupar por día
+function EventIndex({ allBlocks }: { allBlocks: { day: Date; blocks: EventBlock[] }[] }) {
   const byDay: Map<string, { day: Date; blocks: EventBlock[] }> = new Map();
-  for (const { day, block } of truncated) {
-    const key = day.toDateString();
-    if (!byDay.has(key)) byDay.set(key, { day, blocks: [] });
-    byDay.get(key)!.blocks.push(block);
+  for (const { day, blocks } of allBlocks) {
+    if (blocks.length === 0) continue;
+    byDay.set(day.toDateString(), { day, blocks });
   }
+
+  if (byDay.size === 0) return null;
 
   return (
-    <div
-      style={{
-        marginTop: '12px',
-        paddingTop: '12px',
-        borderTop: '1px solid #2d2d44',
-      }}
-    >
+    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #2d2d44' }}>
       <div style={{ color: '#94a3b8', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
         Detalle de eventos
       </div>
@@ -226,10 +256,7 @@ function TruncatedIndex({ allBlocks }: { allBlocks: { day: Date; blocks: EventBl
               const colors = EVENT_COLORS[block.event.type] ?? EVENT_COLORS.OTROS;
               const timeStr = getTimeStr(block.event, block.durationMinutes);
               return (
-                <div
-                  key={block.event.id}
-                  style={{ display: 'flex', alignItems: 'flex-start', gap: '5px', marginBottom: '4px' }}
-                >
+                <div key={block.event.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '5px', marginBottom: '4px' }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: colors.bg, flexShrink: 0, marginTop: '2px' }} />
                   <div>
                     <div style={{ color: '#e2e8f0', fontSize: '10px', fontWeight: 600, lineHeight: 1.2 }}>
@@ -300,7 +327,6 @@ export default function WeeklyPreview() {
     });
   }, [events, weekDays]);
 
-  // Calcular bloques de layout para cada día (para la leyenda de truncados)
   const allDayBlocks = useMemo(() => {
     return weekDays.map((day, i) => ({
       day,
@@ -308,24 +334,13 @@ export default function WeeklyPreview() {
     }));
   }, [weekDays, eventsByDay]);
 
-  // Horas libres al inicio de cada día (para "Club cerrado")
-  const closedHoursPerDay = useMemo(() => {
-    return eventsByDay.map(dayEvents => {
-      if (dayEvents.length === 0) return TOTAL_HOURS; // sin eventos → todo el día cerrado
-      const firstEventHour = Math.min(
-        ...dayEvents.map(e => e.startHour ?? START_HOUR)
-      );
-      const gapHours = firstEventHour - START_HOUR;
-      return gapHours >= CLOSED_GAP_HOURS ? gapHours : 0;
-    });
+  const closedGapsPerDay = useMemo(() => {
+    return eventsByDay.map(dayEvents => getClosedGaps(dayEvents));
   }, [eventsByDay]);
 
   async function captureImage(): Promise<string> {
     if (!previewRef.current) throw new Error('No ref');
-    return toPng(previewRef.current, {
-      pixelRatio: 2,
-      backgroundColor: '#1a1a2e',
-    });
+    return toPng(previewRef.current, { pixelRatio: 2, backgroundColor: '#1a1a2e' });
   }
 
   async function handleDownload() {
@@ -349,9 +364,7 @@ export default function WeeklyPreview() {
       const dataUrl = await captureImage();
       const res = await fetch(dataUrl);
       const blob = await res.blob();
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob }),
-      ]);
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
       setCopyStatus('done');
       setTimeout(() => setCopyStatus('idle'), 2000);
     } catch {
@@ -366,29 +379,19 @@ export default function WeeklyPreview() {
   return (
     <Layout>
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Cabecera */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-[var(--color-text)]">Preview semanal</h1>
             <p className="text-sm text-[var(--color-textSecondary)] mt-1">{weekLabel}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setWeekOffset(o => o - 1)}
-              className="px-3 py-1.5 rounded border border-[var(--color-cardBorder)] text-sm hover:bg-[var(--color-hover)] text-[var(--color-text)]"
-            >
+            <button onClick={() => setWeekOffset(o => o - 1)} className="px-3 py-1.5 rounded border border-[var(--color-cardBorder)] text-sm hover:bg-[var(--color-hover)] text-[var(--color-text)]">
               ← Anterior
             </button>
-            <button
-              onClick={() => setWeekOffset(0)}
-              className="px-3 py-1.5 rounded border border-[var(--color-cardBorder)] text-sm hover:bg-[var(--color-hover)] text-[var(--color-text)]"
-            >
+            <button onClick={() => setWeekOffset(0)} className="px-3 py-1.5 rounded border border-[var(--color-cardBorder)] text-sm hover:bg-[var(--color-hover)] text-[var(--color-text)]">
               Esta semana
             </button>
-            <button
-              onClick={() => setWeekOffset(o => o + 1)}
-              className="px-3 py-1.5 rounded border border-[var(--color-cardBorder)] text-sm hover:bg-[var(--color-hover)] text-[var(--color-text)]"
-            >
+            <button onClick={() => setWeekOffset(o => o + 1)} className="px-3 py-1.5 rounded border border-[var(--color-cardBorder)] text-sm hover:bg-[var(--color-hover)] text-[var(--color-text)]">
               Siguiente →
             </button>
             <Button onClick={handleDownload} disabled={isLoading || downloadStatus === 'downloading'} variant="secondary" size="sm">
@@ -409,15 +412,8 @@ export default function WeeklyPreview() {
         {!isLoading && (
           <div
             ref={previewRef}
-            style={{
-              backgroundColor: '#1a1a2e',
-              borderRadius: '12px',
-              padding: '20px 16px 16px',
-              fontFamily: 'system-ui, sans-serif',
-              minWidth: '640px',
-            }}
+            style={{ backgroundColor: '#1a1a2e', borderRadius: '12px', padding: '20px 16px 16px', fontFamily: 'system-ui, sans-serif', minWidth: '640px' }}
           >
-            {/* Título */}
             <div style={{ marginBottom: '16px' }}>
               <div style={{ color: '#c084fc', fontWeight: 800, fontSize: '18px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Club Dreadnought
@@ -427,24 +423,11 @@ export default function WeeklyPreview() {
               </div>
             </div>
 
-            {/* Grid principal */}
-            <div style={{ display: 'flex', gap: '0' }}>
+            <div style={{ display: 'flex' }}>
               {/* Columna de horas */}
               <div style={{ width: '44px', flexShrink: 0, paddingTop: '36px' }}>
                 {hours.map(h => (
-                  <div
-                    key={h}
-                    style={{
-                      height: `${HOUR_HEIGHT}px`,
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      paddingTop: '2px',
-                      color: '#94a3b8',
-                      fontSize: '10px',
-                      justifyContent: 'flex-end',
-                      paddingRight: '8px',
-                    }}
-                  >
+                  <div key={h} style={{ height: `${HOUR_HEIGHT}px`, display: 'flex', alignItems: 'flex-start', paddingTop: '2px', color: '#94a3b8', fontSize: '10px', justifyContent: 'flex-end', paddingRight: '8px' }}>
                     {formatHour(h * 60)}
                   </div>
                 ))}
@@ -453,53 +436,26 @@ export default function WeeklyPreview() {
               {/* Columnas de días */}
               {weekDays.map((day, i) => {
                 const blocks = allDayBlocks[i].blocks;
+                const gaps = closedGapsPerDay[i];
                 const isToday = day.toDateString() === new Date().toDateString();
-                const closedHours = closedHoursPerDay[i];
                 return (
                   <div key={i} style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #2d2d44' }}>
-                    {/* Header del día */}
                     <div style={{ textAlign: 'center', paddingBottom: '8px', borderBottom: '1px solid #2d2d44' }}>
                       <div style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         {DAY_NAMES[i]}
                       </div>
-                      <div
-                        style={{
-                          color: isToday ? '#c084fc' : '#e2e8f0',
-                          fontWeight: isToday ? 700 : 500,
-                          fontSize: '15px',
-                          width: '26px',
-                          height: '26px',
-                          lineHeight: '26px',
-                          borderRadius: '50%',
-                          background: isToday ? 'rgba(192,132,252,0.15)' : 'transparent',
-                          margin: '2px auto 0',
-                          textAlign: 'center',
-                        }}
-                      >
+                      <div style={{ color: isToday ? '#c084fc' : '#e2e8f0', fontWeight: isToday ? 700 : 500, fontSize: '15px', width: '26px', height: '26px', lineHeight: '26px', borderRadius: '50%', background: isToday ? 'rgba(192,132,252,0.15)' : 'transparent', margin: '2px auto 0', textAlign: 'center' }}>
                         {day.getDate()}
                       </div>
                     </div>
 
-                    {/* Timeline */}
                     <div style={{ position: 'relative', height: `${totalHeight}px` }}>
-                      {/* Líneas de hora */}
                       {hours.map(h => (
-                        <div
-                          key={h}
-                          style={{
-                            position: 'absolute',
-                            top: `${(h - START_HOUR) * HOUR_HEIGHT}px`,
-                            left: 0,
-                            right: 0,
-                            borderTop: '1px solid #2d2d44',
-                          }}
-                        />
+                        <div key={h} style={{ position: 'absolute', top: `${(h - START_HOUR) * HOUR_HEIGHT}px`, left: 0, right: 0, borderTop: '1px solid #2d2d44' }} />
                       ))}
-                      {/* Bloque "Club cerrado" */}
-                      {closedHours > 0 && (
-                        <ClosedBlock hoursUntilFirst={closedHours} />
-                      )}
-                      {/* Bloques de eventos */}
+                      {gaps.map((gap, gi) => (
+                        <ClosedBlock key={gi} gap={gap} />
+                      ))}
                       {blocks.map(block => (
                         <EventBlockView key={block.event.id} block={block} />
                       ))}
@@ -519,13 +475,10 @@ export default function WeeklyPreview() {
                   </span>
                 </div>
               ))}
-              <div style={{ marginLeft: 'auto', color: '#4a4a6a', fontSize: '10px' }}>
-                clubdreadnought.com
-              </div>
+              <div style={{ marginLeft: 'auto', color: '#4a4a6a', fontSize: '10px' }}>clubdreadnought.com</div>
             </div>
 
-            {/* Índice de partidas simultáneas (solo si hay) */}
-            <TruncatedIndex allBlocks={allDayBlocks} />
+            <EventIndex allBlocks={allDayBlocks} />
           </div>
         )}
       </div>
