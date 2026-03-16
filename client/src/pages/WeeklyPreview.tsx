@@ -12,10 +12,10 @@ const HOUR_HEIGHT = 56; // px por hora
 const START_HOUR = 9;
 const END_HOUR = 24;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
+const CLOSED_GAP_HOURS = 2; // mínimo de horas libres al inicio para mostrar "Club cerrado"
 
 const DAY_NAMES = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
 
-// Colores por tipo de evento
 const EVENT_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   PARTIDA: { bg: '#7c3aed', border: '#6d28d9', text: '#ffffff' },
   TORNEO:  { bg: '#b91c1c', border: '#991b1b', text: '#ffffff' },
@@ -48,7 +48,6 @@ interface EventBlock {
 }
 
 function layoutEventsForDay(events: Event[]): EventBlock[] {
-  // Ordenar por hora de inicio
   const sorted = [...events].sort((a, b) => {
     const aStart = (a.startHour ?? 0) * 60 + (a.startMinute ?? 0);
     const bStart = (b.startHour ?? 0) * 60 + (b.startMinute ?? 0);
@@ -63,14 +62,11 @@ function layoutEventsForDay(events: Event[]): EventBlock[] {
     totalColumns: 1,
   }));
 
-  // Detectar solapamientos simples y asignar columnas
   for (let i = 0; i < blocks.length; i++) {
     const usedCols = new Set<number>();
     for (let j = 0; j < i; j++) {
       const aEnd = blocks[j].startMinutes + blocks[j].durationMinutes;
-      const bEnd = blocks[i].startMinutes + blocks[i].durationMinutes;
-      const overlap =
-        blocks[i].startMinutes < aEnd && bEnd > blocks[j].startMinutes;
+      const overlap = blocks[i].startMinutes < aEnd;
       if (overlap) usedCols.add(blocks[j].column);
     }
     let col = 0;
@@ -78,11 +74,30 @@ function layoutEventsForDay(events: Event[]): EventBlock[] {
     blocks[i].column = col;
   }
 
-  // Calcular totalColumns por grupo de solapamiento
-  const maxCols = blocks.reduce((m, b) => Math.max(m, b.column + 1), 1);
-  blocks.forEach(b => { b.totalColumns = maxCols; });
+  // Calcular totalColumns por grupo de solapamiento real
+  // Para cada bloque, buscar cuántos se solapan simultáneamente con él
+  for (let i = 0; i < blocks.length; i++) {
+    let maxConcurrent = 1;
+    for (let j = 0; j < blocks.length; j++) {
+      if (i === j) continue;
+      const iEnd = blocks[i].startMinutes + blocks[i].durationMinutes;
+      const jEnd = blocks[j].startMinutes + blocks[j].durationMinutes;
+      const overlap = blocks[i].startMinutes < jEnd && blocks[j].startMinutes < iEnd;
+      if (overlap) maxConcurrent = Math.max(maxConcurrent, blocks[j].column + 1);
+    }
+    blocks[i].totalColumns = Math.max(blocks[i].column + 1, maxConcurrent);
+  }
 
   return blocks;
+}
+
+function getTimeStr(event: Event, durationMinutes: number): string {
+  const startH = event.startHour ?? 0;
+  const startM = event.startMinute ?? 0;
+  const endTotalMin = startH * 60 + startM + durationMinutes;
+  const endH = Math.floor(endTotalMin / 60);
+  const endM = endTotalMin % 60;
+  return `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')} – ${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
 }
 
 function EventBlockView({ block }: { block: EventBlock }) {
@@ -93,13 +108,7 @@ function EventBlockView({ block }: { block: EventBlock }) {
   const height = Math.max((durationMinutes / 60) * HOUR_HEIGHT, 20);
   const widthPct = 100 / totalColumns;
   const leftPct = column * widthPct;
-
-  const startH = event.startHour ?? 0;
-  const startM = event.startMinute ?? 0;
-  const endTotalMin = startH * 60 + startM + durationMinutes;
-  const endH = Math.floor(endTotalMin / 60);
-  const endM = endTotalMin % 60;
-  const timeStr = `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')} – ${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+  const timeStr = getTimeStr(event, durationMinutes);
 
   return (
     <div
@@ -107,13 +116,13 @@ function EventBlockView({ block }: { block: EventBlock }) {
         position: 'absolute',
         top: `${top}px`,
         height: `${height}px`,
-        left: `${leftPct + 1}%`,
-        width: `${widthPct - 2}%`,
+        left: `${leftPct + 0.5}%`,
+        width: `${widthPct - 1}%`,
         backgroundColor: colors.bg,
         borderLeft: `3px solid ${colors.border}`,
         color: colors.text,
-        borderRadius: '5px',
-        padding: '3px 5px',
+        borderRadius: '4px',
+        padding: '3px 4px',
         overflow: 'hidden',
         boxSizing: 'border-box',
         fontSize: '11px',
@@ -131,6 +140,110 @@ function EventBlockView({ block }: { block: EventBlock }) {
           {event.gameName}
         </div>
       )}
+    </div>
+  );
+}
+
+// Bloque "Club cerrado" que ocupa las horas vacías al inicio del día
+function ClosedBlock({ hoursUntilFirst }: { hoursUntilFirst: number }) {
+  const height = hoursUntilFirst * HOUR_HEIGHT;
+  const startLabel = `${String(START_HOUR).padStart(2, '0')}:00`;
+  const endH = START_HOUR + hoursUntilFirst;
+  const endLabel = `${String(endH).padStart(2, '0')}:00`;
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: '1%',
+        width: '98%',
+        height: `${height}px`,
+        backgroundColor: 'rgba(15, 15, 30, 0.7)',
+        border: '1px dashed #3d3d5c',
+        borderRadius: '4px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div style={{ color: '#4a4a6a', fontSize: '10px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        Club cerrado
+      </div>
+      {height >= 40 && (
+        <div style={{ color: '#3d3d5c', fontSize: '9px', marginTop: '2px' }}>
+          {startLabel} – {endLabel}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Sección de índice de eventos truncados (los que tienen totalColumns >= 2)
+function TruncatedIndex({ allBlocks }: { allBlocks: { day: Date; blocks: EventBlock[] }[] }) {
+  // Recoger eventos que se muestran en columnas (potencialmente cortados)
+  const truncated: { day: Date; block: EventBlock }[] = [];
+  for (const { day, blocks } of allBlocks) {
+    for (const block of blocks) {
+      if (block.totalColumns >= 2) {
+        truncated.push({ day, block });
+      }
+    }
+  }
+
+  if (truncated.length === 0) return null;
+
+  // Agrupar por día
+  const byDay: Map<string, { day: Date; blocks: EventBlock[] }> = new Map();
+  for (const { day, block } of truncated) {
+    const key = day.toDateString();
+    if (!byDay.has(key)) byDay.set(key, { day, blocks: [] });
+    byDay.get(key)!.blocks.push(block);
+  }
+
+  return (
+    <div
+      style={{
+        marginTop: '12px',
+        paddingTop: '12px',
+        borderTop: '1px solid #2d2d44',
+      }}
+    >
+      <div style={{ color: '#94a3b8', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+        Detalle de partidas simultáneas
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+        {Array.from(byDay.values()).map(({ day, blocks }) => (
+          <div key={day.toDateString()} style={{ minWidth: '140px' }}>
+            <div style={{ color: '#c084fc', fontSize: '10px', fontWeight: 700, marginBottom: '4px', textTransform: 'capitalize' }}>
+              {new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric' }).format(day)}
+            </div>
+            {blocks.map(block => {
+              const colors = EVENT_COLORS[block.event.type] ?? EVENT_COLORS.OTROS;
+              const timeStr = getTimeStr(block.event, block.durationMinutes);
+              return (
+                <div
+                  key={block.event.id}
+                  style={{ display: 'flex', alignItems: 'flex-start', gap: '5px', marginBottom: '4px' }}
+                >
+                  <div style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: colors.bg, flexShrink: 0, marginTop: '2px' }} />
+                  <div>
+                    <div style={{ color: '#e2e8f0', fontSize: '10px', fontWeight: 600, lineHeight: 1.2 }}>
+                      {block.event.title}
+                    </div>
+                    <div style={{ color: '#94a3b8', fontSize: '9px' }}>{timeStr}</div>
+                    {block.event.gameName && (
+                      <div style={{ color: '#64748b', fontSize: '9px' }}>{block.event.gameName}</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -178,13 +291,32 @@ export default function WeeklyPreview() {
 
   const events = (data?.events ?? []).filter(e => e.status !== 'CANCELLED');
 
-  // Agrupar eventos por día
   const eventsByDay = useMemo(() => {
     return weekDays.map(day => {
       const key = day.toDateString();
       return events.filter(e => new Date(e.date).toDateString() === key);
     });
   }, [events, weekDays]);
+
+  // Calcular bloques de layout para cada día (para la leyenda de truncados)
+  const allDayBlocks = useMemo(() => {
+    return weekDays.map((day, i) => ({
+      day,
+      blocks: layoutEventsForDay(eventsByDay[i]),
+    }));
+  }, [weekDays, eventsByDay]);
+
+  // Horas libres al inicio de cada día (para "Club cerrado")
+  const closedHoursPerDay = useMemo(() => {
+    return eventsByDay.map(dayEvents => {
+      if (dayEvents.length === 0) return 0; // sin eventos → no mostrar
+      const firstEventHour = Math.min(
+        ...dayEvents.map(e => e.startHour ?? START_HOUR)
+      );
+      const gapHours = firstEventHour - START_HOUR;
+      return gapHours >= CLOSED_GAP_HOURS ? gapHours : 0;
+    });
+  }, [eventsByDay]);
 
   async function captureImage(): Promise<string> {
     if (!previewRef.current) throw new Error('No ref');
@@ -239,7 +371,6 @@ export default function WeeklyPreview() {
             <p className="text-sm text-[var(--color-textSecondary)] mt-1">{weekLabel}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Navegación de semanas */}
             <button
               onClick={() => setWeekOffset(o => o - 1)}
               className="px-3 py-1.5 rounded border border-[var(--color-cardBorder)] text-sm hover:bg-[var(--color-hover)] text-[var(--color-text)]"
@@ -258,8 +389,6 @@ export default function WeeklyPreview() {
             >
               Siguiente →
             </button>
-
-            {/* Acciones de exportación */}
             <Button onClick={handleDownload} disabled={isLoading || downloadStatus === 'downloading'} variant="secondary" size="sm">
               {downloadStatus === 'downloading' ? 'Generando...' : downloadStatus === 'done' ? 'Descargado' : 'Descargar PNG'}
             </Button>
@@ -276,7 +405,6 @@ export default function WeeklyPreview() {
         )}
 
         {!isLoading && (
-          /* Este div es el que se captura */
           <div
             ref={previewRef}
             style={{
@@ -287,7 +415,7 @@ export default function WeeklyPreview() {
               minWidth: '640px',
             }}
           >
-            {/* Título dentro de la imagen */}
+            {/* Título */}
             <div style={{ marginBottom: '16px' }}>
               <div style={{ color: '#c084fc', fontWeight: 800, fontSize: '18px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Club Dreadnought
@@ -322,18 +450,13 @@ export default function WeeklyPreview() {
 
               {/* Columnas de días */}
               {weekDays.map((day, i) => {
-                const blocks = layoutEventsForDay(eventsByDay[i]);
+                const blocks = allDayBlocks[i].blocks;
                 const isToday = day.toDateString() === new Date().toDateString();
+                const closedHours = closedHoursPerDay[i];
                 return (
                   <div key={i} style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #2d2d44' }}>
                     {/* Header del día */}
-                    <div
-                      style={{
-                        textAlign: 'center',
-                        paddingBottom: '8px',
-                        borderBottom: '1px solid #2d2d44',
-                      }}
-                    >
+                    <div style={{ textAlign: 'center', paddingBottom: '8px', borderBottom: '1px solid #2d2d44' }}>
                       <div style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         {DAY_NAMES[i]}
                       </div>
@@ -370,6 +493,10 @@ export default function WeeklyPreview() {
                           }}
                         />
                       ))}
+                      {/* Bloque "Club cerrado" */}
+                      {closedHours > 0 && (
+                        <ClosedBlock hoursUntilFirst={closedHours} />
+                      )}
                       {/* Bloques de eventos */}
                       {blocks.map(block => (
                         <EventBlockView key={block.event.id} block={block} />
@@ -380,7 +507,7 @@ export default function WeeklyPreview() {
               })}
             </div>
 
-            {/* Leyenda */}
+            {/* Leyenda de tipos */}
             <div style={{ display: 'flex', gap: '16px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #2d2d44' }}>
               {Object.entries(EVENT_COLORS).map(([type, colors]) => (
                 <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -394,6 +521,9 @@ export default function WeeklyPreview() {
                 clubdreadnought.com
               </div>
             </div>
+
+            {/* Índice de partidas simultáneas (solo si hay) */}
+            <TruncatedIndex allBlocks={allDayBlocks} />
           </div>
         )}
       </div>
