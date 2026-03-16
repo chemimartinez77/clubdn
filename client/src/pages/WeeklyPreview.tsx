@@ -5,22 +5,32 @@ import { toPng } from 'html-to-image';
 import Layout from '../components/layout/Layout';
 import Button from '../components/ui/Button';
 import { api } from '../api/axios';
+import { useTheme } from '../hooks/useTheme';
 import type { Event, EventsResponse } from '../types/event';
 import type { ApiResponse } from '../types/auth';
+import type { ThemeColors } from '../config/themes';
 
-const HOUR_HEIGHT = 56; // px por hora
+const HOUR_HEIGHT = 56;
 const START_HOUR = 9;
-const END_HOUR = 28; // 28 = 4:00 AM del día siguiente
+const END_HOUR = 28; // 4:00 AM del día siguiente
 const TOTAL_HOURS = END_HOUR - START_HOUR;
-const CLOSED_GAP_MINUTES = 60; // hueco mínimo (minutos) para mostrar bloque "Club cerrado"
+const CLOSED_GAP_MINUTES = 60;
 
 const DAY_NAMES = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
 
-const EVENT_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  PARTIDA: { bg: '#7c3aed', border: '#6d28d9', text: '#ffffff' },
-  TORNEO:  { bg: '#b91c1c', border: '#991b1b', text: '#ffffff' },
-  OTROS:   { bg: '#0369a1', border: '#075985', text: '#ffffff' },
-};
+// Mezcla un color hex con blanco/negro según amount (0-1)
+function hexMix(hex: string, target: string, amount: number): string {
+  const parse = (h: string) => {
+    const c = h.replace('#', '');
+    return [parseInt(c.slice(0, 2), 16), parseInt(c.slice(2, 4), 16), parseInt(c.slice(4, 6), 16)];
+  };
+  const [r1, g1, b1] = parse(hex);
+  const [r2, g2, b2] = parse(target);
+  const r = Math.round(r1 + (r2 - r1) * amount);
+  const g = Math.round(g1 + (g2 - g1) * amount);
+  const b = Math.round(b1 + (b2 - b1) * amount);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
 
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
@@ -41,15 +51,14 @@ function getWeekDays(weekStart: Date): Date[] {
 
 interface EventBlock {
   event: Event;
-  startMinutes: number; // minutos desde START_HOUR
+  startMinutes: number;
   durationMinutes: number;
   column: number;
   totalColumns: number;
 }
 
-// Intervalo libre donde no hay ningún evento activo
 interface ClosedGap {
-  startMinutes: number; // minutos desde START_HOUR
+  startMinutes: number;
   endMinutes: number;
 }
 
@@ -72,8 +81,7 @@ function layoutEventsForDay(events: Event[]): EventBlock[] {
     const usedCols = new Set<number>();
     for (let j = 0; j < i; j++) {
       const aEnd = blocks[j].startMinutes + blocks[j].durationMinutes;
-      const overlap = blocks[i].startMinutes < aEnd;
-      if (overlap) usedCols.add(blocks[j].column);
+      if (blocks[i].startMinutes < aEnd) usedCols.add(blocks[j].column);
     }
     let col = 0;
     while (usedCols.has(col)) col++;
@@ -86,8 +94,9 @@ function layoutEventsForDay(events: Event[]): EventBlock[] {
       if (i === j) continue;
       const iEnd = blocks[i].startMinutes + blocks[i].durationMinutes;
       const jEnd = blocks[j].startMinutes + blocks[j].durationMinutes;
-      const overlap = blocks[i].startMinutes < jEnd && blocks[j].startMinutes < iEnd;
-      if (overlap) maxConcurrent = Math.max(maxConcurrent, blocks[j].column + 1);
+      if (blocks[i].startMinutes < jEnd && blocks[j].startMinutes < iEnd) {
+        maxConcurrent = Math.max(maxConcurrent, blocks[j].column + 1);
+      }
     }
     blocks[i].totalColumns = Math.max(blocks[i].column + 1, maxConcurrent);
   }
@@ -95,23 +104,16 @@ function layoutEventsForDay(events: Event[]): EventBlock[] {
   return blocks;
 }
 
-// Calcula los intervalos del día donde no hay ningún evento activo
 function getClosedGaps(events: Event[]): ClosedGap[] {
   const totalMinutes = TOTAL_HOURS * 60;
+  if (events.length === 0) return [{ startMinutes: 0, endMinutes: totalMinutes }];
 
-  if (events.length === 0) {
-    return [{ startMinutes: 0, endMinutes: totalMinutes }];
-  }
-
-  // Construir una línea de tiempo de "ocupado" por minuto usando intervalos
-  // Cada evento ocupa [startMin, endMin) en minutos desde START_HOUR
   const occupied: [number, number][] = events.map(e => {
     const start = ((e.startHour ?? START_HOUR) - START_HOUR) * 60 + (e.startMinute ?? 0);
     const dur = (e.durationHours ?? 2) * 60 + (e.durationMinutes ?? 0);
     return [Math.max(0, start), Math.min(totalMinutes, start + dur)];
   });
 
-  // Fusionar intervalos solapados para obtener los rangos realmente ocupados
   occupied.sort((a, b) => a[0] - b[0]);
   const merged: [number, number][] = [];
   for (const [s, e] of occupied) {
@@ -122,19 +124,13 @@ function getClosedGaps(events: Event[]): ClosedGap[] {
     }
   }
 
-  // Los huecos son los intervalos entre los rangos ocupados (y al principio/final)
   const gaps: ClosedGap[] = [];
   let cursor = 0;
   for (const [s, e] of merged) {
-    if (s - cursor >= CLOSED_GAP_MINUTES) {
-      gaps.push({ startMinutes: cursor, endMinutes: s });
-    }
+    if (s - cursor >= CLOSED_GAP_MINUTES) gaps.push({ startMinutes: cursor, endMinutes: s });
     cursor = e;
   }
-  if (totalMinutes - cursor >= CLOSED_GAP_MINUTES) {
-    gaps.push({ startMinutes: cursor, endMinutes: totalMinutes });
-  }
-
+  if (totalMinutes - cursor >= CLOSED_GAP_MINUTES) gaps.push({ startMinutes: cursor, endMinutes: totalMinutes });
   return gaps;
 }
 
@@ -148,18 +144,24 @@ function getTimeStr(event: Event, durationMinutes: number): string {
   const startH = event.startHour ?? 0;
   const startM = event.startMinute ?? 0;
   const startTotalMin = startH * 60 + startM;
-  const endTotalMin = startTotalMin + durationMinutes;
-  return `${formatHour(startTotalMin)} – ${formatHour(endTotalMin)}`;
+  return `${formatHour(startTotalMin)} – ${formatHour(startTotalMin + durationMinutes)}`;
 }
 
-function EventBlockView({ block }: { block: EventBlock }) {
+function EventBlockView({ block, colors }: { block: EventBlock; colors: ThemeColors }) {
   const { event, startMinutes, durationMinutes, column, totalColumns } = block;
-  const colors = EVENT_COLORS[event.type] ?? EVENT_COLORS.OTROS;
+  const hasSocio = event.hasSocioRegistered;
+
+  // Con socio: color primary del tema. Sin socio: versión apagada mezclada con el fondo
+  const bg = hasSocio
+    ? colors.primary
+    : hexMix(colors.primary, colors.background, 0.55);
+  const border = hasSocio
+    ? colors.primaryDark
+    : hexMix(colors.primaryDark, colors.background, 0.55);
 
   const top = (startMinutes / 60) * HOUR_HEIGHT;
   const height = Math.max((durationMinutes / 60) * HOUR_HEIGHT, 20);
   const widthPct = 100 / totalColumns;
-  const leftPct = column * widthPct;
   const timeStr = getTimeStr(event, durationMinutes);
 
   return (
@@ -168,11 +170,11 @@ function EventBlockView({ block }: { block: EventBlock }) {
         position: 'absolute',
         top: `${top}px`,
         height: `${height}px`,
-        left: `${leftPct + 0.5}%`,
+        left: `${column * widthPct + 0.5}%`,
         width: `${widthPct - 1}%`,
-        backgroundColor: colors.bg,
-        borderLeft: `3px solid ${colors.border}`,
-        color: colors.text,
+        backgroundColor: bg,
+        borderLeft: `3px solid ${border}`,
+        color: '#ffffff',
         borderRadius: '4px',
         padding: '3px 4px',
         overflow: 'hidden',
@@ -196,11 +198,12 @@ function EventBlockView({ block }: { block: EventBlock }) {
   );
 }
 
-function ClosedBlock({ gap }: { gap: ClosedGap }) {
+function ClosedBlock({ gap, colors }: { gap: ClosedGap; colors: ThemeColors }) {
   const top = (gap.startMinutes / 60) * HOUR_HEIGHT;
   const height = ((gap.endMinutes - gap.startMinutes) / 60) * HOUR_HEIGHT;
   const startLabel = formatHour(START_HOUR * 60 + gap.startMinutes);
   const endLabel = formatHour(START_HOUR * 60 + gap.endMinutes);
+  const borderColor = hexMix(colors.cardBorder, colors.background, 0.3);
 
   return (
     <div
@@ -210,8 +213,8 @@ function ClosedBlock({ gap }: { gap: ClosedGap }) {
         left: '1%',
         width: '98%',
         height: `${height}px`,
-        backgroundColor: 'rgba(15, 15, 30, 0.7)',
-        border: '1px dashed #3d3d5c',
+        backgroundColor: hexMix(colors.background, '#000000', 0.15),
+        border: `1px dashed ${borderColor}`,
         borderRadius: '4px',
         display: 'flex',
         flexDirection: 'column',
@@ -220,11 +223,11 @@ function ClosedBlock({ gap }: { gap: ClosedGap }) {
         boxSizing: 'border-box',
       }}
     >
-      <div style={{ color: '#4a4a6a', fontSize: '10px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+      <div style={{ color: borderColor, fontSize: '10px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
         Club cerrado
       </div>
       {height >= 40 && (
-        <div style={{ color: '#3d3d5c', fontSize: '9px', marginTop: '2px' }}>
+        <div style={{ color: hexMix(colors.cardBorder, colors.background, 0.5), fontSize: '9px', marginTop: '2px' }}>
           {startLabel} – {endLabel}
         </div>
       )}
@@ -232,39 +235,41 @@ function ClosedBlock({ gap }: { gap: ClosedGap }) {
   );
 }
 
-function EventIndex({ allBlocks }: { allBlocks: { day: Date; blocks: EventBlock[] }[] }) {
+function EventIndex({ allBlocks, colors }: { allBlocks: { day: Date; blocks: EventBlock[] }[]; colors: ThemeColors }) {
   const byDay: Map<string, { day: Date; blocks: EventBlock[] }> = new Map();
   for (const { day, blocks } of allBlocks) {
     if (blocks.length === 0) continue;
     byDay.set(day.toDateString(), { day, blocks });
   }
-
   if (byDay.size === 0) return null;
 
   return (
-    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #2d2d44' }}>
-      <div style={{ color: '#94a3b8', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${colors.cardBorder}` }}>
+      <div style={{ color: colors.textSecondary, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
         Detalle de eventos
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
         {Array.from(byDay.values()).map(({ day, blocks }) => (
           <div key={day.toDateString()} style={{ minWidth: '140px' }}>
-            <div style={{ color: '#c084fc', fontSize: '10px', fontWeight: 700, marginBottom: '4px', textTransform: 'capitalize' }}>
+            <div style={{ color: colors.accent, fontSize: '10px', fontWeight: 700, marginBottom: '4px', textTransform: 'capitalize' }}>
               {new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric' }).format(day)}
             </div>
             {blocks.map(block => {
-              const colors = EVENT_COLORS[block.event.type] ?? EVENT_COLORS.OTROS;
+              const hasSocio = block.event.hasSocioRegistered;
+              const dotColor = hasSocio ? colors.primary : hexMix(colors.primary, colors.background, 0.55);
               const timeStr = getTimeStr(block.event, block.durationMinutes);
               return (
                 <div key={block.event.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '5px', marginBottom: '4px' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: colors.bg, flexShrink: 0, marginTop: '2px' }} />
+                  <div style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: dotColor, flexShrink: 0, marginTop: '2px' }} />
                   <div>
-                    <div style={{ color: '#e2e8f0', fontSize: '10px', fontWeight: 600, lineHeight: 1.2 }}>
+                    <div style={{ color: colors.text, fontSize: '10px', fontWeight: 600, lineHeight: 1.2 }}>
                       {block.event.title}
                     </div>
-                    <div style={{ color: '#94a3b8', fontSize: '9px' }}>{timeStr}</div>
+                    <div style={{ color: colors.textSecondary, fontSize: '9px' }}>{timeStr}</div>
                     {block.event.gameName && block.event.gameName !== block.event.title && (
-                      <div style={{ color: '#64748b', fontSize: '9px' }}>{block.event.gameName}</div>
+                      <div style={{ color: hexMix(colors.textSecondary, colors.background, 0.3), fontSize: '9px' }}>
+                        {block.event.gameName}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -278,6 +283,9 @@ function EventIndex({ allBlocks }: { allBlocks: { day: Date; blocks: EventBlock[
 }
 
 export default function WeeklyPreview() {
+  const { theme, themeMode } = useTheme();
+  const colors = theme.colors[themeMode];
+
   const [weekOffset, setWeekOffset] = useState(0);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'done' | 'error'>('idle');
   const [downloadStatus, setDownloadStatus] = useState<'idle' | 'downloading' | 'done'>('idle');
@@ -340,7 +348,7 @@ export default function WeeklyPreview() {
 
   async function captureImage(): Promise<string> {
     if (!previewRef.current) throw new Error('No ref');
-    return toPng(previewRef.current, { pixelRatio: 2, backgroundColor: '#1a1a2e' });
+    return toPng(previewRef.current, { pixelRatio: 2, backgroundColor: colors.background });
   }
 
   async function handleDownload() {
@@ -375,6 +383,7 @@ export default function WeeklyPreview() {
 
   const hours = Array.from({ length: TOTAL_HOURS }, (_, i) => START_HOUR + i);
   const totalHeight = TOTAL_HOURS * HOUR_HEIGHT;
+  const gridBorder = hexMix(colors.cardBorder, colors.background, 0.3);
 
   return (
     <Layout>
@@ -412,22 +421,30 @@ export default function WeeklyPreview() {
         {!isLoading && (
           <div
             ref={previewRef}
-            style={{ backgroundColor: '#1a1a2e', borderRadius: '12px', padding: '20px 16px 16px', fontFamily: 'system-ui, sans-serif', minWidth: '640px' }}
+            style={{
+              backgroundColor: colors.background,
+              borderRadius: '12px',
+              padding: '20px 16px 16px',
+              fontFamily: 'system-ui, sans-serif',
+              minWidth: '640px',
+            }}
           >
+            {/* Título */}
             <div style={{ marginBottom: '16px' }}>
-              <div style={{ color: '#c084fc', fontWeight: 800, fontSize: '18px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              <div style={{ color: colors.accent, fontWeight: 800, fontSize: '18px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Club Dreadnought
               </div>
-              <div style={{ color: '#e2e8f0', fontSize: '13px', marginTop: '2px' }}>
+              <div style={{ color: colors.text, fontSize: '13px', marginTop: '2px', opacity: 0.7 }}>
                 Previsión semanal · {weekLabel}
               </div>
             </div>
 
+            {/* Grid */}
             <div style={{ display: 'flex' }}>
               {/* Columna de horas */}
               <div style={{ width: '44px', flexShrink: 0, paddingTop: '36px' }}>
                 {hours.map(h => (
-                  <div key={h} style={{ height: `${HOUR_HEIGHT}px`, display: 'flex', alignItems: 'flex-start', paddingTop: '2px', color: '#94a3b8', fontSize: '10px', justifyContent: 'flex-end', paddingRight: '8px' }}>
+                  <div key={h} style={{ height: `${HOUR_HEIGHT}px`, display: 'flex', alignItems: 'flex-start', paddingTop: '2px', color: colors.textSecondary, fontSize: '10px', justifyContent: 'flex-end', paddingRight: '8px', opacity: 0.6 }}>
                     {formatHour(h * 60)}
                   </div>
                 ))}
@@ -439,25 +456,38 @@ export default function WeeklyPreview() {
                 const gaps = closedGapsPerDay[i];
                 const isToday = day.toDateString() === new Date().toDateString();
                 return (
-                  <div key={i} style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #2d2d44' }}>
-                    <div style={{ textAlign: 'center', paddingBottom: '8px', borderBottom: '1px solid #2d2d44' }}>
-                      <div style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <div key={i} style={{ flex: 1, minWidth: 0, borderLeft: `1px solid ${gridBorder}` }}>
+                    {/* Header del día */}
+                    <div style={{ textAlign: 'center', paddingBottom: '8px', borderBottom: `1px solid ${gridBorder}` }}>
+                      <div style={{ color: colors.textSecondary, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.7 }}>
                         {DAY_NAMES[i]}
                       </div>
-                      <div style={{ color: isToday ? '#c084fc' : '#e2e8f0', fontWeight: isToday ? 700 : 500, fontSize: '15px', width: '26px', height: '26px', lineHeight: '26px', borderRadius: '50%', background: isToday ? 'rgba(192,132,252,0.15)' : 'transparent', margin: '2px auto 0', textAlign: 'center' }}>
+                      <div style={{
+                        color: isToday ? colors.accent : colors.text,
+                        fontWeight: isToday ? 700 : 500,
+                        fontSize: '15px',
+                        width: '26px',
+                        height: '26px',
+                        lineHeight: '26px',
+                        borderRadius: '50%',
+                        background: isToday ? hexMix(colors.accent, colors.background, 0.8) : 'transparent',
+                        margin: '2px auto 0',
+                        textAlign: 'center',
+                      }}>
                         {day.getDate()}
                       </div>
                     </div>
 
+                    {/* Timeline */}
                     <div style={{ position: 'relative', height: `${totalHeight}px` }}>
                       {hours.map(h => (
-                        <div key={h} style={{ position: 'absolute', top: `${(h - START_HOUR) * HOUR_HEIGHT}px`, left: 0, right: 0, borderTop: '1px solid #2d2d44' }} />
+                        <div key={h} style={{ position: 'absolute', top: `${(h - START_HOUR) * HOUR_HEIGHT}px`, left: 0, right: 0, borderTop: `1px solid ${gridBorder}` }} />
                       ))}
                       {gaps.map((gap, gi) => (
-                        <ClosedBlock key={gi} gap={gap} />
+                        <ClosedBlock key={gi} gap={gap} colors={colors} />
                       ))}
                       {blocks.map(block => (
-                        <EventBlockView key={block.event.id} block={block} />
+                        <EventBlockView key={block.event.id} block={block} colors={colors} />
                       ))}
                     </div>
                   </div>
@@ -465,20 +495,22 @@ export default function WeeklyPreview() {
               })}
             </div>
 
-            {/* Leyenda de tipos */}
-            <div style={{ display: 'flex', gap: '16px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #2d2d44' }}>
-              {Object.entries(EVENT_COLORS).map(([type, colors]) => (
-                <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: colors.bg }} />
-                  <span style={{ color: '#94a3b8', fontSize: '11px' }}>
-                    {type === 'PARTIDA' ? 'Partida' : type === 'TORNEO' ? 'Torneo' : 'Evento'}
-                  </span>
-                </div>
-              ))}
-              <div style={{ marginLeft: 'auto', color: '#4a4a6a', fontSize: '10px' }}>clubdreadnought.com</div>
+            {/* Leyenda */}
+            <div style={{ display: 'flex', gap: '16px', marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${gridBorder}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: colors.primary }} />
+                <span style={{ color: colors.textSecondary, fontSize: '11px' }}>Con socio</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: hexMix(colors.primary, colors.background, 0.55) }} />
+                <span style={{ color: colors.textSecondary, fontSize: '11px' }}>Sin socio confirmado</span>
+              </div>
+              <div style={{ marginLeft: 'auto', color: hexMix(colors.textSecondary, colors.background, 0.4), fontSize: '10px' }}>
+                clubdreadnought.com
+              </div>
             </div>
 
-            <EventIndex allBlocks={allDayBlocks} />
+            <EventIndex allBlocks={allDayBlocks} colors={colors} />
           </div>
         )}
       </div>
