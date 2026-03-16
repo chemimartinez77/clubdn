@@ -39,6 +39,7 @@ import AzulGame from './pages/azul/AzulGame';
 import ViernesHub from './pages/viernes/ViernesHub';
 import ViernesGame from './pages/viernes/ViernesGame';
 import CombatZoneComingSoon from './pages/CombatZoneComingSoon';
+import WeeklyPreview from './pages/WeeklyPreview';
 
 // Componente para rutas protegidas
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -206,6 +207,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CreatePartida />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/preview-semanal"
+            element={
+              <ProtectedRoute>
+                <WeeklyPreview />
               </ProtectedRoute>
             }
           />
