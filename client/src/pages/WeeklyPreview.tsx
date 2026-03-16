@@ -263,7 +263,7 @@ function EventIndex({ allBlocks }: { allBlocks: { day: Date; blocks: EventBlock[
                       {block.event.title}
                     </div>
                     <div style={{ color: '#94a3b8', fontSize: '9px' }}>{timeStr}</div>
-                    {block.event.gameName && (
+                    {block.event.gameName && block.event.gameName !== block.event.title && (
                       <div style={{ color: '#64748b', fontSize: '9px' }}>{block.event.gameName}</div>
                     )}
                   </div>
