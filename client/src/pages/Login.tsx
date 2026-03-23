@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { api } from '../api/axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 import { useToast } from '../hooks/useToast';
@@ -37,7 +37,7 @@ export default function Login() {
   const { data: publicConfig } = useQuery({
     queryKey: ['publicConfig'],
     queryFn: async () => {
-      const response = await axios.get<{ success: boolean; data: PublicConfig }>('/api/config/public');
+      const response = await api.get<{ success: boolean; data: PublicConfig }>('/api/config/public');
       return response.data.data;
     },
     staleTime: 5 * 60 * 1000
