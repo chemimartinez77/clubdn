@@ -3,10 +3,13 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 import { useToast } from '../hooks/useToast';
 import { loginSchema, type LoginFormData } from '../lib/validations';
+import type { PublicConfig, LoginParticleStyle } from '../types/config';
 
 // Interfaz para las partículas
 interface Particle {
@@ -30,6 +33,17 @@ export default function Login() {
   const particlesRef = useRef<Particle[]>([]);
   const mouseRef = useRef({ x: 0, y: 0 });
   const animationFrameRef = useRef<number | null>(null);
+
+  const { data: publicConfig } = useQuery({
+    queryKey: ['publicConfig'],
+    queryFn: async () => {
+      const response = await axios.get<{ success: boolean; data: PublicConfig }>('/api/config/public');
+      return response.data.data;
+    },
+    staleTime: 5 * 60 * 1000
+  });
+
+  const particleStyle: LoginParticleStyle = publicConfig?.loginParticleStyle ?? 'white';
 
   const {
     register,
@@ -64,7 +78,6 @@ export default function Login() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Ajustar tamaño del canvas
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -72,16 +85,33 @@ export default function Login() {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Colores neón
-    const neonColors = [
-      '0, 255, 255',   // cian
-      '255, 0, 255',   // magenta
-      '0, 150, 255',   // azul eléctrico
-      '180, 0, 255',   // violeta
-      '0, 255, 150',   // verde neón
-    ];
+    // Paletas según estilo
+    const neonColors = ['0, 255, 255', '255, 0, 255', '0, 150, 255', '180, 0, 255', '0, 255, 150'];
 
-    // Crear partículas iniciales
+    const getThemeColors = (): string[] => {
+      const root = document.documentElement;
+      const primary = getComputedStyle(root).getPropertyValue('--color-primary').trim();
+      const primaryDark = getComputedStyle(root).getPropertyValue('--color-primaryDark').trim();
+      // Convertir hex a rgb
+      const hexToRgb = (hex: string) => {
+        const h = hex.replace('#', '');
+        const r = parseInt(h.substring(0, 2), 16);
+        const g = parseInt(h.substring(2, 4), 16);
+        const b = parseInt(h.substring(4, 6), 16);
+        return `${r}, ${g}, ${b}`;
+      };
+      return [hexToRgb(primary), hexToRgb(primaryDark)];
+    };
+
+    const pickColor = (): string => {
+      if (particleStyle === 'neon') return neonColors[Math.floor(Math.random() * neonColors.length)];
+      if (particleStyle === 'theme') {
+        const themeColors = getThemeColors();
+        return themeColors[Math.floor(Math.random() * themeColors.length)];
+      }
+      return '255, 255, 255'; // white
+    };
+
     const particleCount = 80;
     particlesRef.current = Array.from({ length: particleCount }, () => ({
       x: Math.random() * canvas.width,
@@ -90,80 +120,71 @@ export default function Login() {
       vy: (Math.random() - 0.5) * 0.5,
       targetX: Math.random() * canvas.width,
       targetY: Math.random() * canvas.height,
-      color: neonColors[Math.floor(Math.random() * neonColors.length)]
+      color: pickColor()
     }));
 
-    // Seguir el ratón
     const handleMouseMove = (e: MouseEvent) => {
       mouseRef.current = { x: e.clientX, y: e.clientY };
     };
     window.addEventListener('mousemove', handleMouseMove);
 
-    // Animación
+    const isNeon = particleStyle === 'neon';
+    const fadeBg = isNeon ? 'rgba(5, 0, 20, 0.15)' : 'rgba(0, 0, 0, 0.05)';
+
     const animate = () => {
-      ctx.fillStyle = 'rgba(5, 0, 20, 0.15)';
+      ctx.fillStyle = fadeBg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const particles = particlesRef.current;
       const mouse = mouseRef.current;
 
       particles.forEach((particle, i) => {
-        // Calcular distancia al ratón
         const dx = mouse.x - particle.x;
         const dy = mouse.y - particle.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        // Si está cerca del ratón, alejarse; si está lejos, moverse aleatoriamente
         if (distance < 150) {
           particle.vx -= dx * 0.00005;
           particle.vy -= dy * 0.00005;
         } else {
-          // Movimiento hacia el target con suavidad
           particle.vx += (particle.targetX - particle.x) * 0.0001;
           particle.vy += (particle.targetY - particle.y) * 0.0001;
-
-          // Cambiar target aleatoriamente
           if (Math.random() < 0.01) {
             particle.targetX = Math.random() * canvas.width;
             particle.targetY = Math.random() * canvas.height;
           }
         }
 
-        // Aplicar fricción
         particle.vx *= 0.95;
         particle.vy *= 0.95;
-
-        // Actualizar posición
         particle.x += particle.vx;
         particle.y += particle.vy;
 
-        // Mantener dentro de los límites
         if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
         if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
         particle.x = Math.max(0, Math.min(canvas.width, particle.x));
         particle.y = Math.max(0, Math.min(canvas.height, particle.y));
 
-        // Dibujar partícula con brillo neón
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${particle.color}, 0.9)`;
-        ctx.shadowColor = `rgba(${particle.color}, 1)`;
-        ctx.shadowBlur = 8;
+        ctx.arc(particle.x, particle.y, isNeon ? 2.5 : 2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${particle.color}, ${isNeon ? 0.9 : 0.6})`;
+        if (isNeon) {
+          ctx.shadowColor = `rgba(${particle.color}, 1)`;
+          ctx.shadowBlur = 8;
+        }
         ctx.fill();
-        ctx.shadowBlur = 0;
+        if (isNeon) ctx.shadowBlur = 0;
 
-        // Conectar con partículas cercanas
         for (let j = i + 1; j < particles.length; j++) {
           const other = particles[j];
           const dx2 = other.x - particle.x;
           const dy2 = other.y - particle.y;
           const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-
           if (distance2 < 120) {
             ctx.beginPath();
             ctx.moveTo(particle.x, particle.y);
             ctx.lineTo(other.x, other.y);
-            ctx.strokeStyle = `rgba(${particle.color}, ${0.2 * (1 - distance2 / 120)})`;
+            ctx.strokeStyle = `rgba(${particle.color}, ${(isNeon ? 0.2 : 0.15) * (1 - distance2 / 120)})`;
             ctx.lineWidth = 1;
             ctx.stroke();
           }
@@ -182,7 +203,7 @@ export default function Login() {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, []);
+  }, [particleStyle]);
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
@@ -190,7 +211,11 @@ export default function Login() {
       <canvas
         ref={canvasRef}
         className="absolute inset-0 z-0"
-        style={{ background: 'linear-gradient(to bottom right, #05001a, #0a0028, #000015)' }}
+        style={{
+          background: particleStyle === 'neon'
+            ? 'linear-gradient(to bottom right, #05001a, #0a0028, #000015)'
+            : 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))'
+        }}
       />
 
       {/* Contenido principal */}

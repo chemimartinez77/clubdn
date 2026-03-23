@@ -545,6 +545,9 @@ model ClubConfig {
   inviteMaxGuestYear Int  @default(5)
   inviteAllowSelfValidation Boolean @default(false)
 
+  // Personalización visual
+  loginParticleStyle String @default("white") // "white" | "neon" | "theme"
+
   // Analytics de navegación
   pageViewCollectionStartedAt DateTime? // Fecha desde la que se recogen datos de navegación
 

@@ -85,6 +85,31 @@ export const getClubConfig = async (_req: Request, res: Response) => {
 };
 
 /**
+ * Obtener configuración pública (sin autenticación)
+ */
+export const getPublicConfig = async (_req: Request, res: Response) => {
+  try {
+    const config = await prisma.clubConfig.findUnique({
+      where: { id: 'club_config' },
+      select: { loginParticleStyle: true }
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        loginParticleStyle: config?.loginParticleStyle ?? 'white'
+      }
+    });
+  } catch (error) {
+    console.error('[CONFIG] Error al obtener configuración pública:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener la configuración'
+    });
+  }
+};
+
+/**
  * Actualizar la configuración del club (solo admins)
  */
 export const updateClubConfig = async (req: Request, res: Response) => {
@@ -99,7 +124,8 @@ export const updateClubConfig = async (req: Request, res: Response) => {
       inviteMaxActive,
       inviteMaxMonthly,
       inviteMaxGuestYear,
-      inviteAllowSelfValidation
+      inviteAllowSelfValidation,
+      loginParticleStyle
     } = req.body;
 
     const config = await prisma.clubConfig.upsert({
@@ -114,7 +140,8 @@ export const updateClubConfig = async (req: Request, res: Response) => {
         ...(inviteMaxActive !== undefined && { inviteMaxActive }),
         ...(inviteMaxMonthly !== undefined && { inviteMaxMonthly }),
         ...(inviteMaxGuestYear !== undefined && { inviteMaxGuestYear }),
-        ...(inviteAllowSelfValidation !== undefined && { inviteAllowSelfValidation })
+        ...(inviteAllowSelfValidation !== undefined && { inviteAllowSelfValidation }),
+        ...(loginParticleStyle !== undefined && { loginParticleStyle })
       },
       create: {
         id: 'club_config',
@@ -127,7 +154,8 @@ export const updateClubConfig = async (req: Request, res: Response) => {
         inviteMaxActive: inviteMaxActive ?? 5,
         inviteMaxMonthly: inviteMaxMonthly ?? 10,
         inviteMaxGuestYear: inviteMaxGuestYear ?? 5,
-        inviteAllowSelfValidation: inviteAllowSelfValidation ?? false
+        inviteAllowSelfValidation: inviteAllowSelfValidation ?? false,
+        loginParticleStyle: loginParticleStyle ?? 'white'
       }
     });
 

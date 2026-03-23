@@ -10,6 +10,8 @@ export interface MembershipTypeConfig {
   description: string;
 }
 
+export type LoginParticleStyle = 'white' | 'neon' | 'theme';
+
 export interface ClubConfig {
   id: string;
   clubName: string;
@@ -18,6 +20,7 @@ export interface ClubConfig {
   clubAddress?: string;
   membershipTypes: MembershipTypeConfig[];
   defaultCurrency: string;
+  loginParticleStyle: LoginParticleStyle;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,4 +32,9 @@ export interface ClubConfigUpdate {
   clubAddress?: string;
   membershipTypes?: MembershipTypeConfig[];
   defaultCurrency?: string;
+  loginParticleStyle?: LoginParticleStyle;
+}
+
+export interface PublicConfig {
+  loginParticleStyle: LoginParticleStyle;
 }

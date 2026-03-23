@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import Button from '../../components/ui/Button';
 import { useToast } from '../../hooks/useToast';
 import { api } from '../../api/axios';
-import type { ClubConfig, ClubConfigUpdate, MembershipTypeConfig } from '../../types/config';
+import type { ClubConfig, ClubConfigUpdate, MembershipTypeConfig, LoginParticleStyle } from '../../types/config';
 import type { ApiResponse } from '../../types/auth';
 
 export default function ClubConfigPage() {
@@ -33,7 +33,8 @@ export default function ClubConfigPage() {
         clubEmail: config.clubEmail,
         clubPhone: config.clubPhone,
         clubAddress: config.clubAddress,
-        defaultCurrency: config.defaultCurrency
+        defaultCurrency: config.defaultCurrency,
+        loginParticleStyle: config.loginParticleStyle ?? 'white'
       });
       setMembershipTypes(Array.isArray(config.membershipTypes) ? config.membershipTypes : []);
     }
@@ -215,6 +216,42 @@ export default function ClubConfigPage() {
                   <p className="text-[var(--color-text)] py-2">{config?.clubAddress || '-'}</p>
                 )}
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Personalización visual */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Personalización Visual</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
+                Efecto de partículas en la pantalla de login
+              </label>
+              {isEditing ? (
+                <div className="flex gap-3">
+                  {(['white', 'neon', 'theme'] as LoginParticleStyle[]).map((style) => (
+                    <button
+                      key={style}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, loginParticleStyle: style })}
+                      className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
+                        formData.loginParticleStyle === style
+                          ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                          : 'border-[var(--color-inputBorder)] text-[var(--color-text)] hover:border-[var(--color-primary)]'
+                      }`}
+                    >
+                      {style === 'white' ? 'Blanco' : style === 'neon' ? 'Neón' : 'Tema'}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[var(--color-text)] py-2 capitalize">
+                  {formData.loginParticleStyle === 'white' ? 'Blanco' : formData.loginParticleStyle === 'neon' ? 'Neón' : 'Tema'}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

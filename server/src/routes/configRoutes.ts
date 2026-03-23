@@ -3,11 +3,15 @@ import { Router } from 'express';
 import { authenticate, requireAdmin } from '../middleware/auth';
 import {
   getClubConfig,
+  getPublicConfig,
   updateClubConfig,
   getMembershipTypes
 } from '../controllers/configController';
 
 const router = Router();
+
+// Rutas completamente públicas (sin autenticación)
+router.get('/public', getPublicConfig);
 
 // Rutas públicas (autenticadas)
 router.get('/membership-types', authenticate, getMembershipTypes);

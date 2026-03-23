@@ -1,0 +1,1 @@
+ALTER TABLE "ClubConfig" ADD COLUMN IF NOT EXISTS "loginParticleStyle" TEXT NOT NULL DEFAULT 'white';

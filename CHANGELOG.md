@@ -4,6 +4,26 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-03-23
+
+### ✨ Nuevas funcionalidades
+
+#### Efecto de partículas en el login configurable por superadmin
+- El fondo animado de la pantalla de login ahora soporta tres estilos: **Blanco** (original), **Neón** (cian, magenta, violeta, azul eléctrico y verde con efecto glow), y **Tema** (colores primarios del tema activo del club)
+- El superadmin puede cambiar el estilo desde **Administración → Configuración del Club → Personalización Visual** sin necesidad de despliegue
+- El valor se persiste en base de datos y se sirve a través de un nuevo endpoint público `GET /api/config/public` (sin autenticación, ya que el login no tiene usuario)
+
+**Archivos modificados/creados:**
+- `client/src/pages/Login.tsx` — lógica multiestilo en el canvas, query a `/api/config/public`
+- `client/src/pages/admin/ClubConfig.tsx` — nueva card "Personalización Visual" con selector de 3 estilos
+- `client/src/types/config.ts` — tipos `LoginParticleStyle` y `PublicConfig`
+- `server/src/controllers/configController.ts` — nuevo handler `getPublicConfig`, `updateClubConfig` acepta `loginParticleStyle`
+- `server/src/routes/configRoutes.ts` — ruta pública `GET /config/public`
+- `server/prisma/schema.prisma` — campo `loginParticleStyle String @default("white")` en `ClubConfig`
+- `server/prisma/migrations/20260323000000_add_login_particle_style/migration.sql` — migración aplicada
+
+---
+
 ## 2026-03-13
 
 ### ✨ Nuevas funcionalidades
