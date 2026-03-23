@@ -16,6 +16,7 @@ interface Particle {
   vy: number;
   targetX: number;
   targetY: number;
+  color: string;
 }
 
 export default function Login() {
@@ -71,6 +72,15 @@ export default function Login() {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
+    // Colores neón
+    const neonColors = [
+      '0, 255, 255',   // cian
+      '255, 0, 255',   // magenta
+      '0, 150, 255',   // azul eléctrico
+      '180, 0, 255',   // violeta
+      '0, 255, 150',   // verde neón
+    ];
+
     // Crear partículas iniciales
     const particleCount = 80;
     particlesRef.current = Array.from({ length: particleCount }, () => ({
@@ -79,7 +89,8 @@ export default function Login() {
       vx: (Math.random() - 0.5) * 0.5,
       vy: (Math.random() - 0.5) * 0.5,
       targetX: Math.random() * canvas.width,
-      targetY: Math.random() * canvas.height
+      targetY: Math.random() * canvas.height,
+      color: neonColors[Math.floor(Math.random() * neonColors.length)]
     }));
 
     // Seguir el ratón
@@ -90,7 +101,7 @@ export default function Login() {
 
     // Animación
     const animate = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillStyle = 'rgba(5, 0, 20, 0.15)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const particles = particlesRef.current;
@@ -132,11 +143,14 @@ export default function Login() {
         particle.x = Math.max(0, Math.min(canvas.width, particle.x));
         particle.y = Math.max(0, Math.min(canvas.height, particle.y));
 
-        // Dibujar partícula
+        // Dibujar partícula con brillo neón
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, 2, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.arc(particle.x, particle.y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${particle.color}, 0.9)`;
+        ctx.shadowColor = `rgba(${particle.color}, 1)`;
+        ctx.shadowBlur = 8;
         ctx.fill();
+        ctx.shadowBlur = 0;
 
         // Conectar con partículas cercanas
         for (let j = i + 1; j < particles.length; j++) {
@@ -149,7 +163,7 @@ export default function Login() {
             ctx.beginPath();
             ctx.moveTo(particle.x, particle.y);
             ctx.lineTo(other.x, other.y);
-            ctx.strokeStyle = `rgba(255, 255, 255, ${0.15 * (1 - distance2 / 120)})`;
+            ctx.strokeStyle = `rgba(${particle.color}, ${0.2 * (1 - distance2 / 120)})`;
             ctx.lineWidth = 1;
             ctx.stroke();
           }
@@ -176,7 +190,7 @@ export default function Login() {
       <canvas
         ref={canvasRef}
         className="absolute inset-0 z-0"
-        style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
+        style={{ background: 'linear-gradient(to bottom right, #05001a, #0a0028, #000015)' }}
       />
 
       {/* Contenido principal */}
