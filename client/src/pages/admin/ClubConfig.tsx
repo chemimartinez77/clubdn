@@ -232,7 +232,7 @@ export default function ClubConfigPage() {
               </label>
               {isEditing ? (
                 <div className="flex gap-3">
-                  {(['white', 'neon', 'theme'] as LoginParticleStyle[]).map((style) => (
+                  {(['white', 'neon', 'theme', 'random'] as LoginParticleStyle[]).map((style) => (
                     <button
                       key={style}
                       type="button"
@@ -243,13 +243,13 @@ export default function ClubConfigPage() {
                           : 'border-[var(--color-inputBorder)] text-[var(--color-text)] hover:border-[var(--color-primary)]'
                       }`}
                     >
-                      {style === 'white' ? 'Blanco' : style === 'neon' ? 'Neón' : 'Tema'}
+                      {style === 'white' ? 'Blanco' : style === 'neon' ? 'Neón' : style === 'theme' ? 'Tema' : 'Aleatorio'}
                     </button>
                   ))}
                 </div>
               ) : (
                 <p className="text-[var(--color-text)] py-2 capitalize">
-                  {formData.loginParticleStyle === 'white' ? 'Blanco' : formData.loginParticleStyle === 'neon' ? 'Neón' : 'Tema'}
+                  {formData.loginParticleStyle === 'white' ? 'Blanco' : formData.loginParticleStyle === 'neon' ? 'Neón' : formData.loginParticleStyle === 'theme' ? 'Tema' : 'Aleatorio'}
                 </p>
               )}
             </div>

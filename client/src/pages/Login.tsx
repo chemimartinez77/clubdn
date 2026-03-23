@@ -1,5 +1,5 @@
 // client/src/pages/Login.tsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -43,7 +43,14 @@ export default function Login() {
     staleTime: 5 * 60 * 1000
   });
 
-  const particleStyle: LoginParticleStyle = publicConfig?.loginParticleStyle ?? 'white';
+  const particleStyle = useMemo((): LoginParticleStyle => {
+    const s = publicConfig?.loginParticleStyle ?? 'white';
+    if (s === 'random') {
+      const options: LoginParticleStyle[] = ['white', 'neon', 'theme'];
+      return options[Math.floor(Math.random() * options.length)];
+    }
+    return s;
+  }, [publicConfig?.loginParticleStyle]);
 
   const {
     register,

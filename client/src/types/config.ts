@@ -10,7 +10,7 @@ export interface MembershipTypeConfig {
   description: string;
 }
 
-export type LoginParticleStyle = 'white' | 'neon' | 'theme';
+export type LoginParticleStyle = 'white' | 'neon' | 'theme' | 'random';
 
 export interface ClubConfig {
   id: string;
