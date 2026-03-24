@@ -794,6 +794,35 @@ export default function Members() {
                   </label>
                 </div>
 
+                {/* Fidelidad */}
+                <div className="border-t border-[var(--color-cardBorder)] pt-4 mt-2">
+                  <h4 className="text-sm font-semibold text-[var(--color-text)] mb-3">Fidelidad</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[var(--color-tableRowHover)] rounded-lg p-3">
+                      <p className="text-xs text-[var(--color-textSecondary)] mb-1">Tasa de respuesta</p>
+                      <p className="text-lg font-bold text-[var(--color-text)]">
+                        {memberProfile.member.reliability.responseRate !== null
+                          ? `${memberProfile.member.reliability.responseRate}%`
+                          : '—'}
+                      </p>
+                      <p className="text-xs text-[var(--color-textSecondary)] mt-1">
+                        {memberProfile.member.reliability.organizedAnswered} de {memberProfile.member.reliability.organizedAsked} partidas organizadas confirmadas
+                      </p>
+                    </div>
+                    <div className="bg-[var(--color-tableRowHover)] rounded-lg p-3">
+                      <p className="text-xs text-[var(--color-textSecondary)] mb-1">Tasa de asistencia</p>
+                      <p className="text-lg font-bold text-[var(--color-text)]">
+                        {memberProfile.member.reliability.attendanceRate !== null
+                          ? `${memberProfile.member.reliability.attendanceRate}%`
+                          : '—'}
+                      </p>
+                      <p className="text-xs text-[var(--color-textSecondary)] mt-1">
+                        {memberProfile.member.reliability.confirmedRegistrations} asistencias · {memberProfile.member.reliability.lateCancellations} cancelaciones
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="pt-4 flex justify-end gap-2">
                   <Button
                     variant="outline"

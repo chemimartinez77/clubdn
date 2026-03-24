@@ -26,6 +26,15 @@ export interface MemberProfileInfo {
   imageConsentSocial: boolean;
 }
 
+export interface MemberReliability {
+  responseRate: number | null;      // % eventos organizados donde respondió (null si no hay datos)
+  organizedAsked: number;
+  organizedAnswered: number;
+  attendanceRate: number | null;    // % participaciones confirmadas (null si no hay datos)
+  confirmedRegistrations: number;
+  lateCancellations: number;
+}
+
 export interface MemberProfileDetails {
   id: string;
   name: string;
@@ -35,6 +44,7 @@ export interface MemberProfileDetails {
   fechaBaja: string | null;
   paymentStatus: PaymentStatusType;
   profile: MemberProfileInfo;
+  reliability: MemberReliability;
 }
 
 export interface MemberProfileResponse {

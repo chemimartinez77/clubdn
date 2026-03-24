@@ -290,6 +290,11 @@ model Event {
   cancelledById   String?
   cancelledBy     User?     @relation("EventCancelledBy", fields: [cancelledById], references: [id])
 
+  // Confirmación de disputa (¿se jugó la partida?)
+  disputeAsked         Boolean   @default(false) // Si ya se le preguntó al organizador
+  disputeConfirmedAt   DateTime? // Cuándo respondió
+  disputeResult        Boolean?  // true = se jugó, false = no se jugó
+
   // Organizador
   createdBy       String
   organizer       User     @relation("EventOrganizer", fields: [createdBy], references: [id])
@@ -800,6 +805,7 @@ enum NotificationType {
   REPORT_CREATED          // Nuevo reporte creado (para admins)
   REPORT_UPDATED          // Reporte actualizado (para creador)
   REPORT_COMMENT          // Nuevo comentario en reporte
+  EVENT_DISPUTE_CONFIRMATION // Confirmar si la partida se disputó (para organizador)
 }
 
 // Notificaciones del sistema

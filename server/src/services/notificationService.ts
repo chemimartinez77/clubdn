@@ -398,6 +398,23 @@ export const notifyReportUpdated = async (
 };
 
 /**
+ * Notificar al organizador que debe confirmar si la partida se disputó
+ */
+export const notifyEventDisputeConfirmation = async (
+  eventId: string,
+  eventTitle: string,
+  organizerId: string
+) => {
+  return await createNotification({
+    userId: organizerId,
+    type: 'EVENT_DISPUTE_CONFIRMATION',
+    title: '¿Se disputó esta partida?',
+    message: `La partida "${eventTitle}" ya ha finalizado. ¿Llegó a disputarse?`,
+    metadata: { eventId, eventTitle },
+  });
+};
+
+/**
  * Notificar sobre un nuevo comentario en un reporte
  * Si hay admin asignado, solo notifica a él. Si no, notifica a todos los admins.
  */

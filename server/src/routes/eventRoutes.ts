@@ -16,7 +16,9 @@ import {
   rejectRegistration,
   searchMembersForEvent,
   addMemberToEvent,
-  completeEvent
+  completeEvent,
+  confirmEventPlayed,
+  confirmEventNotPlayed
 } from '../controllers/eventController';
 import { authenticate, requireAdmin } from '../middleware/auth';
 import { getPendingInvitations, approveInvitation, rejectInvitation } from '../controllers/invitationController';
@@ -56,6 +58,10 @@ router.delete('/:id', authenticate, deleteEvent); // Admins o creador pueden can
 
 // Admin: Marcar evento como completado manualmente
 router.post('/:id/complete', authenticate, requireAdmin, completeEvent);
+
+// Organizador: confirmar si la partida se disputó
+router.post('/:id/confirm-played', authenticate, confirmEventPlayed);
+router.post('/:id/confirm-not-played', authenticate, confirmEventNotPlayed);
 
 // Admin: Sincronizar bggIds de eventos existentes con juegos en BD
 router.post('/admin/sync-bgg-ids', authenticate, requireAdmin, syncEventBggIds);

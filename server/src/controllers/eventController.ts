@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { BadgeCategory, RegistrationStatus } from '@prisma/client';
 import { checkAndUnlockBadges } from './badgeController';
+import { processEventPlayHistory } from './statsController';
 
 const REGISTRATION_COOLDOWN_MS = 30000; // 30 segundos
 
@@ -1931,5 +1932,83 @@ export const completeEvent = async (req: Request, res: Response): Promise<void> 
   } catch (error) {
     console.error('Error al completar evento:', error);
     res.status(500).json({ success: false, message: 'Error al completar el evento' });
+  }
+};
+
+/**
+ * El organizador confirma que la partida SÍ se disputó.
+ * Crea los GamePlayHistory y desbloquea badges.
+ */
+export const confirmEventPlayed = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params['id']!;
+    const userId = req.user!.userId;
+
+    const event = await prisma.event.findUnique({ where: { id } });
+
+    if (!event) {
+      res.status(404).json({ success: false, message: 'Evento no encontrado' });
+      return;
+    }
+
+    if (event.createdBy !== userId) {
+      res.status(403).json({ success: false, message: 'Solo el organizador puede confirmar la disputa' });
+      return;
+    }
+
+    if (event.disputeResult !== null) {
+      res.status(400).json({ success: false, message: 'Ya se ha confirmado la disputa de este evento' });
+      return;
+    }
+
+    await prisma.event.update({
+      where: { id },
+      data: { disputeResult: true, disputeConfirmedAt: new Date() }
+    });
+
+    await processEventPlayHistory(id);
+
+    res.status(200).json({ success: true, message: 'Partida confirmada como disputada' });
+  } catch (error) {
+    console.error('Error al confirmar disputa:', error);
+    res.status(500).json({ success: false, message: 'Error al confirmar la disputa' });
+  }
+};
+
+/**
+ * El organizador confirma que la partida NO se disputó.
+ * No crea GamePlayHistory ni badges.
+ */
+export const confirmEventNotPlayed = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params['id']!;
+    const userId = req.user!.userId;
+
+    const event = await prisma.event.findUnique({ where: { id } });
+
+    if (!event) {
+      res.status(404).json({ success: false, message: 'Evento no encontrado' });
+      return;
+    }
+
+    if (event.createdBy !== userId) {
+      res.status(403).json({ success: false, message: 'Solo el organizador puede confirmar la disputa' });
+      return;
+    }
+
+    if (event.disputeResult !== null) {
+      res.status(400).json({ success: false, message: 'Ya se ha confirmado la disputa de este evento' });
+      return;
+    }
+
+    await prisma.event.update({
+      where: { id },
+      data: { disputeResult: false, disputeConfirmedAt: new Date() }
+    });
+
+    res.status(200).json({ success: true, message: 'Partida confirmada como no disputada' });
+  } catch (error) {
+    console.error('Error al confirmar no disputa:', error);
+    res.status(500).json({ success: false, message: 'Error al confirmar la no disputa' });
   }
 };

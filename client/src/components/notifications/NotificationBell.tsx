@@ -9,12 +9,14 @@ import {
   deleteNotification,
   type Notification,
 } from '../../api/notifications';
+import DisputeConfirmationModal from './DisputeConfirmationModal';
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [disputeNotification, setDisputeNotification] = useState<Notification | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -119,6 +121,10 @@ export default function NotificationBell() {
 
     // Navegar según el tipo de notificación
     switch (notification.type) {
+      case 'EVENT_DISPUTE_CONFIRMATION':
+        setDisputeNotification(notification);
+        return;
+
       case 'ADMIN_NEW_USER':
         navigate('/admin/pending-approvals', { state: { refreshPending: true } });
         break;
@@ -192,6 +198,8 @@ export default function NotificationBell() {
         return String.fromCodePoint(0x1F504); // 🔄
       case 'REPORT_COMMENT':
         return String.fromCodePoint(0x1F4AC); // 💬
+      case 'EVENT_DISPUTE_CONFIRMATION':
+        return String.fromCodePoint(0x2753); // ❓
       default:
         return String.fromCodePoint(0x1F514); // 🔔
     }
@@ -314,5 +322,21 @@ export default function NotificationBell() {
         </>
       )}
     </div>
+
+    {disputeNotification && (
+      <DisputeConfirmationModal
+        eventId={(disputeNotification.metadata as { eventId?: string })?.eventId ?? ''}
+        eventTitle={(disputeNotification.metadata as { eventTitle?: string })?.eventTitle ?? ''}
+        notificationId={disputeNotification.id}
+        onClose={(answered) => {
+          setDisputeNotification(null);
+          if (answered) {
+            // Eliminar la notificación de la lista tras responder
+            setNotifications(prev => prev.filter(n => n.id !== disputeNotification.id));
+            setUnreadCount(count => disputeNotification.read ? count : Math.max(0, count - 1));
+          }
+        }}
+      />
+    )}
   );
 }

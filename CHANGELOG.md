@@ -4,6 +4,50 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-03-24
+
+### ✨ Nuevas funcionalidades
+
+#### Score de fidelidad de miembros (solo admins)
+- El modal de ficha de miembro en el panel de administración muestra ahora una sección "Fidelidad" con dos métricas:
+  - **Tasa de respuesta** (organizador): porcentaje de eventos organizados en los que el organizador respondió a la pregunta de disputa. Mide responsabilidad, no éxito.
+  - **Tasa de asistencia** (participante): porcentaje de participaciones confirmadas sobre el total de participaciones + cancelaciones.
+- Ambas métricas muestran `—` cuando no hay datos suficientes (primer uso).
+- Los conteos brutos acompañan cada porcentaje para dar contexto.
+
+**Archivos modificados:**
+- `server/src/controllers/memberController.ts` — `getMemberProfile` calcula y devuelve `reliability`
+- `client/src/types/members.ts` — nueva interfaz `MemberReliability`, añadida a `MemberProfileDetails`
+- `client/src/pages/admin/Members.tsx` — sección "Fidelidad" en el modal de ficha de miembro
+
+#### Sistema de confirmación de disputa de partidas (frontend)
+- Al hacer clic en una notificación de tipo `EVENT_DISPUTE_CONFIRMATION`, se abre un modal directamente en vez de navegar a ninguna página.
+- El modal muestra el título de la partida y dos botones: "Sí, se jugó" y "No llegó a jugarse".
+- Tras responder, la notificación desaparece de la lista automáticamente. Si el organizador prefiere responder más tarde, puede cerrar el modal sin consecuencias.
+- Icono ❓ para este tipo de notificación en el dropdown.
+
+**Archivos creados/modificados:**
+- `client/src/api/events.ts` — nuevo: funciones `confirmEventPlayed` y `confirmEventNotPlayed`
+- `client/src/components/notifications/DisputeConfirmationModal.tsx` — nuevo: modal de confirmación
+- `client/src/components/notifications/NotificationBell.tsx` — soporte para `EVENT_DISPUTE_CONFIRMATION`
+
+#### Sistema de confirmación de disputa de partidas (backend)
+- Cuando una partida pasa su fecha y hora de finalización, el sistema ya no la marca automáticamente como completada con historial. En su lugar, notifica al organizador preguntándole si la partida llegó a disputarse.
+- El organizador recibe una notificación de tipo `EVENT_DISPUTE_CONFIRMATION` con el texto "¿Se disputó esta partida?" y puede responder desde la app.
+- Si confirma que **sí se jugó**: se registra el historial de partidas (`GamePlayHistory`) y se desbloquean badges para todos los participantes confirmados.
+- Si confirma que **no se jugó**: no se registra historial ni se otorgan badges. La partida queda marcada como completada pero sin disputa.
+- Campo `disputeAsked` evita que se pregunte más de una vez por el mismo evento.
+- Base: para medir la **tasa de respuesta** del organizador (fiabilidad), visible en el panel de admin en fases posteriores.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — 3 campos nuevos en `Event` (`disputeAsked`, `disputeConfirmedAt`, `disputeResult`) + nuevo `NotificationType.EVENT_DISPUTE_CONFIRMATION`
+- `server/src/controllers/statsController.ts` — `completePassedEvents` ahora notifica en vez de crear historial directamente; nueva función exportada `processEventPlayHistory`
+- `server/src/services/notificationService.ts` — nueva función `notifyEventDisputeConfirmation`
+- `server/src/controllers/eventController.ts` — nuevos controladores `confirmEventPlayed` y `confirmEventNotPlayed`
+- `server/src/routes/eventRoutes.ts` — rutas `POST /api/events/:id/confirm-played` y `POST /api/events/:id/confirm-not-played`
+
+---
+
 ## 2026-03-23
 
 ### ✨ Nuevas funcionalidades

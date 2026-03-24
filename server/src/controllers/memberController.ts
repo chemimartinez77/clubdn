@@ -212,6 +212,50 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
       ? 'BAJA'
       : user.membership?.type || null;
 
+    // --- Score de fidelidad ---
+    // Tasa de respuesta: eventos organizados pasados donde se preguntó si se disputó
+    const organizedAsked = await prisma.event.count({
+      where: { createdBy: memberId, disputeAsked: true }
+    });
+    const organizedAnswered = await prisma.event.count({
+      where: { createdBy: memberId, disputeAsked: true, disputeConfirmedAt: { not: null } }
+    });
+
+    // Tasa de asistencia: registros confirmados en eventos completados vs. cancelaciones tardías
+    const confirmedRegistrations = await prisma.eventRegistration.count({
+      where: {
+        userId: memberId,
+        status: 'CONFIRMED',
+        event: { status: 'COMPLETED' }
+      }
+    });
+    const lateCancellations = await prisma.eventRegistration.count({
+      where: {
+        userId: memberId,
+        status: 'CANCELLED',
+        event: { status: 'COMPLETED' },
+        // Cancelación tardía: canceló después de que el evento ya había pasado su fecha
+        cancelledAt: { not: null }
+      }
+    });
+    const totalParticipations = confirmedRegistrations + lateCancellations;
+
+    const reliability = {
+      // % de eventos organizados donde respondió a la pregunta de disputa
+      responseRate: organizedAsked > 0
+        ? Math.round((organizedAnswered / organizedAsked) * 100)
+        : null,
+      organizedAsked,
+      organizedAnswered,
+
+      // % de participaciones confirmadas sobre el total (confirmadas + cancelaciones)
+      attendanceRate: totalParticipations > 0
+        ? Math.round((confirmedRegistrations / totalParticipations) * 100)
+        : null,
+      confirmedRegistrations,
+      lateCancellations,
+    };
+
     res.status(200).json({
       success: true,
       data: {
@@ -231,7 +275,8 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
             dni: profile.dni,
             imageConsentActivities: profile.imageConsentActivities,
             imageConsentSocial: profile.imageConsentSocial
-          }
+          },
+          reliability
         }
       }
     });

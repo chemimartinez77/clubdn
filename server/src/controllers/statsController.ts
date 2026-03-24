@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { RegistrationStatus, EventStatus, BadgeCategory } from '@prisma/client';
 import { checkAndUnlockBadges } from './badgeController';
+import { notifyEventDisputeConfirmation } from '../services/notificationService';
 
 /**
  * Marca como COMPLETED todos los eventos/partidas cuya fecha ya ha pasado
@@ -39,30 +40,50 @@ async function completePassedEvents(): Promise<void> {
   if (passedEvents.length === 0) return;
 
   for (const event of passedEvents) {
-    // Marcar el evento como completado
+    // Si ya se preguntó al organizador, no volver a preguntar
+    if (event.disputeAsked) continue;
+
+    // Marcar el evento como completado y que ya se le preguntó al organizador
     await prisma.event.update({
       where: { id: event.id },
-      data: { status: EventStatus.COMPLETED }
+      data: { status: EventStatus.COMPLETED, disputeAsked: true }
     });
 
-    // Solo procesar badges para partidas con juego y categoría definidos
-    if (event.type !== 'PARTIDA' || !event.gameName || !event.gameCategory) continue;
+    // Notificar al organizador para que confirme si la partida se disputó
+    await notifyEventDisputeConfirmation(event.id, event.title, event.createdBy);
+  }
+}
 
-    const gameName = event.gameName;
-    const gameCategory = event.gameCategory as BadgeCategory;
-
-    for (const { userId } of event.registrations) {
-      // Evitar duplicados en GamePlayHistory
-      const alreadyTracked = await prisma.gamePlayHistory.findFirst({
-        where: { userId, eventId: event.id }
-      });
-
-      if (!alreadyTracked) {
-        await prisma.gamePlayHistory.create({
-          data: { userId, eventId: event.id, gameName, gameCategory }
-        });
-        await checkAndUnlockBadges(userId, gameCategory);
+/**
+ * Procesa los GamePlayHistory y badges para un evento confirmado como disputado.
+ * Se llama desde confirmEventPlayed.
+ */
+export async function processEventPlayHistory(eventId: string): Promise<void> {
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: {
+      registrations: {
+        where: { status: RegistrationStatus.CONFIRMED },
+        select: { userId: true }
       }
+    }
+  });
+
+  if (!event || event.type !== 'PARTIDA' || !event.gameName || !event.gameCategory) return;
+
+  const gameName = event.gameName;
+  const gameCategory = event.gameCategory as BadgeCategory;
+
+  for (const { userId } of event.registrations) {
+    const alreadyTracked = await prisma.gamePlayHistory.findFirst({
+      where: { userId, eventId: event.id }
+    });
+
+    if (!alreadyTracked) {
+      await prisma.gamePlayHistory.create({
+        data: { userId, eventId: event.id, gameName, gameCategory }
+      });
+      await checkAndUnlockBadges(userId, gameCategory);
     }
   }
 }
