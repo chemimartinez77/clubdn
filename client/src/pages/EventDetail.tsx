@@ -1884,7 +1884,7 @@ export default function EventDetail() {
           {/* Ubicación */}
           <div>
             <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Ubicación</label>
-            <input type="text" value={editFormData.location} onChange={(e) => setEditFormData(prev => ({ ...prev, location: e.target.value }))} placeholder="Club DN" className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]" />
+            <input type="text" value={editFormData.location} onChange={(e) => setEditFormData(prev => ({ ...prev, location: e.target.value }))} placeholder="Club Dreadnought" className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]" />
           </div>
 
           {/* Dirección */}

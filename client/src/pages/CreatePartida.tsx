@@ -377,7 +377,7 @@ export default function CreatePartida() {
                   name="location"
                   minLength={3}
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)] placeholder:text-gray-500"
-                  placeholder="Club DN"
+                  placeholder="Club Dreadnought"
                 />
               </div>
 

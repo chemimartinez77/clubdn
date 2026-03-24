@@ -105,7 +105,7 @@ export default function AppTour({ onDismiss }: AppTourProps) {
         {
           element: '#dashboard-welcome',
           popover: {
-            title: '¡Bienvenido al Club DN! 👋',
+            title: '¡Bienvenido al Club Dreadnought! 👋',
             description:
               'Esta es tu página de inicio. Aquí verás un resumen de tu actividad y podrás acceder rápidamente a todo lo que necesitas.',
             side: 'bottom',

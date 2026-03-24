@@ -121,7 +121,7 @@ export default function Register() {
       <div className="bg-[var(--color-cardBackground)] rounded-lg shadow-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-[var(--color-text)] mb-2">
-            {'\u00danete al Club DN'}
+            {'\u00danete al Club Dreadnought'}
           </h1>
           <p className="text-[var(--color-textSecondary)]">Crea tu cuenta para empezar</p>
         </div>

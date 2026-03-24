@@ -4,7 +4,7 @@ import axios from 'axios';
 import { prisma } from '../config/database';
 
 const resendApiKey = process.env.RESEND_API_KEY;
-const resendFrom = process.env.RESEND_FROM || process.env.EMAIL_FROM || 'Club DN <no-reply@clubdn.es>';
+const resendFrom = process.env.RESEND_FROM || process.env.EMAIL_FROM || 'Club Dreadnought <no-reply@clubdn.es>';
 const resendApiUrl = 'https://api.resend.com/emails';
 
 interface EmailOptions {
@@ -86,43 +86,43 @@ export const sendVerificationEmail = async (
       </head>
       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 28px;">🎲 Club DN</h1>
+          <h1 style="color: white; margin: 0; font-size: 28px;">🎲 Club Dreadnought</h1>
         </div>
-        
+
         <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
           <h2 style="color: #667eea; margin-top: 0;">¡Hola ${name}!</h2>
-          
+
           <p>Gracias por registrarte en nuestro club de juegos de mesa.</p>
-          
+
           <p>Para completar tu registro, por favor verifica tu email haciendo clic en el siguiente botón:</p>
-          
+
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationUrl}" 
-               style="background-color: #667eea; 
-                      color: white; 
-                      padding: 14px 30px; 
-                      text-decoration: none; 
-                      border-radius: 5px; 
+            <a href="${verificationUrl}"
+               style="background-color: #667eea;
+                      color: white;
+                      padding: 14px 30px;
+                      text-decoration: none;
+                      border-radius: 5px;
                       display: inline-block;
                       font-weight: bold;
                       box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">
               Verificar Email
             </a>
           </div>
-          
+
           <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
             Este enlace expirará en <strong>24 horas</strong>.
           </p>
-          
+
           <p style="color: #6b7280; font-size: 14px;">
             Si no solicitaste este registro, puedes ignorar este email.
           </p>
-          
+
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-          
+
           <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">
             Saludos,<br>
-            <strong>El equipo del Club DN</strong>
+            <strong>El equipo del Club Dreadnought</strong>
           </p>
         </div>
       </body>
@@ -131,7 +131,7 @@ export const sendVerificationEmail = async (
 
   return sendEmail({
     to: email,
-    subject: 'Verifica tu email - Club DN',
+    subject: 'Verifica tu email - Club Dreadnought',
     html,
     template: 'verification',
   });
@@ -162,38 +162,38 @@ export const sendAdminNotification = async (
         <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
           <h1 style="color: white; margin: 0; font-size: 28px;">🔔 Nueva Solicitud</h1>
         </div>
-        
+
         <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
           <h2 style="color: #d97706; margin-top: 0;">Solicitud Pendiente de Aprobación</h2>
-          
+
           <p>Hay una nueva solicitud de registro esperando tu revisión:</p>
-          
+
           <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0;">
             <p style="margin: 10px 0;"><strong>👤 Nombre:</strong> ${userName}</p>
             <p style="margin: 10px 0;"><strong>📧 Email:</strong> ${userEmail}</p>
             <p style="margin: 10px 0;"><strong>📅 Fecha:</strong> ${currentDate}</p>
           </div>
-          
+
           <p>Accede al panel de administración para aprobar o rechazar esta solicitud:</p>
-          
+
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${adminUrl}" 
-               style="background-color: #f59e0b; 
-                      color: white; 
-                      padding: 14px 30px; 
-                      text-decoration: none; 
-                      border-radius: 5px; 
+            <a href="${adminUrl}"
+               style="background-color: #f59e0b;
+                      color: white;
+                      padding: 14px 30px;
+                      text-decoration: none;
+                      border-radius: 5px;
                       display: inline-block;
                       font-weight: bold;
                       box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
               Ver Panel de Admin
             </a>
           </div>
-          
+
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-          
+
           <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">
-            Sistema automático del Club DN
+            Sistema automático del Club Dreadnought
           </p>
         </div>
       </body>
@@ -202,7 +202,7 @@ export const sendAdminNotification = async (
 
   return sendEmail({
     to: adminEmail,
-    subject: '🔔 Nueva solicitud de registro - Club DN',
+    subject: '🔔 Nueva solicitud de registro - Club Dreadnought',
     html,
     template: 'admin_notification',
   });
@@ -228,32 +228,32 @@ export const sendApprovalEmail = async (
       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
           <h1 style="color: white; margin: 0; font-size: 32px;">🎉</h1>
-          <h2 style="color: white; margin: 10px 0; font-size: 28px;">¡Bienvenido al Club!</h2>
+          <h2 style="color: white; margin: 10px 0; font-size: 28px;">¡Bienvenido al Club Dreadnought!</h2>
         </div>
-        
+
         <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
           <h2 style="color: #059669; margin-top: 0;">¡Hola ${name}!</h2>
-          
+
           <p style="font-size: 18px; color: #10b981; font-weight: bold;">
             ¡Excelentes noticias! Tu solicitud ha sido aprobada.
           </p>
-          
+
           <p>Ya puedes acceder a la plataforma y disfrutar de todas las funcionalidades del club:</p>
-          
+
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${loginUrl}" 
-               style="background-color: #10b981; 
-                      color: white; 
-                      padding: 14px 30px; 
-                      text-decoration: none; 
-                      border-radius: 5px; 
+            <a href="${loginUrl}"
+               style="background-color: #10b981;
+                      color: white;
+                      padding: 14px 30px;
+                      text-decoration: none;
+                      border-radius: 5px;
                       display: inline-block;
                       font-weight: bold;
                       box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
               Iniciar Sesión
             </a>
           </div>
-          
+
           ${customMessage ? `
             <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; border-left: 4px solid #0284c7; margin: 20px 0;">
               <p style="margin: 0; color: #0c4a6e;">
@@ -262,14 +262,14 @@ export const sendApprovalEmail = async (
               </p>
             </div>
           ` : ''}
-          
+
           <p>¡Te esperamos en la próxima sesión de juegos!</p>
-          
+
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-          
+
           <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">
             Saludos,<br>
-            <strong>El equipo del Club DN</strong>
+            <strong>El equipo del Club Dreadnought</strong>
           </p>
         </div>
       </body>
@@ -304,12 +304,12 @@ export const sendRejectionEmail = async (
         <div style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
           <h1 style="color: white; margin: 0; font-size: 28px;">Actualización de tu Solicitud</h1>
         </div>
-        
+
         <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
           <h2 style="color: #4f46e5; margin-top: 0;">Hola ${name},</h2>
-          
+
           <p>Lamentamos informarte que tu solicitud para unirte al club no ha sido aprobada en este momento.</p>
-          
+
           ${reason ? `
             <div style="background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0;">
               <p style="margin: 0; color: #78350f;">
@@ -318,7 +318,7 @@ export const sendRejectionEmail = async (
               </p>
             </div>
           ` : ''}
-          
+
           ${customMessage ? `
             <div style="background: #e0e7ff; padding: 15px; border-radius: 8px; border-left: 4px solid #6366f1; margin: 20px 0;">
               <p style="margin: 0; color: #3730a3;">
@@ -327,14 +327,14 @@ export const sendRejectionEmail = async (
               </p>
             </div>
           ` : ''}
-          
+
           <p>Si tienes alguna pregunta o necesitas más información, no dudes en contactarnos.</p>
-          
+
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-          
+
           <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">
             Saludos,<br>
-            <strong>El equipo del Club DN</strong>
+            <strong>El equipo del Club Dreadnought</strong>
           </p>
         </div>
       </body>
@@ -343,7 +343,7 @@ export const sendRejectionEmail = async (
 
   return sendEmail({
     to: email,
-    subject: 'Actualización sobre tu solicitud - Club DN',
+    subject: 'Actualización sobre tu solicitud - Club Dreadnought',
     html,
     template: 'rejection',
   });
@@ -362,7 +362,7 @@ export const sendPasswordResetEmail = async (email: string, name: string, token:
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Recuperación de contraseña - Club DN</title>
+        <title>Recuperación de contraseña - Club Dreadnought</title>
       </head>
       <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f3f4f6;">
         <div style="max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
@@ -380,7 +380,7 @@ export const sendPasswordResetEmail = async (email: string, name: string, token:
             </p>
 
             <p style="font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 20px;">
-              Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en Club DN.
+              Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en Club Dreadnought.
             </p>
 
             <p style="font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 30px;">
@@ -412,7 +412,7 @@ export const sendPasswordResetEmail = async (email: string, name: string, token:
 
             <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">
               Saludos,<br>
-              <strong>El equipo del Club DN</strong>
+              <strong>El equipo del Club Dreadnought</strong>
             </p>
           </div>
         </div>
@@ -422,7 +422,7 @@ export const sendPasswordResetEmail = async (email: string, name: string, token:
 
   return sendEmail({
     to: email,
-    subject: 'Recuperación de contraseña - Club DN',
+    subject: 'Recuperación de contraseña - Club Dreadnought',
     html,
     template: 'password_reset',
   });
@@ -481,7 +481,7 @@ export const sendRegistrationPendingEmail = async (
 
           <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">
             Saludos,<br>
-            <strong>El equipo del Club DN</strong>
+            <strong>El equipo del Club Dreadnought</strong>
           </p>
         </div>
       </body>
@@ -551,7 +551,7 @@ export const sendRegistrationApprovedEmail = async (
 
           <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">
             Saludos,<br>
-            <strong>El equipo del Club DN</strong>
+            <strong>El equipo del Club Dreadnought</strong>
           </p>
         </div>
       </body>
@@ -618,7 +618,7 @@ export const sendReportCreatedEmail = async (
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
 
           <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">
-            Sistema automático del Club DN
+            Sistema automático del Club Dreadnought
           </p>
         </div>
       </body>

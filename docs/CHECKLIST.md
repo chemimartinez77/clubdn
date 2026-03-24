@@ -60,7 +60,7 @@ EMAIL_HOST="smtp.gmail.com"
 EMAIL_PORT=587
 EMAIL_USER="tu-email@gmail.com"
 EMAIL_PASSWORD="tu-app-password-de-gmail"
-EMAIL_FROM="Club DN <noreply@clubdn.com>"
+EMAIL_FROM="Club Dreadnought <noreply@clubdn.com>"
 
 # Admin
 DEFAULT_ADMIN_EMAIL="admin@clubdn.com"
@@ -162,7 +162,7 @@ Para usar Gmail, necesitas una "App Password":
 
 1. **Ve a:** https://myaccount.google.com/security
 2. **Activa la verificación en 2 pasos** (si no la tienes)
-3. **Ve a:** "App passwords" 
+3. **Ve a:** "App passwords"
 4. **Crea una nueva:** "clubdn" o "nodejs"
 5. **Copia el password de 16 caracteres**
 6. **Pégalo en** `server/.env` como `EMAIL_PASSWORD`

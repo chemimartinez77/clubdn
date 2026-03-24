@@ -205,7 +205,7 @@ export default function Events() {
     });
 
     const lines = [
-      `*Prevision semanal Club DN (${rangeTitle})*`,
+      `*Prevision semanal Club Dreadnought (${rangeTitle})*`,
       '_Solo partidas con socios_',
       ''
     ];

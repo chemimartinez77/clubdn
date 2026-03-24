@@ -237,7 +237,7 @@ export default function Login() {
             />
           </div>
           <h1 className="text-3xl font-bold text-[var(--color-text)] mb-2">
-            Bienvenido al Club DN
+            Bienvenido al Club Dreadnought
           </h1>
           <p className="text-[var(--color-textSecondary)]">Inicia sesión en tu cuenta</p>
         </div>

@@ -38,6 +38,7 @@ import CombatZone from './pages/azul/CombatZone';
 import AzulGame from './pages/azul/AzulGame';
 import ViernesHub from './pages/viernes/ViernesHub';
 import ViernesGame from './pages/viernes/ViernesGame';
+import CentipedeGame from './pages/centipede/CentipedeGame';
 import CombatZoneComingSoon from './pages/CombatZoneComingSoon';
 import WeeklyPreview from './pages/WeeklyPreview';
 
@@ -277,6 +278,14 @@ function App() {
             element={
               <CombatZoneRoute>
                 <ViernesGame />
+              </CombatZoneRoute>
+            }
+          />
+          <Route
+            path="/azul/combatzone/centipede"
+            element={
+              <CombatZoneRoute>
+                <CentipedeGame />
               </CombatZoneRoute>
             }
           />

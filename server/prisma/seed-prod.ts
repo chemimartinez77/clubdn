@@ -101,7 +101,7 @@ async function main() {
     update: {},  // no sobreescribe si ya existe
     create: {
       id: 'club_config',
-      clubName: 'Club DN',
+      clubName: 'Club Dreadnought',
       membershipTypes: [
         { type: 'SOCIO', displayName: 'Socio', price: 19, hasKey: true, description: 'Socio con llave. Requiere 1 año como colaborador + aprobación' },
         { type: 'COLABORADOR', displayName: 'Colaborador', price: 15, hasKey: false, description: 'Colaborador sin llave' },

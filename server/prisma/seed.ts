@@ -53,7 +53,7 @@ async function main() {
   await prisma.clubConfig.create({
     data: {
       id: 'club_config',
-      clubName: 'Club DN',
+      clubName: 'Club Dreadnought',
       membershipTypes: [
         {
           type: 'SOCIO',

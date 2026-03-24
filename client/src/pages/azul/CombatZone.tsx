@@ -17,14 +17,25 @@ interface BoardGame {
   thumbnail: string | null;
 }
 
-const COMBAT_ZONE_GAMES = [
-  { bggId: '230802', name: 'Azul',    path: '/azul/combatzone', solo: false },
-  { bggId: '43570',  name: 'Viernes', path: '/viernes',          solo: true  },
-] as const;
+type CombatZoneGame = {
+  bggId: string;
+  name: string;
+  path: string;
+  solo: boolean;
+  launchMode: 'AZUL_CREATE' | 'NAVIGATE';
+  fetchInfo?: boolean;
+};
 
-function useGameInfo(bggId: string) {
+const COMBAT_ZONE_GAMES = [
+  { bggId: '230802', name: 'Azul',      path: '/azul/combatzone',           solo: false, launchMode: 'AZUL_CREATE', fetchInfo: true },
+  { bggId: '43570',  name: 'Viernes',   path: '/viernes',                   solo: true,  launchMode: 'NAVIGATE',    fetchInfo: true },
+  { bggId: '2243',   name: 'Centipede', path: '/azul/combatzone/centipede', solo: true,  launchMode: 'NAVIGATE',    fetchInfo: false },
+] satisfies ReadonlyArray<CombatZoneGame>;
+
+function useGameInfo(bggId: string, enabled = true) {
   return useQuery<BoardGame>({
     queryKey: ['game', bggId],
+    enabled,
     queryFn: async () => {
       const res = await api.get<{ success: boolean; data: BoardGame }>(`/api/games/${bggId}/info`);
       return res.data.data;
@@ -40,14 +51,17 @@ const GAME_FALLBACK_EMOJI: Record<string, string> = {
   '43570':  '🏝️', // Viernes
 };
 
-function GameCard({ bggId, name, solo, isSelected, onClick }: {
+GAME_FALLBACK_EMOJI['2243'] = '\uD83D\uDC1B'; // Centipede
+
+function GameCard({ bggId, name, solo, fetchInfo, isSelected, onClick }: {
   bggId: string;
   name: string;
   solo: boolean;
+  fetchInfo?: boolean;
   isSelected: boolean;
   onClick: () => void;
 }) {
-  const { data } = useGameInfo(bggId);
+  const { data } = useGameInfo(bggId, fetchInfo ?? true);
   const imgSrc = data?.image ?? data?.thumbnail ?? null;
 
   return (
@@ -188,8 +202,8 @@ export default function CombatZone() {
 
   const handleNewGame = async () => {
     if (!selectedGame) return;
-    if (selectedGame.solo) {
-      // Viernes: ir al hub donde se elige dificultad y se crea la partida
+    if (selectedGame.launchMode === 'NAVIGATE') {
+      // Juegos con flujo propio o en desarrollo
       navigate(selectedGame.path);
     } else {
       // Azul: crear partida directamente
@@ -236,6 +250,7 @@ export default function CombatZone() {
                   bggId={g.bggId}
                   name={g.name}
                   solo={g.solo}
+                  fetchInfo={g.fetchInfo}
                   isSelected={selectedBggId === g.bggId}
                   onClick={() => setSelectedBggId(prev => prev === g.bggId ? null : g.bggId)}
                 />

@@ -70,7 +70,7 @@ export default function Header() {
               alt="Club DN Logo"
               className="w-32 h-16 rounded-lg"
             />
-            <span className="text-xl font-bold text-[var(--color-text)]">Club DN</span>
+            <span className="text-xl font-bold text-[var(--color-text)]">Club Dreadnought</span>
           </Link>
 
           {/* Desktop Navigation */}

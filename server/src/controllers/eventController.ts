@@ -494,7 +494,7 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
     }
 
     const normalizedLocation =
-      typeof location === 'string' && location.trim().length > 0 ? location.trim() : 'Club DN';
+      typeof location === 'string' && location.trim().length > 0 ? location.trim() : 'Club Dreadnought';
 
     const event = await prisma.event.create({
       data: {
@@ -660,7 +660,7 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
 
     if (location !== undefined) {
       updateData.location =
-        typeof location === 'string' && location.trim().length > 0 ? location.trim() : 'Club DN';
+        typeof location === 'string' && location.trim().length > 0 ? location.trim() : 'Club Dreadnought';
     }
 
     const event = await prisma.event.update({

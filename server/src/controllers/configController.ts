@@ -18,7 +18,7 @@ export const getClubConfig = async (_req: Request, res: Response) => {
       config = await prisma.clubConfig.create({
         data: {
           id: 'club_config',
-          clubName: 'Club DN',
+          clubName: 'Club Dreadnought',
           membershipTypes: [
             {
               type: 'SOCIO',
@@ -145,7 +145,7 @@ export const updateClubConfig = async (req: Request, res: Response) => {
       },
       create: {
         id: 'club_config',
-        clubName: clubName || 'Club DN',
+        clubName: clubName || 'Club Dreadnought',
         clubEmail,
         clubPhone,
         clubAddress,

@@ -71,7 +71,7 @@ model User {
   password          String
   role              UserRole    @default(USER)
   status            UserStatus  @default(PENDING_VERIFICATION)
-  
+
   emailVerified     Boolean     @default(false)
   verificationToken String?     @unique
   tokenExpiry       DateTime?
@@ -86,11 +86,11 @@ model User {
   rejectedBy        String?
   rejectedAt        DateTime?
   rejectionReason   String?
-  
+
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
   lastLoginAt       DateTime?
-  
+
   approvedByAdmin   User?       @relation("ApprovedUsers", fields: [approvedBy], references: [id])
   approvedUsers     User[]      @relation("ApprovedUsers")
   rejectedByAdmin   User?       @relation("RejectedUsers", fields: [rejectedBy], references: [id])
@@ -533,7 +533,7 @@ model ClubConfig {
   membershipTypes Json // Array de objetos con: { type, displayName, price, hasKey, description }
 
   // Otras configuraciones del club
-  clubName       String   @default("Club DN")
+  clubName       String   @default("Club Dreadnought")
   clubEmail      String?
   clubPhone      String?
   clubAddress    String?

@@ -14,7 +14,7 @@ export default function Layout({ children }: LayoutProps) {
       </main>
       <footer className="bg-[var(--color-cardBackground)] border-t border-[var(--color-cardBorder)] py-6">
         <div className="container mx-auto px-4 text-center text-[var(--color-textSecondary)] text-sm">
-          <p>© {new Date().getFullYear()} Club DN - Todos los derechos reservados</p>
+          <p>© {new Date().getFullYear()} Club Dreadnought - Todos los derechos reservados</p>
         </div>
       </footer>
     </div>
