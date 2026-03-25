@@ -704,7 +704,7 @@ export default function Members() {
                 </div>
 
                 {/* Selector de tipo de membresía */}
-                <div className={`rounded-lg p-4 ${!memberProfile.member.membershipType ? 'bg-yellow-50 border border-yellow-200' : 'bg-blue-50 border border-blue-200'}`}>
+                <div className="rounded-lg p-4 bg-[var(--color-tableRowHover)] border border-[var(--color-cardBorder)]">
                   <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                     Tipo de Membresía {!memberProfile.member.membershipType && <span className="text-red-500">*</span>}
                   </label>
@@ -736,7 +736,7 @@ export default function Members() {
                       type="text"
                       value={profileForm.firstName}
                       onChange={(e) => setProfileForm({ ...profileForm, firstName: e.target.value })}
-                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
                     />
                   </div>
                   <div>
@@ -745,7 +745,7 @@ export default function Members() {
                       type="text"
                       value={profileForm.lastName}
                       onChange={(e) => setProfileForm({ ...profileForm, lastName: e.target.value })}
-                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
                     />
                   </div>
                   <div>
@@ -754,12 +754,12 @@ export default function Members() {
                       type="text"
                       value={profileForm.dni}
                       onChange={(e) => setProfileForm({ ...profileForm, dni: e.target.value })}
-                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
                     />
                   </div>
                 </div>
 
-                <div className="text-sm text-[var(--color-textSecondary)] bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="text-sm text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] border border-[var(--color-cardBorder)] rounded-lg p-3">
                   <strong>Cambiar foto:</strong> Pasa el cursor sobre el avatar y haz clic en el icono de cámara para subir una nueva imagen desde tu dispositivo.
                 </div>
 
@@ -771,7 +771,7 @@ export default function Members() {
                       onChange={(e) =>
                         setProfileForm({ ...profileForm, imageConsentActivities: e.target.checked })
                       }
-                      className="w-5 h-5 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] mt-0.5"
+                      className="w-5 h-5 shrink-0 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] mt-0.5"
                     />
                     <span className="text-sm text-[var(--color-textSecondary)]">
                       Autorización expresa para la captación y publicación de la imagen del colaborador en
@@ -785,7 +785,7 @@ export default function Members() {
                       onChange={(e) =>
                         setProfileForm({ ...profileForm, imageConsentSocial: e.target.checked })
                       }
-                      className="w-5 h-5 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] mt-0.5"
+                      className="w-5 h-5 shrink-0 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] mt-0.5"
                     />
                     <span className="text-sm text-[var(--color-textSecondary)]">
                       Autorización expresa para la publicación de la imagen del colaborador en las redes

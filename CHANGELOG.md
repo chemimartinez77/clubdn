@@ -4,6 +4,32 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-03-25
+
+### 🐛 Correcciones
+
+#### Modal de confirmación de disputa — correcciones post-prueba
+- Corregido error TypeScript `TS1005` en `NotificationBell.tsx` por JSX con dos raíces (faltaba fragmento `<>` envolvente).
+- Al responder a la pregunta de disputa, ahora se muestra un mensaje de agradecimiento ("Gracias por tu respuesta...") antes de cerrar el modal, en vez de cerrar directamente.
+- Si el organizador intenta responder de nuevo a una disputa ya confirmada, el modal muestra "Ya respondiste a esta pregunta anteriormente" en vez de un error genérico.
+- La notificación `EVENT_DISPUTE_CONFIRMATION` se elimina automáticamente en el backend al confirmar la respuesta, evitando que vuelva a aparecer.
+- El botón "Sí, se jugó" usaba `bg-primary` (clase Tailwind sin efecto en v4); corregido a `bg-[var(--color-primary)]` para compatibilidad con todos los temas.
+
+**Archivos modificados:**
+- `client/src/components/notifications/NotificationBell.tsx` — fragmento JSX envolvente
+- `client/src/components/notifications/DisputeConfirmationModal.tsx` — estados `answered` y `alreadyAnswered`, mensaje de agradecimiento, color de botón
+- `server/src/controllers/eventController.ts` — eliminación de notificación tras confirmar en `confirmEventPlayed` y `confirmEventNotPlayed`
+
+#### Ficha de miembro — compatibilidad con temas oscuro/claro
+- Los fondos `bg-yellow-50` y `bg-blue-50` de las secciones "Tipo de Membresía" y "Cambiar foto" reemplazados por variables CSS del tema.
+- Los inputs de Nombre, Apellidos y DNI ahora usan `bg-[var(--color-cardBackground)]` para no mostrar fondo blanco en temas oscuros.
+- Añadido `shrink-0` a los checkboxes de autorización para que tengan tamaño uniforme independientemente de la longitud del texto.
+
+**Archivos modificados:**
+- `client/src/pages/admin/Members.tsx` — colores hardcoded reemplazados por variables CSS, inputs y checkboxes corregidos
+
+---
+
 ## 2026-03-24
 
 ### ✨ Nuevas funcionalidades
