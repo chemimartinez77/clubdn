@@ -221,6 +221,7 @@ export default function NotificationBell() {
   };
 
   return (
+    <>
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -338,5 +339,6 @@ export default function NotificationBell() {
         }}
       />
     )}
+    </>
   );
 }
