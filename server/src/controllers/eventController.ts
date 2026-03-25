@@ -1968,6 +1968,10 @@ export const confirmEventPlayed = async (req: Request, res: Response): Promise<v
 
     await processEventPlayHistory(id);
 
+    await prisma.notification.deleteMany({
+      where: { userId, type: 'EVENT_DISPUTE_CONFIRMATION', metadata: { path: ['eventId'], equals: id } }
+    });
+
     res.status(200).json({ success: true, message: 'Partida confirmada como disputada' });
   } catch (error) {
     console.error('Error al confirmar disputa:', error);
@@ -2004,6 +2008,10 @@ export const confirmEventNotPlayed = async (req: Request, res: Response): Promis
     await prisma.event.update({
       where: { id },
       data: { disputeResult: false, disputeConfirmedAt: new Date() }
+    });
+
+    await prisma.notification.deleteMany({
+      where: { userId, type: 'EVENT_DISPUTE_CONFIRMATION', metadata: { path: ['eventId'], equals: id } }
     });
 
     res.status(200).json({ success: true, message: 'Partida confirmada como no disputada' });

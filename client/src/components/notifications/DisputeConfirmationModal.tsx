@@ -12,6 +12,8 @@ interface Props {
 export default function DisputeConfirmationModal({ eventId, eventTitle, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [alreadyAnswered, setAlreadyAnswered] = useState(false);
+  const [answered, setAnswered] = useState(false);
 
   const handleAnswer = async (played: boolean) => {
     setLoading(true);
@@ -22,9 +24,15 @@ export default function DisputeConfirmationModal({ eventId, eventTitle, onClose 
       } else {
         await confirmEventNotPlayed(eventId);
       }
-      onClose(true);
-    } catch {
-      setError('No se pudo registrar la respuesta. Inténtalo de nuevo.');
+      setAnswered(true);
+      setLoading(false);
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 400) {
+        setAlreadyAnswered(true);
+      } else {
+        setError('No se pudo registrar la respuesta. Inténtalo de nuevo.');
+      }
       setLoading(false);
     }
   };
@@ -50,30 +58,54 @@ export default function DisputeConfirmationModal({ eventId, eventTitle, onClose 
           <p className="text-sm text-red-500">{error}</p>
         )}
 
-        <div className="flex gap-3 mt-2">
-          <button
-            onClick={() => handleAnswer(true)}
-            disabled={loading}
-            className="flex-1 py-2.5 rounded-lg bg-primary text-white font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Guardando...' : 'Si, se jugó'}
-          </button>
-          <button
-            onClick={() => handleAnswer(false)}
-            disabled={loading}
-            className="flex-1 py-2.5 rounded-lg border border-[var(--color-cardBorder)] text-[var(--color-text)] font-medium text-sm hover:bg-[var(--color-tableRowHover)] transition-colors disabled:opacity-50"
-          >
-            No llegó a jugarse
-          </button>
-        </div>
+        {answered ? (
+          <>
+            <p className="text-sm text-[var(--color-textSecondary)]">Gracias por tu respuesta. Con ella estás ayudando a mejorar el club!</p>
+            <button
+              onClick={() => onClose(true)}
+              className="text-xs text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors text-center"
+            >
+              Cerrar
+            </button>
+          </>
+        ) : alreadyAnswered ? (
+          <>
+            <p className="text-sm text-[var(--color-textSecondary)]">Ya respondiste a esta pregunta anteriormente.</p>
+            <button
+              onClick={() => onClose(false)}
+              className="text-xs text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors text-center"
+            >
+              Cerrar
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="flex gap-3 mt-2">
+              <button
+                onClick={() => handleAnswer(true)}
+                disabled={loading}
+                className="flex-1 py-2.5 rounded-lg bg-[var(--color-primary)] text-white font-medium text-sm hover:bg-[var(--color-primaryDark)] transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Guardando...' : 'Si, se jugó'}
+              </button>
+              <button
+                onClick={() => handleAnswer(false)}
+                disabled={loading}
+                className="flex-1 py-2.5 rounded-lg border border-[var(--color-cardBorder)] text-[var(--color-text)] font-medium text-sm hover:bg-[var(--color-tableRowHover)] transition-colors disabled:opacity-50"
+              >
+                No llegó a jugarse
+              </button>
+            </div>
 
-        <button
-          onClick={() => onClose(false)}
-          disabled={loading}
-          className="text-xs text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors text-center"
-        >
-          Responder más tarde
-        </button>
+            <button
+              onClick={() => onClose(false)}
+              disabled={loading}
+              className="text-xs text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors text-center"
+            >
+              Responder más tarde
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
