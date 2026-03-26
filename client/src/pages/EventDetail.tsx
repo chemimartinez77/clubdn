@@ -552,9 +552,18 @@ export default function EventDetail() {
     && !isFull
     && (event.registeredCount || 0) > 0;
 
-  // El usuario puede validar si: es PARTIDA, está inscrito como CONFIRMED, ya ocurrió, y la partida no está ya validada por disputa
+  // Ventana de validación QR: desde 1h antes del inicio hasta el final del día en que termina
+  const validationWindowOpen = new Date(eventStart.getTime() - 60 * 60 * 1000);
+  const durationMinutes = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
+  const eventEndTime = new Date(eventStart.getTime() + durationMinutes * 60 * 1000);
+  const validationWindowClose = new Date(eventEndTime);
+  validationWindowClose.setHours(23, 59, 59, 999);
+  const now = new Date();
+  const isInValidationWindow = now >= validationWindowOpen && now <= validationWindowClose;
+
+  // El usuario puede validar si: es PARTIDA, está inscrito como CONFIRMED, está en la ventana temporal, y la partida no está ya validada
   const canValidateQr = isPartida
-    && isPast
+    && isInValidationWindow
     && event.isUserRegistered
     && event.userRegistrationStatus === 'CONFIRMED'
     && event.disputeResult !== true;
@@ -708,54 +717,56 @@ export default function EventDetail() {
     );
     const shareTimeText = scheduleText || 'Hora pendiente';
 
-    // Obtener URL personalizada de invitación
-    let shareUrl = window.location.href;
+    const buildMessage = (shareUrl: string) => {
+      let message = `*${event.title}*\n\n`;
+      message += `${emojiCalendar} ${eventDateText}\n`;
+      message += `${emojiClock} ${shareTimeText}\n`;
+      if (event.type !== 'PARTIDA' && event.location) {
+        message += `${emojiLocation} Lugar: ${event.location}\n`;
+      }
+      message += `\n${spotsText}\n`;
+
+      if (event.description) {
+        message += `\n${event.description}\n`;
+      }
+
+      // Añadir participantes registrados
+      const confirmedRegistrations = event.registrations?.filter(reg => reg.status === 'CONFIRMED') || [];
+      const confirmedInvitations = invitations?.filter(inv => inv.status === 'PENDING' || inv.status === 'USED') || [];
+
+      if (confirmedRegistrations.length > 0 || confirmedInvitations.length > 0) {
+        message += `\n*Participantes confirmados:*\n`;
+        confirmedRegistrations.forEach(reg => {
+          message += `- ${reg.user?.name || 'Usuario'}`;
+          if (reg.user?.membership?.type) {
+            const membershipLabel = reg.user.membership.type === 'SOCIO' ? 'Socio' : 'Colaborador';
+            message += ` (${membershipLabel})`;
+          }
+          message += '\n';
+        });
+        confirmedInvitations.forEach(inv => {
+          message += `- ${inv.guestFirstName} ${inv.guestLastName} (Invitado)\n`;
+        });
+      }
+
+      message += `\nApúntate aquí: ${shareUrl}`;
+      return message;
+    };
+
+    // Abrir WhatsApp de forma síncrona (evita bloqueo de popup del navegador)
+    // con la URL actual y luego intentar obtener la URL personalizada
+    const fallbackUrl = window.location.href;
+    const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(buildMessage(fallbackUrl))}`, '_blank');
+
+    // Intentar obtener URL personalizada y actualizar si es posible
     try {
       const res = await api.post<{ success: boolean; data: { url: string } }>('/api/share/generate', { eventId: event.id });
-      if (res.data.success) shareUrl = res.data.data.url;
+      if (res.data.success && whatsappWindow && !whatsappWindow.closed) {
+        whatsappWindow.location.href = `https://wa.me/?text=${encodeURIComponent(buildMessage(res.data.data.url))}`;
+      }
     } catch {
-      // Si falla, usar la URL normal
+      // Ya se abrió con la URL de fallback, no hacer nada
     }
-
-    let message = `*${event.title}*\n\n`;
-    message += `${emojiCalendar} ${eventDateText}\n`;
-    message += `${emojiClock} ${shareTimeText}\n`;
-    if (event.type !== 'PARTIDA' && event.location) {
-      message += `${emojiLocation} Lugar: ${event.location}\n`;
-    }
-    message += `\n${spotsText}\n`;
-
-    if (event.description) {
-      message += `\n${event.description}\n`;
-    }
-
-    // Añadir participantes registrados
-    const confirmedRegistrations = event.registrations?.filter(reg => reg.status === 'CONFIRMED') || [];
-
-    // Obtener invitados válidos (PENDING = invitación válida no usada aún, USED = ya asistió)
-    const confirmedInvitations = invitations?.filter(inv => inv.status === 'PENDING' || inv.status === 'USED') || [];
-
-    if (confirmedRegistrations.length > 0 || confirmedInvitations.length > 0) {
-      message += `\n*Participantes confirmados:*\n`;
-
-      confirmedRegistrations.forEach(reg => {
-        message += `- ${reg.user?.name || 'Usuario'}`;
-        if (reg.user?.membership?.type) {
-          const membershipLabel = reg.user.membership.type === 'SOCIO' ? 'Socio' : 'Colaborador';
-          message += ` (${membershipLabel})`;
-        }
-        message += '\n';
-      });
-
-      confirmedInvitations.forEach(inv => {
-        message += `- ${inv.guestFirstName} ${inv.guestLastName} (Invitado)\n`;
-      });
-    }
-
-    message += `\nApúntate aquí: ${shareUrl}`;
-
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
   };
 
   return (
@@ -1085,7 +1096,7 @@ export default function EventDetail() {
         </Card>
 
         {/* Validación QR de partida */}
-        {(canValidateQr || event.disputeResult === true) && isPartida && isPast && event.isUserRegistered && event.userRegistrationStatus === 'CONFIRMED' && (
+        {(canValidateQr || event.disputeResult === true) && isPartida && event.isUserRegistered && event.userRegistrationStatus === 'CONFIRMED' && (
           <Card>
             <CardHeader>
               <CardTitle>Validación de partida</CardTitle>

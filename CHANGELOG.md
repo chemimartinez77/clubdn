@@ -6,6 +6,22 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-03-26
 
+### 🐛 Correcciones
+
+#### Botón de compartir por WhatsApp no hacía nada
+- El navegador bloqueaba el `window.open` porque se llamaba tras un `await` (fuera del manejador directo del click). Corregido abriendo WhatsApp de forma síncrona con la URL del evento como fallback, e intentando actualizar a la URL personalizada una vez resuelta la petición.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — `handleShareWhatsApp` reestructurado para abrir el popup antes del `await`
+
+#### Sección de validación QR no aparecía antes de que empezara la partida
+- La sección usaba `isPast` (partida ya comenzada) en lugar de la ventana temporal real (desde 1h antes del inicio). Corregido calculando en el cliente la misma ventana que usa el backend.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — `canValidateQr` e `isInValidationWindow` calculados con la ventana temporal correcta
+
+---
+
 ### Validación de partidas por QR y logro VALIDADOR
 
 #### Sistema de validación cruzada por QR
