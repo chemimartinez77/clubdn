@@ -119,10 +119,12 @@ model User {
   badges            UserBadge[]
   gamePlayHistory   GamePlayHistory[]
   financialMovements FinancialMovement[] @relation("FinancialMovements")
-  azulGamesAsPlayer1 AzulGame[]          @relation("AzulGamesAsPlayer1")
-  azulGamesAsPlayer2 AzulGame[]          @relation("AzulGamesAsPlayer2")
-  viernesGames       ViernesGame[]       @relation("ViernesGamesAsPlayer")
-  pageViews          PageView[]
+  azulGamesAsPlayer1  AzulGame[]          @relation("AzulGamesAsPlayer1")
+  azulGamesAsPlayer2  AzulGame[]          @relation("AzulGamesAsPlayer2")
+  viernesGames        ViernesGame[]       @relation("ViernesGamesAsPlayer")
+  pageViews           PageView[]
+  gameValidationsAsScanner GameValidation[] @relation("GameValidationScanner")
+  gameValidationsAsScanned GameValidation[] @relation("GameValidationScanned")
 
   @@index([email])
   @@index([status])
@@ -280,6 +282,7 @@ model Event {
   photos          EventPhoto[]
   auditLogs       EventAuditLog[]
   gamePlayHistory GamePlayHistory[]
+  gameValidations GameValidation[]
 
   // Aprobación de jugadores
   requiresApproval Boolean @default(true) // Si requiere aprobación del organizador
@@ -784,6 +787,7 @@ enum BadgeCategory {
   CATALOGADOR
   ORGANIZADOR
   REPETIDOR
+  VALIDADOR
 }
 
 // Tipos de notificaciones
@@ -850,6 +854,23 @@ model BadgeDefinition {
   @@unique([category, level])
   @@index([category])
   @@index([level])
+}
+
+// Validación cruzada de partidas por QR
+model GameValidation {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  scannerId   String   // quien escaneó el QR del otro
+  scanner     User     @relation("GameValidationScanner", fields: [scannerId], references: [id], onDelete: Cascade)
+  scannedId   String   // cuyo QR fue escaneado
+  scanned     User     @relation("GameValidationScanned", fields: [scannedId], references: [id], onDelete: Cascade)
+  validatedAt DateTime @default(now())
+
+  @@unique([eventId, scannerId, scannedId])
+  @@index([eventId])
+  @@index([scannerId])
+  @@index([scannedId])
 }
 
 // Badges desbloqueados por usuarios

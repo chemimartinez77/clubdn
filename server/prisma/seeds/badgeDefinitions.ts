@@ -83,6 +83,14 @@ const badgeDefinitions = [
   { category: BadgeCategory.REPETIDOR, level: 4, name: 'Devoto del Tablero', requiredCount: 40 },
   { category: BadgeCategory.REPETIDOR, level: 5, name: 'El que no Necesita Novedades', requiredCount: 70 },
   { category: BadgeCategory.REPETIDOR, level: 6, name: 'Maestro de sus Obsesiones', requiredCount: 100 },
+
+  // VALIDADOR (por partidas validadas con QR)
+  { category: BadgeCategory.VALIDADOR, level: 1, name: 'Testigo Presencial', requiredCount: 5 },
+  { category: BadgeCategory.VALIDADOR, level: 2, name: 'Fedatario del Dado', requiredCount: 10 },
+  { category: BadgeCategory.VALIDADOR, level: 3, name: 'Oficial de Actas', requiredCount: 20 },
+  { category: BadgeCategory.VALIDADOR, level: 4, name: 'Inspector del Tablero', requiredCount: 40 },
+  { category: BadgeCategory.VALIDADOR, level: 5, name: 'Gran Notario Lúdico', requiredCount: 70 },
+  { category: BadgeCategory.VALIDADOR, level: 6, name: 'Guardián del Resultado', requiredCount: 100 },
 ];
 
 export async function seedBadges() {

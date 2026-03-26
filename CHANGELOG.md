@@ -6,6 +6,36 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-03-26
 
+### Validación de partidas por QR y logro VALIDADOR
+
+#### Sistema de validación cruzada por QR
+- Cada jugador inscrito en una partida puede mostrar su QR personal en la página de detalle del evento (visible solo si la partida ya ocurrió y no está aún validada).
+- Cuando un jugador escanea el QR del otro, se llama a `POST /api/events/:eventId/validate-qr/:scannedUserId`. El sistema verifica que ambos están inscritos como CONFIRMED y que el evento ya ocurrió.
+- La primera validación QR marca la partida como disputada (`disputeResult: true`), cancela la notificación de disputa pendiente al organizador y procesa el `GamePlayHistory` y badges de categoría de juego para todos los inscritos.
+- La validación solo está disponible desde **1 hora antes del inicio** hasta el **final del día en que termina la partida**. Fuera de esa ventana el endpoint devuelve error.
+- La operación es idempotente: si la misma pareja ya validó, devuelve `alreadyValidated: true` sin error.
+- Página nueva `/validate-game/:eventId/:scannedUserId` que ejecuta la validación automáticamente al abrirse (la que recibe el usuario que escanea el QR).
+
+#### Logro VALIDADOR (6 niveles: 5, 10, 20, 40, 70, 100 partidas)
+- Testigo Presencial / Fedatario del Dado / Oficial de Actas / Inspector del Tablero / Gran Notario Lúdico / Guardián del Resultado
+- Cuenta partidas únicas en las que el usuario participó en una validación QR (como scanner o como escaneado).
+- Añadida la categoría `VALIDADOR` al enum `BadgeCategory` en schema Prisma y en los tipos/helpers del cliente.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — modelo `GameValidation`, categoría `VALIDADOR` en enum, relaciones en `User` y `Event`
+- `server/prisma/seeds/badgeDefinitions.ts` — 6 nuevos badges VALIDADOR
+- `server/src/controllers/eventController.ts` — función `validateGameQr`
+- `server/src/controllers/badgeController.ts` — contador VALIDADOR en `getCategoryCount`, nombre en helper
+- `server/src/routes/eventRoutes.ts` — ruta `POST /:eventId/validate-qr/:scannedUserId`
+- `client/src/types/badge.ts` — tipo, display name, color e icono para VALIDADOR
+- `client/src/pages/EventDetail.tsx` — sección de QR de validación para participantes
+- `client/src/pages/ValidateGame.tsx` — página nueva que recibe el escaneo
+- `client/src/App.tsx` — ruta `/validate-game/:eventId/:scannedUserId`
+
+---
+
+## 2026-03-26
+
 ### 🐛 Correcciones
 
 #### Badges — categorías ORGANIZADOR y REPETIDOR sin nombre

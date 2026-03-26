@@ -2020,3 +2020,121 @@ export const confirmEventNotPlayed = async (req: Request, res: Response): Promis
     res.status(500).json({ success: false, message: 'Error al confirmar la no disputa' });
   }
 };
+
+/**
+ * POST /api/events/:eventId/validate-qr/:scannedUserId
+ * El usuario autenticado (scanner) escanea el QR del scannedUser.
+ * Valida la partida para ambos y desbloquea badges VALIDADOR.
+ */
+export const validateGameQr = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { eventId, scannedUserId } = req.params as { eventId: string; scannedUserId: string };
+    const scannerId = req.user!.userId;
+
+    if (scannerId === scannedUserId) {
+      res.status(400).json({ success: false, message: 'No puedes escanear tu propio QR' });
+      return;
+    }
+
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      include: {
+        registrations: {
+          where: { status: RegistrationStatus.CONFIRMED },
+          select: { userId: true }
+        }
+      }
+    });
+
+    if (!event) {
+      res.status(404).json({ success: false, message: 'Evento no encontrado' });
+      return;
+    }
+
+    // Si ya está validado por disputa, no hacer nada
+    if (event.disputeResult === true) {
+      res.status(400).json({ success: false, message: 'Esta partida ya fue validada anteriormente' });
+      return;
+    }
+
+    // Verificar ventana temporal de validación:
+    // - Desde 1 hora antes del inicio
+    // - Hasta el final del día en que termina la partida
+    const now = new Date();
+    const eventDate = new Date(event.date);
+
+    // Calcular inicio real del evento
+    const startHour = event.startHour ?? 0;
+    const startMinute = event.startMinute ?? 0;
+    const eventStart = new Date(eventDate);
+    eventStart.setHours(startHour, startMinute, 0, 0);
+
+    // Ventana de apertura: 1 hora antes del inicio
+    const windowOpen = new Date(eventStart.getTime() - 60 * 60 * 1000);
+
+    // Calcular fin del día en que termina la partida
+    const durationMinutes = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
+    const eventEnd = new Date(eventStart.getTime() + durationMinutes * 60 * 1000);
+    const windowClose = new Date(eventEnd);
+    windowClose.setHours(23, 59, 59, 999);
+
+    if (now < windowOpen) {
+      res.status(400).json({ success: false, message: 'La validación aún no está disponible (se abre 1 hora antes de la partida)' });
+      return;
+    }
+    if (now > windowClose) {
+      res.status(400).json({ success: false, message: 'El plazo de validación de esta partida ha expirado' });
+      return;
+    }
+
+    // Verificar que ambos están inscritos como CONFIRMED
+    const registeredIds = new Set(event.registrations.map(r => r.userId));
+    if (!registeredIds.has(scannerId)) {
+      res.status(403).json({ success: false, message: 'No estás inscrito en esta partida' });
+      return;
+    }
+    if (!registeredIds.has(scannedUserId)) {
+      res.status(403).json({ success: false, message: 'El otro jugador no está inscrito en esta partida' });
+      return;
+    }
+
+    // Intentar crear la validación (@@unique evita duplicados)
+    try {
+      await prisma.gameValidation.create({
+        data: { eventId, scannerId, scannedId: scannedUserId }
+      });
+    } catch {
+      // Ya existe esta validación exacta — idempotente
+      res.status(200).json({ success: true, message: 'La partida ya estaba validada', alreadyValidated: true });
+      return;
+    }
+
+    // Marcar el evento como disputado (primera validación QR confirma la partida)
+    if (event.disputeResult === null) {
+      await prisma.event.update({
+        where: { id: eventId },
+        data: { disputeResult: true, disputeConfirmedAt: now, disputeAsked: true }
+      });
+
+      // Eliminar la notificación de disputa pendiente al organizador si existe
+      await prisma.notification.deleteMany({
+        where: {
+          type: 'EVENT_DISPUTE_CONFIRMATION',
+          metadata: { path: ['eventId'], equals: eventId }
+        }
+      });
+
+      // Procesar GamePlayHistory y badges de categoría de juego para todos los inscritos
+      await processEventPlayHistory(eventId);
+    }
+
+    // Desbloquear badge VALIDADOR para ambos jugadores
+    await checkAndUnlockBadges(scannerId, BadgeCategory.VALIDADOR);
+    await checkAndUnlockBadges(scannedUserId, BadgeCategory.VALIDADOR);
+
+    res.status(200).json({ success: true, message: 'Partida validada correctamente' });
+  } catch (error) {
+    console.error('Error al validar QR de partida:', error);
+    res.status(500).json({ success: false, message: 'Error al validar la partida' });
+  }
+};

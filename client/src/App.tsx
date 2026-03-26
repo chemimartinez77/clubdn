@@ -19,6 +19,7 @@ import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
 import CreatePartida from './pages/CreatePartida';
 import InviteValidation from './pages/InviteValidation';
+import ValidateGame from './pages/ValidateGame';
 import JoinViaShareLink from './pages/JoinViaShareLink';
 import PendingApprovals from './pages/admin/PendingApprovals';
 import AdminDashboard from './pages/admin/Dashboard';
@@ -232,6 +233,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <InviteValidation />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/validate-game/:eventId/:scannedUserId"
+            element={
+              <ProtectedRoute>
+                <ValidateGame />
               </ProtectedRoute>
             }
           />

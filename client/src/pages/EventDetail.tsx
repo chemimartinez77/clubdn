@@ -63,6 +63,10 @@ export default function EventDetail() {
     requiresApproval: true,
   });
 
+  // Estado QR de validación de partida
+  const [showValidationQr, setShowValidationQr] = useState(false);
+  const [validationDone, setValidationDone] = useState(false);
+
   // Fetch event details
   const { data: event, isLoading } = useQuery({
     queryKey: ['event', id],
@@ -370,6 +374,22 @@ export default function EventDetail() {
     }
   });
 
+  // Mutación de validación QR de partida
+  const validateQrMutation = useMutation({
+    mutationFn: async (scannedUserId: string) => {
+      const response = await api.post(`/api/events/${id}/validate-qr/${scannedUserId}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      setValidationDone(true);
+      setShowValidationQr(false);
+      success('Partida validada correctamente');
+    },
+    onError: (err: unknown) => {
+      showError(getErrorMessage(err, 'Error al validar la partida'));
+    }
+  });
+
   // Approve registration mutation
   const approveRegistrationMutation = useMutation({
     mutationFn: async (registrationId: string) => {
@@ -547,6 +567,22 @@ export default function EventDetail() {
     && (isAdmin || user?.id === event.createdBy)
     && !isFull
     && (event.registeredCount || 0) > 0;
+
+  // El usuario puede validar si: es PARTIDA, está inscrito como CONFIRMED, ya ocurrió, y la partida no está ya validada por disputa
+  const canValidateQr = isPartida
+    && isPast
+    && event.isUserRegistered
+    && event.userRegistrationStatus === 'CONFIRMED'
+    && event.disputeResult !== true
+    && !validationDone;
+
+  // URL que codifica el QR de validación de este usuario en esta partida
+  const validationQrData = id && user?.id
+    ? `${window.location.origin}/validate-game/${id}/${user.id}`
+    : null;
+  const validationQrImageUrl = validationQrData
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(validationQrData)}`
+    : null;
 
   const confirmed = event.registrations?.filter(r => r.status === 'CONFIRMED') || [];
   const waitlist = event.registrations?.filter(r => r.status === 'WAITLIST') || [];
@@ -1064,6 +1100,40 @@ export default function EventDetail() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Validación QR de partida */}
+        {(canValidateQr || validationDone || event.disputeResult === true) && isPartida && isPast && event.isUserRegistered && event.userRegistrationStatus === 'CONFIRMED' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Validación de partida</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {event.disputeResult === true || validationDone ? (
+                <p className="text-sm text-green-600 font-medium">Partida validada correctamente.</p>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-[var(--color-textSecondary)]">
+                    Muestra tu QR a otro participante para validar la partida, o escanea el suyo.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      onClick={() => setShowValidationQr(v => !v)}
+                      className="!bg-[var(--color-primary)] !text-white"
+                    >
+                      {showValidationQr ? 'Ocultar mi QR' : 'Mostrar mi QR'}
+                    </Button>
+                  </div>
+                  {showValidationQr && validationQrImageUrl && (
+                    <div className="flex flex-col items-center gap-2 pt-2">
+                      <img src={validationQrImageUrl} alt="QR de validación" className="rounded-lg" width={180} height={180} />
+                      <p className="text-xs text-[var(--color-textSecondary)]">Pide a otro participante que lo escanee</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Attendees */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

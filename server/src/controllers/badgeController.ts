@@ -104,6 +104,24 @@ async function getCategoryCount(userId: string, category: BadgeCategory): Promis
     });
     return groups.length;
   }
+  if (category === BadgeCategory.VALIDADOR) {
+    // Cuenta partidas únicas en las que el usuario participó en una validación QR
+    const asScanner = await prisma.gameValidation.findMany({
+      where: { scannerId: userId },
+      select: { eventId: true },
+      distinct: ['eventId']
+    });
+    const asScanned = await prisma.gameValidation.findMany({
+      where: { scannedId: userId },
+      select: { eventId: true },
+      distinct: ['eventId']
+    });
+    const uniqueEvents = new Set([
+      ...asScanner.map(v => v.eventId),
+      ...asScanned.map(v => v.eventId)
+    ]);
+    return uniqueEvents.size;
+  }
   return prisma.gamePlayHistory.count({ where: { userId, gameCategory: category } });
 }
 
@@ -371,7 +389,8 @@ function getCategoryDisplayName(category: BadgeCategory): string {
     [BadgeCategory.FILLERS_PARTY]: 'Fillers / Party',
     [BadgeCategory.CATALOGADOR]: 'Catalogador',
     [BadgeCategory.ORGANIZADOR]: 'Organizador',
-    [BadgeCategory.REPETIDOR]: 'Repetidor'
+    [BadgeCategory.REPETIDOR]: 'Repetidor',
+    [BadgeCategory.VALIDADOR]: 'Validador'
   };
   return names[category];
 }

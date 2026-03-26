@@ -10,7 +10,8 @@ export type BadgeCategory =
   | 'FILLERS_PARTY'
   | 'CATALOGADOR'
   | 'ORGANIZADOR'
-  | 'REPETIDOR';
+  | 'REPETIDOR'
+  | 'VALIDADOR';
 
 export interface BadgeDefinition {
   id: string;
@@ -91,7 +92,8 @@ export const getCategoryDisplayName = (category: BadgeCategory): string => {
     FILLERS_PARTY: 'Fillers / Party',
     CATALOGADOR: 'Catalogador',
     ORGANIZADOR: 'Organizador',
-    REPETIDOR: 'Repetidor'
+    REPETIDOR: 'Repetidor',
+    VALIDADOR: 'Validador'
   };
   return categoryNames[category];
 };
@@ -116,7 +118,8 @@ export const getCategoryColor = (category: BadgeCategory): string => {
     FILLERS_PARTY: '#fbbf24',   // Amarillo/Dorado
     CATALOGADOR: '#06b6d4',     // Cian
     ORGANIZADOR: '#f97316',     // Naranja
-    REPETIDOR: '#ec4899'        // Rosa
+    REPETIDOR: '#ec4899',       // Rosa
+    VALIDADOR: '#10b981'        // Esmeralda
   };
   return categoryColors[category];
 };
@@ -133,7 +136,8 @@ export const getCategoryIcon = (category: BadgeCategory): string => {
     FILLERS_PARTY: '🎉',
     CATALOGADOR: '📚',
     ORGANIZADOR: '🏛️',
-    REPETIDOR: '🔁'
+    REPETIDOR: '🔁',
+    VALIDADOR: '✅'
   };
   return categoryIcons[category];
 };
