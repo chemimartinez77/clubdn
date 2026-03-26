@@ -80,6 +80,9 @@ export interface Event {
   // Invitaciones del evento (solo en detalle)
   invitations?: EventInvitation[];
   eventGuests?: EventGuest[];
+
+  // Disputa
+  disputeResult?: boolean | null;
 }
 
 export interface EventGuest {

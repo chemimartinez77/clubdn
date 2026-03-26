@@ -65,7 +65,6 @@ export default function EventDetail() {
 
   // Estado QR de validación de partida
   const [showValidationQr, setShowValidationQr] = useState(false);
-  const [validationDone, setValidationDone] = useState(false);
 
   // Fetch event details
   const { data: event, isLoading } = useQuery({
@@ -374,21 +373,6 @@ export default function EventDetail() {
     }
   });
 
-  // Mutación de validación QR de partida
-  const validateQrMutation = useMutation({
-    mutationFn: async (scannedUserId: string) => {
-      const response = await api.post(`/api/events/${id}/validate-qr/${scannedUserId}`);
-      return response.data;
-    },
-    onSuccess: () => {
-      setValidationDone(true);
-      setShowValidationQr(false);
-      success('Partida validada correctamente');
-    },
-    onError: (err: unknown) => {
-      showError(getErrorMessage(err, 'Error al validar la partida'));
-    }
-  });
 
   // Approve registration mutation
   const approveRegistrationMutation = useMutation({
@@ -573,8 +557,7 @@ export default function EventDetail() {
     && isPast
     && event.isUserRegistered
     && event.userRegistrationStatus === 'CONFIRMED'
-    && event.disputeResult !== true
-    && !validationDone;
+    && event.disputeResult !== true;
 
   // URL que codifica el QR de validación de este usuario en esta partida
   const validationQrData = id && user?.id
@@ -1102,13 +1085,13 @@ export default function EventDetail() {
         </Card>
 
         {/* Validación QR de partida */}
-        {(canValidateQr || validationDone || event.disputeResult === true) && isPartida && isPast && event.isUserRegistered && event.userRegistrationStatus === 'CONFIRMED' && (
+        {(canValidateQr || event.disputeResult === true) && isPartida && isPast && event.isUserRegistered && event.userRegistrationStatus === 'CONFIRMED' && (
           <Card>
             <CardHeader>
               <CardTitle>Validación de partida</CardTitle>
             </CardHeader>
             <CardContent>
-              {event.disputeResult === true || validationDone ? (
+              {event.disputeResult === true ? (
                 <p className="text-sm text-green-600 font-medium">Partida validada correctamente.</p>
               ) : (
                 <div className="space-y-3">
