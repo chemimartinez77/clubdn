@@ -4,6 +4,19 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-03-26
+
+### 🐛 Correcciones
+
+#### Badges — categorías ORGANIZADOR y REPETIDOR sin nombre
+- Las categorías `ORGANIZADOR` y `REPETIDOR` existían en la base de datos pero no estaban declaradas en el tipo `BadgeCategory` ni en los helpers de `badge.ts`, por lo que su nombre aparecía vacío en la cabecera de cada grupo de logros.
+- Añadidas ambas categorías al tipo, a `getCategoryDisplayName`, `getCategoryColor` y `getCategoryIcon`.
+
+**Archivos modificados:**
+- `client/src/types/badge.ts` — tipo y helpers actualizados
+
+---
+
 ## 2026-03-25
 
 ### 🐛 Correcciones
