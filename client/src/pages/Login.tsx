@@ -25,6 +25,7 @@ interface Particle {
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const redirectTo = new URLSearchParams(window.location.search).get('redirect') || '/';
   const { themeMode } = useTheme();
   const { success, error: showError } = useToast();
   const [error, setError] = useState('');
@@ -67,7 +68,7 @@ export default function Login() {
     try {
       await login(data.email, data.password);
       success('Sesión iniciada correctamente');
-      navigate('/');
+      navigate(redirectTo);
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Error al iniciar sesión';
       setError(errorMessage);

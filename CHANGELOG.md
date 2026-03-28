@@ -4,6 +4,27 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-03-28
+
+### Mejoras
+
+#### Enlace de invitación por WhatsApp redirige al login si no hay sesión
+- Al abrir el enlace compartido, si el usuario no está autenticado se le redirige al login. Tras hacer login es llevado automáticamente a la página del evento para apuntarse.
+- El login acepta el parámetro `?redirect=` para recordar el destino tras autenticarse.
+- Eliminado el formulario de "solicitar plaza como invitado anónimo" de la página de enlace compartido, ya que el flujo es exclusivo para socios registrados.
+
+**Archivos modificados:**
+- `client/src/pages/JoinViaShareLink.tsx` — reescrito para redirigir al login o al evento según sesión
+- `client/src/pages/Login.tsx` — navega a `?redirect=` tras login exitoso
+
+#### Modal de confirmación para "Cerrar plazas"
+- El botón de cerrar plazas usaba `window.confirm` nativo (diálogo del sistema). Reemplazado por un modal con el mismo estilo visual que el resto de confirmaciones de la página.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — nuevo estado `isCloseCapacityModalOpen` y modal de confirmación
+
+---
+
 ## 2026-03-26
 
 ### 🐛 Correcciones

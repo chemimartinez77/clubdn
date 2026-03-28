@@ -35,6 +35,7 @@ export default function EventDetail() {
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isUnregisterModalOpen, setIsUnregisterModalOpen] = useState(false);
+  const [isCloseCapacityModalOpen, setIsCloseCapacityModalOpen] = useState(false);
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name?: string } | null>(null);
 
@@ -959,14 +960,7 @@ export default function EventDetail() {
                   </Button>
                   {canCloseCapacity && (
                     <Button
-                      onClick={() => {
-                        const confirmed = window.confirm(
-                          '¿Quieres cerrar la partida al número actual de asistentes?'
-                        );
-                        if (confirmed) {
-                          closeCapacityMutation.mutate();
-                        }
-                      }}
+                      onClick={() => setIsCloseCapacityModalOpen(true)}
                       disabled={closeCapacityMutation.isPending}
                       className="w-full sm:w-auto bg-slate-200 hover:bg-slate-300 text-[var(--color-text)]"
                     >
@@ -1982,6 +1976,36 @@ export default function EventDetail() {
           }
         }}
       />
+
+      {/* Modal de confirmación de cerrar plazas */}
+      <Modal
+        isOpen={isCloseCapacityModalOpen}
+        onClose={() => setIsCloseCapacityModalOpen(false)}
+        title="Cerrar plazas"
+      >
+        <div className="space-y-4">
+          <p className="text-[var(--color-textSecondary)]">
+            ¿Quieres cerrar la partida al número actual de asistentes?
+          </p>
+          <div className="flex gap-3 justify-end">
+            <Button
+              onClick={() => setIsCloseCapacityModalOpen(false)}
+              variant="outline"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                closeCapacityMutation.mutate();
+                setIsCloseCapacityModalOpen(false);
+              }}
+              disabled={closeCapacityMutation.isPending}
+            >
+              {closeCapacityMutation.isPending ? 'Cerrando...' : 'Aceptar'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Modal de confirmación de eliminación */}
       <Modal
