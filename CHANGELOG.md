@@ -36,6 +36,17 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 - `server/src/controllers/authController.ts` — comprobación de rate limit antes de validar credenciales, `warningMessage` en respuestas de fallo
 - `client/src/pages/Login.tsx` — cuenta atrás de freeze, banner de aviso amarillo
 
+### Correcciones
+
+#### Tipos TypeScript desincronizados tras cambio de teléfono a DNI
+- Los tipos `Invitation`, `PendingInvitation` y `CreateInvitationPayload` todavía referenciaban `guestPhone`/`guestPhoneMasked`. Actualizados a `guestDni`/`guestDniMasked` para alinearlos con el backend.
+- La página `InviteValidation.tsx` también mostraba "Tel." con el campo antiguo; corregido a "DNI:".
+
+**Archivos modificados:**
+- `client/src/types/invitation.ts` — `guestPhoneMasked` → `guestDniMasked`, `guestPhone` → `guestDni`
+- `client/src/types/event.ts` — `guestPhoneMasked` → `guestDniMasked` en `PendingInvitation`
+- `client/src/pages/InviteValidation.tsx` — label "Tel." → "DNI:" y campo actualizado
+
 ### Mejoras
 
 #### Validación de DNI/NIE al invitar a un externo a una partida

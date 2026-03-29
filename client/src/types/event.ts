@@ -105,7 +105,7 @@ export interface PendingInvitation {
   id: string;
   guestFirstName: string;
   guestLastName: string;
-  guestPhoneMasked: string;
+  guestDniMasked: string;
   createdAt: string;
   inviter: { id: string; name: string; nick: string | null; avatar: string | null };
 }
