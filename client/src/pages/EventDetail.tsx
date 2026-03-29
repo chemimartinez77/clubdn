@@ -19,6 +19,19 @@ import { getCategoryDisplayName, getCategoryIcon } from '../types/badge';
 import { displayName, fullNameTooltip } from '../utils/displayName';
 import UserPopover from '../components/ui/UserPopover';
 
+const DNI_LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE';
+const isValidDniNie = (value: string): boolean => {
+  const v = value.trim().toUpperCase();
+  if (/^\d{8}[A-HJ-NP-TV-Z]$/.test(v)) {
+    return v[8] === DNI_LETTERS[parseInt(v.slice(0, 8), 10) % 23];
+  }
+  if (/^[XYZ]\d{7}[A-HJ-NP-TV-Z]$/.test(v)) {
+    const prefix: Record<string, string> = { X: '0', Y: '1', Z: '2' };
+    return v[8] === DNI_LETTERS[parseInt(prefix[v[0]] + v.slice(1, 8), 10) % 23];
+  }
+  return false;
+};
+
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -28,7 +41,7 @@ export default function EventDetail() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [guestFirstName, setGuestFirstName] = useState('');
   const [guestLastName, setGuestLastName] = useState('');
-  const [guestPhone, setGuestPhone] = useState('');
+  const [guestDni, setGuestDni] = useState('');
   const [isExceptional, setIsExceptional] = useState(false);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [expandedInviteId, setExpandedInviteId] = useState<string | null>(null);
@@ -350,7 +363,7 @@ export default function EventDetail() {
         eventId: id,
         guestFirstName: guestFirstName.trim(),
         guestLastName: guestLastName.trim(),
-        guestPhone: guestPhone.trim(),
+        guestDni: guestDni.trim(),
         ...(isAdmin && isExceptional ? { isExceptional: true } : {})
       };
       const response = await api.post<ApiResponse<InvitationCreateResponse>>('/api/invitations', payload);
@@ -363,7 +376,7 @@ export default function EventDetail() {
       queryClient.invalidateQueries({ queryKey: ['pending-invitations', id] });
       setGuestFirstName('');
       setGuestLastName('');
-      setGuestPhone('');
+      setGuestDni('');
       setIsExceptional(false);
       setQrUrl(data.data?.pendingApproval ? null : (data.data?.qrUrl || null));
       setExpandedInviteId(data.data?.pendingApproval ? null : (data.data?.invitation.id || null));
@@ -619,8 +632,8 @@ export default function EventDetail() {
       showError('Apellidos requeridos');
       return;
     }
-    if (!guestPhone.trim() || !/^\d{1,12}$/.test(guestPhone.trim())) {
-      showError('Teléfono no válido (solo dígitos, máximo 12)');
+    if (!isValidDniNie(guestDni.trim())) {
+      showError('DNI o NIE no válido');
       return;
     }
     if (!id) {
@@ -1620,15 +1633,15 @@ export default function EventDetail() {
 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-[var(--color-textSecondary)]">
-                Teléfono *
+                DNI / NIE *
               </label>
               <input
                 type="text"
-                value={guestPhone}
-                onChange={(e) => setGuestPhone(e.target.value)}
-                maxLength={12}
+                value={guestDni}
+                onChange={(e) => setGuestDni(e.target.value)}
+                maxLength={9}
                 className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-                placeholder="612345678"
+                placeholder="12345678A"
               />
             </div>
 
@@ -1645,7 +1658,7 @@ export default function EventDetail() {
                     createInvitationMutation.isPending ||
                     guestFirstName.trim().length < 2 ||
                     guestLastName.trim().length < 2 ||
-                    !/^\d{1,12}$/.test(guestPhone.trim())
+                    !isValidDniNie(guestDni.trim())
                   }
                   variant="primary"
                 >
@@ -1729,8 +1742,8 @@ export default function EventDetail() {
                         <p className="text-sm font-medium text-[var(--color-text)]">
                           {invite.guestFirstName} {invite.guestLastName}
                         </p>
-                        {invite.guestPhoneMasked && (
-                          <p className="text-xs text-[var(--color-textSecondary)]">Tel. {invite.guestPhoneMasked}</p>
+                        {invite.guestDniMasked && (
+                          <p className="text-xs text-[var(--color-textSecondary)]">DNI: {invite.guestDniMasked}</p>
                         )}
                         <p className="text-xs text-[var(--color-textSecondary)]">
                           {new Date(invite.validDate).toLocaleDateString('es-ES')}

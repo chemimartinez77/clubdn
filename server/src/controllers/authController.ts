@@ -9,8 +9,47 @@ import {
   sendAdminNotification,
   sendPasswordResetEmail,
 } from '../services/emailService';
-import { logLoginAttempt } from '../services/loginAttemptService';
+import { logLoginAttempt, checkLoginRateLimit } from '../services/loginAttemptService';
 import { notifyAdminsNewUser } from '../services/notificationService';
+import https from 'https';
+import querystring from 'querystring';
+
+async function verifyHcaptcha(token: string): Promise<boolean> {
+  const secret = process.env.HCAPTCHA_SECRET;
+  if (!secret) {
+    console.warn('[hCaptcha] HCAPTCHA_SECRET no configurado, omitiendo verificación');
+    return true;
+  }
+  return new Promise((resolve) => {
+    const body = querystring.stringify({ secret, response: token });
+    const req = https.request(
+      {
+        hostname: 'api.hcaptcha.com',
+        path: '/siteverify',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': Buffer.byteLength(body),
+        },
+      },
+      (res) => {
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(data);
+            resolve(parsed.success === true);
+          } catch {
+            resolve(false);
+          }
+        });
+      }
+    );
+    req.on('error', () => resolve(false));
+    req.write(body);
+    req.end();
+  });
+}
 
 /**
  * Registro de nuevo usuario
@@ -18,7 +57,16 @@ import { notifyAdminsNewUser } from '../services/notificationService';
  */
 export const register = async (req: Request, res: Response) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, hcaptchaToken } = req.body;
+
+    // Verificar hCaptcha
+    if (!hcaptchaToken) {
+      return res.status(400).json({ success: false, message: 'Verificación de seguridad requerida' });
+    }
+    const captchaOk = await verifyHcaptcha(hcaptchaToken);
+    if (!captchaOk) {
+      return res.status(400).json({ success: false, message: 'Verificación de seguridad fallida. Inténtalo de nuevo.' });
+    }
 
     // Verificar si el email ya existe
     const existingUser = await prisma.user.findUnique({
@@ -178,7 +226,30 @@ export const verifyEmail = async (req: Request, res: Response) => {
  */
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, hcaptchaToken } = req.body;
+
+    // Verificar hCaptcha
+    if (!hcaptchaToken) {
+      return res.status(400).json({ success: false, message: 'Verificación de seguridad requerida' });
+    }
+    const captchaOk = await verifyHcaptcha(hcaptchaToken);
+    if (!captchaOk) {
+      return res.status(400).json({ success: false, message: 'Verificación de seguridad fallida. Inténtalo de nuevo.' });
+    }
+
+    // Comprobar rate limit antes de cualquier consulta de credenciales
+    const rateLimit = await checkLoginRateLimit(email);
+    if (rateLimit.blocked) {
+      const mins = Math.ceil(rateLimit.retryAfterSeconds / 60);
+      const timeStr = rateLimit.retryAfterSeconds < 60
+        ? `${rateLimit.retryAfterSeconds} segundos`
+        : `${mins} minuto${mins !== 1 ? 's' : ''}`;
+      return res.status(429).json({
+        success: false,
+        message: `Demasiados intentos fallidos. Por favor, espera ${timeStr} antes de intentarlo de nuevo.`,
+        retryAfterSeconds: rateLimit.retryAfterSeconds,
+      });
+    }
 
     // Buscar usuario
     const user = await prisma.user.findUnique({
@@ -196,10 +267,12 @@ export const login = async (req: Request, res: Response) => {
         failureReason: 'invalid_credentials',
         req
       });
+      const rl = await checkLoginRateLimit(email);
 
       return res.status(401).json({
         success: false,
         message: 'Credenciales incorrectas',
+        warningMessage: rl.warningMessage,
       });
     }
 
@@ -213,10 +286,12 @@ export const login = async (req: Request, res: Response) => {
         failureReason: 'invalid_credentials',
         req
       });
+      const rl = await checkLoginRateLimit(email);
 
       return res.status(401).json({
         success: false,
         message: 'Credenciales incorrectas',
+        warningMessage: rl.warningMessage,
       });
     }
 

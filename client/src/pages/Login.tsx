@@ -1,9 +1,10 @@
 // client/src/pages/Login.tsx
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { api } from '../api/axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
@@ -29,7 +30,11 @@ export default function Login() {
   const { themeMode } = useTheme();
   const { success, error: showError } = useToast();
   const [error, setError] = useState('');
+  const [warningMessage, setWarningMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [freezeSeconds, setFreezeSeconds] = useState(0);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HCaptcha>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const mouseRef = useRef({ x: 0, y: 0 });
@@ -61,18 +66,57 @@ export default function Login() {
     resolver: zodResolver(loginSchema)
   });
 
+  // Cuenta atrás del freeze
+  useEffect(() => {
+    if (freezeSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setFreezeSeconds((s) => {
+        if (s <= 1) { clearInterval(timer); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [freezeSeconds]);
+
+  const handleCaptchaVerify = useCallback((token: string) => {
+    setCaptchaToken(token);
+  }, []);
+
+  const handleCaptchaExpire = useCallback(() => {
+    setCaptchaToken(null);
+  }, []);
+
   const onSubmit = async (data: LoginFormData) => {
+    if (!captchaToken) {
+      setError('Por favor, completa la verificación de seguridad.');
+      return;
+    }
     setError('');
+    setWarningMessage('');
     setLoading(true);
 
     try {
-      await login(data.email, data.password);
+      await login(data.email, data.password, captchaToken);
       success('Sesión iniciada correctamente');
       navigate(redirectTo);
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al iniciar sesión';
+      const responseData = err.response?.data;
+      const errorMessage = responseData?.message || 'Error al iniciar sesión';
+
+      if (err.response?.status === 429 && responseData?.retryAfterSeconds) {
+        setFreezeSeconds(responseData.retryAfterSeconds);
+      }
+
+      if (responseData?.warningMessage) {
+        setWarningMessage(responseData.warningMessage);
+      }
+
       setError(errorMessage);
       showError(errorMessage);
+
+      // Resetear captcha tras cada intento fallido
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -247,6 +291,16 @@ export default function Login() {
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg animate-shake">
               {error}
+              {freezeSeconds > 0 && (
+                <p className="mt-1 text-sm font-semibold">
+                  Podrás intentarlo de nuevo en {freezeSeconds}s
+                </p>
+              )}
+            </div>
+          )}
+          {!error && warningMessage && (
+            <div className="bg-yellow-50 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg text-sm">
+              {warningMessage}
             </div>
           )}
 
@@ -300,9 +354,19 @@ export default function Login() {
             </div>
           </div>
 
+          <div className="flex justify-center">
+            <HCaptcha
+              ref={captchaRef}
+              sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
+              onVerify={handleCaptchaVerify}
+              onExpire={handleCaptchaExpire}
+              theme={themeMode === 'dark' ? 'dark' : 'light'}
+            />
+          </div>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !captchaToken || freezeSeconds > 0}
             className="w-full bg-[var(--color-primary)] text-white py-3 rounded-lg font-semibold hover:bg-[var(--color-primaryDark)] transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg hover:shadow-xl"
           >
             {loading ? (

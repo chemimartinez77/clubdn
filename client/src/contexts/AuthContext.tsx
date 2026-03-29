@@ -18,7 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   impersonating: ImpersonatedUser | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, hcaptchaToken: string) => Promise<void>;
   logout: () => void;
   refetchUser: () => void;
   impersonate: (memberId: string) => Promise<void>;
@@ -87,10 +87,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Mutation para login
   const loginMutation = useMutation({
-    mutationFn: async ({ email, password }: LoginData) => {
+    mutationFn: async ({ email, password, hcaptchaToken }: LoginData) => {
       const response = await api.post<ApiResponse<{ token: string; user: User }>>(
         '/api/auth/login',
-        { email, password }
+        { email, password, hcaptchaToken }
       );
       return response.data.data;
     },
@@ -113,8 +113,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   });
 
-  const login = async (email: string, password: string) => {
-    await loginMutation.mutateAsync({ email, password });
+  const login = async (email: string, password: string, hcaptchaToken: string) => {
+    await loginMutation.mutateAsync({ email, password, hcaptchaToken });
   };
 
   const logout = () => {

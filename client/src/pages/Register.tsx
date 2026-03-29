@@ -1,8 +1,9 @@
 // client/src/pages/Register.tsx
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { api } from '../api/axios';
 import { useToast } from '../hooks/useToast';
 import { registerSchema, type RegisterFormData } from '../lib/validations';
@@ -15,6 +16,16 @@ export default function Register() {
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HCaptcha>(null);
+
+  const handleCaptchaVerify = useCallback((token: string) => {
+    setCaptchaToken(token);
+  }, []);
+
+  const handleCaptchaExpire = useCallback(() => {
+    setCaptchaToken(null);
+  }, []);
   const getRegisterErrorMessage = (err: unknown) => {
     if (typeof err !== 'object' || err === null || !('response' in err)) {
       return undefined;
@@ -39,13 +50,17 @@ export default function Register() {
   });
 
   const onSubmit = async (data: RegisterFormData) => {
+    if (!captchaToken) {
+      setError('Por favor, completa la verificación de seguridad.');
+      return;
+    }
     setError('');
     setLoading(true);
 
     try {
       const response = await api.post<ApiResponse<{ email: string }>>(
         '/api/auth/register',
-        data
+        { ...data, hcaptchaToken: captchaToken }
       );
 
       if (response.data.success) {
@@ -62,6 +77,8 @@ export default function Register() {
       const errorMessage = getRegisterErrorMessage(err) || 'Error al registrarse';
       setError(errorMessage);
       showError(errorMessage);
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -196,9 +213,18 @@ export default function Register() {
             </p>
           </div>
 
+          <div className="flex justify-center">
+            <HCaptcha
+              ref={captchaRef}
+              sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
+              onVerify={handleCaptchaVerify}
+              onExpire={handleCaptchaExpire}
+            />
+          </div>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !captchaToken}
             className="w-full bg-[var(--color-primary)] text-white py-3 rounded-lg font-semibold hover:bg-[var(--color-primaryDark)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Registrando...' : 'Registrarse'}

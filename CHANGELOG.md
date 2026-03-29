@@ -4,6 +4,57 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-03-29
+
+### Seguridad
+
+#### hCaptcha en login y registro
+- Añadido widget hCaptcha (checkbox) en las páginas de login y registro. El botón de envío queda deshabilitado hasta que el usuario completa la verificación.
+- En login, el captcha se adapta al tema claro/oscuro. Tras cada intento fallido el captcha se resetea automáticamente.
+- El backend verifica el token con la API de hCaptcha (`api.hcaptcha.com/siteverify`) antes de procesar las credenciales. Si no se envía token o la verificación falla, devuelve 400.
+- Variables requeridas: `VITE_HCAPTCHA_SITE_KEY` (frontend) y `HCAPTCHA_SECRET` (backend).
+
+**Archivos modificados:**
+- `client/src/pages/Login.tsx` — widget HCaptcha, botón deshabilitado sin token, reset tras fallo
+- `client/src/pages/Register.tsx` — ídem
+- `client/src/contexts/AuthContext.tsx` — firma de `login` actualizada para pasar `hcaptchaToken`
+- `client/src/types/auth.ts` — campo `hcaptchaToken` en `LoginData`
+- `server/src/controllers/authController.ts` — función `verifyHcaptcha`, verificación en `login` y `register`
+
+#### Rate limiting en login (bloqueo escalonado por intentos fallidos)
+- Tras demasiados intentos fallidos con el mismo email, el acceso queda bloqueado temporalmente:
+  - 3 fallos → 30 segundos
+  - 6 fallos → 5 minutos
+  - 10 fallos → 15 minutos
+- El contador se resetea tras un login exitoso.
+- Cuando quedan 1 o 2 intentos antes del siguiente bloqueo, el backend incluye un aviso en la respuesta que se muestra en amarillo en el frontend.
+- Mientras dura el bloqueo, el frontend muestra una cuenta atrás en segundos y el botón permanece deshabilitado.
+- El bloqueo opera en el backend (por email), no solo en el cliente.
+
+**Archivos modificados:**
+- `server/src/services/loginAttemptService.ts` — función `checkLoginRateLimit` con escala de bloqueos
+- `server/src/controllers/authController.ts` — comprobación de rate limit antes de validar credenciales, `warningMessage` en respuestas de fallo
+- `client/src/pages/Login.tsx` — cuenta atrás de freeze, banner de aviso amarillo
+
+### Mejoras
+
+#### Validación de DNI/NIE al invitar a un externo a una partida
+- El campo para identificar al invitado vuelve a pedir el DNI o NIE (en lugar del teléfono).
+- Se valida el formato completo, incluyendo la letra de control, usando el algoritmo oficial: para DNI se comprueba `letra = 'TRWAGMYFPDXBNJZSQVHLCKE'[número % 23]`; para NIE se reemplaza el prefijo X→0, Y→1, Z→2 antes del cálculo.
+- La validación se realiza tanto en el frontend (botón deshabilitado si no es válido) como en el backend (error 400 si no pasa la validación antes de crear la invitación).
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — renombrado `guestPhone`→`guestDni`, función `isValidDniNie`, label/placeholder/maxLength actualizados
+- `server/src/controllers/invitationController.ts` — `isValidDniNie` con algoritmo oficial, `maskDni`, mensaje de error actualizado
+
+#### "Consejo del día" no aparece en páginas de autenticación
+- El modal de consejo del día se mostraba al cargar la página de reseteo de contraseña tras un login. Corregido excluyendo las rutas `/reset-password`, `/login`, `/register`, `/verify-email` y `/forgot-password`.
+
+**Archivos modificados:**
+- `client/src/App.tsx` — `NO_TIP_PATHS` y comprobación de `pathname` en `TipController`
+
+---
+
 ## 2026-03-28
 
 ### Mejoras

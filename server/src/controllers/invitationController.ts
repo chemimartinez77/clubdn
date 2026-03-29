@@ -3,7 +3,24 @@ import { Request, Response } from 'express';
 import { InvitationStatus, UserRole } from '@prisma/client';
 import { prisma } from '../config/database';
 import { generateInvitationToken } from '../utils/invitationToken';
-const isValidPhone = (value: string) => /^\d{1,12}$/.test(value);
+const DNI_REGEX = /^\d{8}[A-HJ-NP-TV-Z]$/i;
+const NIE_REGEX = /^[XYZ]\d{7}[A-HJ-NP-TV-Z]$/i;
+const DNI_LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE';
+
+const isValidDniNie = (value: string): boolean => {
+  const v = value.trim().toUpperCase();
+  if (DNI_REGEX.test(v)) {
+    const num = parseInt(v.slice(0, 8), 10);
+    return v[8] === DNI_LETTERS[num % 23];
+  }
+  if (NIE_REGEX.test(v)) {
+    const prefix: Record<string, string> = { X: '0', Y: '1', Z: '2' };
+    const firstChar = v.charAt(0);
+    const num = parseInt((prefix[firstChar] ?? '0') + v.slice(1, 8), 10);
+    return v[8] === DNI_LETTERS[num % 23];
+  }
+  return false;
+};
 
 const DEFAULT_INVITE_RULES = {
   inviteMaxActive: 5,
@@ -15,9 +32,10 @@ const DEFAULT_INVITE_RULES = {
 const normalizeText = (value: string) => value.trim().replace(/\s+/g, ' ');
 
 
-const maskPhone = (value: string) => {
-  if (value.length <= 3) return '*'.repeat(value.length);
-  return `${'*'.repeat(value.length - 3)}${value.slice(-3)}`;
+const maskDni = (value: string) => {
+  const v = value.trim().toUpperCase();
+  if (v.length <= 3) return '*'.repeat(v.length);
+  return `${'*'.repeat(v.length - 3)}${v.slice(-3)}`;
 };
 
 const getDateKey = (date: Date) => {
@@ -69,7 +87,7 @@ const mapInvitation = (invitation: any, options?: { includeQr?: boolean }) => {
     id: invitation.id,
     guestFirstName: invitation.guestFirstName,
     guestLastName: invitation.guestLastName,
-    guestDniMasked: invitation.guestPhone ? maskPhone(invitation.guestPhone) : undefined,
+    guestDniMasked: invitation.guestPhone ? maskDni(invitation.guestPhone) : undefined,
     status: invitation.status,
     validDate: invitation.validDate,
     isExceptional: invitation.isExceptional,
@@ -118,8 +136,8 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    if (!guestPhone || typeof guestPhone !== 'string' || !isValidPhone(guestPhone)) {
-      res.status(400).json({ success: false, message: 'Teléfono no válido (solo dígitos, máximo 12)' });
+    if (!guestPhone || typeof guestPhone !== 'string' || !isValidDniNie(guestPhone)) {
+      res.status(400).json({ success: false, message: 'DNI o NIE no válido' });
       return;
     }
       const event = await prisma.event.findUnique({
@@ -603,7 +621,7 @@ export const getPendingInvitations = async (req: Request, res: Response): Promis
         id: inv.id,
         guestFirstName: inv.guestFirstName,
         guestLastName: inv.guestLastName,
-        guestDniMasked: maskPhone(inv.guestPhone),
+        guestDniMasked: maskDni(inv.guestPhone),
         createdAt: inv.createdAt,
         inviter: { id: inv.member.id, name: inv.member.name, nick: inv.member.profile?.nick ?? null, avatar: inv.member.profile?.avatar ?? null }
       }))

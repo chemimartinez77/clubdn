@@ -1,5 +1,5 @@
 // client/src/App.tsx
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { usePageTracking } from './hooks/usePageTracking';
@@ -112,8 +112,11 @@ function PageTracker() {
   return null;
 }
 
+const NO_TIP_PATHS = ['/reset-password', '/login', '/register', '/verify-email', '/forgot-password'];
+
 function TipController() {
   const { user, isLoading } = useAuth();
+  const { pathname } = useLocation();
   const [tip, setTip] = useState<Tip | null>(null);
   const prevUserRef = useRef<string | null>(null);
 
@@ -123,12 +126,12 @@ function TipController() {
     const wasLoggedOut = prevUserRef.current === null;
     const isNowLoggedIn = currentId !== null;
 
-    if (wasLoggedOut && isNowLoggedIn && shouldShowTip()) {
+    if (wasLoggedOut && isNowLoggedIn && shouldShowTip() && !NO_TIP_PATHS.includes(pathname)) {
       setTip(getRandomTip());
     }
 
     prevUserRef.current = currentId;
-  }, [user, isLoading]);
+  }, [user, isLoading, pathname]);
 
   if (!tip) return null;
   return <TipOfTheDayModal tip={tip} onClose={() => setTip(null)} />;

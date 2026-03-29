@@ -46,6 +46,7 @@ export interface RegisterData {
 export interface LoginData {
   email: string;
   password: string;
+  hcaptchaToken: string;
 }
 
 export interface ApiResponse<T> {
