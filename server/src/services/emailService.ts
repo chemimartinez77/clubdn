@@ -397,7 +397,7 @@ export const sendPasswordResetEmail = async (email: string, name: string, token:
 
             <div style="background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0;">
               <p style="margin: 0; color: #92400e; font-size: 14px;">
-                <strong>⚠️ Importante:</strong> Este enlace expirará en 1 hora. Si no solicitaste este cambio, puedes ignorar este email.
+                <strong>⚠️ Importante:</strong> Este enlace expirará en 72 horas. Si no solicitaste este cambio, puedes ignorar este email.
               </p>
             </div>
 

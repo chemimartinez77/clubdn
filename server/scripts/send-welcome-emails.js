@@ -11,7 +11,7 @@
 // Para incluir también a usuarios que ya tienen contraseña real (bcrypt):
 //   INCLUDE_ACTIVE=true node server/scripts/send-welcome-emails.js
 
-require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+require('dotenv').config({ path: require('path').join(__dirname, '../.env'), override: true });
 
 const { PrismaClient } = require('@prisma/client');
 const { randomUUID } = require('crypto');
@@ -19,7 +19,7 @@ const { sendPasswordResetEmail } = require('../dist/services/emailService');
 
 const prisma = new PrismaClient();
 
-const EXCLUDED_EMAILS = ['chemimartinez@gmail.com'];
+const EXCLUDED_EMAILS = ['chemimartinez@gmail.com', 'ileonarroyo@gmail.com'];
 
 // Las contraseñas generadas por el script de importación siguen el patrón rand_XXXX_XXXX
 // Los hashes bcrypt empiezan por $2b$ — esos usuarios ya configuraron su contraseña
@@ -69,9 +69,9 @@ async function main() {
     console.log('');
   }
 
-  const targetUsers = includeActive ? users : pendingUsers;
+  const targetUsers = onlyEmail ? users : (includeActive ? users : pendingUsers);
 
-  if (onlyEmail && targetUsers.length === 0) {
+  if (onlyEmail && users.length === 0) {
     console.log(`No se encontró usuario con email: ${onlyEmail}`);
     return;
   }
