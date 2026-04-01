@@ -4,6 +4,19 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-02 (sesión 6)
+
+### Correcciones
+
+#### Tooltips de configuración del club no funcionaban en móvil
+- Los tooltips de los campos de configuración (ícono `ⓘ`) se mostraban solo con hover, que no existe en dispositivos táctiles.
+- Convertido a componente con estado: al tocar el ícono se abre el tooltip, al volver a tocar se cierra.
+
+**Archivos modificados:**
+- `client/src/pages/admin/ClubConfig.tsx` — `Tooltip` usa `useState` + `onClick` en lugar de `group-hover`
+
+---
+
 ## 2026-04-02 (sesión 5)
 
 ### Nuevas funcionalidades

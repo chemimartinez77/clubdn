@@ -10,14 +10,24 @@ import type { ClubConfig, ClubConfigUpdate, MembershipTypeConfig, LoginParticleS
 import type { ApiResponse } from '../../types/auth';
 
 function Tooltip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
   return (
     <span className="relative group inline-flex items-center ml-1">
-      <svg className="w-4 h-4 text-[var(--color-textSecondary)] cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg
+        className="w-4 h-4 text-[var(--color-textSecondary)] cursor-help"
+        fill="none" viewBox="0 0 24 24" stroke="currentColor"
+        onClick={e => { e.stopPropagation(); setOpen(v => !v); }}
+      >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
-      <span className="absolute left-1/2 -translate-x-1/2 bottom-6 z-10 hidden group-hover:block w-64 bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] text-[var(--color-text)] text-xs rounded-lg px-3 py-2 shadow-lg pointer-events-none">
-        {text}
-      </span>
+      {open && (
+        <span
+          className="absolute left-1/2 -translate-x-1/2 bottom-6 z-10 w-64 bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] text-[var(--color-text)] text-xs rounded-lg px-3 py-2 shadow-lg"
+          onClick={e => { e.stopPropagation(); setOpen(false); }}
+        >
+          {text}
+        </span>
+      )}
     </span>
   );
 }
