@@ -139,6 +139,18 @@ function TipController() {
 }
 
 function App() {
+  if (import.meta.env.VITE_MAINTENANCE === 'true') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <img
+          src="/under_construction.png"
+          alt="En construcción"
+          className="max-w-full max-h-screen object-contain"
+        />
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <ThemeProvider>
