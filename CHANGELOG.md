@@ -4,6 +4,27 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-01 (sesión 3)
+
+### Correcciones
+
+#### Invitaciones: campo DNI no llegaba al backend
+- El frontend enviaba el DNI del invitado en el campo `guestDni` pero el backend lo esperaba en el campo antiguo `guestPhone` (nombre anterior cuando era teléfono). El backend rechazaba siempre con "DNI o NIE no válido" aunque el DNI fuese correcto.
+- Corregido para aceptar ambos nombres (`guestDni` y `guestPhone`) por compatibilidad, usando `dniValue` internamente en toda la lógica de validación y guardado en BD.
+
+**Archivos modificados:**
+- `server/src/controllers/invitationController.ts` — lectura de `guestDni` con fallback a `guestPhone`, uso de `dniValue` en validación y creación
+
+#### Script de reenvío de emails fallidos migrado a Brevo
+- El script `send-failed-emails-gmail.js` se reescribió para usar la API REST de Brevo en lugar de SMTP de Gmail (que rechazaba silenciosamente los envíos entre cuentas Gmail).
+- Añadida lista `EXCLUDED_EMAILS` para no reenviar a los admins.
+- Añadido soporte a `ONLY_EMAIL` para envíos individuales de prueba.
+
+**Archivos modificados:**
+- `server/scripts/send-failed-emails-gmail.js` — reescrito para usar Brevo API
+
+---
+
 ## 2026-04-01 (sesión 2)
 
 ### Infraestructura / Puesta en producción

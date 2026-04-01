@@ -114,7 +114,8 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
   try {
     const userId = req.user?.userId;
     const userRole = req.user?.role;
-    const { eventId, guestFirstName, guestLastName, guestPhone, isExceptional } = req.body;
+    const { eventId, guestFirstName, guestLastName, guestDni, guestPhone, isExceptional } = req.body;
+    const dniValue = guestDni || guestPhone; // compatibilidad con nombre antiguo
 
     if (!userId) {
       res.status(401).json({ success: false, message: 'No autenticado' });
@@ -136,7 +137,7 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    if (!guestPhone || typeof guestPhone !== 'string' || !isValidDniNie(guestPhone)) {
+    if (!dniValue || typeof dniValue !== 'string' || !isValidDniNie(dniValue)) {
       res.status(400).json({ success: false, message: 'DNI o NIE no válido' });
       return;
     }
@@ -220,7 +221,7 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
       }),
       prisma.invitation.count({
         where: {
-          guestDniNormalized: guestPhone,
+          guestDniNormalized: dniValue,
           createdAt: { gte: yearStart }
         }
       })
@@ -251,8 +252,8 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
           memberId: userId,
           guestFirstName: normalizeText(guestFirstName),
           guestLastName: normalizeText(guestLastName),
-          guestPhone: guestPhone,
-          guestDniNormalized: guestPhone,
+          guestPhone: dniValue,
+          guestDniNormalized: dniValue,
           eventId: event.id,
           validDate: eventDay,
           status: needsApproval ? InvitationStatus.PENDING_APPROVAL : InvitationStatus.PENDING,

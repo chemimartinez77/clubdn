@@ -1,29 +1,26 @@
 // server/scripts/send-failed-emails-gmail.js
-// Reenvía los emails fallidos usando SMTP de Gmail (nodemailer)
+// Reenvía los emails fallidos usando la API de Brevo
 //
 // Uso:
 //   node server/scripts/send-failed-emails-gmail.js
+//   ONLY_EMAIL=x node server/scripts/send-failed-emails-gmail.js
 
 require('dotenv').config({ path: require('path').join(__dirname, '../.env'), override: true });
 
 const { PrismaClient } = require('@prisma/client');
 const { randomUUID } = require('crypto');
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 
 const prisma = new PrismaClient();
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+const FROM_EMAIL = process.env.SMTP_USER || 'chemimartinez@gmail.com';
+const FROM_NAME = 'Club Dreadnought';
+
+const EXCLUDED_EMAILS = ['chemimartinez@gmail.com', 'ileonarroyo@gmail.com'];
 
 function randomDelay() {
-  const ms = 1500 + Math.random() * 1500; // 1.5-3s
+  const ms = 1500 + Math.random() * 1500;
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
@@ -72,27 +69,63 @@ function buildHtml(name, resetUrl) {
 </html>`;
 }
 
-async function main() {
-  // Obtener emails fallidos de hoy
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const failedLogs = await prisma.emailLog.findMany({
-    where: {
-      success: false,
-      template: 'password_reset',
-      sentAt: { gte: today },
+async function sendViaBrevo(toEmail, toName, subject, html) {
+  await axios.post(
+    BREVO_API_URL,
+    {
+      sender: { name: FROM_NAME, email: FROM_EMAIL },
+      to: [{ email: toEmail, name: toName }],
+      subject,
+      htmlContent: html,
     },
-    select: { to: true },
-  });
+    {
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      timeout: 15000,
+    }
+  );
+}
 
-  const failedEmails = [...new Set(failedLogs.map(l => l.to))];
-  console.log(`Emails fallidos a reintentar: ${failedEmails.length}\n`);
+async function main() {
+  if (!process.env.BREVO_API_KEY) {
+    console.error('BREVO_API_KEY no configurada en .env');
+    process.exit(1);
+  }
 
-  const users = await prisma.user.findMany({
-    where: { email: { in: failedEmails } },
-    orderBy: { name: 'asc' },
-  });
+  const onlyEmail = process.env.ONLY_EMAIL;
+
+  let users;
+
+  if (onlyEmail) {
+    const user = await prisma.user.findUnique({ where: { email: onlyEmail } });
+    users = user ? [user] : [];
+    if (users.length === 0) {
+      console.log(`No se encontró usuario con email: ${onlyEmail}`);
+      return;
+    }
+  } else {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const failedLogs = await prisma.emailLog.findMany({
+      where: {
+        success: false,
+        template: 'password_reset',
+        sentAt: { gte: today },
+      },
+      select: { to: true },
+    });
+
+    const failedEmails = [...new Set(failedLogs.map(l => l.to))];
+    console.log(`Emails fallidos a reintentar: ${failedEmails.length}\n`);
+
+    users = await prisma.user.findMany({
+      where: { email: { in: failedEmails, notIn: EXCLUDED_EMAILS } },
+      orderBy: { name: 'asc' },
+    });
+  }
 
   let ok = 0;
   let errors = 0;
@@ -109,16 +142,12 @@ async function main() {
     });
 
     try {
-      await transporter.sendMail({
-        from: `Club Dreadnought <${process.env.SMTP_USER}>`,
-        to: user.email,
-        subject: 'Acceso a Club Dreadnought',
-        html: buildHtml(user.name, resetUrl),
-      });
+      await sendViaBrevo(user.email, user.name, 'Acceso a Club Dreadnought', buildHtml(user.name, resetUrl));
       console.log(`  OK    ${user.email} (${user.name})`);
       ok++;
     } catch (err) {
-      console.error(`  ERROR ${user.email} — ${err.message}`);
+      const detail = err?.response?.data?.message || err.message;
+      console.error(`  ERROR ${user.email} — ${detail}`);
       errors++;
     }
 
