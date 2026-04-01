@@ -8,12 +8,13 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### Correcciones
 
-#### Tooltips de configuración del club no funcionaban en móvil
+#### Tooltips de configuración del club no funcionaban en móvil y se cortaban en bordes
 - Los tooltips de los campos de configuración (ícono `ⓘ`) se mostraban solo con hover, que no existe en dispositivos táctiles.
-- Convertido a componente con estado: al tocar el ícono se abre el tooltip, al volver a tocar se cierra.
+- Además, al posicionarse relativos al ícono (`absolute`), se salían del viewport cuando el ícono estaba cerca de un borde.
+- Convertido a posicionamiento `fixed` calculado en tiempo de render: se mide la posición del ícono con `getBoundingClientRect()` y se ajusta horizontalmente para que el tooltip no se salga por ningún lado. Un overlay transparente cierra el tooltip al tocar fuera.
 
 **Archivos modificados:**
-- `client/src/pages/admin/ClubConfig.tsx` — `Tooltip` usa `useState` + `onClick` en lugar de `group-hover`
+- `client/src/pages/admin/ClubConfig.tsx` — `Tooltip` usa `useState` + `useRef` + `fixed` con posición calculada
 
 ---
 

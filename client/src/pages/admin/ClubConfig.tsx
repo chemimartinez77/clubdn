@@ -1,5 +1,5 @@
 // client/src/pages/admin/ClubConfig.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../../components/layout/Layout';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
@@ -11,22 +11,48 @@ import type { ApiResponse } from '../../types/auth';
 
 function Tooltip({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const iconRef = useRef<SVGSVGElement>(null);
+
+  const handleToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!open && iconRef.current) {
+      const rect = iconRef.current.getBoundingClientRect();
+      const tooltipWidth = 256; // w-64
+      const margin = 8;
+      let left = rect.left + rect.width / 2 - tooltipWidth / 2;
+      // No salir por la izquierda
+      if (left < margin) left = margin;
+      // No salir por la derecha
+      if (left + tooltipWidth > window.innerWidth - margin) {
+        left = window.innerWidth - tooltipWidth - margin;
+      }
+      setPos({ top: rect.top - margin, left });
+    }
+    setOpen(v => !v);
+  };
+
   return (
-    <span className="relative group inline-flex items-center ml-1">
+    <span className="inline-flex items-center ml-1">
       <svg
+        ref={iconRef}
         className="w-4 h-4 text-[var(--color-textSecondary)] cursor-help"
         fill="none" viewBox="0 0 24 24" stroke="currentColor"
-        onClick={e => { e.stopPropagation(); setOpen(v => !v); }}
+        onClick={handleToggle}
       >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
       {open && (
-        <span
-          className="absolute left-1/2 -translate-x-1/2 bottom-6 z-10 w-64 bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] text-[var(--color-text)] text-xs rounded-lg px-3 py-2 shadow-lg"
-          onClick={e => { e.stopPropagation(); setOpen(false); }}
-        >
-          {text}
-        </span>
+        <>
+          <span className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <span
+            className="fixed z-50 w-64 bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] text-[var(--color-text)] text-xs rounded-lg px-3 py-2 shadow-lg"
+            style={{ top: pos.top, left: pos.left, transform: 'translateY(-100%)' }}
+            onClick={e => { e.stopPropagation(); setOpen(false); }}
+          >
+            {text}
+          </span>
+        </>
       )}
     </span>
   );
