@@ -45,8 +45,9 @@ export default function PendingApprovals() {
       success('Usuario aprobado exitosamente');
       setApproveModalOpen(false);
       setSelectedUser(null);
-    } catch (err) {
-      showError('Error al aprobar usuario');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Error al aprobar usuario';
+      showError(msg);
     }
   };
 
@@ -56,8 +57,9 @@ export default function PendingApprovals() {
       success('Usuario rechazado');
       setRejectModalOpen(false);
       setSelectedUser(null);
-    } catch (err) {
-      showError('Error al rechazar usuario');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Error al rechazar usuario';
+      showError(msg);
     }
   };
 

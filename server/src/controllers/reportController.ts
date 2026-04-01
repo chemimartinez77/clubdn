@@ -125,6 +125,7 @@ export const createReport = async (req: Request, res: Response): Promise<void> =
     });
 
     // Crear notificaciones en paralelo
+    const emailDisabled = process.env.EMAIL_DISABLED === 'true';
     await Promise.all([
       // Notificar a admins
       notifyReportCreated(
@@ -133,21 +134,23 @@ export const createReport = async (req: Request, res: Response): Promise<void> =
         report.type,
         report.user.name
       ),
-      // Enviar emails a admins
-      ...adminUsers.map(admin =>
+      // Enviar emails a admins (solo si email habilitado)
+      ...(!emailDisabled ? adminUsers.map(admin =>
         sendReportCreatedEmail(
           admin.email,
           report.title,
           report.type,
           report.user.name
         )
-      )
+      ) : [])
     ]);
 
     res.status(201).json({
       success: true,
       data: report,
-      message: 'Reporte creado correctamente'
+      message: emailDisabled
+        ? 'Reporte creado. Los administradores no recibirán notificación por email temporalmente.'
+        : 'Reporte creado correctamente'
     });
   } catch (error) {
     console.error('Error al crear reporte:', error);

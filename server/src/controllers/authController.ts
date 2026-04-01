@@ -57,6 +57,13 @@ async function verifyHcaptcha(token: string): Promise<boolean> {
  */
 export const register = async (req: Request, res: Response) => {
   try {
+    if (process.env.EMAIL_DISABLED === 'true') {
+      return res.status(503).json({
+        success: false,
+        message: 'El registro está temporalmente deshabilitado. Inténtalo de nuevo en unas horas.',
+      });
+    }
+
     const { name, email, password, hcaptchaToken } = req.body;
 
     // Verificar hCaptcha
@@ -433,6 +440,13 @@ export const login = async (req: Request, res: Response) => {
  */
 export const requestPasswordReset = async (req: Request, res: Response) => {
   try {
+    if (process.env.EMAIL_DISABLED === 'true') {
+      return res.status(503).json({
+        success: false,
+        message: 'La recuperación de contraseña está temporalmente deshabilitada. Inténtalo de nuevo en unas horas.',
+      });
+    }
+
     const { email } = req.body;
 
     if (!email) {

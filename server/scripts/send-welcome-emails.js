@@ -27,18 +27,37 @@ function hasRealPassword(passwordHash) {
   return passwordHash && passwordHash.startsWith('$2b$');
 }
 
-function randomDelay() {
-  const ms = 1000 + Math.random() * 2000; // 1000-3000ms
+function randomDelay(min = 1000, max = 3000) {
+  const ms = min + Math.random() * (max - min);
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function main() {
   const onlyEmail = process.env.ONLY_EMAIL;
   const includeActive = process.env.INCLUDE_ACTIVE === 'true';
+  const retryFailed = process.env.RETRY_FAILED === 'true';
 
   let users;
 
-  if (onlyEmail) {
+  if (retryFailed) {
+    // Buscar emails que fallaron hoy en el EmailLog
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const failedLogs = await prisma.emailLog.findMany({
+      where: {
+        success: false,
+        template: 'password_reset',
+        sentAt: { gte: today },
+      },
+      select: { to: true },
+    });
+    const failedEmails = [...new Set(failedLogs.map(l => l.to))];
+    console.log(`Reintentando ${failedEmails.length} emails fallidos...\n`);
+    users = await prisma.user.findMany({
+      where: { email: { in: failedEmails } },
+      orderBy: { name: 'asc' },
+    });
+  } else if (onlyEmail) {
     const user = await prisma.user.findUnique({ where: { email: onlyEmail } });
     users = user ? [user] : [];
   } else {
@@ -56,7 +75,7 @@ async function main() {
   const withRealPassword = users.filter(u => hasRealPassword(u.password));
   const pendingUsers = users.filter(u => !hasRealPassword(u.password));
 
-  if (!onlyEmail) {
+  if (!onlyEmail && !retryFailed) {
     console.log(`Total usuarios en BD (excl. admin): ${users.length}`);
     console.log(`  - Ya configuraron contraseña:      ${withRealPassword.length}`);
     console.log(`  - Pendientes de recibir email:     ${pendingUsers.length}`);
@@ -69,12 +88,16 @@ async function main() {
     console.log('');
   }
 
-  const targetUsers = onlyEmail ? users : (includeActive ? users : pendingUsers);
+  const targetUsers = (onlyEmail || retryFailed) ? users : (includeActive ? users : pendingUsers);
 
   if (onlyEmail && users.length === 0) {
     console.log(`No se encontró usuario con email: ${onlyEmail}`);
     return;
   }
+
+  // Delay mayor al reintentar para evitar otro 429
+  const delayMin = retryFailed ? 5000 : 1000;
+  const delayMax = retryFailed ? 8000 : 3000;
 
   console.log(`Procesando ${targetUsers.length} usuario(s)...\n`);
 
@@ -105,7 +128,7 @@ async function main() {
 
     // Delay entre envíos para no saturar el servidor de correo
     if (ok + errors < targetUsers.length) {
-      await randomDelay();
+      await randomDelay(delayMin, delayMax);
     }
   }
 

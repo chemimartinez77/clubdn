@@ -69,7 +69,8 @@
       "Bash(DATABASE_URL=\"postgresql://testuser:testpass@localhost:5433/clubdn_test\" npx prisma migrate deploy)",
       "Bash(DATABASE_URL=\"postgresql://testuser:testpass@localhost:5433/clubdn_test\" npx prisma db push)",
       "Bash(npx jest:*)",
-      "Bash(railway version:*)"
+      "Bash(railway version:*)",
+      "Bash(node -e \"require\\(''nodemailer''\\)\")"
     ]
   }
 }

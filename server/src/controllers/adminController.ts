@@ -67,6 +67,13 @@ export const getPendingApprovals = async (_req: Request, res: Response) => {
  */
 export const approveUser = async (req: Request, res: Response) => {
   try {
+    if (process.env.EMAIL_DISABLED === 'true') {
+      return res.status(503).json({
+        success: false,
+        message: 'Las aprobaciones están temporalmente deshabilitadas porque el servicio de email no está disponible. Inténtalo de nuevo en unas horas.',
+      });
+    }
+
     const { userId } = req.params;
     const { customMessage, membershipType } = req.body;
     const adminId = req.user?.userId;
@@ -180,6 +187,13 @@ export const approveUser = async (req: Request, res: Response) => {
  */
 export const rejectUser = async (req: Request, res: Response) => {
   try {
+    if (process.env.EMAIL_DISABLED === 'true') {
+      return res.status(503).json({
+        success: false,
+        message: 'Los rechazos están temporalmente deshabilitados porque el servicio de email no está disponible. Inténtalo de nuevo en unas horas.',
+      });
+    }
+
     const { userId } = req.params;
     const { reason, customMessage } = req.body;
     const adminId = req.user?.userId;

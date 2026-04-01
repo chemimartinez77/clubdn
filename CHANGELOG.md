@@ -4,6 +4,54 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-01 (sesión 2)
+
+### Infraestructura / Puesta en producción
+
+#### Envío masivo de emails de bienvenida a miembros importados
+- Script `server/scripts/send-welcome-emails.js` reescrito: obtiene todos los usuarios `APPROVED` de la BD (no lista hardcoded), excluye admins (`chemimartinez@gmail.com`, `ileonarroyo@gmail.com`), omite automáticamente a usuarios que ya tienen hash bcrypt (ya configuraron su contraseña), y añade delay aleatorio de 1-3s entre envíos para evitar rate limit.
+- Opciones: `ONLY_EMAIL=x` para probar con un email concreto (ignora filtro de bcrypt), `INCLUDE_ACTIVE=true` para incluir también a usuarios con contraseña ya configurada, `RETRY_FAILED=true` para reintentar solo los emails que fallaron hoy (buscándolos en `EmailLog`).
+- El token generado tiene 72 horas de validez.
+- Se enviaron 173 emails correctamente. Los 124 restantes fallaron por rate limit diario de Resend (límite alcanzado).
+- Script auxiliar `server/scripts/send-failed-emails-gmail.js`: reenvía los emails fallidos usando SMTP de Gmail (nodemailer) como alternativa cuando Resend está bloqueado. Lee los emails fallidos del día desde `EmailLog`.
+- Script auxiliar `server/scripts/failed-emails.txt`: lista de los 124 emails pendientes de recibir el correo de bienvenida.
+
+**Archivos nuevos/modificados:**
+- `server/scripts/send-welcome-emails.js` — reescrito completo
+- `server/scripts/send-failed-emails-gmail.js` — nuevo, envío por Gmail SMTP
+- `server/scripts/failed-emails.txt` — lista de emails pendientes
+
+#### Corrección de URL en emails (`CLIENT_URL`)
+- La variable `CLIENT_URL` en `server/.env` apuntaba a `localhost:5173`. Actualizada a `https://app.clubdreadnought.org` para que los enlaces de reset de contraseña en los emails apunten a producción.
+
+**Archivos modificados:**
+- `server/.env` — `CLIENT_URL` corregida
+
+#### Corrección de texto en email de reset de contraseña
+- El email de reset indicaba "expirará en 1 hora" pero el token se generaba con 72h de validez. Corregido a "72 horas".
+
+**Archivos modificados:**
+- `server/src/services/emailService.ts` — texto del aviso de expiración
+
+#### Bloqueo temporal de funcionalidades dependientes de email
+- Añadida variable `EMAIL_DISABLED=true` en `server/.env` para deshabilitar temporalmente las funcionalidades que requieren envío de email, mientras Resend está bloqueado por rate limit.
+- **Registro de usuarios**: bloqueado (503) con mensaje "El registro está temporalmente deshabilitado. Inténtalo de nuevo en unas horas."
+- **Recuperación de contraseña**: bloqueada (503) con mensaje similar.
+- **Aprobación de usuarios pendientes**: bloqueada (503) con mensaje que explica que el email no está disponible.
+- **Rechazo de usuarios pendientes**: ídem.
+- **Reportes**: funcionan con normalidad. El email a admins se omite silenciosamente; el mensaje de respuesta avisa de que no se notificará por email temporalmente.
+- El frontend de `PendingApprovals` ahora muestra el mensaje real del servidor en el toast de error (en lugar de uno hardcodeado genérico).
+- Para reactivar: cambiar `EMAIL_DISABLED=false` en Railway y hacer redeploy.
+
+**Archivos modificados:**
+- `server/.env` — `EMAIL_DISABLED=true`
+- `server/src/controllers/authController.ts` — bloqueo en `register` y `requestPasswordReset`
+- `server/src/controllers/adminController.ts` — bloqueo en `approveUser` y `rejectUser`
+- `server/src/controllers/reportController.ts` — omisión de emails con mensaje informativo
+- `client/src/pages/admin/PendingApprovals.tsx` — mensaje de error del servidor en toast
+
+---
+
 ## 2026-04-01
 
 ### Correcciones
