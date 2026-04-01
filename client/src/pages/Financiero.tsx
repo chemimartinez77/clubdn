@@ -40,6 +40,7 @@ interface BalanceCategoryData {
   category: {
     id: string;
     name: string;
+    type: 'GASTO' | 'INGRESO';
     icon: string;
     color: string;
   };
@@ -372,24 +373,54 @@ export default function Financiero() {
                     </tr>
                   </thead>
                   <tbody>
-                    {balanceData?.categories.map((categoryData, idx) => (
-                      <tr key={categoryData.category.id} className={idx % 2 === 0 ? 'bg-[var(--color-tableRowHover)]' : 'bg-[var(--color-cardBackground)]'}>
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${categoryData.category.color}`}>
-                            <span>{categoryData.category.icon}</span>
-                            {categoryData.category.name}
-                          </span>
-                        </td>
-                        {categoryData.monthlyTotals.map((amount, monthIdx) => (
-                          <td key={monthIdx} className="text-center py-3 px-2 text-[var(--color-textSecondary)] text-sm">
-                            {amount !== 0 ? `${amount.toFixed(0)}€` : '-'}
-                          </td>
-                        ))}
-                        <td className="text-right py-3 px-4 font-medium text-[var(--color-text)]">
-                          {categoryData.totalYear.toFixed(2)} €
-                        </td>
-                      </tr>
-                    ))}
+                    {(['INGRESO', 'GASTO'] as const).map((tipo) => {
+                      const grupo = balanceData?.categories.filter(c => c.category.type === tipo) ?? [];
+                      if (grupo.length === 0) return null;
+                      const grupoTotal = grupo.reduce((sum, c) => sum + c.totalYear, 0);
+                      const grupoMonthly = Array(12).fill(0).map((_, i) =>
+                        grupo.reduce((sum, c) => sum + c.monthlyTotals[i], 0)
+                      );
+                      return (
+                        <>
+                          <tr key={`header-${tipo}`}>
+                            <td colSpan={14} className={`py-2 px-4 text-xs font-semibold uppercase tracking-wide ${tipo === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
+                              {tipo === 'INGRESO' ? 'Ingresos' : 'Gastos'}
+                            </td>
+                          </tr>
+                          {grupo.map((categoryData, idx) => (
+                            <tr key={categoryData.category.id} className={idx % 2 === 0 ? 'bg-[var(--color-tableRowHover)]' : 'bg-[var(--color-cardBackground)]'}>
+                              <td className="py-3 px-4">
+                                <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${categoryData.category.color}`}>
+                                  <span>{categoryData.category.icon}</span>
+                                  {categoryData.category.name}
+                                </span>
+                              </td>
+                              {categoryData.monthlyTotals.map((amount, monthIdx) => (
+                                <td key={monthIdx} className="text-center py-3 px-2 text-[var(--color-textSecondary)] text-sm">
+                                  {amount !== 0 ? `${amount.toFixed(0)}€` : '-'}
+                                </td>
+                              ))}
+                              <td className="text-right py-3 px-4 font-medium text-[var(--color-text)]">
+                                {categoryData.totalYear.toFixed(2)} €
+                              </td>
+                            </tr>
+                          ))}
+                          <tr key={`subtotal-${tipo}`} className="border-t border-[var(--color-cardBorder)]">
+                            <td className={`py-2 px-4 text-sm font-semibold ${tipo === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
+                              Subtotal {tipo === 'INGRESO' ? 'ingresos' : 'gastos'}
+                            </td>
+                            {grupoMonthly.map((amount, idx) => (
+                              <td key={idx} className={`text-center py-2 px-2 text-sm font-semibold ${tipo === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
+                                {amount !== 0 ? `${amount.toFixed(0)}€` : '-'}
+                              </td>
+                            ))}
+                            <td className={`text-right py-2 px-4 text-sm font-semibold ${tipo === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
+                              {grupoTotal.toFixed(2)} €
+                            </td>
+                          </tr>
+                        </>
+                      );
+                    })}
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-[var(--color-inputBorder)] bg-[var(--color-tableRowHover)]">

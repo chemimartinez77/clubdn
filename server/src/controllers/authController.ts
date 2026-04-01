@@ -368,7 +368,7 @@ export const login = async (req: Request, res: Response) => {
         role: user.role,
       },
       process.env.JWT_SECRET!,
-      { expiresIn: '7d' }
+      { expiresIn: '365d' }
     );
 
     // Actualizar último login

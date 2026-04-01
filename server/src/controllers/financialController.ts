@@ -444,6 +444,7 @@ export const getAnnualBalance = async (req: Request, res: Response) => {
         category: {
           id: category.id,
           name: category.name,
+          type: category.type,
           icon: category.icon,
           color: category.color
         },
