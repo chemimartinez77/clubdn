@@ -79,8 +79,7 @@ router.post(
     body('email')
       .trim()
       .isEmail()
-      .withMessage('Debe proporcionar un email válido')
-      .normalizeEmail(),
+      .withMessage('Debe proporcionar un email válido'),
     body('password')
       .notEmpty()
       .withMessage('La contraseña es requerida'),
@@ -112,8 +111,7 @@ router.post(
     body('email')
       .trim()
       .isEmail()
-      .withMessage('Debe proporcionar un email válido')
-      .normalizeEmail(),
+      .withMessage('Debe proporcionar un email válido'),
   ],
   async (req: Request, res: Response) => {
     const { validationResult } = await import('express-validator');
