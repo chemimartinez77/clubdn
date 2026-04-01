@@ -9,6 +9,7 @@ type ViewMode = 'balance' | 'movements' | 'categories';
 interface FinancialCategory {
   id: string;
   name: string;
+  type: 'GASTO' | 'INGRESO';
   icon: string;
   color: string;
   showInBalance: boolean;
@@ -93,8 +94,9 @@ export default function Financiero() {
 
   const [categoryForm, setCategoryForm] = useState({
     name: '',
+    type: 'GASTO' as 'GASTO' | 'INGRESO',
     icon: '💰',
-    color: 'bg-blue-100 text-blue-800'
+    color: 'bg-red-100 text-red-800'
   });
 
   const [loading, setLoading] = useState(false);
@@ -184,8 +186,9 @@ export default function Financiero() {
         setShowCategoryModal(false);
         setCategoryForm({
           name: '',
+          type: 'GASTO',
           icon: '💰',
-          color: 'bg-blue-100 text-blue-800'
+          color: 'bg-red-100 text-red-800'
         });
         await loadCategories();
       }
@@ -475,40 +478,50 @@ export default function Financiero() {
                 </button>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {categories.map((category) => {
-                  const categoryMovements = movements.filter(m => m.categoryId === category.id);
-                  const categoryTotal = categoryMovements.reduce((sum, m) => sum + m.amount, 0);
-
-                  return (
-                    <div key={category.id} className="border border-[var(--color-cardBorder)] rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${category.color}`}>
-                          <span className="text-lg">{category.icon}</span>
-                          {category.name}
-                        </span>
-                      </div>
-                      <div className="text-sm text-[var(--color-textSecondary)] mb-3">
-                        <p>Total {selectedYear}: <span className="font-semibold text-[var(--color-text)]">{categoryTotal.toFixed(2)} €</span></p>
-                        <p className="mt-1">{categoryMovements.length} transacciones</p>
-                      </div>
-                      <div className="flex items-center gap-2 pt-3 border-t border-[var(--color-cardBorder)]">
-                        <input
-                          type="checkbox"
-                          id={`show-${category.id}`}
-                          checked={category.showInBalance}
-                          onChange={() => handleToggleShowInBalance(category.id, category.showInBalance)}
-                          className="w-4 h-4 text-[var(--color-primary)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--color-primary)] focus:ring-2"
-                        />
-                        <label htmlFor={`show-${category.id}`} className="text-sm text-[var(--color-textSecondary)] cursor-pointer">
-                          Mostrar en balance
-                        </label>
-                      </div>
+            <CardContent className="space-y-8">
+              {(['INGRESO', 'GASTO'] as const).map((tipo) => {
+                const filtered = categories.filter(c => c.type === tipo);
+                if (filtered.length === 0) return null;
+                return (
+                  <div key={tipo}>
+                    <h3 className={`text-sm font-semibold uppercase tracking-wide mb-4 ${tipo === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
+                      {tipo === 'INGRESO' ? 'Ingresos' : 'Gastos'}
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {filtered.map((category) => {
+                        const categoryMovements = movements.filter(m => m.categoryId === category.id);
+                        const categoryTotal = categoryMovements.reduce((sum, m) => sum + m.amount, 0);
+                        return (
+                          <div key={category.id} className="border border-[var(--color-cardBorder)] rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${category.color}`}>
+                                <span className="text-lg">{category.icon}</span>
+                                {category.name}
+                              </span>
+                            </div>
+                            <div className="text-sm text-[var(--color-textSecondary)] mb-3">
+                              <p>Total {selectedYear}: <span className="font-semibold text-[var(--color-text)]">{categoryTotal.toFixed(2)} €</span></p>
+                              <p className="mt-1">{categoryMovements.length} transacciones</p>
+                            </div>
+                            <div className="flex items-center gap-2 pt-3 border-t border-[var(--color-cardBorder)]">
+                              <input
+                                type="checkbox"
+                                id={`show-${category.id}`}
+                                checked={category.showInBalance}
+                                onChange={() => handleToggleShowInBalance(category.id, category.showInBalance)}
+                                className="w-4 h-4 text-[var(--color-primary)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--color-primary)] focus:ring-2"
+                              />
+                              <label htmlFor={`show-${category.id}`} className="text-sm text-[var(--color-textSecondary)] cursor-pointer">
+                                Mostrar en balance
+                              </label>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         )}
@@ -625,6 +638,23 @@ export default function Financiero() {
                 </button>
               </div>
               <form onSubmit={handleCreateCategory} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                    Tipo *
+                  </label>
+                  <select
+                    required
+                    value={categoryForm.type}
+                    onChange={(e) => {
+                      const type = e.target.value as 'GASTO' | 'INGRESO';
+                      setCategoryForm({ ...categoryForm, type, color: type === 'GASTO' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' });
+                    }}
+                    className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  >
+                    <option value="GASTO">Gasto</option>
+                    <option value="INGRESO">Ingreso</option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
                     Nombre *
