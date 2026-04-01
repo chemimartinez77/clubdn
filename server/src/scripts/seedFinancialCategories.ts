@@ -33,6 +33,7 @@ async function seedCategories() {
         await prisma.financialCategory.create({
           data: {
             ...category,
+            type: 'GASTO' as const,
             showInBalance: true
           }
         });

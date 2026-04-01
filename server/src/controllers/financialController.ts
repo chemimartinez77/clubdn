@@ -32,7 +32,7 @@ export const getCategories = async (_req: Request, res: Response) => {
 // Crear una nueva categoría
 export const createCategory = async (req: Request, res: Response) => {
   try {
-    const { name, icon, color } = req.body;
+    const { name, icon, color, type } = req.body;
 
     if (!name) {
       return res.status(400).json({
@@ -56,8 +56,9 @@ export const createCategory = async (req: Request, res: Response) => {
     const category = await prisma.financialCategory.create({
       data: {
         name,
+        type: type || 'GASTO',
         icon: icon || '💰',
-        color: color || 'bg-blue-100 text-blue-800',
+        color: color || 'bg-red-100 text-red-800',
         showInBalance: true
       }
     });
