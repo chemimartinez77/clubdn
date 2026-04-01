@@ -7,7 +7,8 @@ import {
   uploadDocument,
   updateDocument,
   deleteDocument,
-  getDocumentStats
+  getDocumentStats,
+  trackDownload
 } from '../controllers/documentController';
 
 const router = Router();
@@ -31,6 +32,9 @@ router.get('/stats', getDocumentStats);
 
 // POST /api/documents - Subir documento (solo admin)
 router.post('/', upload.single('file'), uploadDocument);
+
+// POST /api/documents/:id/download - Registrar descarga
+router.post('/:id/download', trackDownload);
 
 // PATCH /api/documents/:id - Actualizar título/visibilidad (solo admin)
 router.patch('/:id', updateDocument);

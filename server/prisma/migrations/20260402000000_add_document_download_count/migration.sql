@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Document" ADD COLUMN IF NOT EXISTS "downloadCount" INTEGER NOT NULL DEFAULT 0;

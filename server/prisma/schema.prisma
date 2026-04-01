@@ -645,6 +645,9 @@ model Document {
   cloudinaryId  String             // public_id de Cloudinary
   url           String             // Secure URL del documento
 
+  // Estadísticas
+  downloadCount Int                @default(0)
+
   // Permisos/Visibilidad
   visibility    DocumentVisibility @default(PUBLIC)
 

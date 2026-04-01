@@ -4,9 +4,34 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-02 (sesión 5)
+
+### Nuevas funcionalidades
+
+#### Contador de descargas en documentos
+- Cada documento muestra ahora cuántas veces ha sido descargado. El contador aparece junto al botón de descarga cuando es mayor que 0.
+- Al descargar un documento se llama al endpoint `POST /api/documents/:id/download` en segundo plano (no bloquea la descarga).
+- El incremento es atómico en BD (`{ increment: 1 }`).
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — campo `downloadCount Int @default(0)` en modelo `Document`
+- `server/prisma/migrations/20260402000000_add_document_download_count/migration.sql` — migración SQL
+- `server/src/controllers/documentController.ts` — función `trackDownload`, `downloadCount` en select de `getDocuments`
+- `server/src/routes/documentRoutes.ts` — ruta `POST /:id/download`
+- `client/src/pages/Documentos.tsx` — tipo `downloadCount`, llamada al endpoint en `handleDownload`, contador en UI
+
+---
+
 ## 2026-04-01 (sesión 4)
 
 ### Correcciones
+
+#### Login fallaba para emails con puntos por normalizeEmail() en el backend
+- `express-validator` tiene un método `.normalizeEmail()` que por diseño elimina los puntos de emails de Gmail (comportamiento heredado de la política de Gmail de ignorar puntos). Esto hacía que `carlos.navarro.mallach@gmail.com` se buscase en BD como `carlosnavarromallach@gmail.com`, no se encontrase, y devolviese `invalid_credentials`.
+- Eliminado `.normalizeEmail()` del middleware de validación en los endpoints `/login` y `/request-password-reset`. `.isEmail()` ya valida el formato correctamente sin transformar el valor.
+
+**Archivos modificados:**
+- `server/src/routes/authRoutes.ts` — eliminado `.normalizeEmail()` en login y request-password-reset
 
 #### Login fallaba para emails con puntos por normalización del navegador
 - Algunos navegadores y gestores de contraseñas normalizan los emails con `type="email"` quitando los puntos (comportamiento heredado de la política de Gmail). Los usuarios con puntos en su email (`carlos.navarro.mallach@gmail.com`, `ar.rabak@gmail.com`) llegaban al servidor sin puntos y no se encontraban en BD.

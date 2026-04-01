@@ -18,6 +18,7 @@ interface Document {
   size: number;
   visibility: DocumentVisibility;
   url: string;
+  downloadCount: number;
   createdAt: string;
   uploadedBy: {
     id: string;
@@ -246,6 +247,9 @@ export default function Documentos() {
   };
 
   const handleDownload = async (doc: Document) => {
+    // Registrar descarga en el servidor (fire-and-forget, no bloquea la descarga)
+    api.post(`/api/documents/${doc.id}/download`).catch(() => {});
+
     try {
       // Descargar como blob para forzar el nombre de archivo correcto
       // (el atributo 'download' es ignorado por el navegador en dominios externos)
@@ -473,15 +477,22 @@ export default function Documentos() {
                     )}
 
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleDownload(doc)}
-                        className="p-2 hover:bg-[var(--color-tableRowHover)] rounded-lg transition-colors cursor-pointer"
-                        title="Descargar"
-                      >
-                        <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleDownload(doc)}
+                          className="p-2 hover:bg-[var(--color-tableRowHover)] rounded-lg transition-colors cursor-pointer"
+                          title="Descargar"
+                        >
+                          <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                        </button>
+                        {doc.downloadCount > 0 && (
+                          <span className="text-xs text-[var(--color-textSecondary)]" title="Descargas">
+                            {doc.downloadCount}
+                          </span>
+                        )}
+                      </div>
                       {isAdmin && (
                         <>
                           <button

@@ -64,7 +64,7 @@ export const getDocuments = async (req: Request, res: Response): Promise<void> =
     }
 
     // Obtener documentos con sus URLs de Cloudinary
-    const documents = await prisma.document.findMany({
+    const documents = await (prisma.document.findMany as any)({
       where,
       select: {
         id: true,
@@ -75,6 +75,7 @@ export const getDocuments = async (req: Request, res: Response): Promise<void> =
         visibility: true,
         url: true,
         cloudinaryId: true,
+        downloadCount: true,
         createdAt: true,
         updatedAt: true,
         uploadedBy: {
@@ -359,6 +360,31 @@ export const deleteDocument = async (req: Request, res: Response): Promise<void>
       success: false,
       message: 'Error al eliminar documento'
     });
+  }
+};
+
+/**
+ * Registrar descarga de documento
+ * POST /api/documents/:id/download
+ */
+export const trackDownload = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const document = await (prisma.document as any).update({
+      where: { id },
+      data: { downloadCount: { increment: 1 } },
+      select: { id: true, url: true, filename: true, downloadCount: true }
+    });
+
+    res.json({ success: true, data: document });
+  } catch (error: any) {
+    if (error?.code === 'P2025') {
+      res.status(404).json({ success: false, message: 'Documento no encontrado' });
+      return;
+    }
+    console.error('Error al registrar descarga:', error);
+    res.status(500).json({ success: false, message: 'Error al registrar descarga' });
   }
 };
 
