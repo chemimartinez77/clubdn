@@ -6,6 +6,14 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-02 (sesión 6)
 
+### Nuevas funcionalidades
+
+#### Panel de Control accesible desde el menú de administración
+- La ruta `/admin/dashboard` solo era accesible desde un botón en la pantalla de inicio. Ahora aparece como primera entrada ("Panel de Control") en el menú desplegable de escritorio y en el menú hamburguesa de móvil.
+
+**Archivos modificados:**
+- `client/src/components/layout/Header.tsx` — entrada "Panel de Control" añadida al inicio de la sección admin en ambos menús
+
 ### Correcciones
 
 #### Tooltips de configuración del club no funcionaban en móvil y se cortaban en bordes

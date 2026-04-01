@@ -222,6 +222,14 @@ export default function Header() {
                     />
                     <div className="absolute left-0 mt-2 w-56 bg-[var(--color-cardBackground)] rounded-lg shadow-lg border border-[var(--color-cardBorder)] py-1 z-20">
                       <Link
+                        to="/admin/dashboard"
+                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                        onClick={() => setIsAdminMenuOpen(false)}
+                      >
+                        Panel de Control
+                      </Link>
+                      <div className="border-t border-[var(--color-cardBorder)] my-1"></div>
+                      <Link
                         to="/admin/pending-approvals"
                         className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                         onClick={() => setIsAdminMenuOpen(false)}
@@ -517,6 +525,13 @@ export default function Header() {
                       Administración
                     </p>
                   </div>
+                  <Link
+                    to="/admin/dashboard"
+                    className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                    onClick={closeAllMenus}
+                  >
+                    Panel de Control
+                  </Link>
                   <Link
                     to="/admin/pending-approvals"
                     className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
