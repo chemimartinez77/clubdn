@@ -96,6 +96,7 @@ export default function Login() {
     setLoading(true);
 
     try {
+      console.log('[LOGIN DEBUG] email enviado:', JSON.stringify(data.email));
       await login(data.email, data.password, captchaToken);
       success('Sesión iniciada correctamente');
       navigate(redirectTo);
