@@ -4,6 +4,36 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-01
+
+### Infraestructura / Puesta en producción
+
+#### Importación de miembros desde el sistema anterior
+- Añadidos campos `joinedAt`, `iban` a `UserProfile` y enum `FinancialCategoryType` + campo `type` a `FinancialCategory` en el schema de Prisma. Cambios aplicados con `db push`.
+- Script `server/scripts/import-members.js`: importa todos los socios desde el CSV exportado del sistema anterior. Crea `User` + `UserProfile` + `Membership` en una transacción por miembro. Deduplica por email (gana la última aparición). El usuario `chemimartinez@gmail.com` es intocable. Todos los usuarios se crean con `status: APPROVED` y `emailVerified: true`; la contraseña es aleatoria y no usable hasta que el socio haga "olvidé mi contraseña".
+- Script `server/scripts/import-missing-members.js`: inserta los 2 miembros que carecían de email en el CSV (`Joel Bayona Belenguer` y `Carlos Cano Genoves`), una vez localizados sus emails.
+- Resultado: 311 miembros importados, 0 errores.
+
+#### Limpieza de BD antes de producción
+- Script `server/scripts/clean-for-production.js`: vacía todas las tablas de datos de prueba (analítica, notificaciones, badges, partidas, eventos, reportes, finanzas, pagos, documentos) y elimina todos los usuarios excepto `chemimartinez@gmail.com`. Ejecutado satisfactoriamente contra Railway.
+- Script SQL equivalente `server/scripts/clean-for-production.sql` conservado como referencia.
+
+#### Seed de categorías financieras
+- Script `server/scripts/seed-financial-categories.js`: inserta las 22 categorías iniciales (18 gastos + 4 ingresos) con sus emojis y colores. Ejecutado tras la limpieza.
+- Categorías de gasto: Alquiler 🏠, Iberdrola ⚡, Agua 💧, Internet 🌐, Limpieza 🧹, Seguro 🛡️, Compra 🛒, Extintores 🧯, IRPF 📋, Obras 🔨, Mant. - Bricolaje/Ferreteria 🔧, Mat. Papeleria 📝, Mobiliario 🪑, Gastos Bancarios 🏦, Juegos/Mat. Ludico (Gasto) 🎲, Servicios Online 💻, Adecuación nuevo local 🏗️, Salida a Caja (Pagos de Mano) 💵.
+- Categorías de ingreso: Cuotas Socios 👥, Cuotas Colaboradores 🤝, Otros Ingresos 💰, Juegos/Mat. Ludico (Venta) 🎲.
+
+**Archivos nuevos/modificados:**
+- `server/prisma/schema.prisma` — `joinedAt`, `iban` en `UserProfile`; enum `FinancialCategoryType`; campo `type` en `FinancialCategory`
+- `server/scripts/import-members.js` — script de importación masiva desde CSV
+- `server/scripts/import-missing-members.js` — inserción puntual de 2 miembros sin email
+- `server/scripts/clean-for-production.js` — limpieza de BD para producción
+- `server/scripts/clean-for-production.sql` — equivalente SQL del anterior
+- `server/scripts/seed-financial-categories.js` — seed de categorías financieras
+- `server/scripts/seed-financial-categories.sql` — equivalente SQL del anterior
+
+---
+
 ## 2026-03-29
 
 ### Seguridad
