@@ -195,7 +195,7 @@ export const uploadDocument = async (req: Request, res: Response): Promise<void>
     const document = await prisma.document.create({
       data: {
         title: title.trim(),
-        filename: file.originalname,
+        filename: Buffer.from(file.originalname, 'latin1').toString('utf8'),
         mimeType: file.mimetype,
         size: file.size,
         cloudinaryId: uploadResult.public_id,
