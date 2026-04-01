@@ -51,6 +51,7 @@ export default function EventDetail() {
   const [isCloseCapacityModalOpen, setIsCloseCapacityModalOpen] = useState(false);
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name?: string } | null>(null);
+  const [inviteQrModal, setInviteQrModal] = useState<{ guestName: string; qrUrl: string } | null>(null);
 
   // Estado modal apuntar miembro
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
@@ -1224,6 +1225,20 @@ export default function EventDetail() {
                           </span>
                         )}
                       </span>
+                      {(() => {
+                        const inv = invitations.find(i => i.id === guest.id);
+                        return inv?.qrUrl ? (
+                          <button
+                            onClick={() => setInviteQrModal({ guestName: `${guest.guestFirstName} ${guest.guestLastName}`, qrUrl: inv.qrUrl! })}
+                            className="p-1 rounded text-[var(--color-textSecondary)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-100)] transition-colors"
+                            title="Ver QR"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                            </svg>
+                          </button>
+                        ) : null;
+                      })()}
                       {(isAdmin || user?.id === event.createdBy || (guest.inviterId && user?.id === guest.inviterId)) && (
                         <button
                           onClick={() => cancelInvitationMutation.mutate(guest.id)}
@@ -2081,6 +2096,41 @@ export default function EventDetail() {
           </div>
         </div>
       </Modal>
+
+      {/* Modal QR invitación individual */}
+      {inviteQrModal && (
+        <Modal
+          isOpen={true}
+          onClose={() => setInviteQrModal(null)}
+          title={`QR — ${inviteQrModal.guestName}`}
+          size="sm"
+        >
+          <div className="flex flex-col items-center gap-4">
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(inviteQrModal.qrUrl)}`}
+              alt="QR Invitación"
+              className="w-44 h-44"
+            />
+            <div className="w-full space-y-2">
+              <p className="text-sm text-[var(--color-textSecondary)]">Enlace del QR</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={inviteQrModal.qrUrl}
+                  className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-cardBackground)] text-sm"
+                />
+                <Button
+                  onClick={() => navigator.clipboard.writeText(inviteQrModal.qrUrl).then(() => success('Enlace copiado')).catch(() => showError('No se pudo copiar el enlace'))}
+                  variant="outline"
+                >
+                  Copiar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
     </Layout>
   );
 }

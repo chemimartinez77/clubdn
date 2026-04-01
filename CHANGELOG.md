@@ -4,6 +4,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-01 (sesión 4)
+
+### Mejoras
+
+#### Ver QR de invitación desde la lista de asistentes
+- Se añade un icono de lupa junto a cada invitado externo en la lista de asistentes de la partida, visible si el usuario logado tiene una invitación con QR para ese guest.
+- Al hacer clic se abre un modal individual con el código QR y el enlace copiable, sin necesidad de abrir el modal de "Invitar externo".
+- Soluciona el caso en que un SUPER_ADMIN creaba una invitación y no copiaba el QR en ese momento: ahora puede recuperarlo en cualquier momento desde la ficha de la partida, incluso si el evento ya ha pasado.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — estado `inviteQrModal`, icono de lupa en lista de asistentes, modal de QR individual
+
+---
+
 ## 2026-04-01 (sesión 3)
 
 ### Correcciones
