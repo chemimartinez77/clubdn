@@ -6,6 +6,31 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-01
 
+### Correcciones
+
+#### Build: campo `type` obligatorio en `FinancialCategory`
+- Al añadir `type` como campo requerido en el schema, dos sitios del servidor no lo incluían al crear categorías: `financialController.ts` (`createCategory`) y el seed TypeScript `seedFinancialCategories.ts`. Corregidos para incluir `type: 'GASTO'` por defecto.
+
+**Archivos modificados:**
+- `server/src/controllers/financialController.ts` — `type` añadido al `create` de categoría
+- `server/src/scripts/seedFinancialCategories.ts` — `type: 'GASTO'` añadido al `create`
+
+### Mejoras
+
+#### Sesión sin caducidad automática
+- El token JWT de login pasa de 7 días a 365 días. La sesión solo termina cuando el usuario cierra sesión manualmente. Los usuarios existentes con token de 7 días deberán volver a hacer login cuando venza.
+
+**Archivos modificados:**
+- `server/src/controllers/authController.ts` — `expiresIn: '7d'` → `'365d'`
+
+#### Balance financiero agrupado por tipo
+- La tabla de Balance Anual en `/financiero` ahora muestra las categorías agrupadas: primero **Ingresos** (cabecera en verde) y luego **Gastos** (cabecera en rojo), cada grupo con su fila de subtotal. El total global permanece al final.
+- El backend ahora incluye el campo `type` en la respuesta del balance para permitir la agrupación.
+
+**Archivos modificados:**
+- `server/src/controllers/financialController.ts` — `type` incluido en el select del balance
+- `client/src/pages/Financiero.tsx` — tabla agrupada con cabeceras y subtotales por tipo
+
 ### Administración
 
 #### Límites de invitaciones editables desde configuración del club
