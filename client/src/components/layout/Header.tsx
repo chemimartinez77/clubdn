@@ -265,6 +265,13 @@ export default function Header() {
                       </Link>
                       <div className="border-t border-[var(--color-cardBorder)] my-1"></div>
                       <Link
+                        to="/admin/invitations"
+                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                        onClick={() => setIsAdminMenuOpen(false)}
+                      >
+                        Historial de Invitaciones
+                      </Link>
+                      <Link
                         to="/admin/config"
                         className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                         onClick={() => setIsAdminMenuOpen(false)}
@@ -551,6 +558,13 @@ export default function Header() {
                     onClick={closeAllMenus}
                   >
                     Preview semanal
+                  </Link>
+                  <Link
+                    to="/admin/invitations"
+                    className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                    onClick={closeAllMenus}
+                  >
+                    Historial de Invitaciones
                   </Link>
                   <Link
                     to="/admin/config"

@@ -9,6 +9,19 @@ import { api } from '../../api/axios';
 import type { ClubConfig, ClubConfigUpdate, MembershipTypeConfig, LoginParticleStyle } from '../../types/config';
 import type { ApiResponse } from '../../types/auth';
 
+function Tooltip({ text }: { text: string }) {
+  return (
+    <span className="relative group inline-flex items-center ml-1">
+      <svg className="w-4 h-4 text-[var(--color-textSecondary)] cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span className="absolute left-1/2 -translate-x-1/2 bottom-6 z-10 hidden group-hover:block w-64 bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] text-[var(--color-text)] text-xs rounded-lg px-3 py-2 shadow-lg pointer-events-none">
+        {text}
+      </span>
+    </span>
+  );
+}
+
 export default function ClubConfigPage() {
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
@@ -34,7 +47,11 @@ export default function ClubConfigPage() {
         clubPhone: config.clubPhone,
         clubAddress: config.clubAddress,
         defaultCurrency: config.defaultCurrency,
-        loginParticleStyle: config.loginParticleStyle ?? 'white'
+        loginParticleStyle: config.loginParticleStyle ?? 'white',
+        inviteMaxActive: config.inviteMaxActive,
+        inviteMaxMonthly: config.inviteMaxMonthly,
+        inviteMaxGuestYear: config.inviteMaxGuestYear,
+        inviteAllowSelfValidation: config.inviteAllowSelfValidation,
       });
       setMembershipTypes(Array.isArray(config.membershipTypes) ? config.membershipTypes : []);
     }
@@ -252,6 +269,87 @@ export default function ClubConfigPage() {
                   {formData.loginParticleStyle === 'white' ? 'Blanco' : formData.loginParticleStyle === 'neon' ? 'Neón' : formData.loginParticleStyle === 'theme' ? 'Tema' : 'Aleatorio'}
                 </p>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Límites de Invitaciones */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Límites de Invitaciones</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="flex items-center text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                  Máx. invitaciones activas simultáneas
+                  <Tooltip text="Número máximo de invitaciones en estado PENDIENTE que un socio puede tener a la vez. Si ya tiene este número de invitaciones sin usar, no puede crear más hasta que alguna se use, expire o la cancele." />
+                </label>
+                {isEditing ? (
+                  <input
+                    type="number" min="1" max="50"
+                    value={formData.inviteMaxActive ?? 5}
+                    onChange={(e) => setFormData({ ...formData, inviteMaxActive: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  />
+                ) : (
+                  <p className="text-[var(--color-text)] py-2">{config?.inviteMaxActive}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="flex items-center text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                  Máx. invitaciones por mes
+                  <Tooltip text="Total de invitaciones que un socio puede crear en el mes natural en curso. El contador no baja aunque se cancelen — se resetea automáticamente el 1 de cada mes." />
+                </label>
+                {isEditing ? (
+                  <input
+                    type="number" min="1" max="100"
+                    value={formData.inviteMaxMonthly ?? 10}
+                    onChange={(e) => setFormData({ ...formData, inviteMaxMonthly: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  />
+                ) : (
+                  <p className="text-[var(--color-text)] py-2">{config?.inviteMaxMonthly}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="flex items-center text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                  Máx. veces al mismo invitado por año
+                  <Tooltip text="Número de veces que un socio puede invitar a la misma persona (identificada por DNI) en el año en curso. Se resetea el 1 de enero. Evita que alguien traiga siempre al mismo invitado en lugar de que se haga socio." />
+                </label>
+                {isEditing ? (
+                  <input
+                    type="number" min="1" max="50"
+                    value={formData.inviteMaxGuestYear ?? 5}
+                    onChange={(e) => setFormData({ ...formData, inviteMaxGuestYear: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  />
+                ) : (
+                  <p className="text-[var(--color-text)] py-2">{config?.inviteMaxGuestYear}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="flex items-center text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                  Permitir autovalidación
+                  <Tooltip text="Si está activado, el propio socio que creó la invitación puede escanear el QR y validar la entrada de su invitado. Si está desactivado, solo otro socio distinto puede validarla." />
+                </label>
+                {isEditing ? (
+                  <label className="flex items-center py-2 gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.inviteAllowSelfValidation ?? false}
+                      onChange={(e) => setFormData({ ...formData, inviteAllowSelfValidation: e.target.checked })}
+                      className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)]"
+                    />
+                    <span className="text-[var(--color-text)]">Activado</span>
+                  </label>
+                ) : (
+                  <p className="text-[var(--color-text)] py-2">{config?.inviteAllowSelfValidation ? 'Sí' : 'No'}</p>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>

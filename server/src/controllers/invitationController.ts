@@ -785,3 +785,71 @@ export const rejectInvitation = async (req: Request, res: Response): Promise<voi
     res.status(500).json({ success: false, message: 'Error al rechazar la invitación' });
   }
 };
+
+// ── Historial de invitados (admin) ────────────────────────────────────────────
+export const getInvitationHistory = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { page = '1', limit = '50', search = '', memberId = '' } = req.query as Record<string, string>;
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+    const skip = (pageNum - 1) * limitNum;
+
+    const where: any = {};
+    if (memberId) where.memberId = memberId;
+    if (search) {
+      where.OR = [
+        { guestFirstName: { contains: search, mode: 'insensitive' } },
+        { guestLastName:  { contains: search, mode: 'insensitive' } },
+        { member: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [invitations, total] = await Promise.all([
+      prisma.invitation.findMany({
+        where,
+        skip,
+        take: limitNum,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          guestFirstName: true,
+          guestLastName: true,
+          guestPhone: true,
+          status: true,
+          validDate: true,
+          createdAt: true,
+          usedAt: true,
+          member: {
+            select: {
+              id: true,
+              name: true,
+              profile: { select: { nick: true, avatar: true } },
+              membership: { select: { type: true } },
+            },
+          },
+          event: { select: { id: true, title: true, date: true } },
+          validatedBy: { select: { id: true, name: true } },
+        },
+      }),
+      prisma.invitation.count({ where }),
+    ]);
+
+    res.json({
+      success: true,
+      data: invitations.map(inv => ({
+        ...inv,
+        guestDniMasked: maskDni(inv.guestPhone),
+        guestPhone: undefined,
+      })),
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (error) {
+    console.error('[INVITATION] Error al obtener historial:', error);
+    res.status(500).json({ success: false, message: 'Error al obtener historial de invitaciones' });
+  }
+};

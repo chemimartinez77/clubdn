@@ -21,6 +21,10 @@ export interface ClubConfig {
   membershipTypes: MembershipTypeConfig[];
   defaultCurrency: string;
   loginParticleStyle: LoginParticleStyle;
+  inviteMaxActive: number;
+  inviteMaxMonthly: number;
+  inviteMaxGuestYear: number;
+  inviteAllowSelfValidation: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -33,6 +37,10 @@ export interface ClubConfigUpdate {
   membershipTypes?: MembershipTypeConfig[];
   defaultCurrency?: string;
   loginParticleStyle?: LoginParticleStyle;
+  inviteMaxActive?: number;
+  inviteMaxMonthly?: number;
+  inviteMaxGuestYear?: number;
+  inviteAllowSelfValidation?: boolean;
 }
 
 export interface PublicConfig {

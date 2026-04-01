@@ -27,6 +27,7 @@ import EventManagement from './pages/admin/EventManagement';
 import MembershipManagement from './pages/admin/MembershipManagement';
 import Members from './pages/admin/Members';
 import ClubConfig from './pages/admin/ClubConfig';
+import InvitationHistory from './pages/admin/InvitationHistory';
 import Games from './pages/Games';
 import Financiero from './pages/Financiero';
 import Ludoteca from './pages/Ludoteca';
@@ -390,6 +391,14 @@ function App() {
             element={
               <AdminRoute>
                 <ClubConfig />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/invitations"
+            element={
+              <AdminRoute>
+                <InvitationHistory />
               </AdminRoute>
             }
           />

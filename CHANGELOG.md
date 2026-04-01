@@ -6,6 +6,39 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-01
 
+### Administración
+
+#### Límites de invitaciones editables desde configuración del club
+- La página `/admin/config` incluye una nueva sección "Límites de Invitaciones" con los cuatro parámetros editables: máx. activas simultáneas, máx. por mes, máx. veces al mismo invitado por año y permitir autovalidación.
+- Cada campo muestra un tooltip (icono ⓘ) con la explicación exacta del comportamiento del límite, visible al pasar el ratón o pulsar en móvil.
+- Los valores se guardan en `ClubConfig` a través del endpoint existente `PUT /api/config`.
+
+**Archivos modificados:**
+- `client/src/pages/admin/ClubConfig.tsx` — nueva sección con campos numéricos, checkbox y tooltips inline
+- `client/src/types/config.ts` — campos `inviteMaxActive`, `inviteMaxMonthly`, `inviteMaxGuestYear`, `inviteAllowSelfValidation` añadidos a `ClubConfig` y `ClubConfigUpdate`
+
+#### Historial de invitaciones (`/admin/invitations`)
+- Nueva página de administración con el registro completo de todas las invitaciones del club.
+- Muestra: nombre del invitado, DNI enmascarado, socio invitador (con nick si lo tiene), evento asociado, fecha de validez, estado (con color) y quién validó la entrada.
+- Búsqueda en tiempo real por nombre de invitado o nombre de socio (debounce 400ms).
+- Paginación de 50 registros por página.
+- Nuevo endpoint `GET /api/invitations/admin/history` (solo admin) con filtros por búsqueda y paginación.
+- Enlace añadido en el menú de Administración (desktop y móvil).
+
+**Archivos nuevos/modificados:**
+- `client/src/pages/admin/InvitationHistory.tsx` — nueva página
+- `client/src/App.tsx` — ruta `/admin/invitations`
+- `client/src/components/layout/Header.tsx` — enlace en menú admin (desktop y móvil)
+- `server/src/controllers/invitationController.ts` — función `getInvitationHistory`
+- `server/src/routes/invitationRoutes.ts` — `GET /admin/history`
+
+#### Categorías financieras agrupadas por tipo en la vista Categorías
+- La pestaña "Categorías" de `/financiero` ahora muestra dos bloques separados: **Ingresos** (en verde) y **Gastos** (en rojo), en lugar de una lista plana sin distinción.
+- Al crear una nueva categoría, el tipo (Gasto/Ingreso) es seleccionable y el color por defecto se ajusta automáticamente al tipo elegido.
+
+**Archivos modificados:**
+- `client/src/pages/Financiero.tsx` — agrupación por `type`, campo `type` en el formulario de nueva categoría
+
 ### Infraestructura / Puesta en producción
 
 #### Importación de miembros desde el sistema anterior
