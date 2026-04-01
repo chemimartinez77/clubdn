@@ -6,6 +6,15 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-01 (sesión 4)
 
+### Correcciones
+
+#### Login fallaba en producción por configuración de proxy
+- En Railway, todas las requests pasan por un proxy que añade el header `X-Forwarded-For`. `express-rate-limit` lanzaba un error de validación (`ERR_ERL_UNEXPECTED_X_FORWARDED_FOR`) porque Express no estaba configurado para confiar en ese header, lo que bloqueaba el login antes de llegar a verificar la contraseña.
+- Añadido `app.set('trust proxy', 1)` para que Express confíe en el proxy de Railway.
+
+**Archivos modificados:**
+- `server/src/index.ts` — añadido `trust proxy`
+
 ### Mejoras
 
 #### Ver QR de invitación desde la lista de asistentes

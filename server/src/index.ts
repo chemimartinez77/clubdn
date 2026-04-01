@@ -40,6 +40,9 @@ if (!process.env.JWT_SECRET) {
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Necesario para que express-rate-limit funcione correctamente detrás del proxy de Railway
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet());
 
