@@ -8,6 +8,13 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### Correcciones
 
+#### Login fallaba para emails con puntos por normalización del navegador
+- Algunos navegadores y gestores de contraseñas normalizan los emails con `type="email"` quitando los puntos (comportamiento heredado de la política de Gmail). Los usuarios con puntos en su email (`carlos.navarro.mallach@gmail.com`, `ar.rabak@gmail.com`) llegaban al servidor sin puntos y no se encontraban en BD.
+- Campo de email cambiado a `type="text"` + `inputMode="email"` (mantiene el teclado correcto en móvil) + `autoComplete="username"` (evita que los gestores de contraseñas normalicen el valor).
+
+**Archivos modificados:**
+- `client/src/pages/Login.tsx` — campo email de `type="email"` a `type="text"` con `inputMode` y `autoComplete`
+
 #### Login fallaba en producción por configuración de proxy
 - En Railway, todas las requests pasan por un proxy que añade el header `X-Forwarded-For`. `express-rate-limit` lanzaba un error de validación (`ERR_ERL_UNEXPECTED_X_FORWARDED_FOR`) porque Express no estaba configurado para confiar en ese header, lo que bloqueaba el login antes de llegar a verificar la contraseña.
 - Añadido `app.set('trust proxy', 1)` para que Express confíe en el proxy de Railway.
