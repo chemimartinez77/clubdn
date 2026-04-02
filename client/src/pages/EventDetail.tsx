@@ -633,7 +633,7 @@ export default function EventDetail() {
       showError('Apellidos requeridos');
       return;
     }
-    if (!isValidDniNie(guestDni.trim())) {
+    if (guestDni.trim() && !isValidDniNie(guestDni.trim())) {
       showError('DNI o NIE no válido');
       return;
     }
@@ -1637,7 +1637,7 @@ export default function EventDetail() {
 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-[var(--color-textSecondary)]">
-                DNI / NIE *
+                DNI / NIE (opcional)
               </label>
               <input
                 type="text"
@@ -1662,7 +1662,7 @@ export default function EventDetail() {
                     createInvitationMutation.isPending ||
                     guestFirstName.trim().length < 2 ||
                     guestLastName.trim().length < 2 ||
-                    !isValidDniNie(guestDni.trim())
+                    (guestDni.trim().length > 0 && !isValidDniNie(guestDni.trim()))
                   }
                   variant="primary"
                 >

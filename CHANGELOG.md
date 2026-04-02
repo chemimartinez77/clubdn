@@ -6,6 +6,18 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-02 (sesión 8)
 
+### Correcciones
+
+#### DNI opcional en invitaciones
+
+- El campo DNI/NIE al crear una invitación pasa de obligatorio a opcional. Si se rellena, se sigue validando el formato; si se deja vacío, la invitación se crea igualmente.
+- La comprobación de límite anual por invitado (`inviteMaxGuestYear`) ahora solo se ejecuta si se ha proporcionado DNI, evitando consultas innecesarias a la BD.
+- El campo `guestDniNormalized` (y `guestPhone`, que almacenaba el mismo valor) se guarda como `null` cuando no se facilita.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — label cambiado a "DNI / NIE (opcional)", validación y `disabled` del botón actualizados
+- `server/src/controllers/invitationController.ts` — validación, conteo anual y guardado condicionales al valor del DNI
+
 ### Nuevas funcionalidades
 
 #### Tablón de anuncios

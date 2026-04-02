@@ -137,7 +137,7 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    if (!dniValue || typeof dniValue !== 'string' || !isValidDniNie(dniValue)) {
+    if (dniValue && (typeof dniValue !== 'string' || !isValidDniNie(dniValue))) {
       res.status(400).json({ success: false, message: 'DNI o NIE no válido' });
       return;
     }
@@ -219,12 +219,14 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
           createdAt: { gte: monthStart, lt: nextMonthStart }
         }
       }),
-      prisma.invitation.count({
-        where: {
-          guestDniNormalized: dniValue,
-          createdAt: { gte: yearStart }
-        }
-      })
+      dniValue
+        ? prisma.invitation.count({
+            where: {
+              guestDniNormalized: dniValue,
+              createdAt: { gte: yearStart }
+            }
+          })
+        : Promise.resolve(0)
     ]);
 
     if (activeCount >= inviteConfig.inviteMaxActive) {
@@ -237,7 +239,7 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    if (guestYearCount >= inviteConfig.inviteMaxGuestYear) {
+    if (dniValue && guestYearCount >= inviteConfig.inviteMaxGuestYear) {
       res.status(400).json({ success: false, message: 'Limite anual para este invitado alcanzado' });
       return;
     }
@@ -252,8 +254,8 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
           memberId: userId,
           guestFirstName: normalizeText(guestFirstName),
           guestLastName: normalizeText(guestLastName),
-          guestPhone: dniValue,
-          guestDniNormalized: dniValue,
+          guestPhone: dniValue || null,
+          guestDniNormalized: dniValue || null,
           eventId: event.id,
           validDate: eventDay,
           status: needsApproval ? InvitationStatus.PENDING_APPROVAL : InvitationStatus.PENDING,
