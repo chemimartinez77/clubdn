@@ -463,3 +463,29 @@ export const notifyReportComment = async (
     return { success: false, error };
   }
 };
+
+/**
+ * Notificar a todos los usuarios sobre un nuevo anuncio en el tablón
+ */
+export const notifyNewAnnouncement = async (
+  announcementId: string,
+  title: string | null,
+  content: string
+) => {
+  try {
+    const notificationTitle = title ? `Nuevo anuncio: ${title}` : 'Nuevo anuncio en el tablón';
+    const message = content.length > 120 ? content.slice(0, 117) + '...' : content;
+    await prisma.globalNotification.create({
+      data: {
+        type: 'ANNOUNCEMENT_CREATED',
+        title: notificationTitle,
+        message,
+        metadata: { announcementId },
+      },
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error notificando nuevo anuncio:', error);
+    return { success: false, error };
+  }
+};

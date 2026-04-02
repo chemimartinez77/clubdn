@@ -28,6 +28,8 @@ import MembershipManagement from './pages/admin/MembershipManagement';
 import Members from './pages/admin/Members';
 import ClubConfig from './pages/admin/ClubConfig';
 import InvitationHistory from './pages/admin/InvitationHistory';
+import AdminAnnouncements from './pages/admin/Announcements';
+import Announcements from './pages/Announcements';
 import Games from './pages/Games';
 import Financiero from './pages/Financiero';
 import Ludoteca from './pages/Ludoteca';
@@ -356,6 +358,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/anuncios"
+            element={
+              <ProtectedRoute>
+                <Announcements />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Rutas de administración */}
           <Route
@@ -411,6 +421,14 @@ function App() {
             element={
               <AdminRoute>
                 <InvitationHistory />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/announcements"
+            element={
+              <AdminRoute>
+                <AdminAnnouncements />
               </AdminRoute>
             }
           />

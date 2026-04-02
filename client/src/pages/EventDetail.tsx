@@ -745,23 +745,12 @@ export default function EventDetail() {
         message += `\n${event.description}\n`;
       }
 
-      // Añadir participantes registrados
+      // Indicar si hay socios apuntados (sin datos personales)
       const confirmedRegistrations = event.registrations?.filter(reg => reg.status === 'CONFIRMED') || [];
-      const confirmedInvitations = invitations?.filter(inv => inv.status === 'PENDING' || inv.status === 'USED') || [];
+      const hasSocios = confirmedRegistrations.some(reg => reg.user?.membership?.type);
 
-      if (confirmedRegistrations.length > 0 || confirmedInvitations.length > 0) {
-        message += `\n*Participantes confirmados:*\n`;
-        confirmedRegistrations.forEach(reg => {
-          message += `- ${reg.user?.name || 'Usuario'}`;
-          if (reg.user?.membership?.type) {
-            const membershipLabel = reg.user.membership.type === 'SOCIO' ? 'Socio' : 'Colaborador';
-            message += ` (${membershipLabel})`;
-          }
-          message += '\n';
-        });
-        confirmedInvitations.forEach(inv => {
-          message += `- ${inv.guestFirstName} ${inv.guestLastName} (Invitado)\n`;
-        });
+      if (hasSocios) {
+        message += `\nHay socios apuntados\n`;
       }
 
       message += `\nApúntate aquí: ${shareUrl}`;

@@ -4,6 +4,49 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-02 (sesión 8)
+
+### Nuevas funcionalidades
+
+#### Tablón de anuncios
+
+- Se añade un sistema de anuncios gestionado por admins/super admins, accesible para todos los usuarios registrados.
+- Los anuncios pueden tener título opcional, contenido, y opción de fijarlos arriba. Al publicar uno se genera automáticamente una notificación global para todos los usuarios.
+- El menú de navegación "Feedback" se renombra a **"Comunidad"** y pasa a ser un desplegable con dos opciones: "Sugerencias y reportes" (antes "Feedback") y "Tablón de anuncios". El cambio aplica tanto en desktop como en móvil.
+- El panel de administración incluye una nueva sección "Tablón de anuncios" (`/admin/announcements`) para crear, editar, eliminar y fijar anuncios.
+
+**Archivos modificados/añadidos:**
+- `server/prisma/schema.prisma` — modelo `Announcement` + enum `ANNOUNCEMENT_CREATED` en `NotificationType`
+- `server/src/controllers/announcementController.ts` — nuevo, CRUD completo
+- `server/src/routes/announcementRoutes.ts` — nuevo, rutas `GET/POST/PUT/DELETE /api/announcements`
+- `server/src/index.ts` — registro de `announcementRoutes`
+- `server/src/services/notificationService.ts` — función `notifyNewAnnouncement`
+- `client/src/types/announcement.ts` — nuevo, tipos `Announcement` y `AnnouncementFormData`
+- `client/src/pages/Announcements.tsx` — nuevo, vista pública `/anuncios`
+- `client/src/pages/admin/Announcements.tsx` — nuevo, gestión admin
+- `client/src/components/layout/Header.tsx` — menú "Comunidad" (desplegable desktop + acordeón móvil)
+- `client/src/App.tsx` — rutas `/anuncios` y `/admin/announcements`
+
+#### Pantalla de inicio configurable tras login
+
+- El usuario puede elegir en su perfil a qué pantalla aterriza después de hacer login: **Inicio** o **Calendario**. La preferencia se guarda al instante (igual que las notificaciones) y se aplica en el siguiente login. Si existe un `?redirect=` explícito en la URL, se respeta sobre la preferencia del usuario.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — campo `defaultScreen String @default("home")` en `UserProfile`
+- `server/src/controllers/profileController.ts` — acepta y guarda `defaultScreen`
+- `client/src/types/profile.ts` — campo `defaultScreen` en `UserProfile` y `UpdateProfileData`
+- `client/src/pages/Profile.tsx` — sección "Pantalla de inicio" con botones Inicio/Calendario
+- `client/src/pages/Login.tsx` — tras login sin redirect explícito, consulta el perfil y navega según `defaultScreen`
+
+#### Privacidad en compartir evento por WhatsApp
+
+- Al compartir un evento por WhatsApp se eliminan los datos personales de los participantes (nombres, tipo de membresía, invitados). Ahora solo se indica "Hay socios apuntados" si hay al menos un socio confirmado.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — función `handleShareWhatsApp`, bloque de participantes
+
+---
+
 ## 2026-04-02 (sesión 7)
 
 ### Refactorización

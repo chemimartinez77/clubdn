@@ -119,6 +119,7 @@ model User {
   notifications     Notification[]
   globalNotificationReads GlobalNotificationRead[]
   badges            UserBadge[]
+  announcements     Announcement[]
   gamePlayHistory   GamePlayHistory[]
   financialMovements FinancialMovement[] @relation("FinancialMovements")
   azulGamesAsPlayer1  AzulGame[]          @relation("AzulGamesAsPlayer1")
@@ -181,6 +182,7 @@ model UserProfile {
   allowEventInvitations Boolean @default(true)   // Permitir ser apuntado a eventos por otros miembros
 
   // Personalización
+  defaultScreen   String   @default("home")  // Pantalla de inicio tras login: "home" o "events"
   noughterColor   String?  // Color de Noughter: purple, blue, green, red, brown (null = usar tema activo)
   tourDismissed              Boolean  @default(false)  // true = no volver a mostrar el tour de inicio
   calendarTourDismissed      Boolean  @default(false)  // true = no volver a mostrar el tour del calendario
@@ -192,6 +194,20 @@ model UserProfile {
 
   @@index([userId])
   @@index([dniNormalized])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String?
+  content   String
+  pinned    Boolean  @default(false)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([pinned])
 }
 
 model EmailLog {
@@ -825,6 +841,7 @@ enum NotificationType {
   REPORT_UPDATED          // Reporte actualizado (para creador)
   REPORT_COMMENT          // Nuevo comentario en reporte
   EVENT_DISPUTE_CONFIRMATION // Confirmar si la partida se disputó (para organizador)
+  ANNOUNCEMENT_CREATED       // Nuevo anuncio publicado en el tablón
 }
 
 // Notificaciones del sistema

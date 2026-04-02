@@ -191,7 +191,8 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
       notifyEventCancelled,
       notifyInvitations,
       allowEventInvitations,
-      noughterColor
+      noughterColor,
+      defaultScreen
     } = req.body;
 
     // Buscar o crear perfil
@@ -220,7 +221,8 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           notifyEventCancelled: notifyEventCancelled ?? true,
           notifyInvitations: notifyInvitations ?? true,
           allowEventInvitations: allowEventInvitations ?? true,
-          noughterColor: noughterColor ?? null
+          noughterColor: noughterColor ?? null,
+          defaultScreen: defaultScreen ?? 'home'
         },
         include: {
           user: {
@@ -257,7 +259,8 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           ...(notifyEventCancelled !== undefined && { notifyEventCancelled }),
           ...(notifyInvitations !== undefined && { notifyInvitations }),
           ...(allowEventInvitations !== undefined && { allowEventInvitations }),
-          ...(noughterColor !== undefined && { noughterColor })
+          ...(noughterColor !== undefined && { noughterColor }),
+          ...(defaultScreen !== undefined && { defaultScreen })
         },
         include: {
           user: {

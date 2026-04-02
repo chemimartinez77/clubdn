@@ -27,6 +27,7 @@ export interface UserProfile {
   notifyInvitations: boolean;
   allowEventInvitations: boolean;
   noughterColor: string | null;
+  defaultScreen: string;
   calendarToken: string | null;
   tourDismissed: boolean;
   calendarTourDismissed: boolean;
@@ -55,4 +56,5 @@ export interface UpdateProfileData {
   notifyInvitations?: boolean;
   allowEventInvitations?: boolean;
   noughterColor?: string | null;
+  defaultScreen?: string;
 }

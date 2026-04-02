@@ -17,6 +17,8 @@ export default function Header() {
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const [isGamesMenuOpen, setIsGamesMenuOpen] = useState(false);
   const [isMobileGamesOpen, setIsMobileGamesOpen] = useState(false);
+  const [isComunidadMenuOpen, setIsComunidadMenuOpen] = useState(false);
+  const [isMobileComunidadOpen, setIsMobileComunidadOpen] = useState(false);
   const [isIdModalOpen, setIsIdModalOpen] = useState(false);
   const [now, setNow] = useState(new Date());
   const [manualTip, setManualTip] = useState<Tip | null>(null);
@@ -35,6 +37,7 @@ export default function Header() {
     setIsMenuOpen(false);
     setIsAdminMenuOpen(false);
     setIsGamesMenuOpen(false);
+    setIsComunidadMenuOpen(false);
   };
 
   const membershipLabel =
@@ -181,13 +184,49 @@ export default function Header() {
             >
               Documentos
             </Link>
-            <Link
-              id="nav-feedback"
-              to="/feedback"
-              className="text-[var(--color-textSecondary)] hover:text-primary transition-colors"
-            >
-              Feedback
-            </Link>
+            {/* Comunidad - Desplegable */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setIsComunidadMenuOpen(!isComunidadMenuOpen);
+                  setIsGamesMenuOpen(false);
+                  setIsAdminMenuOpen(false);
+                  setIsMenuOpen(false);
+                }}
+                className="text-[var(--color-textSecondary)] hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                Comunidad
+                <svg
+                  className={`w-4 h-4 transition-transform ${isComunidadMenuOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {isComunidadMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setIsComunidadMenuOpen(false)} />
+                  <div className="absolute left-0 mt-2 w-52 bg-[var(--color-cardBackground)] rounded-lg shadow-lg border border-[var(--color-cardBorder)] py-1 z-20">
+                    <Link
+                      to="/feedback"
+                      className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                      onClick={() => setIsComunidadMenuOpen(false)}
+                    >
+                      Sugerencias y reportes
+                    </Link>
+                    <Link
+                      to="/anuncios"
+                      className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                      onClick={() => setIsComunidadMenuOpen(false)}
+                    >
+                      Tablón de anuncios
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* Menú Administración - Solo admin */}
             {isAdmin && (
@@ -278,6 +317,13 @@ export default function Header() {
                         onClick={() => setIsAdminMenuOpen(false)}
                       >
                         Historial de Invitaciones
+                      </Link>
+                      <Link
+                        to="/admin/announcements"
+                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                        onClick={() => setIsAdminMenuOpen(false)}
+                      >
+                        Tablón de anuncios
                       </Link>
                       <Link
                         to="/admin/config"
@@ -509,13 +555,41 @@ export default function Header() {
               >
                 Documentos
               </Link>
-              <Link
-                to="/feedback"
-                className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
-                onClick={closeAllMenus}
-              >
-                Feedback
-              </Link>
+              {/* Comunidad - Acordeón móvil */}
+              <div>
+                <button
+                  onClick={() => setIsMobileComunidadOpen(!isMobileComunidadOpen)}
+                  className="w-full px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors flex items-center justify-between cursor-pointer"
+                >
+                  <span>Comunidad</span>
+                  <svg
+                    className={`w-4 h-4 transition-transform ${isMobileComunidadOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {isMobileComunidadOpen && (
+                  <div className="ml-4 mt-1 space-y-1">
+                    <Link
+                      to="/feedback"
+                      className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                      onClick={closeAllMenus}
+                    >
+                      Sugerencias y reportes
+                    </Link>
+                    <Link
+                      to="/anuncios"
+                      className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                      onClick={closeAllMenus}
+                    >
+                      Tablón de anuncios
+                    </Link>
+                  </div>
+                )}
+              </div>
 
               {/* Administración - Solo admin */}
               {isAdmin && (
@@ -580,6 +654,13 @@ export default function Header() {
                     onClick={closeAllMenus}
                   >
                     Historial de Invitaciones
+                  </Link>
+                  <Link
+                    to="/admin/announcements"
+                    className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                    onClick={closeAllMenus}
+                  >
+                    Tablón de anuncios
                   </Link>
                   <Link
                     to="/admin/config"

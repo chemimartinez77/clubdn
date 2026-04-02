@@ -99,7 +99,19 @@ export default function Login() {
       console.log('[LOGIN DEBUG] email enviado:', JSON.stringify(data.email));
       await login(data.email, data.password, captchaToken);
       success('Sesión iniciada correctamente');
-      navigate(redirectTo);
+
+      // Si hay redirect explícito, respetarlo; si no, usar la pantalla de inicio del perfil
+      if (redirectTo !== '/') {
+        navigate(redirectTo);
+      } else {
+        try {
+          const res = await api.get<{ success: boolean; data: { profile: { defaultScreen?: string } } }>('/api/profile/me');
+          const defaultScreen = res.data?.data?.profile?.defaultScreen;
+          navigate(defaultScreen === 'events' ? '/events' : '/');
+        } catch {
+          navigate('/');
+        }
+      }
     } catch (err: any) {
       const responseData = err.response?.data;
       const errorMessage = responseData?.message || 'Error al iniciar sesión';
