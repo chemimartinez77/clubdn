@@ -174,42 +174,25 @@ export const notifyAdminsNewUser = async (newUserName: string, newUserEmail: str
 };
 
 /**
- * Notificar a usuarios con preferencia activada sobre una nueva partida
+ * Notificar sobre una nueva partida — genera 1 sola fila global en lugar de una por usuario
  */
 export const notifyNewEvent = async (
   eventId: string,
   eventTitle: string,
   eventDate: Date,
-  createdById?: string
+  _createdById?: string
 ) => {
   try {
-    // Obtener usuarios con notificaciones de nuevos eventos habilitadas
-    const users = await prisma.user.findMany({
-      where: {
-        status: 'APPROVED',
-        ...(createdById ? { id: { not: createdById } } : {}),
-        profile: {
-          notifyNewEvents: true,
-        },
-      },
-      select: {
-        id: true,
+    const globalNotification = await prisma.globalNotification.create({
+      data: {
+        type: 'EVENT_CREATED',
+        title: 'Nueva partida disponible',
+        message: `Se ha creado una nueva partida: "${eventTitle}". Fecha: ${new Date(eventDate).toLocaleDateString('es-ES')}`,
+        metadata: { eventId, eventTitle, eventDate: eventDate.toISOString() },
       },
     });
 
-    const userIds = users.map(user => user.id);
-
-    if (userIds.length === 0) {
-      return { success: true, count: 0 };
-    }
-
-    return await createBulkNotifications({
-      userIds,
-      type: 'EVENT_CREATED',
-      title: 'Nueva partida disponible',
-      message: `Se ha creado una nueva partida: "${eventTitle}". Fecha: ${new Date(eventDate).toLocaleDateString('es-ES')}`,
-      metadata: { eventId, eventTitle, eventDate: eventDate.toISOString() },
-    });
+    return { success: true, globalNotification };
   } catch (error) {
     console.error('Error notificando nueva partida:', error);
     return { success: false, error };

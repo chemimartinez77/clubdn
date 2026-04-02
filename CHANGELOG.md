@@ -4,6 +4,27 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-02 (sesión 7)
+
+### Refactorización
+
+#### Modelo de notificaciones global para eventos — de N filas a 1
+
+- La tabla `Notification` acumulaba ~310 filas por cada evento creado (una por usuario). Con 100 usuarios activos en el primer día ya había 3.000+ filas, con riesgo de crecimiento exponencial.
+- Se introduce un modelo de **notificación global**: al crear un evento se genera 1 sola fila en `GlobalNotification`. El estado de lectura/descarte de cada usuario se registra bajo demanda en `GlobalNotificationRead` (solo cuando el usuario interactúa con la notificación).
+- El controller fusiona ambas fuentes en cada respuesta, exponiendo al cliente exactamente la misma forma de objeto (`{ id, type, title, message, metadata, read, readAt, createdAt }`). Las notificaciones globales llevan el prefijo `global_` en el `id` para que el routing interno del controller distinga entre ambos tipos sin cambios en el frontend.
+- Las notificaciones 1-a-1 existentes (aprobaciones, registros, reportes, etc.) no se modifican.
+- Los ~3.000 registros históricos de `EVENT_CREATED` permanecen en `Notification` y se siguen sirviendo normalmente.
+- La preferencia `notifyNewEvents` pasa a filtrarse en la lectura (en lugar de en la creación), lo que permite cambiar la preferencia con efecto inmediato.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — modelos `GlobalNotification` y `GlobalNotificationRead` añadidos; relación `globalNotificationReads` en `User`
+- `server/prisma/migrations/20260402100000_add_global_notifications/migration.sql` — migración aplicada directamente a Railway con `prisma db execute` + `migrate resolve`
+- `server/src/services/notificationService.ts` — `notifyNewEvent` usa `prisma.globalNotification.create` en lugar de `createBulkNotifications`
+- `server/src/controllers/notificationController.ts` — las cinco funciones (`getNotifications`, `getUnreadCount`, `markAsRead`, `markAllAsRead`, `deleteNotification`) fusionan `Notification` personal y `GlobalNotification`
+
+---
+
 ## 2026-04-02 (sesión 6)
 
 ### Nuevas funcionalidades

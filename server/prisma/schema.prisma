@@ -117,6 +117,7 @@ model User {
   eventAuditLogs    EventAuditLog[] @relation("EventAuditActor")
   eventAuditTargets EventAuditLog[] @relation("EventAuditTargetUser")
   notifications     Notification[]
+  globalNotificationReads GlobalNotificationRead[]
   badges            UserBadge[]
   gamePlayHistory   GamePlayHistory[]
   financialMovements FinancialMovement[] @relation("FinancialMovements")
@@ -848,6 +849,40 @@ model Notification {
   @@index([userId])
   @@index([read])
   @@index([createdAt])
+}
+
+// Notificaciones globales (broadcast a todos los usuarios)
+model GlobalNotification {
+  id        String           @id @default(cuid())
+
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  metadata  Json?
+
+  createdAt DateTime         @default(now())
+
+  reads     GlobalNotificationRead[]
+
+  @@index([createdAt])
+  @@index([type])
+}
+
+// Registro de lectura/descarte de notificaciones globales por usuario
+model GlobalNotificationRead {
+  id                   String             @id @default(cuid())
+  userId               String
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  globalNotificationId String
+  globalNotification   GlobalNotification @relation(fields: [globalNotificationId], references: [id], onDelete: Cascade)
+
+  readAt    DateTime  @default(now())
+  dismissed Boolean   @default(false)
+
+  @@unique([userId, globalNotificationId])
+  @@index([userId])
+  @@index([globalNotificationId])
+  @@index([userId, dismissed])
 }
 
 // Definiciones de badges (catálogo estático)
