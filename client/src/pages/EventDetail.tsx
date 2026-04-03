@@ -747,7 +747,7 @@ export default function EventDetail() {
 
       // Indicar si hay socios apuntados (sin datos personales)
       const confirmedRegistrations = event.registrations?.filter(reg => reg.status === 'CONFIRMED') || [];
-      const hasSocios = confirmedRegistrations.some(reg => reg.user?.membership?.type);
+      const hasSocios = confirmedRegistrations.some(reg => reg.user?.membership?.type === 'SOCIO');
 
       if (hasSocios) {
         message += `\nHay socios apuntados\n`;

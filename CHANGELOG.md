@@ -4,6 +4,19 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-03 (sesión 1)
+
+### Correcciones
+
+#### Filtro de socios en compartir por WhatsApp
+
+- El mensaje "Hay socios apuntados" se mostraba también cuando había colaboradores apuntados, ya que la condición comprobaba cualquier valor en `membership.type`. Corregido para que solo aparezca cuando hay al menos un participante con `type === 'SOCIO'`.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — condición `hasSocios` ajustada
+
+---
+
 ## 2026-04-02 (sesión 8)
 
 ### Correcciones
