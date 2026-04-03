@@ -28,6 +28,7 @@ import viernesRoutes from './routes/viernesRoutes';
 import calendarRoutes from './routes/calendarRoutes';
 import pageViewRoutes from './routes/pageViewRoutes';
 import announcementRoutes from './routes/announcementRoutes';
+import { startEventCompletionJob } from './jobs/eventCompletionJob';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -158,6 +159,7 @@ if (process.env.NODE_ENV !== 'test') {
   const server = app.listen(PORT, () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
     console.log(`📝 Entorno: ${process.env.NODE_ENV || 'development'}`);
+    startEventCompletionJob();
   });
 
   // Manejo de cierre graceful

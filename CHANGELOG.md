@@ -6,6 +6,21 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-03 (sesión 1)
 
+### Nuevas funcionalidades
+
+#### Cron job de cierre automático de eventos
+
+- Los eventos pasaban a COMPLETED solo cuando un admin lo hacía manualmente. La lógica `completePassedEvents` ya existía en `statsController.ts` pero nunca se llamaba de forma autónoma.
+- Se añade un cron job con `node-cron` que ejecuta `completePassedEvents` cada hora en punto. Al arrancar el servidor se registra el job (solo fuera de entorno `test`).
+- El proceso marca como COMPLETED todos los eventos cuya hora de fin ya ha pasado, y envía la notificación `EVENT_DISPUTE_CONFIRMATION` al organizador para que confirme si la partida se disputó. La lógica `disputeAsked` evita notificaciones duplicadas.
+- Esto hace que las estadísticas de "Partidas jugadas" y "Eventos asistidos" se actualicen sin intervención manual.
+
+**Archivos modificados/añadidos:**
+- `server/src/jobs/eventCompletionJob.ts` — nuevo, registra el cron `0 * * * *`
+- `server/src/controllers/statsController.ts` — `completePassedEvents` exportada
+- `server/src/index.ts` — llama a `startEventCompletionJob()` al arrancar el servidor
+- `server/package.json` + `server/package-lock.json` — dependencia `node-cron ^4.2.1` + tipos
+
 ### Correcciones
 
 #### Filtro de socios en compartir por WhatsApp

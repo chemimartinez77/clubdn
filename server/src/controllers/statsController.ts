@@ -10,7 +10,7 @@ import { notifyEventDisputeConfirmation } from '../services/notificationService'
  * y crea los registros de GamePlayHistory para los participantes confirmados.
  * Se llama automáticamente al cargar stats para mantener los datos actualizados.
  */
-async function completePassedEvents(): Promise<void> {
+export async function completePassedEvents(): Promise<void> {
   const now = new Date();
 
   // Buscar eventos candidatos (fecha pasada) que aún no están COMPLETED ni CANCELLED
