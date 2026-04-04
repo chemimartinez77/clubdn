@@ -28,29 +28,27 @@ export async function completePassedEvents(): Promise<void> {
   });
 
   // Filtrar solo los que ya han terminado según su hora fin real
+  // event.date ya viene en UTC con la hora local convertida (ej. 17:00 España = 15:00 UTC)
+  // así que usamos directamente el timestamp UTC sin sobreescribir la hora
   const passedEvents = candidateEvents.filter(event => {
-    if (event.startHour == null) return true; // sin hora definida: basar solo en fecha
-    const endDate = new Date(event.date);
-    endDate.setHours(event.startHour, event.startMinute ?? 0, 0, 0);
     const durationMinutes = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
-    endDate.setMinutes(endDate.getMinutes() + durationMinutes);
+    const endDate = new Date(event.date.getTime() + durationMinutes * 60 * 1000);
     return endDate <= now;
   });
 
   if (passedEvents.length === 0) return;
 
   for (const event of passedEvents) {
-    // Si ya se preguntó al organizador, no volver a preguntar
-    if (event.disputeAsked) continue;
-
-    // Marcar el evento como completado y que ya se le preguntó al organizador
+    // Marcar el evento como completado
     await prisma.event.update({
       where: { id: event.id },
       data: { status: EventStatus.COMPLETED, disputeAsked: true }
     });
 
-    // Notificar al organizador para que confirme si la partida se disputó
-    await notifyEventDisputeConfirmation(event.id, event.title, event.createdBy);
+    // Notificar al organizador solo si aún no se le había preguntado
+    if (!event.disputeAsked) {
+      await notifyEventDisputeConfirmation(event.id, event.title, event.createdBy);
+    }
   }
 }
 

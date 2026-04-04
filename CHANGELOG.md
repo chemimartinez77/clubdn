@@ -4,6 +4,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-04 (sesión 1)
+
+### Correcciones
+
+#### Dos bugs en `completePassedEvents` que impedían el cierre automático de eventos
+
+**Bug 1 — Desfase UTC en el cálculo de hora de fin:**
+La función reconstruía la hora de fin haciendo `new Date(event.date)` + `setHours(startHour, startMinute)`, lo que sobreescribía la hora del timestamp UTC con la hora local del evento, produciendo un desfase de 2 horas (UTC+2 en horario de verano). El resultado era que eventos como "Coimbra 17:00-20:00" se calculaban como finalizados a las 22:00 UTC (00:00 hora española) en lugar de a las 18:00 UTC (20:00 hora española). Corregido usando directamente `event.date.getTime() + durationMinutes * 60 * 1000`, ya que la BD almacena la hora de inicio ya convertida a UTC.
+
+**Bug 2 — `disputeAsked: true` bloqueaba el cierre del evento:**
+Si por cualquier motivo un evento tenía `disputeAsked: true` pero seguía en estado SCHEDULED (caso real en producción), el `continue` impedía que se marcara como COMPLETED. Separada la lógica: el status se actualiza siempre; la notificación al organizador solo se envía si `disputeAsked` era `false`.
+
+**Archivos modificados:**
+- `server/src/controllers/statsController.ts` — función `completePassedEvents`
+
+---
+
 ## 2026-04-03 (sesión 1)
 
 ### Nuevas funcionalidades
