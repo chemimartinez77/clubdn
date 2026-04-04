@@ -441,10 +441,36 @@ export default function Events() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {events.map((event) => (
-                    <EventCard key={event.id} event={event} />
-                  ))}
+                <div className="space-y-6">
+                  {(() => {
+                    const groups: { dateKey: string; label: string; events: typeof events }[] = [];
+                    for (const event of events) {
+                      const d = new Date(event.date);
+                      const dateKey = d.toISOString().slice(0, 10);
+                      const label = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+                      const last = groups[groups.length - 1];
+                      if (last && last.dateKey === dateKey) {
+                        last.events.push(event);
+                      } else {
+                        groups.push({ dateKey, label, events: [event] });
+                      }
+                    }
+                    return groups.map(group => (
+                      <div key={group.dateKey}>
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="text-sm font-semibold text-[var(--color-textSecondary)] capitalize whitespace-nowrap">
+                            {group.label}
+                          </span>
+                          <div className="flex-1 h-px bg-[var(--color-cardBorder)]" />
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          {group.events.map(event => (
+                            <EventCard key={event.id} event={event} />
+                          ))}
+                        </div>
+                      </div>
+                    ));
+                  })()}
                 </div>
               )
             ) : (
