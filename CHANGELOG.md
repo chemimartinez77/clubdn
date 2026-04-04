@@ -8,6 +8,40 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### Correcciones
 
+#### Campos nullable en schema Prisma para invitaciones sin DNI
+
+- Tras hacer opcionales los campos DNI/NIE en el formulario de invitaciones (sesión 2026-04-02), el schema de Prisma seguía declarando `guestPhone` y `guestDniNormalized` como `String` (NOT NULL) en los modelos `Invitation` y `EventGuest`. Esto producía un `PrismaClientKnownRequestError P2011` al intentar crear invitaciones sin DNI, tanto en local como en producción.
+- Se corrigen ambos campos a `String?` (nullable) en el schema. También se actualiza `maskDni` para aceptar `string | null | undefined`.
+- El cambio se aplicó a producción con `prisma db push` apuntando directamente a la BD de Railway, ya que Railway no ejecuta `db push` automáticamente en el deploy.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — `guestPhone` y `guestDniNormalized` opcionales en `Invitation`; `guestPhone` opcional en `EventGuest`
+- `server/src/controllers/invitationController.ts` — `maskDni` acepta `null`
+
+---
+
+#### Partidas en progreso visibles en la home hasta su hora de fin
+
+- Las partidas desaparecían del panel "Tus próximas partidas" en cuanto llegaba su hora de inicio, porque el endpoint filtraba por `event.date >= now`. El usuario no podía acceder desde la home para subir fotos u otras acciones mientras la partida estaba en curso.
+- Corregido el backend para traer eventos con una ventana de 24h hacia atrás y filtrar en código comparando la hora de **fin** (`startTime + duración`) con la hora actual.
+- En el frontend se añade la función `getEffectiveStatus` que calcula si una partida está "En curso" comparando la hora actual con el intervalo inicio-fin, mostrando el badge "En curso" (ámbar) aunque el status en BD siga siendo `SCHEDULED`.
+
+**Archivos modificados:**
+- `server/src/controllers/statsController.ts` — `getUserUpcomingEvents` filtra por hora de fin
+- `client/src/components/dashboard/UpcomingEventsCard.tsx` — `getEffectiveStatus` para badge "En curso"
+
+---
+
+#### Eliminación de participantes permitida hasta el final del día del evento
+
+- El backend bloqueaba la eliminación de un participante en cuanto pasaba la hora de inicio del evento (`eventDate <= now`). En la práctica esto impedía corregir la lista de asistentes si alguien avisaba tarde o no se presentaba.
+- Cambiada la validación para permitir eliminar participantes hasta las 23:59:59 UTC del día del evento. A partir del día siguiente se bloquea.
+
+**Archivos modificados:**
+- `server/src/controllers/eventController.ts` — validación en `removeParticipant`
+
+---
+
 #### Dos bugs en `completePassedEvents` que impedían el cierre automático de eventos
 
 **Bug 1 — Desfase UTC en el cálculo de hora de fin:**
