@@ -83,6 +83,19 @@ export default function UpcomingEventsCard() {
     return `${startText}-${endText}${formatDuration(event.durationHours, event.durationMinutes)}`;
   };
 
+  const getEffectiveStatus = (event: EventDetail) => {
+    if (event.status !== 'SCHEDULED') return event.status;
+    const start = getStartTime(event);
+    if (!start) return event.status;
+    const now = new Date();
+    const startDate = new Date(event.date);
+    startDate.setHours(start.hour, start.minute, 0, 0);
+    const durationMins = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
+    const endDate = new Date(startDate.getTime() + durationMins * 60 * 1000);
+    if (now >= startDate && now < endDate) return 'ONGOING';
+    return event.status;
+  };
+
   return (
     <Card id="dashboard-upcoming-events">
       <CardHeader>
@@ -97,6 +110,7 @@ export default function UpcomingEventsCard() {
           <div className="space-y-2">
             {upcomingEvents.slice(0, 4).map((event) => {
               const scheduleText = formatTimeWithDuration(event);
+              const effectiveStatus = getEffectiveStatus(event);
 
               return (
                 <div
@@ -123,8 +137,8 @@ export default function UpcomingEventsCard() {
                         )}
                       </div>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusClass(event.status)}`}>
-                      {statusLabel(event.status)}
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusClass(effectiveStatus)}`}>
+                      {statusLabel(effectiveStatus)}
                     </span>
                   </div>
                 </div>

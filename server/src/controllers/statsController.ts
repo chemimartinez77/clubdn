@@ -605,7 +605,10 @@ export const getUserUpcomingEvents = async (req: Request, res: Response): Promis
       return;
     }
 
-    const events = await prisma.eventRegistration.findMany({
+    const now = new Date();
+    // Traemos eventos SCHEDULED u ONGOING sin filtrar por fecha — lo haremos en código
+    // para poder comparar con la hora de FIN (no de inicio)
+    const registrations = await prisma.eventRegistration.findMany({
       where: {
         userId,
         status: RegistrationStatus.CONFIRMED,
@@ -614,7 +617,7 @@ export const getUserUpcomingEvents = async (req: Request, res: Response): Promis
             in: [EventStatus.SCHEDULED, EventStatus.ONGOING]
           },
           date: {
-            gte: new Date()
+            gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) // ventana de 24h atrás
           }
         }
       },
@@ -651,9 +654,18 @@ export const getUserUpcomingEvents = async (req: Request, res: Response): Promis
       }
     });
 
+    // Filtrar: solo mostrar si la hora de fin aún no ha pasado
+    const events = registrations
+      .map(r => r.event)
+      .filter(event => {
+        const durationMins = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
+        const endDate = new Date(event.date.getTime() + durationMins * 60 * 1000);
+        return endDate > now;
+      });
+
     res.json({
       success: true,
-      data: events.map(e => e.event)
+      data: events
     });
 
   } catch (error) {
