@@ -1217,13 +1217,14 @@ export const removeParticipant = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    // Validar que el evento no haya comenzado
-    const eventDate = new Date(registration.event.date);
+    // Permitir eliminar hasta el final del día del evento
+    const eventDay = new Date(registration.event.date);
+    eventDay.setUTCHours(23, 59, 59, 999);
     const now = new Date();
-    if (eventDate <= now) {
+    if (eventDay < now) {
       res.status(400).json({
         success: false,
-        message: 'No se pueden eliminar participantes de un evento que ya ha comenzado o pasado'
+        message: 'No se pueden eliminar participantes de un evento que ya ha finalizado'
       });
       return;
     }
