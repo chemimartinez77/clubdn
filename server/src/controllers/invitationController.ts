@@ -32,7 +32,8 @@ const DEFAULT_INVITE_RULES = {
 const normalizeText = (value: string) => value.trim().replace(/\s+/g, ' ');
 
 
-const maskDni = (value: string) => {
+const maskDni = (value: string | null | undefined) => {
+  if (!value) return undefined;
   const v = value.trim().toUpperCase();
   if (v.length <= 3) return '*'.repeat(v.length);
   return `${'*'.repeat(v.length - 3)}${v.slice(-3)}`;

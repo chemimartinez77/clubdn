@@ -389,7 +389,7 @@ model EventGuest {
   invitation    Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
   guestFirstName String
   guestLastName  String
-  guestPhone     String
+  guestPhone     String?
   createdAt     DateTime   @default(now())
   auditLogs      EventAuditLog[]
 
