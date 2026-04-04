@@ -36,6 +36,7 @@ export default function Events() {
   const [participant, setParticipant] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [sortOption, setSortOption] = useState<SortOption>('date_asc');
+  const [openDays, setOpenDays] = useState<Set<string>>(new Set());
 
   const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
   const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -441,35 +442,74 @@ export default function Events() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-3">
                   {(() => {
-                    const groups: { dateKey: string; label: string; events: typeof events }[] = [];
+                    // Colores por día de la semana (0=dom, 1=lun, ..., 6=sáb)
+                    const dayColors: Record<number, string> = {
+                      0: 'bg-orange-900/30 border-orange-700/50 text-orange-300',   // domingo
+                      1: 'bg-blue-900/30 border-blue-700/50 text-blue-300',         // lunes
+                      2: 'bg-purple-900/30 border-purple-700/50 text-purple-300',   // martes
+                      3: 'bg-green-900/30 border-green-700/50 text-green-300',      // miércoles
+                      4: 'bg-yellow-900/30 border-yellow-700/50 text-yellow-300',   // jueves
+                      5: 'bg-red-900/30 border-red-700/50 text-red-300',            // viernes
+                      6: 'bg-teal-900/30 border-teal-700/50 text-teal-300',         // sábado
+                    };
+
+                    const groups: { dateKey: string; label: string; dayOfWeek: number; events: typeof events }[] = [];
                     for (const event of events) {
                       const d = new Date(event.date);
                       const dateKey = d.toISOString().slice(0, 10);
                       const label = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+                      const dayOfWeek = d.getDay();
                       const last = groups[groups.length - 1];
                       if (last && last.dateKey === dateKey) {
                         last.events.push(event);
                       } else {
-                        groups.push({ dateKey, label, events: [event] });
+                        groups.push({ dateKey, label, dayOfWeek, events: [event] });
                       }
                     }
-                    return groups.map(group => (
-                      <div key={group.dateKey}>
-                        <div className="flex items-center gap-3 mb-3">
-                          <span className="text-sm font-semibold text-[var(--color-textSecondary)] capitalize whitespace-nowrap">
-                            {group.label}
-                          </span>
-                          <div className="flex-1 h-px bg-[var(--color-cardBorder)]" />
+
+                    // Inicializar: primer día abierto si openDays está vacío
+                    if (groups.length > 0 && openDays.size === 0) {
+                      setOpenDays(new Set([groups[0].dateKey]));
+                    }
+
+                    return groups.map(group => {
+                      const isOpen = openDays.has(group.dateKey);
+                      const colorClass = dayColors[group.dayOfWeek];
+                      return (
+                        <div key={group.dateKey} className="rounded-lg overflow-hidden border border-[var(--color-cardBorder)]">
+                          <button
+                            onClick={() => {
+                              setOpenDays(prev => {
+                                const next = new Set(prev);
+                                if (next.has(group.dateKey)) next.delete(group.dateKey);
+                                else next.add(group.dateKey);
+                                return next;
+                              });
+                            }}
+                            className={`w-full flex items-center justify-between px-4 py-3 border-b border-[var(--color-cardBorder)] ${colorClass} transition-colors`}
+                          >
+                            <span className="font-semibold capitalize text-sm">
+                              {group.label} · {group.events.length} {group.events.length === 1 ? 'partida' : 'partidas'}
+                            </span>
+                            <svg
+                              className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                          {isOpen && (
+                            <div className="p-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                              {group.events.map(event => (
+                                <EventCard key={event.id} event={event} />
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                          {group.events.map(event => (
-                            <EventCard key={event.id} event={event} />
-                          ))}
-                        </div>
-                      </div>
-                    ));
+                      );
+                    });
                   })()}
                 </div>
               )
