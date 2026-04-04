@@ -40,6 +40,7 @@ export default function EventPhotoGallery({
   const { success, error: showError } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<EventPhoto | null>(null);
+  const [confirmDeletePhoto, setConfirmDeletePhoto] = useState<EventPhoto | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [caption, setCaption] = useState('');
   const [showDateWarning, setShowDateWarning] = useState(false);
@@ -255,29 +256,84 @@ export default function EventPhotoGallery({
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
                 {selectedPhoto.caption && (
-                  <p className="text-[var(--color-textSecondary)] mb-1">{selectedPhoto.caption}</p>
+                  <p className="text-[var(--color-textSecondary)] mb-1 truncate">{selectedPhoto.caption}</p>
                 )}
                 <p className="text-sm text-[var(--color-textSecondary)]">
                   Por {selectedPhoto.uploadedBy.name} • {formatDate(selectedPhoto.createdAt)}
                 </p>
               </div>
 
-              {canDeletePhoto(selectedPhoto) && (
-                <Button
-                  onClick={() => deleteMutation.mutate(selectedPhoto.id)}
-                  variant="outline"
-                  disabled={deleteMutation.isPending}
-                  className="text-red-600 border-red-200 hover:bg-red-50"
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Descargar */}
+                <a
+                  href={selectedPhoto.url}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 rounded-lg border border-[var(--color-cardBorder)] text-[var(--color-textSecondary)] hover:text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                  title="Descargar foto"
                 >
-                  {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                </a>
+
+                {/* Eliminar */}
+                {canDeletePhoto(selectedPhoto) && (
+                  <Button
+                    onClick={() => setConfirmDeletePhoto(selectedPhoto)}
+                    variant="outline"
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    Eliminar
+                  </Button>
+                )}
+
+                {/* Cerrar */}
+                <Button
+                  onClick={() => setSelectedPhoto(null)}
+                  variant="outline"
+                >
+                  Cerrar
                 </Button>
-              )}
+              </div>
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Confirm Delete Modal */}
+      <Modal
+        isOpen={!!confirmDeletePhoto}
+        onClose={() => setConfirmDeletePhoto(null)}
+        title="Eliminar foto"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-[var(--color-textSecondary)]">
+            ¿Seguro que quieres eliminar esta foto? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setConfirmDeletePhoto(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (confirmDeletePhoto) {
+                  deleteMutation.mutate(confirmDeletePhoto.id);
+                  setConfirmDeletePhoto(null);
+                }
+              }}
+              disabled={deleteMutation.isPending}
+              className="bg-red-600 hover:bg-red-700 text-white border-red-600"
+            >
+              {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       {/* Warning Modal - Event not started */}
