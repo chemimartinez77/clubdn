@@ -345,8 +345,8 @@ model Invitation {
   member              User             @relation("InvitationsCreated", fields: [memberId], references: [id], onDelete: Cascade)
   guestFirstName      String
   guestLastName       String
-  guestPhone          String
-  guestDniNormalized  String
+  guestPhone          String?
+  guestDniNormalized  String?
   eventId             String
   event               Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
   validDate           DateTime
