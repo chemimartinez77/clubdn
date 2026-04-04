@@ -1,5 +1,5 @@
 ﻿// client/src/pages/Events.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
@@ -105,6 +105,14 @@ export default function Events() {
       }
       return dateB - dateA;
     });
+
+  // Abrir el primer día al cargar los eventos (solo la primera vez)
+  useEffect(() => {
+    if (events.length > 0) {
+      const firstDateKey = new Date(events[0].date).toISOString().slice(0, 10);
+      setOpenDays(new Set([firstDateKey]));
+    }
+  }, [data]); // solo cuando cambian los datos del servidor
 
   const shiftDate = (base: Date, days: number) => {
     const next = new Date(base);
@@ -467,11 +475,6 @@ export default function Events() {
                       } else {
                         groups.push({ dateKey, label, dayOfWeek, events: [event] });
                       }
-                    }
-
-                    // Inicializar: primer día abierto si openDays está vacío
-                    if (groups.length > 0 && openDays.size === 0) {
-                      setOpenDays(new Set([groups[0].dateKey]));
                     }
 
                     return groups.map(group => {
