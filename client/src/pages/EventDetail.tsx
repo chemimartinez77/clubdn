@@ -1517,9 +1517,12 @@ export default function EventDetail() {
               href={`https://boardgamegeek.com/boardgame/${event.bggId}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex justify-end"
+              className="inline-flex items-center gap-1.5 text-sm text-[var(--color-primary)] hover:underline"
             >
-              <img src="/bgg.powered.webp" alt="Powered by BGG" className="h-5 opacity-80 hover:opacity-100 transition-opacity" />
+              Ver en BoardGameGeek
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
             </a>
           )}
           <div className="flex flex-col gap-4 sm:flex-row">
