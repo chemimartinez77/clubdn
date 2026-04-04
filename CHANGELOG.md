@@ -42,6 +42,45 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+#### Enlace a BoardGameGeek en la modal de info del juego
+
+- Al abrir la modal de información de un juego desde el detalle de un evento, ahora aparece al pie un enlace "Ver en BoardGameGeek" junto al logo "Powered by BGG", ambos enlazando a la página del juego en BGG. Solo aparece si el evento tiene `bggId`.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — enlace y logo BGG al pie de la modal de juego
+
+---
+
+#### Vista lista de eventos: acordeón por día con color por día de la semana
+
+- La vista lista del calendario de eventos mostraba todas las partidas en un grid continuo sin separación visual por día, lo que dificultaba distinguir qué partidas eran de cada jornada.
+- Se implementa un acordeón: cada día agrupa sus partidas bajo una cabecera coloreada según el día de la semana (lunes azul, martes morado, miércoles verde, jueves amarillo, viernes rojo, sábado teal, domingo naranja). El primer día aparece desplegado y el resto plegados. Cada día se puede plegar/desplegar de forma independiente.
+
+**Archivos modificados:**
+- `client/src/pages/Events.tsx` — agrupación por día, acordeón y colores
+
+---
+
+#### Mejoras en la galería de fotos del evento
+
+- El botón de eliminar foto ahora abre una modal de confirmación antes de proceder, evitando borrados accidentales.
+- Se añade un botón "Cerrar" explícito en la modal de visualización de foto.
+- Se añade un botón de descarga (icono flecha hacia abajo) que permite guardar la foto directamente.
+
+**Archivos modificados:**
+- `client/src/components/events/EventPhotoGallery.tsx` — modal de confirmación, botón cerrar y botón descarga
+
+---
+
+#### CORS: origen de staging añadido a la lista permitida
+
+- El entorno de staging no podía conectar con la API porque `clubdn-web-staging.up.railway.app` no estaba en la lista de `allowedOrigins` del backend.
+
+**Archivos modificados:**
+- `server/src/index.ts` — añadido origen de staging
+
+---
+
 #### Dos bugs en `completePassedEvents` que impedían el cierre automático de eventos
 
 **Bug 1 — Desfase UTC en el cálculo de hora de fin:**
