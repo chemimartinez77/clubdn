@@ -1,5 +1,15 @@
 # TODO
 
+## Pendiente de implementación
+
+### Traducción automática de descripciones de juegos (BGG)
+- Las descripciones, categorías y mecánicas vienen de BGG en inglés y se guardan así en BD
+- Traducir en el frontend con **MyMemory API** (gratuita, sin tarjeta) al abrir la modal de info del juego
+- Cachear en memoria de sesión para no repetir llamadas al mismo juego
+- Sin cambios en BD ni en schema — solo frontend, en la modal de `EventDetail.tsx`
+
+---
+
 ## ~~Pendiente de decisión~~ RESUELTO
 
 ### ~~Membresía al aprobar usuario~~
