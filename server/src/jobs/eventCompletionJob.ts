@@ -8,7 +8,7 @@ import { completePassedEvents } from '../controllers/statsController';
  * Se ejecuta cada hora en punto.
  */
 export function startEventCompletionJob(): void {
-  cron.schedule('0 * * * *', async () => {
+  cron.schedule('0 12-23,0-2 * * *', async () => {
     console.log('[CRON] Ejecutando completePassedEvents...');
     try {
       await completePassedEvents();
