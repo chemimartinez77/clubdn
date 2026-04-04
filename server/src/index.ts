@@ -71,6 +71,7 @@ app.use(globalLimiter);
 // Middleware CORS
 const allowedOrigins = [
   'https://clubdn-web-production.up.railway.app',
+  'https://clubdn-web-staging.up.railway.app',
   'https://app.clubdreadnought.org',
   'http://localhost:5173',
   'http://localhost:5174'
