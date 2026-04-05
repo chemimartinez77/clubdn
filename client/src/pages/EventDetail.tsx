@@ -620,9 +620,9 @@ export default function EventDetail() {
     event.durationHours,
     event.durationMinutes
   );
-  const emojiCalendar = '\uD83D\uDCC5';
-  const emojiClock = '\uD83D\uDD50';
-  const emojiLocation = '\uD83D\uDCCD';
+  const emojiCalendar = '\u{1F4C5}';
+  const emojiClock = '\u{1F550}';
+  const emojiLocation = '\u{1F4CD}';
 
   const handleCreateInvitation = () => {
     if (!guestFirstName.trim()) {
