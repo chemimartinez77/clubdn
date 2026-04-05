@@ -620,9 +620,9 @@ export default function EventDetail() {
     event.durationHours,
     event.durationMinutes
   );
-  const emojiCalendar = '📅';
-  const emojiClock = '🕐';
-  const emojiLocation = '📍';
+  const emojiCalendar = '📆';
+  const emojiClock = '⏰';
+  const emojiLocation = '📌';
 
   const handleCreateInvitation = () => {
     if (!guestFirstName.trim()) {
