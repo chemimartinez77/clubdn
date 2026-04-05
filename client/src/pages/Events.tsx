@@ -13,6 +13,7 @@ import { useTour } from '../hooks/useTour';
 import { api } from '../api/axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/useToast';
+import { useTheme } from '../hooks/useTheme';
 import type { EventsResponse, EventStatus } from '../types/event';
 import type { ApiResponse } from '../types/auth';
 
@@ -26,6 +27,7 @@ type StatusFilter = EventStatus | '' | 'RECOMMENDED';
 export default function Events() {
   const { user, isAdmin } = useAuth();
   const { error: showError } = useToast();
+  const { themeMode } = useTheme();
   const { shouldShow: showTour, dismissTour } = useTour('calendar');
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [calendarView, setCalendarView] = useState<CalendarView>('month');
@@ -453,7 +455,7 @@ export default function Events() {
                 <div className="space-y-3">
                   {(() => {
                     // Colores por día de la semana (0=dom, 1=lun, ..., 6=sáb)
-                    const dayColors: Record<number, string> = {
+                    const dayColors: Record<number, string> = themeMode === 'dark' ? {
                       0: 'bg-orange-900/30 border-orange-700/50 text-orange-300',   // domingo
                       1: 'bg-blue-900/30 border-blue-700/50 text-blue-300',         // lunes
                       2: 'bg-purple-900/30 border-purple-700/50 text-purple-300',   // martes
@@ -461,6 +463,14 @@ export default function Events() {
                       4: 'bg-yellow-900/30 border-yellow-700/50 text-yellow-300',   // jueves
                       5: 'bg-red-900/30 border-red-700/50 text-red-300',            // viernes
                       6: 'bg-teal-900/30 border-teal-700/50 text-teal-300',         // sábado
+                    } : {
+                      0: 'bg-orange-100 border-orange-300 text-orange-800',         // domingo
+                      1: 'bg-blue-100 border-blue-300 text-blue-800',               // lunes
+                      2: 'bg-purple-100 border-purple-300 text-purple-800',         // martes
+                      3: 'bg-green-100 border-green-300 text-green-800',            // miércoles
+                      4: 'bg-yellow-100 border-yellow-300 text-yellow-800',         // jueves
+                      5: 'bg-red-100 border-red-300 text-red-800',                  // viernes
+                      6: 'bg-teal-100 border-teal-300 text-teal-800',               // sábado
                     };
 
                     const groups: { dateKey: string; label: string; dayOfWeek: number; events: typeof events }[] = [];
