@@ -757,27 +757,25 @@ export default function EventDetail() {
       return message;
     };
 
+    // Si el evento tiene imagen de juego, usar la URL de preview para que WhatsApp genere la previsualización
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const previewUrl = event.gameImage ? `${apiBase}/preview/events/${event.id}` : null;
+
     // Abrir WhatsApp de forma síncrona (evita bloqueo de popup del navegador)
-    // con la URL actual y luego intentar obtener la URL personalizada
-    const fallbackUrl = window.location.href;
+    const fallbackUrl = previewUrl ?? window.location.href;
     const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(buildMessage(fallbackUrl))}`, '_blank');
 
-    // Intentar obtener URL personalizada y actualizar si es posible
-    try {
-      const res = await api.post<{ success: boolean; data: { url: string } }>('/api/share/generate', { eventId: event.id });
-      if (res.data.success && whatsappWindow && !whatsappWindow.closed) {
-        whatsappWindow.location.href = `https://wa.me/?text=${encodeURIComponent(buildMessage(res.data.data.url))}`;
+    // Si no hay imagen de juego, intentar obtener URL personalizada y actualizar si es posible
+    if (!previewUrl) {
+      try {
+        const res = await api.post<{ success: boolean; data: { url: string } }>('/api/share/generate', { eventId: event.id });
+        if (res.data.success && whatsappWindow && !whatsappWindow.closed) {
+          whatsappWindow.location.href = `https://wa.me/?text=${encodeURIComponent(buildMessage(res.data.data.url))}`;
+        }
+      } catch {
+        // Ya se abrió con la URL de fallback, no hacer nada
       }
-    } catch {
-      // Ya se abrió con la URL de fallback, no hacer nada
     }
-  };
-
-  const handleSharePreview = () => {
-    if (!event) return;
-    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const previewUrl = `${apiBase}/preview/events/${event.id}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(previewUrl)}`, '_blank');
   };
 
   return (
@@ -969,21 +967,6 @@ export default function EventDetail() {
                     </span>
                   </Button>
 
-                  {event.gameImage && (
-                    <Button
-                      onClick={handleSharePreview}
-                      disabled={isPast || event.status === 'ONGOING' || event.status === 'COMPLETED'}
-                      className="w-full sm:w-auto !bg-green-700 hover:!bg-green-800 !text-white transition-all duration-300"
-                      title="Compartir con imagen del juego"
-                    >
-                      <span className="flex items-center justify-center gap-2">
-                        <span>WA + imagen</span>
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </span>
-                    </Button>
-                  )}
                   {canCloseCapacity && (
                     <Button
                       onClick={() => setIsCloseCapacityModalOpen(true)}
