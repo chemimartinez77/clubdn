@@ -910,12 +910,11 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
             return;
           }
 
+          const reRegStatus = event.requiresApproval ? 'PENDING_APPROVAL' : 'CONFIRMED';
+
           const registration = await prisma.eventRegistration.update({
             where: { id: existingRegistration.id },
-            data: {
-            status: 'CONFIRMED',
-            cancelledAt: null
-            }
+            data: { status: reRegStatus, cancelledAt: null }
           });
 
           await prisma.eventAuditLog.create({
@@ -927,11 +926,14 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
             }
           });
 
-          res.status(200).json({
-            success: true,
-            data: { registration },
-          message: 'Te has registrado correctamente al evento'
-          });
+          if (event.requiresApproval) {
+            const { notifyRegistrationPending } = await import('../services/notificationService');
+            const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+            if (user) await notifyRegistrationPending(id, event.title, event.createdBy, user.name);
+            res.status(200).json({ success: true, data: { registration }, message: 'Tu solicitud está pendiente de aprobación del organizador' });
+          } else {
+            res.status(200).json({ success: true, data: { registration }, message: 'Te has registrado correctamente al evento' });
+          }
           return;
         }
 
@@ -1145,13 +1147,18 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
 
     const { notifyRegistrationCancelled, notifyPlayersOfAbandonment } = await import('../services/notificationService');
 
+    const organizerId = registration.event.createdBy;
+    const organizerIsLeaving = organizerId === userId;
+
     // Notificar al organizador (si el que se va no es el propio organizador)
-    if (registration.event.createdBy !== userId) {
-      await notifyRegistrationCancelled(id, registration.event.title, registration.event.createdBy, registration.user.name);
+    if (!organizerIsLeaving) {
+      await notifyRegistrationCancelled(id, registration.event.title, organizerId, registration.user.name, wasConfirmed);
     }
 
-    // Notificar al resto de jugadores confirmados
-    await notifyPlayersOfAbandonment(id, registration.event.title, userId, registration.user.name);
+    // Notificar al resto de jugadores confirmados solo si el jugador estaba confirmado
+    if (wasConfirmed) {
+      await notifyPlayersOfAbandonment(id, registration.event.title, userId, registration.user.name, organizerIsLeaving ? null : organizerId);
+    }
 
     res.status(200).json({
       success: true,
@@ -2064,11 +2071,8 @@ export const validateGameQr = async (req: Request, res: Response): Promise<void>
     const now = new Date();
     const eventDate = new Date(event.date);
 
-    // Calcular inicio real del evento
-    const startHour = event.startHour ?? 0;
-    const startMinute = event.startMinute ?? 0;
-    const eventStart = new Date(eventDate);
-    eventStart.setHours(startHour, startMinute, 0, 0);
+    // event.date ya almacena la hora de inicio en UTC — usarlo directamente
+    const eventStart = eventDate;
 
     // Ventana de apertura: 1 hora antes del inicio
     const windowOpen = new Date(eventStart.getTime() - 60 * 60 * 1000);
@@ -2077,7 +2081,7 @@ export const validateGameQr = async (req: Request, res: Response): Promise<void>
     const durationMinutes = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
     const eventEnd = new Date(eventStart.getTime() + durationMinutes * 60 * 1000);
     const windowClose = new Date(eventEnd);
-    windowClose.setHours(23, 59, 59, 999);
+    windowClose.setUTCHours(23, 59, 59, 999);
 
     if (now < windowOpen) {
       res.status(400).json({ success: false, message: 'La validación aún no está disponible (se abre 1 hora antes de la partida)' });

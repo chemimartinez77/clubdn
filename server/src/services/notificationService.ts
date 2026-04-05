@@ -224,13 +224,18 @@ export const notifyRegistrationCancelled = async (
   eventId: string,
   eventTitle: string,
   organizerId: string,
-  userName: string
+  userName: string,
+  wasConfirmed: boolean = true
 ) => {
+  const title = wasConfirmed ? 'Un asistente ha abandonado la partida' : 'Un asistente ha cancelado su solicitud';
+  const message = wasConfirmed
+    ? `${userName} ha abandonado "${eventTitle}".`
+    : `${userName} ha cancelado su solicitud para unirse a "${eventTitle}".`;
   return await createNotification({
     userId: organizerId,
     type: 'REGISTRATION_PENDING',
-    title: 'Un asistente ha abandonado tu partida',
-    message: `${userName} ha abandonado "${eventTitle}".`,
+    title,
+    message,
     metadata: { eventId, eventTitle, userName },
   });
 };
@@ -242,14 +247,15 @@ export const notifyPlayersOfAbandonment = async (
   eventId: string,
   eventTitle: string,
   leavingUserId: string,
-  leavingUserName: string
+  leavingUserName: string,
+  excludeUserId: string | null = null
 ) => {
   try {
     const registrations = await prisma.eventRegistration.findMany({
       where: {
         eventId,
         status: 'CONFIRMED',
-        userId: { not: leavingUserId },
+        userId: { notIn: [leavingUserId, ...(excludeUserId ? [excludeUserId] : [])] },
       },
       select: { userId: true },
     });
@@ -473,8 +479,8 @@ export const notifyNewAnnouncement = async (
   content: string
 ) => {
   try {
-    const notificationTitle = title ? `${title}` : 'Nuevo anuncio en el tablón';
-    const message = content.length > 120 ? content.slice(0, 117) + '...' : content;
+    const notificationTitle = 'Tablón de anuncios';
+    const message = title ?? (content.length > 120 ? content.slice(0, 117) + '...' : content);
     await prisma.globalNotification.create({
       data: {
         type: 'ANNOUNCEMENT_CREATED',

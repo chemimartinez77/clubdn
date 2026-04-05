@@ -120,6 +120,7 @@ model User {
   globalNotificationReads GlobalNotificationRead[]
   badges            UserBadge[]
   announcements     Announcement[]
+  announcementLikes AnnouncementLike[]
   gamePlayHistory   GamePlayHistory[]
   financialMovements FinancialMovement[] @relation("FinancialMovements")
   azulGamesAsPlayer1  AzulGame[]          @relation("AzulGamesAsPlayer1")
@@ -203,11 +204,24 @@ model Announcement {
   pinned    Boolean  @default(false)
   authorId  String
   author    User     @relation(fields: [authorId], references: [id])
+  likes     AnnouncementLike[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([createdAt])
   @@index([pinned])
+}
+
+model AnnouncementLike {
+  id             String       @id @default(cuid())
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([announcementId, userId])
+  @@index([announcementId])
 }
 
 model EmailLog {
@@ -409,6 +423,7 @@ model EventRegistration {
 
   cancelledAt DateTime?
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
   @@unique([eventId, userId])
   @@index([userId])

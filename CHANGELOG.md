@@ -4,6 +4,100 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-05 (sesión 3)
+
+### Nuevas funcionalidades
+
+#### Me gusta en el tablón de anuncios
+
+- Se añade un botón "Me gusta" en cada anuncio, tanto en la vista pública (`/announcements`) como en la vista de administración (`/admin/announcements`).
+- El botón se posiciona fuera de la card, anclado en la esquina inferior derecha (CSS `position: absolute`, `-bottom-3 right-4`) para que solape visualmente el borde inferior de la tarjeta.
+- Cuando el usuario ha dado Me gusta, aparece el icono `meeple.blue.png` a la izquierda del texto y el botón se rellena con el color primario. Al quitarlo, el meeple desaparece.
+- Se muestra el contador de likes si es mayor que 0.
+- Actualización optimista con TanStack Query: el estado cambia al instante y se revierte si hay error.
+- Rate limit de 5 segundos en memoria (servidor) por usuario y anuncio; si se supera, el servidor devuelve 429 y el frontend muestra un toast de aviso.
+- Separación entre cards aumentada de `space-y-3` a `space-y-6` para dejar espacio al botón flotante.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — nuevo modelo `AnnouncementLike` con `@@unique([announcementId, userId])` y relaciones en `Announcement` y `User`
+- `server/src/controllers/announcementController.ts` — `listAnnouncements` incluye `likeCount` y `userHasLiked`; nuevo controlador `toggleLike` con rate limit en Map
+- `server/src/routes/announcementRoutes.ts` — nueva ruta `POST /:id/like`
+- `client/src/types/announcement.ts` — añadidos campos `likeCount` y `userHasLiked`
+- `client/src/pages/Announcements.tsx` — botón Me gusta con meeple, posicionado fuera de card, actualización optimista
+- `client/src/pages/admin/Announcements.tsx` — ídem en vista admin
+- `client/public/meeple.blue.png` — nuevo asset (meeple azul)
+
+---
+
+## 2026-04-05 (sesión 2)
+
+### Nuevas funcionalidades
+
+#### Cancelar solicitud pendiente de aprobación
+
+- Un jugador con registro en estado `PENDING_APPROVAL` no podía borrarse de la partida porque `canUnregister` excluía explícitamente ese estado. Ahora puede cancelar su solicitud desde el detalle del evento.
+- El botón muestra "Cancelar solicitud" en lugar de "No asistiré" cuando el estado es `PENDING_APPROVAL`.
+- La modal de confirmación adapta su título y texto según el estado: "Cancelar solicitud / Se notificará al organizador" vs "Abandonar partida / Se notificará al organizador y al resto de jugadores".
+- Al cancelar una solicitud pendiente, solo se notifica al organizador (no al resto de jugadores). Al abandonar estando confirmado, se notifica a todos.
+- Los textos de notificación diferencian ambos casos: "ha cancelado su solicitud" vs "ha abandonado la partida".
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — `canUnregister` sin excluir `PENDING_APPROVAL`, texto del botón y modal dinámicos
+- `server/src/controllers/eventController.ts` — `notifyPlayersOfAbandonment` solo se llama si era `CONFIRMED`; `notifyRegistrationCancelled` recibe `wasConfirmed`
+- `server/src/services/notificationService.ts` — `notifyRegistrationCancelled` con títulos/mensajes distintos según estado; `notifyPlayersOfAbandonment` excluye al organizador si ya fue notificado por separado
+
+---
+
+#### Re-registro respeta `requiresApproval`
+
+- Al re-apuntarse a una partida con aprobación requerida (tras haber cancelado previamente), el registro se reactivaba directamente como `CONFIRMED` en lugar de `PENDING_APPROVAL`. Corregido para respetar `event.requiresApproval` también en el flujo de re-registro.
+
+**Archivos modificados:**
+- `server/src/controllers/eventController.ts` — rama de re-registro usa `reRegStatus` y notifica al organizador si corresponde
+
+---
+
+#### Campo `updatedAt` en `EventRegistration` para fecha de solicitud fiable
+
+- La fecha de solicitud mostrada en el panel de solicitudes pendientes usaba `createdAt`, que no se actualizaba al re-apuntarse. Se añade `updatedAt` al modelo (con `@updatedAt`) para reflejar siempre la fecha de la última acción.
+- El frontend usa `updatedAt ?? createdAt` al mostrar "Solicitó el...".
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — `updatedAt DateTime @default(now()) @updatedAt` en `EventRegistration`
+- `client/src/pages/EventDetail.tsx` — fecha de solicitud usa `registration.updatedAt ?? registration.createdAt`
+
+---
+
+### Correcciones
+
+#### Ventana de validación QR usaba hora local en lugar de UTC
+
+- El cálculo de la ventana de validación de QR reconstruía la hora de inicio con `setHours(startHour, startMinute)`, que interpreta la hora en la zona local del servidor. Como `event.date` ya almacena la hora en UTC, el resultado era un desfase de 2h (UTC+2 en verano), haciendo que la ventana no se abriera hasta 2h después de lo esperado.
+- Corregido usando `event.date` directamente como `eventStart`, igual que se hizo en `completePassedEvents`. El `windowClose` pasa a usar `setUTCHours`.
+
+**Archivos modificados:**
+- `server/src/controllers/eventController.ts` — `validateGameQr` usa `eventDate` directamente y `setUTCHours` para el cierre
+
+---
+
+#### Emojis en mensaje de WhatsApp se corrompían en algunos entornos
+
+- Los emojis del mensaje de WhatsApp se definían con `String.fromCodePoint()`, que en algunos entornos (Railway) producía el carácter de reemplazo Unicode (`%EF%BF%BD`) al codificar la URL. Sustituidos por literales UTF-8 directos.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — `emojiCalendar`, `emojiClock`, `emojiLocation` como literales `📅`, `🕐`, `📍`
+
+---
+
+#### Notificaciones de anuncios: formato de título y mensaje
+
+- El header de la notificación mostraba el título del anuncio y el mensaje mostraba el contenido. Cambiado para que el header sea siempre "Tablón de anuncios" y el mensaje sea el título del anuncio (o el inicio del contenido si no tiene título).
+
+**Archivos modificados:**
+- `server/src/services/notificationService.ts` — `notifyNewAnnouncement` actualizado
+
+---
+
 ## 2026-04-05 (sesión 1)
 
 ### Nuevas funcionalidades
@@ -20,6 +114,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 - `server/src/middleware/auth.ts` — nuevo middleware `requireSuperAdmin`
 - `server/src/routes/announcementRoutes.ts` — ruta `POST /:id/notify` con `requireSuperAdmin`
 - `client/src/pages/admin/Announcements.tsx` — `notifyMutation`, icono de sobre, visible solo si `isSuperAdmin`
+
+#### Previsualización de imagen del juego al compartir por WhatsApp
+
+- Al compartir una partida por WhatsApp con el botón existente, WhatsApp no generaba previsualización de imagen porque la app es una SPA y el bot de WhatsApp no ejecuta JavaScript.
+- Se añade un endpoint Express `GET /preview/events/:id` (sin autenticación) que devuelve HTML estático con meta OG tags: `og:image` apunta a `event.gameImage` (URL de BGG guardada en BD), `og:title` incluye el nombre del juego, y `og:description` muestra fecha, hora y plazas disponibles. El HTML redirige automáticamente al usuario a `/events/:id`.
+- En el frontend se añade un segundo botón "WA + imagen" (solo visible si el evento tiene `gameImage`) que envía únicamente la URL de preview a WhatsApp, permitiendo que el bot la rastree y genere la previsualización con la portada del juego.
+
+**Archivos añadidos/modificados:**
+- `server/src/controllers/previewController.ts` — nuevo, genera HTML con OG tags dinámicos
+- `server/src/routes/previewRoutes.ts` — nuevo, `GET /events/:id`
+- `server/src/index.ts` — registra `app.use('/preview', previewRoutes)` sin autenticación
+- `client/src/pages/EventDetail.tsx` — `handleSharePreview` y botón "WA + imagen"
+
+---
 
 ### Correcciones
 

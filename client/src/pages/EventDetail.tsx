@@ -556,7 +556,7 @@ export default function EventDetail() {
   const isFull = (event.registeredCount || 0) >= event.maxAttendees;
   const isPendingApproval = event.userRegistrationStatus === 'PENDING_APPROVAL';
   const canRegister = event.status === 'SCHEDULED' && !isPast && !event.isUserRegistered && !isFull;
-  const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && !isPendingApproval && !isPast;
+  const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && !isPast;
   const canInvite = event.status !== 'CANCELLED' && !isPast && !isFull;
   const canDelete = isPartida && !isPast && event.status !== 'CANCELLED' && (isAdmin || user?.id === event.createdBy);
   const canEdit = isOrganizerOrAdmin && event.status !== 'CANCELLED' && !isPast;
@@ -620,9 +620,10 @@ export default function EventDetail() {
     event.durationHours,
     event.durationMinutes
   );
-  const emojiCalendar = String.fromCodePoint(0x1F4C5);
-  const emojiClock = String.fromCodePoint(0x1F550);
-  const emojiLocation = String.fromCodePoint(0x1F4CD);
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const emojiCalendar = isMobile ? '\u{1F4C5}' : 'Dia:';
+  const emojiClock = isMobile ? '\u{1F550}' : 'Hora:';
+  const emojiLocation = isMobile ? '\u{1F4CD}' : 'Lugar:';
 
   const handleCreateInvitation = () => {
     if (!guestFirstName.trim()) {
@@ -732,18 +733,34 @@ export default function EventDetail() {
     );
     const shareTimeText = scheduleText || 'Hora pendiente';
 
+    const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+    const dateTextCapitalized = capitalizeFirst(eventDateText);
+
     const buildMessage = (shareUrl: string) => {
-      let message = `*${event.title}*\n\n`;
-      message += `${emojiCalendar} ${eventDateText}\n`;
-      message += `${emojiClock} ${shareTimeText}\n`;
-      if (event.type !== 'PARTIDA' && event.location) {
-        message += `${emojiLocation} Lugar: ${event.location}\n`;
+      // Título: solo si no hay imagen (si hay imagen ya sale en la previsualización)
+      let message = '';
+      if (!event.gameImage) {
+        message += `*${event.title}*\n\n`;
       }
-      message += `\n${spotsText}\n`;
+
+      // Fecha y hora en negrita
+      if (isMobile) {
+        message += `${emojiCalendar} *${dateTextCapitalized}*\n`;
+        message += `${emojiClock} *${shareTimeText}*\n`;
+      } else {
+        message += `*${dateTextCapitalized}*\n`;
+        message += `*${shareTimeText}*\n`;
+      }
+
+      if (event.type !== 'PARTIDA' && event.location) {
+        message += isMobile ? `${emojiLocation} Lugar: ${event.location}\n` : `Lugar: ${event.location}\n`;
+      }
 
       if (event.description) {
         message += `\n${event.description}\n`;
       }
+
+      message += `\n${spotsText}\n`;
 
       // Indicar si hay socios apuntados (sin datos personales)
       const confirmedRegistrations = event.registrations?.filter(reg => reg.status === 'CONFIRMED') || [];
@@ -757,19 +774,24 @@ export default function EventDetail() {
       return message;
     };
 
+    // Si el evento tiene imagen de juego, usar la URL de preview para que WhatsApp genere la previsualización
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const previewUrl = event.gameImage ? `${apiBase}/preview/events/${event.id}` : null;
+
     // Abrir WhatsApp de forma síncrona (evita bloqueo de popup del navegador)
-    // con la URL actual y luego intentar obtener la URL personalizada
-    const fallbackUrl = window.location.href;
+    const fallbackUrl = previewUrl ?? window.location.href;
     const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(buildMessage(fallbackUrl))}`, '_blank');
 
-    // Intentar obtener URL personalizada y actualizar si es posible
-    try {
-      const res = await api.post<{ success: boolean; data: { url: string } }>('/api/share/generate', { eventId: event.id });
-      if (res.data.success && whatsappWindow && !whatsappWindow.closed) {
-        whatsappWindow.location.href = `https://wa.me/?text=${encodeURIComponent(buildMessage(res.data.data.url))}`;
+    // Si no hay imagen de juego, intentar obtener URL personalizada y actualizar si es posible
+    if (!previewUrl) {
+      try {
+        const res = await api.post<{ success: boolean; data: { url: string } }>('/api/share/generate', { eventId: event.id });
+        if (res.data.success && whatsappWindow && !whatsappWindow.closed) {
+          whatsappWindow.location.href = `https://wa.me/?text=${encodeURIComponent(buildMessage(res.data.data.url))}`;
+        }
+      } catch {
+        // Ya se abrió con la URL de fallback, no hacer nada
       }
-    } catch {
-      // Ya se abrió con la URL de fallback, no hacer nada
     }
   };
 
@@ -880,7 +902,7 @@ export default function EventDetail() {
                       className="w-full sm:w-auto !bg-slate-500 hover:!bg-slate-600 !text-white transition-all duration-300"
                     >
                       <span className="flex items-center justify-center gap-2">
-                        <span>{unregisterMutation.isPending ? 'Cancelando...' : 'No asistiré'}</span>
+                        <span>{unregisterMutation.isPending ? 'Cancelando...' : isPendingApproval ? 'Cancelar solicitud' : 'No asistiré'}</span>
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
@@ -961,6 +983,7 @@ export default function EventDetail() {
                       </svg>
                     </span>
                   </Button>
+
                   {canCloseCapacity && (
                     <Button
                       onClick={() => setIsCloseCapacityModalOpen(true)}
@@ -1348,7 +1371,7 @@ export default function EventDetail() {
                           {displayName(registration.user.name, registration.user.profile?.nick)}
                         </p>
                         <p className="text-xs text-[var(--color-textSecondary)]">
-                          Solicitó el {new Date(registration.createdAt).toLocaleDateString('es-ES', {
+                          Solicitó el {new Date(registration.updatedAt ?? registration.createdAt).toLocaleDateString('es-ES', {
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric',
@@ -2082,11 +2105,13 @@ export default function EventDetail() {
       <Modal
         isOpen={isUnregisterModalOpen}
         onClose={() => setIsUnregisterModalOpen(false)}
-        title="Abandonar partida"
+        title={isPendingApproval ? 'Cancelar solicitud' : 'Abandonar partida'}
       >
         <div className="space-y-4">
           <p className="text-[var(--color-textSecondary)]">
-            ¿Estás seguro de que quieres abandonar esta partida? Se notificará al organizador y al resto de jugadores.
+            {isPendingApproval
+              ? '¿Estás seguro de que quieres cancelar tu solicitud? Se notificará al organizador.'
+              : '¿Estás seguro de que quieres abandonar esta partida? Se notificará al organizador y al resto de jugadores.'}
           </p>
           <div className="flex gap-3 justify-end">
             <Button
