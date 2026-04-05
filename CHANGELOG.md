@@ -6,6 +6,18 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-05 (sesión 3)
 
+### Correcciones
+
+#### Colores de días del calendario en tema claro
+
+- Los encabezados de días en la vista de lista del calendario usaban colores hardcodeados para tema oscuro (`bg-*-900/30`, `text-*-300`), lo que resultaba en texto pastel sobre fondo pastel ilegible en tema claro (reportado por una usuaria).
+- Se usa `useTheme` para detectar `themeMode` y seleccionar el mapa de colores adecuado: variantes `/30` con texto `-300` en oscuro, variantes `-100` con texto `-800` en claro.
+
+**Archivos modificados:**
+- `client/src/pages/Events.tsx` — importa `useTheme`, `themeMode` condiciona `dayColors`
+
+---
+
 ### Nuevas funcionalidades
 
 #### Me gusta en el tablón de anuncios
