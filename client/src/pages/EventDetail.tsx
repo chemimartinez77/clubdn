@@ -775,7 +775,8 @@ export default function EventDetail() {
 
   const handleSharePreview = () => {
     if (!event) return;
-    const previewUrl = `${window.location.origin}/preview/events/${event.id}`;
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const previewUrl = `${apiBase}/preview/events/${event.id}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(previewUrl)}`, '_blank');
   };
 
