@@ -4,6 +4,35 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-05 (sesión 1)
+
+### Nuevas funcionalidades
+
+#### Botón "Notificar" manual en el tablón de anuncios (solo SUPER_ADMIN)
+
+- El tablón de anuncios creaba automáticamente una `GlobalNotification` al publicar cada anuncio, sin control del administrador. Ahora la notificación es manual: se añade un botón con icono de sobre visible únicamente para el rol `SUPER_ADMIN` en cada fila del listado de anuncios.
+- Se elimina la llamada automática a `notifyNewAnnouncement` del controlador `createAnnouncement`, evitando notificaciones dobles cuando el admin pulsa el botón después de crear.
+- El endpoint `POST /api/announcements/:id/notify` está protegido con el middleware `requireSuperAdmin`.
+
+**Archivos modificados:**
+- `server/src/controllers/announcementController.ts` — eliminada llamada automática a `notifyNewAnnouncement` en `createAnnouncement`
+- `server/src/controllers/notificationController.ts` — `getNotifications` y `getUnreadCount` incluyen `ANNOUNCEMENT_CREATED` además de `EVENT_CREATED`
+- `server/src/middleware/auth.ts` — nuevo middleware `requireSuperAdmin`
+- `server/src/routes/announcementRoutes.ts` — ruta `POST /:id/notify` con `requireSuperAdmin`
+- `client/src/pages/admin/Announcements.tsx` — `notifyMutation`, icono de sobre, visible solo si `isSuperAdmin`
+
+### Correcciones
+
+#### Notificaciones de anuncios no aparecían en el badge de la campana
+
+- El controlador de notificaciones filtraba las `GlobalNotification` por `type: 'EVENT_CREATED'` de forma hardcodeada, por lo que los registros de tipo `ANNOUNCEMENT_CREATED` nunca se contaban ni se mostraban en el panel de notificaciones.
+- Cambiado el filtro a `type: { in: ['EVENT_CREATED', 'ANNOUNCEMENT_CREATED'] }` en los tres lugares donde se consultan globales: listado completo, listado unreadOnly y conteo de no leídas.
+
+**Archivos modificados:**
+- `server/src/controllers/notificationController.ts` — filtro de tipo ampliado en `getNotifications` y `getUnreadCount`
+
+---
+
 ## 2026-04-04 (sesión 1)
 
 ### Correcciones
