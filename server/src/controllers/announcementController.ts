@@ -3,15 +3,29 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { notifyNewAnnouncement } from '../services/notificationService';
 
-export const listAnnouncements = async (_req: Request, res: Response) => {
+// Rate limit en memoria: userId+announcementId -> timestamp último like
+const likeRateLimit = new Map<string, number>();
+const LIKE_COOLDOWN_MS = 5_000;
+
+export const listAnnouncements = async (req: Request, res: Response) => {
   try {
+    const userId = req.user?.userId;
     const announcements = await prisma.announcement.findMany({
       orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
       include: {
-        author: { select: { id: true, name: true } }
+        author: { select: { id: true, name: true } },
+        likes: { select: { userId: true } }
       }
     });
-    res.json({ success: true, data: announcements });
+
+    const data = announcements.map(a => ({
+      ...a,
+      likeCount: a.likes.length,
+      userHasLiked: userId ? a.likes.some(l => l.userId === userId) : false,
+      likes: undefined
+    }));
+
+    res.json({ success: true, data });
   } catch {
     res.status(500).json({ success: false, message: 'Error al obtener anuncios' });
   }
@@ -84,5 +98,36 @@ export const notifyAnnouncement = async (req: Request, res: Response) => {
     res.json({ success: true });
   } catch {
     res.status(500).json({ success: false, message: 'Error al enviar notificación' });
+  }
+};
+
+export const toggleLike = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const userId = req.user!.userId;
+    const key = `${userId}:${id}`;
+
+    const lastLike = likeRateLimit.get(key);
+    if (lastLike && Date.now() - lastLike < LIKE_COOLDOWN_MS) {
+      res.status(429).json({ success: false, message: 'Espera un momento antes de volver a dar Me gusta' });
+      return;
+    }
+    likeRateLimit.set(key, Date.now());
+
+    const existing = await prisma.announcementLike.findUnique({
+      where: { announcementId_userId: { announcementId: id, userId } }
+    });
+
+    if (existing) {
+      await prisma.announcementLike.delete({ where: { id: existing.id } });
+    } else {
+      await prisma.announcementLike.create({ data: { announcementId: id, userId } });
+    }
+
+    const likeCount = await prisma.announcementLike.count({ where: { announcementId: id } });
+
+    res.json({ success: true, data: { userHasLiked: !existing, likeCount } });
+  } catch {
+    res.status(500).json({ success: false, message: 'Error al procesar Me gusta' });
   }
 };

@@ -6,7 +6,8 @@ import {
   createAnnouncement,
   updateAnnouncement,
   deleteAnnouncement,
-  notifyAnnouncement
+  notifyAnnouncement,
+  toggleLike
 } from '../controllers/announcementController';
 
 const router = Router();
@@ -18,5 +19,6 @@ router.post('/', requireAdmin, createAnnouncement);
 router.put('/:id', requireAdmin, updateAnnouncement);
 router.delete('/:id', requireAdmin, deleteAnnouncement);
 router.post('/:id/notify', requireSuperAdmin, notifyAnnouncement);
+router.post('/:id/like', toggleLike);
 
 export default router;

@@ -4,6 +4,31 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-05 (sesión 3)
+
+### Nuevas funcionalidades
+
+#### Me gusta en el tablón de anuncios
+
+- Se añade un botón "Me gusta" en cada anuncio, tanto en la vista pública (`/announcements`) como en la vista de administración (`/admin/announcements`).
+- El botón se posiciona fuera de la card, anclado en la esquina inferior derecha (CSS `position: absolute`, `-bottom-3 right-4`) para que solape visualmente el borde inferior de la tarjeta.
+- Cuando el usuario ha dado Me gusta, aparece el icono `meeple.blue.png` a la izquierda del texto y el botón se rellena con el color primario. Al quitarlo, el meeple desaparece.
+- Se muestra el contador de likes si es mayor que 0.
+- Actualización optimista con TanStack Query: el estado cambia al instante y se revierte si hay error.
+- Rate limit de 5 segundos en memoria (servidor) por usuario y anuncio; si se supera, el servidor devuelve 429 y el frontend muestra un toast de aviso.
+- Separación entre cards aumentada de `space-y-3` a `space-y-6` para dejar espacio al botón flotante.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — nuevo modelo `AnnouncementLike` con `@@unique([announcementId, userId])` y relaciones en `Announcement` y `User`
+- `server/src/controllers/announcementController.ts` — `listAnnouncements` incluye `likeCount` y `userHasLiked`; nuevo controlador `toggleLike` con rate limit en Map
+- `server/src/routes/announcementRoutes.ts` — nueva ruta `POST /:id/like`
+- `client/src/types/announcement.ts` — añadidos campos `likeCount` y `userHasLiked`
+- `client/src/pages/Announcements.tsx` — botón Me gusta con meeple, posicionado fuera de card, actualización optimista
+- `client/src/pages/admin/Announcements.tsx` — ídem en vista admin
+- `client/public/meeple.blue.png` — nuevo asset (meeple azul)
+
+---
+
 ## 2026-04-05 (sesión 2)
 
 ### Nuevas funcionalidades

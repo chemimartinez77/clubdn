@@ -69,6 +69,28 @@ export default function AdminAnnouncements() {
     onError: () => showError('Error al enviar la notificación')
   });
 
+  const likeMutation = useMutation({
+    mutationFn: (id: string) => api.post<{ success: boolean; data: { userHasLiked: boolean; likeCount: number } }>(`/api/announcements/${id}/like`),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['announcements'] });
+      const previous = queryClient.getQueryData<Announcement[]>(['announcements']);
+      queryClient.setQueryData<Announcement[]>(['announcements'], old =>
+        old?.map(a => a.id === id
+          ? { ...a, userHasLiked: !a.userHasLiked, likeCount: a.userHasLiked ? a.likeCount - 1 : a.likeCount + 1 }
+          : a
+        )
+      );
+      return { previous };
+    },
+    onError: (err: any, _id, context) => {
+      if (context?.previous) queryClient.setQueryData(['announcements'], context.previous);
+      if (err?.response?.status === 429) showError('Espera unos segundos antes de volver a dar Me gusta');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+    }
+  });
+
   const handleEdit = (a: Announcement) => {
     setEditingId(a.id);
     setForm({ title: a.title ?? '', content: a.content, pinned: a.pinned });
@@ -158,9 +180,10 @@ export default function AdminAnnouncements() {
         ) : announcements.length === 0 ? (
           <p className="text-sm text-[var(--color-textSecondary)]">No hay anuncios publicados.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-6">
             {announcements.map(a => (
-              <Card key={a.id}>
+              <div key={a.id} className="relative">
+              <Card>
                 <CardContent className="py-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -210,6 +233,20 @@ export default function AdminAnnouncements() {
                   </div>
                 </CardContent>
               </Card>
+              <button
+                onClick={() => !likeMutation.isPending && likeMutation.mutate(a.id)}
+                disabled={likeMutation.isPending}
+                className={`absolute -bottom-3 right-4 flex items-center gap-1.5 text-sm px-3 py-1 rounded-full border transition-all ${
+                  a.userHasLiked
+                    ? 'bg-[var(--color-primary)] border-[var(--color-primary)] text-white font-medium'
+                    : 'bg-[var(--color-cardBackground)] border-[var(--color-cardBorder)] text-[var(--color-textSecondary)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
+                }`}
+              >
+                {a.userHasLiked && <img src="/meeple.blue.png" alt="" className="w-4 h-4 object-contain" />}
+                Me gusta
+                {a.likeCount > 0 && <span>· {a.likeCount}</span>}
+              </button>
+              </div>
             ))}
           </div>
         )}

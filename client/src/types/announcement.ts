@@ -7,6 +7,8 @@ export interface Announcement {
   pinned: boolean;
   authorId: string;
   author: { id: string; name: string };
+  likeCount: number;
+  userHasLiked: boolean;
   createdAt: string;
   updatedAt: string;
 }
