@@ -4,6 +4,75 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-05 (sesión 2)
+
+### Nuevas funcionalidades
+
+#### Cancelar solicitud pendiente de aprobación
+
+- Un jugador con registro en estado `PENDING_APPROVAL` no podía borrarse de la partida porque `canUnregister` excluía explícitamente ese estado. Ahora puede cancelar su solicitud desde el detalle del evento.
+- El botón muestra "Cancelar solicitud" en lugar de "No asistiré" cuando el estado es `PENDING_APPROVAL`.
+- La modal de confirmación adapta su título y texto según el estado: "Cancelar solicitud / Se notificará al organizador" vs "Abandonar partida / Se notificará al organizador y al resto de jugadores".
+- Al cancelar una solicitud pendiente, solo se notifica al organizador (no al resto de jugadores). Al abandonar estando confirmado, se notifica a todos.
+- Los textos de notificación diferencian ambos casos: "ha cancelado su solicitud" vs "ha abandonado la partida".
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — `canUnregister` sin excluir `PENDING_APPROVAL`, texto del botón y modal dinámicos
+- `server/src/controllers/eventController.ts` — `notifyPlayersOfAbandonment` solo se llama si era `CONFIRMED`; `notifyRegistrationCancelled` recibe `wasConfirmed`
+- `server/src/services/notificationService.ts` — `notifyRegistrationCancelled` con títulos/mensajes distintos según estado; `notifyPlayersOfAbandonment` excluye al organizador si ya fue notificado por separado
+
+---
+
+#### Re-registro respeta `requiresApproval`
+
+- Al re-apuntarse a una partida con aprobación requerida (tras haber cancelado previamente), el registro se reactivaba directamente como `CONFIRMED` en lugar de `PENDING_APPROVAL`. Corregido para respetar `event.requiresApproval` también en el flujo de re-registro.
+
+**Archivos modificados:**
+- `server/src/controllers/eventController.ts` — rama de re-registro usa `reRegStatus` y notifica al organizador si corresponde
+
+---
+
+#### Campo `updatedAt` en `EventRegistration` para fecha de solicitud fiable
+
+- La fecha de solicitud mostrada en el panel de solicitudes pendientes usaba `createdAt`, que no se actualizaba al re-apuntarse. Se añade `updatedAt` al modelo (con `@updatedAt`) para reflejar siempre la fecha de la última acción.
+- El frontend usa `updatedAt ?? createdAt` al mostrar "Solicitó el...".
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — `updatedAt DateTime @default(now()) @updatedAt` en `EventRegistration`
+- `client/src/pages/EventDetail.tsx` — fecha de solicitud usa `registration.updatedAt ?? registration.createdAt`
+
+---
+
+### Correcciones
+
+#### Ventana de validación QR usaba hora local en lugar de UTC
+
+- El cálculo de la ventana de validación de QR reconstruía la hora de inicio con `setHours(startHour, startMinute)`, que interpreta la hora en la zona local del servidor. Como `event.date` ya almacena la hora en UTC, el resultado era un desfase de 2h (UTC+2 en verano), haciendo que la ventana no se abriera hasta 2h después de lo esperado.
+- Corregido usando `event.date` directamente como `eventStart`, igual que se hizo en `completePassedEvents`. El `windowClose` pasa a usar `setUTCHours`.
+
+**Archivos modificados:**
+- `server/src/controllers/eventController.ts` — `validateGameQr` usa `eventDate` directamente y `setUTCHours` para el cierre
+
+---
+
+#### Emojis en mensaje de WhatsApp se corrompían en algunos entornos
+
+- Los emojis del mensaje de WhatsApp se definían con `String.fromCodePoint()`, que en algunos entornos (Railway) producía el carácter de reemplazo Unicode (`%EF%BF%BD`) al codificar la URL. Sustituidos por literales UTF-8 directos.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — `emojiCalendar`, `emojiClock`, `emojiLocation` como literales `📅`, `🕐`, `📍`
+
+---
+
+#### Notificaciones de anuncios: formato de título y mensaje
+
+- El header de la notificación mostraba el título del anuncio y el mensaje mostraba el contenido. Cambiado para que el header sea siempre "Tablón de anuncios" y el mensaje sea el título del anuncio (o el inicio del contenido si no tiene título).
+
+**Archivos modificados:**
+- `server/src/services/notificationService.ts` — `notifyNewAnnouncement` actualizado
+
+---
+
 ## 2026-04-05 (sesión 1)
 
 ### Nuevas funcionalidades

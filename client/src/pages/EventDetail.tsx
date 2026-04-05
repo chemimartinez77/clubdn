@@ -556,7 +556,7 @@ export default function EventDetail() {
   const isFull = (event.registeredCount || 0) >= event.maxAttendees;
   const isPendingApproval = event.userRegistrationStatus === 'PENDING_APPROVAL';
   const canRegister = event.status === 'SCHEDULED' && !isPast && !event.isUserRegistered && !isFull;
-  const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && !isPendingApproval && !isPast;
+  const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && !isPast;
   const canInvite = event.status !== 'CANCELLED' && !isPast && !isFull;
   const canDelete = isPartida && !isPast && event.status !== 'CANCELLED' && (isAdmin || user?.id === event.createdBy);
   const canEdit = isOrganizerOrAdmin && event.status !== 'CANCELLED' && !isPast;
@@ -620,9 +620,9 @@ export default function EventDetail() {
     event.durationHours,
     event.durationMinutes
   );
-  const emojiCalendar = String.fromCodePoint(0x1F4C5);
-  const emojiClock = String.fromCodePoint(0x1F550);
-  const emojiLocation = String.fromCodePoint(0x1F4CD);
+  const emojiCalendar = '📅';
+  const emojiClock = '🕐';
+  const emojiLocation = '📍';
 
   const handleCreateInvitation = () => {
     if (!guestFirstName.trim()) {
@@ -885,7 +885,7 @@ export default function EventDetail() {
                       className="w-full sm:w-auto !bg-slate-500 hover:!bg-slate-600 !text-white transition-all duration-300"
                     >
                       <span className="flex items-center justify-center gap-2">
-                        <span>{unregisterMutation.isPending ? 'Cancelando...' : 'No asistiré'}</span>
+                        <span>{unregisterMutation.isPending ? 'Cancelando...' : isPendingApproval ? 'Cancelar solicitud' : 'No asistiré'}</span>
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
@@ -1354,7 +1354,7 @@ export default function EventDetail() {
                           {displayName(registration.user.name, registration.user.profile?.nick)}
                         </p>
                         <p className="text-xs text-[var(--color-textSecondary)]">
-                          Solicitó el {new Date(registration.createdAt).toLocaleDateString('es-ES', {
+                          Solicitó el {new Date(registration.updatedAt ?? registration.createdAt).toLocaleDateString('es-ES', {
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric',
@@ -2088,11 +2088,13 @@ export default function EventDetail() {
       <Modal
         isOpen={isUnregisterModalOpen}
         onClose={() => setIsUnregisterModalOpen(false)}
-        title="Abandonar partida"
+        title={isPendingApproval ? 'Cancelar solicitud' : 'Abandonar partida'}
       >
         <div className="space-y-4">
           <p className="text-[var(--color-textSecondary)]">
-            ¿Estás seguro de que quieres abandonar esta partida? Se notificará al organizador y al resto de jugadores.
+            {isPendingApproval
+              ? '¿Estás seguro de que quieres cancelar tu solicitud? Se notificará al organizador.'
+              : '¿Estás seguro de que quieres abandonar esta partida? Se notificará al organizador y al resto de jugadores.'}
           </p>
           <div className="flex gap-3 justify-end">
             <Button
