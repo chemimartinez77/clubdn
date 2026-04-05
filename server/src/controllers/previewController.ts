@@ -13,16 +13,8 @@ export const previewEvent = async (req: Request, res: Response) => {
       select: {
         id: true,
         title: true,
-        description: true,
-        date: true,
-        startHour: true,
-        startMinute: true,
-        durationHours: true,
-        durationMinutes: true,
         gameName: true,
         gameImage: true,
-        maxAttendees: true,
-        registrations: { select: { id: true } },
       },
     });
 
@@ -33,33 +25,8 @@ export const previewEvent = async (req: Request, res: Response) => {
 
     const eventUrl = `${CLIENT_URL}/events/${event.id}`;
 
-    const ogTitle = event.gameName
-      ? `${event.gameName} — ${event.title}`
-      : event.title;
-
-    const taken = event.registrations.length;
-    const free = event.maxAttendees - taken;
-    const placesText = free > 0 ? `${free} plaza${free !== 1 ? 's' : ''} disponible${free !== 1 ? 's' : ''}` : 'Sin plazas disponibles';
-
-    let timeText = '';
-    if (event.startHour !== null && event.startMinute !== null) {
-      const h = String(event.startHour).padStart(2, '0');
-      const m = String(event.startMinute).padStart(2, '0');
-      timeText = ` · ${h}:${m}`;
-      if (event.durationHours || event.durationMinutes) {
-        const endMs = event.date.getTime() + ((event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0)) * 60000;
-        const end = new Date(endMs);
-        const eh = String(end.getUTCHours()).padStart(2, '0');
-        const em = String(end.getUTCMinutes()).padStart(2, '0');
-        timeText += `–${eh}:${em}`;
-      }
-    }
-
-    const dateText = event.date.toLocaleDateString('es-ES', {
-      weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Madrid'
-    });
-
-    const ogDescription = `${dateText}${timeText} · ${placesText}`;
+    const ogTitle = event.gameName ?? event.title;
+    const ogDescription = '';
 
     const ogImage = event.gameImage ?? `${CLIENT_URL}/og-image.png`;
 
