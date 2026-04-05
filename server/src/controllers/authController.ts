@@ -367,6 +367,22 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
+    if (user.status === 'BAJA') {
+      await logLoginAttempt({
+        email,
+        userId: user.id,
+        success: false,
+        failureReason: 'baja',
+        req
+      });
+
+      return res.status(403).json({
+        success: false,
+        message: 'Tu cuenta está dada de baja. Si crees que es un error, contacta con el club.',
+        status: 'BAJA',
+      });
+    }
+
     // Generar token JWT
     const token = jwt.sign(
       {

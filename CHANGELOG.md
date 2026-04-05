@@ -4,6 +4,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-05 (sesión 4)
+
+### Seguridad
+
+#### Bloqueo de acceso a usuarios dados de baja
+
+- Los usuarios importados del CSV con `estado = "canceled"` habían quedado como `APPROVED` en la BD al no mapear ese campo durante la importación. Podían iniciar sesión y usar la app.
+- Se añade el estado `BAJA` al flujo de login: si el usuario tiene ese estado, se devuelve 403 con mensaje "Tu cuenta está dada de baja. Si crees que es un error, contacta con el club." y no se genera token.
+- Se añade comprobación en el middleware `authenticate`: en cada petición autenticada se consulta el estado actual del usuario en BD. Si es `BAJA` o `SUSPENDED`, se devuelve 403 inmediatamente, invalidando sesiones activas sin esperar a que expire el JWT (365 días).
+- Corrección de datos en producción: UPDATE directo en BD para marcar 58 usuarios como `BAJA` identificados por email desde el CSV original.
+
+**Archivos modificados:**
+- `server/src/controllers/authController.ts` — bloque `BAJA` en login, con log del intento fallido
+- `server/src/middleware/auth.ts` — consulta a BD en cada request para verificar `status` actual
+
+---
+
 ## 2026-04-05 (sesión 3)
 
 ### Nuevas funcionalidades
