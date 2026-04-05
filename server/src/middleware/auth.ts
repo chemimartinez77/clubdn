@@ -57,3 +57,18 @@ export const requireAdmin = (
   }
   next();
 };
+
+export const requireSuperAdmin = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (req.user?.role !== 'SUPER_ADMIN') {
+    res.status(403).json({
+      success: false,
+      message: 'Acceso denegado. Se requieren permisos de superadministrador.'
+    });
+    return;
+  }
+  next();
+};

@@ -473,7 +473,7 @@ export const notifyNewAnnouncement = async (
   content: string
 ) => {
   try {
-    const notificationTitle = title ? `Nuevo anuncio: ${title}` : 'Nuevo anuncio en el tablón';
+    const notificationTitle = title ? `${title}` : 'Nuevo anuncio en el tablón';
     const message = content.length > 120 ? content.slice(0, 117) + '...' : content;
     await prisma.globalNotification.create({
       data: {

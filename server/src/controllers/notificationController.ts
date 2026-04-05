@@ -67,7 +67,7 @@ export const getNotifications = async (req: Request, res: Response) => {
         // Solo las que no tienen ninguna entrada de lectura (ni leída ni descartada)
         const globals = await prisma.globalNotification.findMany({
           where: {
-            type: 'EVENT_CREATED',
+            type: { in: ['EVENT_CREATED', 'ANNOUNCEMENT_CREATED'] },
             reads: { none: { userId } },
           },
           orderBy: { createdAt: 'desc' },
@@ -78,7 +78,7 @@ export const getNotifications = async (req: Request, res: Response) => {
         // Todas excepto las descartadas
         const globals = await prisma.globalNotification.findMany({
           where: {
-            type: 'EVENT_CREATED',
+            type: { in: ['EVENT_CREATED', 'ANNOUNCEMENT_CREATED'] },
             NOT: { reads: { some: { userId, dismissed: true } } },
           },
           include: {
@@ -143,7 +143,7 @@ export const getUnreadCount = async (req: Request, res: Response) => {
     if (wantsNewEvents) {
       globalCount = await prisma.globalNotification.count({
         where: {
-          type: 'EVENT_CREATED',
+          type: { in: ['EVENT_CREATED', 'ANNOUNCEMENT_CREATED'] },
           reads: { none: { userId } },
         },
       });

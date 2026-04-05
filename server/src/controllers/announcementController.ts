@@ -33,7 +33,6 @@ export const createAnnouncement = async (req: Request, res: Response) => {
       },
       include: { author: { select: { id: true, name: true } } }
     });
-    notifyNewAnnouncement(announcement.id, announcement.title, announcement.content);
     res.status(201).json({ success: true, data: announcement });
   } catch {
     res.status(500).json({ success: false, message: 'Error al crear anuncio' });
@@ -70,5 +69,20 @@ export const deleteAnnouncement = async (req: Request, res: Response) => {
     res.json({ success: true });
   } catch {
     res.status(500).json({ success: false, message: 'Error al eliminar anuncio' });
+  }
+};
+
+export const notifyAnnouncement = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const announcement = await prisma.announcement.findUnique({ where: { id } });
+    if (!announcement) {
+      res.status(404).json({ success: false, message: 'Anuncio no encontrado' });
+      return;
+    }
+    await notifyNewAnnouncement(announcement.id, announcement.title, announcement.content);
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ success: false, message: 'Error al enviar notificación' });
   }
 };
