@@ -620,9 +620,10 @@ export default function EventDetail() {
     event.durationHours,
     event.durationMinutes
   );
-  const emojiCalendar = '\u{1F4C5}';
-  const emojiClock = '\u{1F550}';
-  const emojiLocation = '\u{1F4CD}';
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const emojiCalendar = isMobile ? '\u{1F4C5}' : 'Dia:';
+  const emojiClock = isMobile ? '\u{1F550}' : 'Hora:';
+  const emojiLocation = isMobile ? '\u{1F4CD}' : 'Lugar:';
 
   const handleCreateInvitation = () => {
     if (!guestFirstName.trim()) {
@@ -732,18 +733,34 @@ export default function EventDetail() {
     );
     const shareTimeText = scheduleText || 'Hora pendiente';
 
+    const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+    const dateTextCapitalized = capitalizeFirst(eventDateText);
+
     const buildMessage = (shareUrl: string) => {
-      let message = `*${event.title}*\n\n`;
-      message += `${emojiCalendar} ${eventDateText}\n`;
-      message += `${emojiClock} ${shareTimeText}\n`;
-      if (event.type !== 'PARTIDA' && event.location) {
-        message += `${emojiLocation} Lugar: ${event.location}\n`;
+      // Título: solo si no hay imagen (si hay imagen ya sale en la previsualización)
+      let message = '';
+      if (!event.gameImage) {
+        message += `*${event.title}*\n\n`;
       }
-      message += `\n${spotsText}\n`;
+
+      // Fecha y hora en negrita
+      if (isMobile) {
+        message += `${emojiCalendar} *${dateTextCapitalized}*\n`;
+        message += `${emojiClock} *${shareTimeText}*\n`;
+      } else {
+        message += `*${dateTextCapitalized}*\n`;
+        message += `*${shareTimeText}*\n`;
+      }
+
+      if (event.type !== 'PARTIDA' && event.location) {
+        message += isMobile ? `${emojiLocation} Lugar: ${event.location}\n` : `Lugar: ${event.location}\n`;
+      }
 
       if (event.description) {
         message += `\n${event.description}\n`;
       }
+
+      message += `\n${spotsText}\n`;
 
       // Indicar si hay socios apuntados (sin datos personales)
       const confirmedRegistrations = event.registrations?.filter(reg => reg.status === 'CONFIRMED') || [];
