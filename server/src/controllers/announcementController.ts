@@ -33,7 +33,6 @@ export const createAnnouncement = async (req: Request, res: Response) => {
       },
       include: { author: { select: { id: true, name: true } } }
     });
-    notifyNewAnnouncement(announcement.id, announcement.title, announcement.content);
     res.status(201).json({ success: true, data: announcement });
   } catch {
     res.status(500).json({ success: false, message: 'Error al crear anuncio' });
