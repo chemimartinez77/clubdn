@@ -28,6 +28,7 @@ import viernesRoutes from './routes/viernesRoutes';
 import calendarRoutes from './routes/calendarRoutes';
 import pageViewRoutes from './routes/pageViewRoutes';
 import announcementRoutes from './routes/announcementRoutes';
+import previewRoutes from './routes/previewRoutes';
 import { startEventCompletionJob } from './jobs/eventCompletionJob';
 
 // Cargar variables de entorno
@@ -136,6 +137,7 @@ app.use('/api/viernes', viernesRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/pageviews', pageViewRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/preview', previewRoutes);
 
 // Ruta 404
 app.use((_req, res) => {

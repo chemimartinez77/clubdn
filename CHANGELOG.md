@@ -21,6 +21,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 - `server/src/routes/announcementRoutes.ts` — ruta `POST /:id/notify` con `requireSuperAdmin`
 - `client/src/pages/admin/Announcements.tsx` — `notifyMutation`, icono de sobre, visible solo si `isSuperAdmin`
 
+#### Previsualización de imagen del juego al compartir por WhatsApp
+
+- Al compartir una partida por WhatsApp con el botón existente, WhatsApp no generaba previsualización de imagen porque la app es una SPA y el bot de WhatsApp no ejecuta JavaScript.
+- Se añade un endpoint Express `GET /preview/events/:id` (sin autenticación) que devuelve HTML estático con meta OG tags: `og:image` apunta a `event.gameImage` (URL de BGG guardada en BD), `og:title` incluye el nombre del juego, y `og:description` muestra fecha, hora y plazas disponibles. El HTML redirige automáticamente al usuario a `/events/:id`.
+- En el frontend se añade un segundo botón "WA + imagen" (solo visible si el evento tiene `gameImage`) que envía únicamente la URL de preview a WhatsApp, permitiendo que el bot la rastree y genere la previsualización con la portada del juego.
+
+**Archivos añadidos/modificados:**
+- `server/src/controllers/previewController.ts` — nuevo, genera HTML con OG tags dinámicos
+- `server/src/routes/previewRoutes.ts` — nuevo, `GET /events/:id`
+- `server/src/index.ts` — registra `app.use('/preview', previewRoutes)` sin autenticación
+- `client/src/pages/EventDetail.tsx` — `handleSharePreview` y botón "WA + imagen"
+
+---
+
 ### Correcciones
 
 #### Notificaciones de anuncios no aparecían en el badge de la campana
