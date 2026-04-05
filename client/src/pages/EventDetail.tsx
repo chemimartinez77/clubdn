@@ -620,9 +620,9 @@ export default function EventDetail() {
     event.durationHours,
     event.durationMinutes
   );
-  const emojiCalendar = '📆';
-  const emojiClock = '⏰';
-  const emojiLocation = '📌';
+  const emojiCalendar = '📅';
+  const emojiClock = '🕐';
+  const emojiLocation = '📍';
 
   const handleCreateInvitation = () => {
     if (!guestFirstName.trim()) {
@@ -733,11 +733,8 @@ export default function EventDetail() {
     const shareTimeText = scheduleText || 'Hora pendiente';
 
     const buildMessage = (shareUrl: string) => {
-      let message = `*${event.title}*\n`;
-      if (event.gameImage) {
-        message += `${event.gameImage}\n`;
-      }
-      message += `\n${emojiCalendar} ${eventDateText}\n`;
+      let message = `*${event.title}*\n\n`;
+      message += `${emojiCalendar} ${eventDateText}\n`;
       message += `${emojiClock} ${shareTimeText}\n`;
       if (event.type !== 'PARTIDA' && event.location) {
         message += `${emojiLocation} Lugar: ${event.location}\n`;

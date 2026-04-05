@@ -28,7 +28,7 @@ export const previewEvent = async (req: Request, res: Response) => {
     const ogTitle = event.gameName ?? event.title;
     const ogDescription = '';
 
-    const ogImage = `${CLIENT_URL}/og-image.png`;
+    const ogImage = event.gameImage ?? `${CLIENT_URL}/og-image.png`;
 
     const html = `<!DOCTYPE html>
 <html lang="es">
