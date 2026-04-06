@@ -1,16 +1,11 @@
 // client/src/components/admin/ApproveUserModal.tsx
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Modal, { ModalFooter } from '../ui/Modal';
 import Button from '../ui/Button';
-
-type MembershipType = 'EN_PRUEBAS' | 'COLABORADOR' | 'SOCIO' | 'FAMILIAR';
-
-const MEMBERSHIP_OPTIONS: { value: MembershipType; label: string }[] = [
-  { value: 'EN_PRUEBAS', label: 'En Pruebas' },
-  { value: 'COLABORADOR', label: 'Colaborador (15€/mes)' },
-  { value: 'SOCIO', label: 'Socio (19€/mes)' },
-  { value: 'FAMILIAR', label: 'Familiar' },
-];
+import { api } from '../../api/axios';
+import type { ClubConfig, MembershipType } from '../../types/config';
+import type { ApiResponse } from '../../types/auth';
 
 interface ApproveUserModalProps {
   isOpen: boolean;
@@ -29,6 +24,29 @@ export default function ApproveUserModal({
 }: ApproveUserModalProps) {
   const [customMessage, setCustomMessage] = useState('');
   const [membershipType, setMembershipType] = useState<MembershipType>('EN_PRUEBAS');
+
+  const { data: config } = useQuery({
+    queryKey: ['clubConfig'],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<ClubConfig>>('/api/config');
+      return response.data.data;
+    },
+    staleTime: 5 * 60 * 1000
+  });
+
+  const membershipOptions = config?.membershipTypes
+    .filter(mt => mt.type !== 'BAJA')
+    .map(mt => ({
+      value: mt.type,
+      label: mt.price > 0
+        ? `${mt.displayName} (${mt.price}${config.defaultCurrency === 'EUR' ? '€' : config.defaultCurrency}/mes)`
+        : mt.displayName
+    })) ?? [
+    { value: 'EN_PRUEBAS', label: 'En Pruebas' },
+    { value: 'COLABORADOR', label: 'Colaborador' },
+    { value: 'SOCIO', label: 'Socio' },
+    { value: 'FAMILIAR', label: 'Familiar' },
+  ];
 
   const handleConfirm = () => {
     if (user) {
@@ -84,7 +102,7 @@ export default function ApproveUserModal({
             className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-[var(--color-surface)] text-[var(--color-text)]"
             disabled={isLoading}
           >
-            {MEMBERSHIP_OPTIONS.map((opt) => (
+            {membershipOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
@@ -128,4 +146,3 @@ export default function ApproveUserModal({
     </Modal>
   );
 }
-

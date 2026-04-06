@@ -4,6 +4,22 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-07 (sesión 2)
+
+### Correcciones
+
+#### Precios de membresía dinámicos en el modal de aprobación
+
+- El modal "Aprobar Usuario" mostraba los precios hardcodeados (`15€/mes`, `19€/mes`), ignorando la configuración real del club almacenada en BD.
+- Se sustituye la lista estática por una consulta a `/api/config` (TanStack Query, caché 5 min). Los labels se generan dinámicamente con el precio y la moneda configurados. Si el precio es 0 (En Pruebas, Familiar), no se muestra importe. La opción `BAJA` se filtra y no aparece como opción de aprobación. Si la config no carga, se muestra un fallback con nombres sin precio.
+- También se corrige el formato de fecha en las notificaciones de nuevas partidas: Railway corre en UTC y `toLocaleDateString('es-ES')` no respeta el locale configurado en el servidor, produciendo fechas en formato M/D/YYYY. Se sustituye por una función `formatDateEs` que construye la fecha explícitamente en formato `D/M/YYYY`.
+
+**Archivos modificados:**
+- `client/src/components/admin/ApproveUserModal.tsx` — precios leídos de la config del club vía API
+- `server/src/services/notificationService.ts` — función `formatDateEs` para formato de fecha garantizado
+
+---
+
 ## 2026-04-07 (sesión 1)
 
 ### Nuevas funcionalidades
