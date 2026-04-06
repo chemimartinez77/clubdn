@@ -32,7 +32,7 @@ export const getUserCalendar = async (req: Request, res: Response): Promise<void
   const registrations: any[] = await prisma.eventRegistration.findMany({
     where: {
       userId: user.id,
-      status: { in: ['CONFIRMED', 'APPROVED'] as any },
+      status: 'CONFIRMED',
       event: {
         status: { in: ['SCHEDULED', 'ONGOING'] },
         date: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
