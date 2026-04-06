@@ -6,7 +6,6 @@ const router = Router();
 
 // Público: suscripción por URL (con o sin .ics)
 router.get('/:token', getUserCalendar);
-router.get('/:token.ics', getUserCalendar);
 
 // Autenticado: generar/regenerar token
 router.post('/token', authenticate, generateCalendarToken);

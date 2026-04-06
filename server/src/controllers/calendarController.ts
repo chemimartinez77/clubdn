@@ -16,7 +16,8 @@ const escapeIcs = (s: string): string =>
  * Usa `any` en las queries que dependen de calendarToken (campo nuevo, requiere prisma generate).
  */
 export const getUserCalendar = async (req: Request, res: Response): Promise<void> => {
-  const { token } = req.params;
+  const rawToken = req.params.token ?? '';
+  const token = rawToken.endsWith('.ics') ? rawToken.slice(0, -4) : rawToken;
 
   const user = await (prisma.user as any).findUnique({
     where: { calendarToken: token },
