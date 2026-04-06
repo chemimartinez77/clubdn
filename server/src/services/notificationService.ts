@@ -2,6 +2,13 @@
 import { prisma } from '../config/database';
 import { NotificationType, Prisma } from '@prisma/client';
 
+const formatDateEs = (date: Date): string => {
+  const d = date.getUTCDate();
+  const m = date.getUTCMonth() + 1;
+  const y = date.getUTCFullYear();
+  return `${d}/${m}/${y}`;
+};
+
 interface CreateNotificationParams {
   userId: string;
   type: NotificationType;
@@ -187,7 +194,7 @@ export const notifyNewEvent = async (
       data: {
         type: 'EVENT_CREATED',
         title: 'Nueva partida disponible',
-        message: `Se ha creado una nueva partida: "${eventTitle}". Fecha: ${new Date(eventDate).toLocaleDateString('es-ES')}`,
+        message: `Se ha creado una nueva partida: "${eventTitle}". Fecha: ${formatDateEs(new Date(eventDate))}`,
         metadata: { eventId, eventTitle, eventDate: eventDate.toISOString() },
       },
     });
