@@ -4,6 +4,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-06 (sesión 1)
+
+### Correcciones
+
+#### Compatibilidad de URL de calendario con Outlook
+
+- Outlook rechazaba la URL de suscripción de calendario porque no terminaba en `.ics`, que es el formato estándar que espera.
+- Se añade la extensión `.ics` al final de la URL que se muestra y copia en el perfil del usuario.
+- Se registra una segunda ruta en el servidor (`/:token.ics`) que apunta al mismo controlador, manteniendo la ruta antigua (`/:token`) por compatibilidad con suscripciones ya guardadas.
+- La URL con `.ics` funciona igualmente en iPhone y Google Calendar.
+
+**Archivos modificados:**
+- `client/src/pages/Profile.tsx` — URL generada y mostrada en el perfil ahora termina en `.ics`
+- `server/src/routes/calendarRoutes.ts` — nueva ruta `GET /:token.ics` apuntando al mismo controlador
+
+---
+
 ## 2026-04-05 (sesión 4)
 
 ### Seguridad

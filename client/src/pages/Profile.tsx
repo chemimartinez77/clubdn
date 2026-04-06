@@ -238,7 +238,7 @@ export default function Profile() {
   });
 
   const handleCopyCalendarUrl = (token: string) => {
-    const url = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/calendar/${token}`;
+    const url = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/calendar/${token}.ics`;
     navigator.clipboard.writeText(url).then(() => {
       setCalendarCopied(true);
       setTimeout(() => setCalendarCopied(false), 2000);
@@ -771,7 +771,7 @@ export default function Profile() {
                       <input
                         type="text"
                         readOnly
-                        value={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/calendar/${profile.calendarToken}`}
+                        value={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/calendar/${profile.calendarToken}.ics`}
                         className="flex-1 px-3 py-2 text-xs border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)] truncate"
                       />
                       <button
