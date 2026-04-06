@@ -284,7 +284,7 @@ export default function EventDetail() {
       startMinute: editFormData.startMinute !== '' ? parseInt(editFormData.startMinute) : undefined,
       durationHours: editFormData.durationHours ? parseInt(editFormData.durationHours) : undefined,
       durationMinutes: editFormData.durationMinutes !== '' ? parseInt(editFormData.durationMinutes) : undefined,
-      location: editFormData.location || 'Club DN',
+      location: editFormData.location || 'Club Dreadnought',
       address: editFormData.address || undefined,
       maxAttendees: editFormData.maxAttendees,
       requiresApproval: editFormData.requiresApproval,

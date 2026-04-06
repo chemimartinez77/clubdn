@@ -104,7 +104,7 @@ export default function EventManagement() {
       description: formData.get('description') as string,
       type: (formData.get('type') as 'PARTIDA' | 'TORNEO' | 'OTROS') || 'OTROS',
       date: formData.get('date') as string,
-      location: locationValue || 'Club DN',
+      location: locationValue || 'Club Dreadnought',
       address: formData.get('address') as string || undefined,
       maxAttendees: parseInt(formData.get('maxAttendees') as string)
     };

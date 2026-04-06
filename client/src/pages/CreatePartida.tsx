@@ -74,7 +74,7 @@ export default function CreatePartida() {
       startMinute: startMinute ? parseInt(startMinute) : undefined,
       durationHours: formData.get('durationHours') ? parseInt(formData.get('durationHours') as string) : undefined,
       durationMinutes: formData.get('durationMinutes') ? parseInt(formData.get('durationMinutes') as string) : undefined,
-      location: locationValue || 'Club DN',
+      location: locationValue || 'Club Dreadnought',
       address: (formData.get('address') as string) || undefined,
       maxAttendees: parseInt(formData.get('maxAttendees') as string),
       attend,
