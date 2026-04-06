@@ -7,6 +7,10 @@ const pad = (n: number) => n.toString().padStart(2, '0');
 const toIcsDate = (d: Date): string =>
   `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
 
+// Formatea una fecha como hora local Madrid (sin conversión UTC) para usar con TZID
+const toIcsDateLocal = (year: number, month: number, day: number, hour: number, minute: number): string =>
+  `${year}${pad(month)}${pad(day)}T${pad(hour)}${pad(minute)}00`;
+
 const escapeIcs = (s: string): string =>
   s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
 
@@ -71,21 +75,24 @@ export const getUserCalendar = async (req: Request, res: Response): Promise<void
   for (const reg of registrations) {
     const event = reg.event;
     const base = new Date(event.date);
-
-    if (event.startHour !== null && event.startHour !== undefined) {
-      base.setUTCHours(event.startHour, event.startMinute ?? 0, 0, 0);
-    }
-
+    const hour = event.startHour ?? 0;
+    const minute = event.startMinute ?? 0;
     const totalMinutes = (event.durationHours ?? 2) * 60 + (event.durationMinutes ?? 0);
-    const end = new Date(base.getTime() + totalMinutes * 60 * 1000);
+
+    // Usamos hora local Madrid con TZID para evitar desfase UTC
+    const year = base.getUTCFullYear();
+    const month = base.getUTCMonth() + 1;
+    const day = base.getUTCDate();
+    const endHour = Math.floor((hour * 60 + minute + totalMinutes) / 60) % 24;
+    const endMinute = (hour * 60 + minute + totalMinutes) % 60;
 
     const location = [event.location, event.address].filter(Boolean).join(', ');
 
     lines.push('BEGIN:VEVENT');
     lines.push(`UID:${event.id}@clubdreadnought`);
     lines.push(`DTSTAMP:${toIcsDate(new Date())}`);
-    lines.push(`DTSTART:${toIcsDate(base)}`);
-    lines.push(`DTEND:${toIcsDate(end)}`);
+    lines.push(`DTSTART;TZID=Europe/Madrid:${toIcsDateLocal(year, month, day, hour, minute)}`);
+    lines.push(`DTEND;TZID=Europe/Madrid:${toIcsDateLocal(year, month, day, endHour, endMinute)}`);
     lines.push(`SUMMARY:${escapeIcs(event.title)}`);
     if (location) lines.push(`LOCATION:${escapeIcs(location)}`);
     if (event.description) lines.push(`DESCRIPTION:${escapeIcs(event.description)}`);

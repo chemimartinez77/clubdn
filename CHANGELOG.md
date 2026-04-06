@@ -19,6 +19,25 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 - `client/src/pages/Profile.tsx` — URL generada y mostrada en el perfil ahora termina en `.ics`
 - `server/src/routes/calendarRoutes.ts` — nueva ruta `GET /:token.ics` apuntando al mismo controlador
 
+#### Corrección de desfase horario en el calendario ICS
+
+- Los eventos aparecían 2 horas más tarde de lo esperado en Outlook (y potencialmente en otros clientes). El servidor corre en UTC en Railway, pero `startHour` se guarda como hora local de Madrid. El código anterior emitía la hora como UTC, lo que provocaba un desfase de +2h en verano y +1h en invierno.
+- Se cambia el formato de `DTSTART`/`DTEND` de UTC (`...Z`) a hora local con `TZID=Europe/Madrid`, que es el estándar correcto para eventos con zona horaria fija. El cliente de calendario aplica la conversión automáticamente según la época del año.
+- Además se corrige el valor incorrecto `APPROVED` en el filtro de registraciones (no existe en el enum `RegistrationStatus`), sustituyéndolo por solo `CONFIRMED`, que es el estado final tras aprobación.
+
+**Archivos modificados:**
+- `server/src/controllers/calendarController.ts` — `DTSTART`/`DTEND` con `TZID=Europe/Madrid`, nueva función `toIcsDateLocal`, filtro de status corregido a `CONFIRMED`
+
+#### Polling automático de notificaciones y eventos
+
+- Los datos de notificaciones y eventos no se actualizaban sin recargar la página manualmente.
+- Se ajusta el intervalo de polling de notificaciones de 30s a 120s. Se añade `refetchInterval` de 10 minutos a las queries de lista de eventos y próximos eventos del dashboard. TanStack Query también refresca al volver a la pestaña (`refetchOnWindowFocus`).
+
+**Archivos modificados:**
+- `client/src/components/notifications/NotificationBell.tsx` — intervalo de polling 30s → 120s
+- `client/src/pages/Events.tsx` — `refetchInterval: 10 * 60 * 1000`
+- `client/src/components/dashboard/UpcomingEventsCard.tsx` — `refetchInterval: 10 * 60 * 1000`
+
 ---
 
 ## 2026-04-05 (sesión 4)

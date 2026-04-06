@@ -46,6 +46,7 @@ export default function Events() {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['events', statusFilter, typeFilter, search, participant, viewMode, monthKey],
+    refetchInterval: 10 * 60 * 1000,
     queryFn: async () => {
       const params = new URLSearchParams();
       if (viewMode === 'list') {

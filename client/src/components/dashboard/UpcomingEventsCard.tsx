@@ -30,7 +30,8 @@ export default function UpcomingEventsCard() {
     queryFn: async () => {
       const response = await api.get<{ success: boolean; data: EventDetail[] }>('/api/stats/user/upcoming-events');
       return response.data.data;
-    }
+    },
+    refetchInterval: 10 * 60 * 1000,
   });
 
   const formatDate = (dateString: string) => {
