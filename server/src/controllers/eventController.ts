@@ -1382,9 +1382,13 @@ export const searchMembersForEvent = async (req: Request, res: Response): Promis
       return;
     }
 
-    const users = await prisma.user.findMany({
+    const term = q.trim();
+    const normalize = (s: string) =>
+      s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const normalizedTerm = normalize(term);
+
+    const candidates = await prisma.user.findMany({
       where: {
-        name: { contains: q.trim(), mode: 'insensitive' },
         status: 'APPROVED',
         membership: {
           type: { in: ['SOCIO', 'COLABORADOR', 'EN_PRUEBAS'] },
@@ -1392,7 +1396,11 @@ export const searchMembersForEvent = async (req: Request, res: Response): Promis
         },
         profile: {
           allowEventInvitations: true
-        }
+        },
+        OR: [
+          { name: { contains: term, mode: 'insensitive' } },
+          { profile: { nick: { contains: term, mode: 'insensitive' } } }
+        ]
       },
       select: {
         id: true,
@@ -1400,14 +1408,21 @@ export const searchMembersForEvent = async (req: Request, res: Response): Promis
         membership: { select: { type: true } },
         profile: { select: { avatar: true, nick: true } }
       },
-      take: 10
+      take: 50
     });
+
+    // Filtrar por tildes en JS: incluir si nombre o nick normalizados contienen el término normalizado
+    const users = candidates.filter(u =>
+      normalize(u.name).includes(normalizedTerm) ||
+      (u.profile?.nick ? normalize(u.profile.nick).includes(normalizedTerm) : false)
+    ).slice(0, 10);
 
     res.status(200).json({
       success: true,
       data: users.map(u => ({
         id: u.id,
         name: u.name,
+        nick: u.profile?.nick ?? null,
         avatar: u.profile?.avatar ?? null,
         membershipType: u.membership?.type ?? null
       }))

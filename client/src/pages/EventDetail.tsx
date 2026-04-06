@@ -56,7 +56,7 @@ export default function EventDetail() {
   // Estado modal apuntar miembro
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
-  const [memberSearchResults, setMemberSearchResults] = useState<Array<{ id: string; name: string; avatar: string | null; membershipType: string | null }>>([]);
+  const [memberSearchResults, setMemberSearchResults] = useState<Array<{ id: string; name: string; nick: string | null; avatar: string | null; membershipType: string | null }>>([]);
   const [memberSearchLoading, setMemberSearchLoading] = useState(false);
 
   // Estado modal edición
@@ -1870,6 +1870,9 @@ export default function EventDetail() {
                     </div>
                     <div>
                       <span className="text-sm font-medium text-[var(--color-text)]">{member.name}</span>
+                      {member.nick && (
+                        <span className="ml-1 text-sm text-[var(--color-textSecondary)]">({member.nick})</span>
+                      )}
                       {member.membershipType && (
                         <span className="ml-2 text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
                           {member.membershipType}
