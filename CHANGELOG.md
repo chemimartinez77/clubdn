@@ -4,6 +4,36 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-07 (sesión 1)
+
+### Nuevas funcionalidades
+
+#### Campo "Miembro desde" con antigüedad real del club
+
+- El campo "Miembro desde" en la tarjeta de bienvenida del dashboard no tenía datos reales: se usaba `startDate` de la membresía, que corresponde al ciclo de pago actual, no a la fecha de alta histórica.
+- Se añade el campo `memberSince` (nullable) al modelo `Membership` en Prisma, independiente de `startDate`.
+- Se crea el script `seed-member-since.ts` que carga las fechas históricas de un CSV del club y las cruza por email (case-insensitive) para poblar el campo en BD.
+- Si `memberSince` es null, el bloque "Miembro desde" no se muestra en el dashboard (en lugar de mostrar "Nunca" u otro valor incorrecto).
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — campo `memberSince DateTime?` en modelo `Membership`
+- `server/prisma/migrations/20260406000000_add_member_since/migration.sql` — migración ALTER TABLE
+- `server/src/scripts/seed-member-since.ts` — script de seed con datos CSV históricos
+- `client/src/types/auth.ts` — `memberSince?: string | null` en tipo `membership`
+- `client/src/components/dashboard/WelcomeCard.tsx` — mostrar fecha sin hora, ocultar si es null
+
+#### Búsqueda de miembros por nick e insensible a tildes
+
+- Al añadir asistentes a una partida, solo se podía buscar por nombre completo, con sensibilidad a mayúsculas y tildes.
+- Se amplía la búsqueda para incluir el campo `nick` del perfil. La búsqueda es insensible a tildes mediante normalización Unicode en JS (sin depender de extensiones de PostgreSQL).
+- El nick se devuelve en los resultados y se muestra entre paréntesis junto al nombre en la lista de sugerencias.
+
+**Archivos modificados:**
+- `server/src/controllers/eventController.ts` — búsqueda OR por nombre/nick, normalización accent-insensitive, devuelve `nick`
+- `client/src/pages/EventDetail.tsx` — muestra nick entre paréntesis en la lista de miembros
+
+---
+
 ## 2026-04-06 (sesión 1)
 
 ### Correcciones
