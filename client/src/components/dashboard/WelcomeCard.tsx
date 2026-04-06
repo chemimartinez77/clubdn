@@ -48,6 +48,20 @@ export default function WelcomeCard({ user }: WelcomeCardProps) {
     }).format(date);
   };
 
+  const formatDateShort = (dateString: string | null | undefined) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(date);
+  };
+
+  const memberSinceDate = user.membership?.memberSince
+    ? formatDateShort(user.membership.memberSince)
+    : null;
+
   return (
     <Card
       id="dashboard-welcome"
@@ -67,12 +81,12 @@ export default function WelcomeCard({ user }: WelcomeCardProps) {
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-4 pt-4 border-t border-white/20">
-              <div>
-                <p className="text-white/70 text-sm">Miembro desde</p>
-                <p className="font-medium text-sm">
-                  {formatDate(user.createdAt)}
-                </p>
-              </div>
+              {memberSinceDate && (
+                <div>
+                  <p className="text-white/70 text-sm">Miembro desde</p>
+                  <p className="font-medium text-sm">{memberSinceDate}</p>
+                </div>
+              )}
               <div>
                 <p className="text-white/70 text-sm">Último acceso</p>
                 <p className="font-medium text-sm">

@@ -17,6 +17,7 @@ export interface User {
   lastLoginAt?: string | null;
   membership?: {
     type: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA';
+    memberSince?: string | null;
   } | null;
   profile?: {
     avatar?: string | null;

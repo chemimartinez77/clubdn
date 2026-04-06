@@ -441,6 +441,7 @@ model Membership {
   iban              String?
 
   // Fechas importantes
+  memberSince       DateTime?      // Fecha real de alta en el club (del CSV histórico)
   startDate         DateTime       @default(now())  // Fecha de inicio como miembro
   becameSocioAt     DateTime?      // Fecha en que pasó a SOCIO (si aplica)
   fechaBaja         DateTime?      // Fecha de baja del miembro
