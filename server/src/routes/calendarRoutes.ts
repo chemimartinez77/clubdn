@@ -4,7 +4,7 @@ import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
-// Público: suscripción por URL
+// Público: suscripción por URL (con o sin .ics)
 router.get('/:token', getUserCalendar);
 
 // Autenticado: generar/regenerar token
