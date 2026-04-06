@@ -326,7 +326,10 @@ const CSV_DATA: [string, string | null][] = [
 ];
 
 function parseDate(dateStr: string): Date {
-  const [day, month, year] = dateStr.split('/').map(Number);
+  const parts = dateStr.split('/').map(Number);
+  const day = parts[0]!;
+  const month = parts[1]!;
+  const year = parts[2]!;
   return new Date(Date.UTC(year, month - 1, day));
 }
 
