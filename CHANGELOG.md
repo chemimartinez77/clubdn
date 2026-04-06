@@ -19,6 +19,19 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 - `client/src/pages/Profile.tsx` — URL generada y mostrada en el perfil ahora termina en `.ics`
 - `server/src/routes/calendarRoutes.ts` — nueva ruta `GET /:token.ics` apuntando al mismo controlador
 
+#### Búsqueda de miembros por nick e insensible a tildes
+
+- Al añadir miembros a una partida, la búsqueda solo funcionaba por nombre completo y era sensible a tildes.
+- Se amplía la búsqueda para incluir el campo `nick` del perfil además del nombre. La normalización de tildes se realiza en JS tras traer candidatos de la BD (Prisma/PostgreSQL no soporta búsqueda sin tildes sin la extensión `unaccent`).
+- El nick se muestra ahora entre paréntesis junto al nombre en los resultados.
+- Se corrige el valor por defecto de localización en los formularios de creación/edición de eventos a "Club Dreadnought".
+
+**Archivos modificados:**
+- `server/src/controllers/eventController.ts` — búsqueda por `name` OR `profile.nick`, normalización de tildes en JS, devuelve `nick` en respuesta
+- `client/src/pages/EventDetail.tsx` — muestra nick en resultados, tipo de estado actualizado
+- `client/src/pages/CreatePartida.tsx` — localización por defecto corregida
+- `client/src/pages/admin/EventManagement.tsx` — localización por defecto corregida
+
 #### Corrección de desfase horario en el calendario ICS
 
 - Los eventos aparecían 2 horas más tarde de lo esperado en Outlook (y potencialmente en otros clientes). El servidor corre en UTC en Railway, pero `startHour` se guarda como hora local de Madrid. El código anterior emitía la hora como UTC, lo que provocaba un desfase de +2h en verano y +1h en invierno.
