@@ -776,25 +776,12 @@ export default function EventDetail() {
       return message;
     };
 
-    // Si el evento tiene imagen de juego, usar la URL de preview para que WhatsApp genere la previsualización
+    // Usar siempre la URL de preview para que WhatsApp genere la previsualización con meta tags OG
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const previewUrl = event.gameImage ? `${apiBase}/preview/events/${event.id}` : null;
+    const previewUrl = `${apiBase}/preview/events/${event.id}`;
 
-    // Abrir WhatsApp de forma síncrona (evita bloqueo de popup del navegador)
-    const fallbackUrl = previewUrl ?? window.location.href;
-    const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(buildMessage(fallbackUrl))}`, '_blank');
-
-    // Si no hay imagen de juego, intentar obtener URL personalizada y actualizar si es posible
-    if (!previewUrl) {
-      try {
-        const res = await api.post<{ success: boolean; data: { url: string } }>('/api/share/generate', { eventId: event.id });
-        if (res.data.success && whatsappWindow && !whatsappWindow.closed) {
-          whatsappWindow.location.href = `https://wa.me/?text=${encodeURIComponent(buildMessage(res.data.data.url))}`;
-        }
-      } catch {
-        // Ya se abrió con la URL de fallback, no hacer nada
-      }
-    }
+    const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(buildMessage(previewUrl))}`, '_blank');
+    void whatsappWindow;
   };
 
   return (
