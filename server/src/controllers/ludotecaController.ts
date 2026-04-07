@@ -79,10 +79,12 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
         if (item.gameType === 'ROL' && item.bggId && !item.thumbnail) {
           const rpggItem = await getRPGGeekItem(item.bggId);
           const thumbnail = rpggItem?.thumbnail || null;
+          const image = rpggItem?.image || null;
+          const yearPublished = rpggItem?.yearPublished || null;
           if (thumbnail) {
             await prisma.libraryItem.update({
               where: { id: item.id },
-              data: { thumbnail }
+              data: { thumbnail, image, yearPublished }
             });
           }
           return { ...item, gameThumbnail: thumbnail };
@@ -231,7 +233,7 @@ export const getLibraryItemDetail = async (req: Request, res: Response): Promise
 
     const item = await prisma.libraryItem.findUnique({
       where: { id },
-      select: { id: true, name: true, gameType: true, bggId: true, description: true }
+      select: { id: true, name: true, gameType: true, bggId: true, description: true, image: true, thumbnail: true, yearPublished: true }
     });
 
     if (!item) {
@@ -244,23 +246,40 @@ export const getLibraryItemDetail = async (req: Request, res: Response): Promise
       return;
     }
 
-    const rpgData = await getRPGGeekItem(item.bggId);
+    // Usar datos cacheados si los tenemos, si no consultar RPGGeek
+    let image = item.image;
+    let thumbnail = item.thumbnail;
+    let yearPublished = item.yearPublished;
+    let description = item.description;
+    const rpggId = item.bggId;
 
-    if (!rpgData) {
-      res.status(404).json({ success: false, message: 'No se encontró información en RPGGeek' });
-      return;
+    if (!image) {
+      const rpgData = await getRPGGeekItem(item.bggId);
+      if (!rpgData) {
+        res.status(404).json({ success: false, message: 'No se encontró información en RPGGeek' });
+        return;
+      }
+      image = rpgData.image;
+      thumbnail = rpgData.thumbnail;
+      yearPublished = rpgData.yearPublished;
+      description = description || rpgData.description;
+      // Cachear en BD
+      await prisma.libraryItem.update({
+        where: { id },
+        data: { image, thumbnail, yearPublished }
+      });
     }
 
     // Devolver en el mismo formato que /api/games/:id para que GameDetailModal lo consuma sin cambios
     res.json({
       success: true,
       data: {
-        id: rpgData.id,
-        name: rpgData.name,
-        description: rpgData.description,
-        yearPublished: rpgData.yearPublished,
-        image: rpgData.image,
-        thumbnail: rpgData.thumbnail,
+        id: rpggId,
+        name: item.name,
+        description: description || '',
+        yearPublished,
+        image,
+        thumbnail,
         minPlayers: null, maxPlayers: null, playingTime: null,
         minPlaytime: null, maxPlaytime: null, minAge: null,
         usersRated: null, averageRating: null, bayesAverage: null,
