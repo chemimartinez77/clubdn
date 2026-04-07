@@ -96,9 +96,6 @@ export const previewEvent = async (req: Request, res: Response) => {
   <meta property="og:title" content="${ogTitle}" />
   <meta property="og:description" content="${ogDescription}" />
   <meta property="og:image" content="${ogImage}" />
-  <meta property="og:image:width" content="800" />
-  <meta property="og:image:height" content="600" />
-  <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:url" content="${eventUrl}" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
