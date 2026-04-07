@@ -51,6 +51,8 @@ export default function EventDetail() {
   const [isCloseCapacityModalOpen, setIsCloseCapacityModalOpen] = useState(false);
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name?: string } | null>(null);
+  const [removalReason, setRemovalReason] = useState('');
+  const [cancellationReason, setCancellationReason] = useState('');
   const [inviteQrModal, setInviteQrModal] = useState<{ guestName: string; qrUrl: string } | null>(null);
 
   // Estado modal apuntar miembro
@@ -135,8 +137,8 @@ export default function EventDetail() {
   });
 
   const removeParticipantMutation = useMutation({
-    mutationFn: async (registrationId: string) => {
-      const response = await api.delete(`/api/events/${id}/registrations/${registrationId}`);
+    mutationFn: async ({ registrationId, reason }: { registrationId: string; reason: string }) => {
+      const response = await api.delete(`/api/events/${id}/registrations/${registrationId}`, { data: { removalReason: reason } });
       return response.data;
     },
     onSuccess: (data) => {
@@ -185,8 +187,8 @@ export default function EventDetail() {
     }
   });
   const deleteEventMutation = useMutation({
-    mutationFn: async () => {
-      const response = await api.delete(`/api/events/${id}`);
+    mutationFn: async (reason: string) => {
+      const response = await api.delete(`/api/events/${id}`, { data: { cancellationReason: reason } });
       return response.data;
     },
     onSuccess: (data) => {
@@ -1490,6 +1492,7 @@ export default function EventDetail() {
         onClose={() => {
           setIsRemoveModalOpen(false);
           setRemoveTarget(null);
+          setRemovalReason('');
         }}
         title="Eliminar asistente"
         size="sm"
@@ -1500,12 +1503,29 @@ export default function EventDetail() {
               ? `¿Seguro que quieres eliminar a ${removeTarget.name} de la partida?`
               : '¿Seguro que quieres eliminar a este asistente de la partida?'}
           </p>
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+              Motivo <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={removalReason}
+              onChange={(e) => setRemovalReason(e.target.value)}
+              className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              <option value="">Selecciona un motivo...</option>
+              <option value="No se presentó">No se presentó</option>
+              <option value="Comportamiento inadecuado">Comportamiento inadecuado</option>
+              <option value="Solicitud del propio jugador">Solicitud del propio jugador</option>
+              <option value="Aforo reducido">Aforo reducido</option>
+            </select>
+          </div>
           <div className="flex justify-end gap-2">
             <Button
               variant="outline"
               onClick={() => {
                 setIsRemoveModalOpen(false);
                 setRemoveTarget(null);
+                setRemovalReason('');
               }}
             >
               Cancelar
@@ -1513,14 +1533,13 @@ export default function EventDetail() {
             <Button
               className="bg-red-500 hover:bg-red-400 text-black"
               onClick={() => {
-                if (!removeTarget?.id) {
-                  return;
-                }
-                removeParticipantMutation.mutate(removeTarget.id);
+                if (!removeTarget?.id || !removalReason) return;
+                removeParticipantMutation.mutate({ registrationId: removeTarget.id, reason: removalReason });
                 setIsRemoveModalOpen(false);
                 setRemoveTarget(null);
+                setRemovalReason('');
               }}
-              disabled={removeParticipantMutation.isPending}
+              disabled={removeParticipantMutation.isPending || !removalReason}
             >
               {removeParticipantMutation.isPending ? 'Eliminando...' : 'Eliminar'}
             </Button>
@@ -2076,29 +2095,47 @@ export default function EventDetail() {
       {/* Modal de confirmación de eliminación */}
       <Modal
         isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        title="Eliminar partida"
+        onClose={() => { setIsDeleteModalOpen(false); setCancellationReason(''); }}
+        title="Cancelar partida"
       >
         <div className="space-y-4">
           <p className="text-[var(--color-textSecondary)]">
-            ¿Estás seguro de que quieres eliminar esta partida? Se marcará como cancelada.
+            ¿Estás seguro de que quieres cancelar esta partida? Se notificará a todos los participantes.
           </p>
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+              Motivo de cancelación <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={cancellationReason}
+              onChange={(e) => setCancellationReason(e.target.value)}
+              className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              <option value="">Selecciona un motivo...</option>
+              <option value="Falta de participantes">Falta de participantes</option>
+              <option value="Problema con el local">Problema con el local</option>
+              <option value="Causa personal del organizador">Causa personal del organizador</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
           <div className="flex gap-3 justify-end">
             <Button
-              onClick={() => setIsDeleteModalOpen(false)}
+              onClick={() => { setIsDeleteModalOpen(false); setCancellationReason(''); }}
               variant="outline"
             >
               Cancelar
             </Button>
             <Button
               onClick={() => {
-                deleteEventMutation.mutate();
+                if (!cancellationReason) return;
+                deleteEventMutation.mutate(cancellationReason);
                 setIsDeleteModalOpen(false);
+                setCancellationReason('');
               }}
-              disabled={deleteEventMutation.isPending}
+              disabled={deleteEventMutation.isPending || !cancellationReason}
               variant="danger"
             >
-              {deleteEventMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+              {deleteEventMutation.isPending ? 'Cancelando...' : 'Cancelar partida'}
             </Button>
           </div>
         </div>

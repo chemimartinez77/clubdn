@@ -827,11 +827,11 @@ export default function Profile() {
                         disabled={updateMutation.isPending}
                       />
                       <NotifToggle
-                        value={false}
+                        value={profile.emailUpdates}
                         label="Actualizaciones por email"
-                        disabled
-                        tooltip="De momento no disponible"
-                        muted
+                        onToggle={() => updateMutation.mutate({ emailUpdates: !profile.emailUpdates })}
+                        disabled={updateMutation.isPending}
+                        tooltip="Recibe un email cuando alguien se apunte o abandone tu partida, o cuando una partida a la que asistes sea cancelada"
                       />
                     </div>
                   </div>

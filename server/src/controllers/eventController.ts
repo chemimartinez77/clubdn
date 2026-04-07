@@ -4,6 +4,14 @@ import { prisma } from '../config/database';
 import { BadgeCategory, RegistrationStatus } from '@prisma/client';
 import { checkAndUnlockBadges } from './badgeController';
 import { processEventPlayHistory } from './statsController';
+import {
+  sendRegistrationJoinedEmail,
+  sendRegistrationLeftEmail,
+  sendParticipantRemovedEmail,
+  sendEventCancelledEmail
+} from '../services/emailService';
+
+const REMOVAL_REASONS = ['No se presentó', 'Comportamiento inadecuado', 'Solicitud del propio jugador', 'Aforo reducido'] as const;
 
 const REGISTRATION_COOLDOWN_MS = 30000; // 30 segundos
 
@@ -712,8 +720,14 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
   export const deleteEvent = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+      const { cancellationReason } = req.body;
       const userId = req.user?.userId;
       const userRole = req.user?.role;
+
+      if (!cancellationReason || typeof cancellationReason !== 'string' || !cancellationReason.trim()) {
+        res.status(400).json({ success: false, message: 'Debes indicar un motivo de cancelación' });
+        return;
+      }
 
       if (!id) {
         res.status(400).json({
@@ -782,13 +796,28 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
         data: {
           status: 'CANCELLED',
           cancelledAt: new Date(),
-          cancelledById: userId
+          cancelledById: userId,
+          cancellationReason: cancellationReason.trim()
         }
       });
 
-      // Notificar a los usuarios inscritos
+      // Notificar a los usuarios inscritos (en-app)
       const { notifyEventCancelled } = await import('../services/notificationService');
       await notifyEventCancelled(id, event.title);
+
+      // Enviar email a participantes CONFIRMED y PENDING_APPROVAL que tengan emailUpdates activo
+      const registrations = await prisma.eventRegistration.findMany({
+        where: { eventId: id, status: { in: ['CONFIRMED', 'PENDING_APPROVAL'] } },
+        include: { user: { include: { profile: true } } }
+      });
+
+      const eventDateStr = new Intl.DateTimeFormat('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(event.date));
+
+      for (const reg of registrations) {
+        if (reg.user.profile?.emailUpdates) {
+          sendEventCancelledEmail(reg.user.email, reg.user.name, event.title, eventDateStr, cancellationReason.trim(), id).catch(console.error);
+        }
+      }
 
     res.status(200).json({
       success: true,
@@ -979,7 +1008,7 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
 
         const organizer = await prisma.user.findUnique({
           where: { id: event.createdBy },
-          select: { name: true }
+          include: { profile: true }
         });
 
         const user = await prisma.user.findUnique({
@@ -989,6 +1018,9 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
 
         if (organizer && user) {
           await notifyRegistrationPending(id, event.title, event.createdBy, user.name);
+          if (organizer.profile?.emailUpdates) {
+            sendRegistrationJoinedEmail(organizer.email, organizer.name, event.title, user.name, id).catch(console.error);
+          }
         }
 
         res.status(201).json({
@@ -1002,9 +1034,13 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
       // Notificar al organizador (si no es el mismo que se apunta)
       if (event.createdBy !== userId) {
         const { notifyRegistrationConfirmed } = await import('../services/notificationService');
+        const organizer = await prisma.user.findUnique({ where: { id: event.createdBy }, include: { profile: true } });
         const joiningUser = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
-        if (joiningUser) {
+        if (organizer && joiningUser) {
           await notifyRegistrationConfirmed(id, event.title, event.createdBy, joiningUser.name);
+          if (organizer.profile?.emailUpdates) {
+            sendRegistrationJoinedEmail(organizer.email, organizer.name, event.title, joiningUser.name, id).catch(console.error);
+          }
         }
       }
 
@@ -1153,6 +1189,14 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
     // Notificar al organizador (si el que se va no es el propio organizador)
     if (!organizerIsLeaving) {
       await notifyRegistrationCancelled(id, registration.event.title, organizerId, registration.user.name, wasConfirmed);
+
+      // Email al organizador solo si el usuario estaba CONFIRMED
+      if (wasConfirmed) {
+        const organizer = await prisma.user.findUnique({ where: { id: organizerId }, include: { profile: true } });
+        if (organizer?.profile?.emailUpdates) {
+          sendRegistrationLeftEmail(organizer.email, organizer.name, registration.event.title, registration.user.name, id).catch(console.error);
+        }
+      }
     }
 
     // Notificar al resto de jugadores confirmados solo si el jugador estaba confirmado
@@ -1179,14 +1223,17 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
 export const removeParticipant = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id, registrationId } = req.params;
+    const { removalReason } = req.body;
     const userId = req.user?.userId;
     const userRole = req.user?.role;
 
     if (!id || !registrationId || !userId) {
-      res.status(400).json({
-        success: false,
-        message: 'Datos inválidos'
-      });
+      res.status(400).json({ success: false, message: 'Datos inválidos' });
+      return;
+    }
+
+    if (!removalReason || !(REMOVAL_REASONS as readonly string[]).includes(removalReason)) {
+      res.status(400).json({ success: false, message: 'Debes seleccionar un motivo válido para eliminar al participante' });
       return;
     }
 
@@ -1196,6 +1243,7 @@ export const removeParticipant = async (req: Request, res: Response): Promise<vo
         event: {
           select: {
             id: true,
+            title: true,
             date: true,
             createdBy: true,
             maxAttendees: true,
@@ -1248,7 +1296,7 @@ export const removeParticipant = async (req: Request, res: Response): Promise<vo
 
     await prisma.eventRegistration.update({
       where: { id: registration.id },
-      data: { status: 'CANCELLED', cancelledAt: new Date() }
+      data: { status: 'CANCELLED', cancelledAt: new Date(), removalReason }
     });
 
     await prisma.eventAuditLog.create({
@@ -1299,6 +1347,16 @@ export const removeParticipant = async (req: Request, res: Response): Promise<vo
           }
         }
       }
+    }
+
+    // Notificar en-app al expulsado
+    const { notifyParticipantRemoved } = await import('../services/notificationService');
+    await notifyParticipantRemoved(id, registration.event.title, registration.userId, removalReason).catch(console.error);
+
+    // Email al expulsado (siempre, independientemente de emailUpdates)
+    const expelledUser = await prisma.user.findUnique({ where: { id: registration.userId }, select: { email: true, name: true } });
+    if (expelledUser) {
+      sendParticipantRemovedEmail(expelledUser.email, expelledUser.name, registration.event.title, removalReason, id).catch(console.error);
     }
 
     res.status(200).json({

@@ -284,6 +284,29 @@ export const notifyPlayersOfAbandonment = async (
 };
 
 /**
+ * Notificar al usuario que ha sido eliminado de una partida por el organizador
+ */
+export const notifyParticipantRemoved = async (
+  eventId: string,
+  eventTitle: string,
+  userId: string,
+  removalReason: string
+) => {
+  try {
+    return await createNotification({
+      userId,
+      type: 'REGISTRATION_REJECTED',
+      title: 'Has sido eliminado de una partida',
+      message: `El organizador te ha eliminado de "${eventTitle}". Motivo: ${removalReason}.`,
+      metadata: { eventId, eventTitle, removalReason },
+    });
+  } catch (error) {
+    console.error('Error notificando expulsión al participante:', error);
+    return { success: false, error };
+  }
+};
+
+/**
  * Notificar al organizador sobre una solicitud de registro pendiente
  */
 export const notifyRegistrationPending = async (

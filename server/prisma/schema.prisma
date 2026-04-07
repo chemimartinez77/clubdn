@@ -329,10 +329,11 @@ model Event {
   requiresApproval Boolean @default(true) // Si requiere aprobación del organizador
 
   // Estado
-  status          EventStatus @default(SCHEDULED)
-  cancelledAt     DateTime?
-  cancelledById   String?
-  cancelledBy     User?     @relation("EventCancelledBy", fields: [cancelledById], references: [id])
+  status              EventStatus @default(SCHEDULED)
+  cancelledAt         DateTime?
+  cancelledById       String?
+  cancelledBy         User?     @relation("EventCancelledBy", fields: [cancelledById], references: [id])
+  cancellationReason  String?   // Motivo de cancelación (introducido por el organizador)
 
   // Confirmación de disputa (¿se jugó la partida?)
   disputeAsked         Boolean   @default(false) // Si ya se le preguntó al organizador
@@ -419,7 +420,8 @@ model EventRegistration {
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  status      RegistrationStatus @default(CONFIRMED)
+  status        RegistrationStatus @default(CONFIRMED)
+  removalReason String?            // Motivo de expulsión por el organizador (desplegable fijo)
 
   cancelledAt DateTime?
   createdAt   DateTime @default(now())

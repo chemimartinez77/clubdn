@@ -632,3 +632,164 @@ export const sendReportCreatedEmail = async (
     template: 'report_created',
   });
 };
+
+/**
+ * Email al organizador cuando un miembro se apunta a su partida
+ */
+export const sendRegistrationJoinedEmail = async (
+  organizerEmail: string,
+  organizerName: string,
+  eventTitle: string,
+  userName: string,
+  eventId: string
+) => {
+  const eventUrl = `${process.env.CLIENT_URL}/events/${eventId}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">Nuevo participante</h1>
+        </div>
+        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+          <h2 style="color: #667eea; margin-top: 0;">Hola ${organizerName},</h2>
+          <p><strong>${userName}</strong> se ha apuntado a tu partida:</p>
+          <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin: 20px 0;">
+            <p style="margin: 0;"><strong>📅 Partida:</strong> ${eventTitle}</p>
+          </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${eventUrl}" style="background-color: #667eea; color: white; padding: 14px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Ver partida</a>
+          </div>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+          <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">Saludos,<br><strong>El equipo del Club Dreadnought</strong></p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return sendEmail({ to: organizerEmail, subject: `${userName} se ha apuntado a "${eventTitle}"`, html, template: 'registration_joined' });
+};
+
+/**
+ * Email al organizador cuando un miembro CONFIRMADO abandona su partida
+ */
+export const sendRegistrationLeftEmail = async (
+  organizerEmail: string,
+  organizerName: string,
+  eventTitle: string,
+  userName: string,
+  eventId: string
+) => {
+  const eventUrl = `${process.env.CLIENT_URL}/events/${eventId}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">Un participante ha abandonado</h1>
+        </div>
+        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+          <h2 style="color: #d97706; margin-top: 0;">Hola ${organizerName},</h2>
+          <p><strong>${userName}</strong> ha abandonado tu partida:</p>
+          <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0;">
+            <p style="margin: 0;"><strong>📅 Partida:</strong> ${eventTitle}</p>
+          </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${eventUrl}" style="background-color: #f59e0b; color: white; padding: 14px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Ver partida</a>
+          </div>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+          <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">Saludos,<br><strong>El equipo del Club Dreadnought</strong></p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return sendEmail({ to: organizerEmail, subject: `${userName} ha abandonado "${eventTitle}"`, html, template: 'registration_left' });
+};
+
+/**
+ * Email al participante cuando el organizador le elimina de la partida
+ */
+export const sendParticipantRemovedEmail = async (
+  userEmail: string,
+  userName: string,
+  eventTitle: string,
+  removalReason: string,
+  eventId: string
+) => {
+  const eventUrl = `${process.env.CLIENT_URL}/events/${eventId}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">Has sido eliminado de una partida</h1>
+        </div>
+        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+          <h2 style="color: #dc2626; margin-top: 0;">Hola ${userName},</h2>
+          <p>El organizador te ha eliminado de la siguiente partida:</p>
+          <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #ef4444; margin: 20px 0;">
+            <p style="margin: 10px 0;"><strong>📅 Partida:</strong> ${eventTitle}</p>
+            <p style="margin: 10px 0;"><strong>Motivo:</strong> ${removalReason}</p>
+          </div>
+          <p>Si crees que es un error, contacta con el organizador.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${eventUrl}" style="background-color: #ef4444; color: white; padding: 14px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Ver partida</a>
+          </div>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+          <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">Saludos,<br><strong>El equipo del Club Dreadnought</strong></p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return sendEmail({ to: userEmail, subject: `Has sido eliminado de "${eventTitle}"`, html, template: 'participant_removed' });
+};
+
+/**
+ * Email a un participante cuando el organizador cancela la partida
+ */
+export const sendEventCancelledEmail = async (
+  userEmail: string,
+  userName: string,
+  eventTitle: string,
+  eventDate: string,
+  cancellationReason: string,
+  eventId: string
+) => {
+  const eventUrl = `${process.env.CLIENT_URL}/events/${eventId}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">Partida cancelada</h1>
+        </div>
+        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+          <h2 style="color: #4b5563; margin-top: 0;">Hola ${userName},</h2>
+          <p>La siguiente partida ha sido cancelada por el organizador:</p>
+          <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #6b7280; margin: 20px 0;">
+            <p style="margin: 10px 0;"><strong>📅 Partida:</strong> ${eventTitle}</p>
+            <p style="margin: 10px 0;"><strong>Fecha:</strong> ${eventDate}</p>
+            <p style="margin: 10px 0;"><strong>Motivo:</strong> ${cancellationReason}</p>
+          </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${eventUrl}" style="background-color: #6b7280; color: white; padding: 14px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Ver partida</a>
+          </div>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+          <p style="color: #9ca3af; font-size: 12px; margin-bottom: 0;">Saludos,<br><strong>El equipo del Club Dreadnought</strong></p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return sendEmail({ to: userEmail, subject: `Partida cancelada: "${eventTitle}"`, html, template: 'event_cancelled' });
+};
