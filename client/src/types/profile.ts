@@ -28,6 +28,8 @@ export interface UserProfile {
   allowEventInvitations: boolean;
   noughterColor: string | null;
   defaultScreen: string;
+  eventsDefaultView: string;
+  eventsAccordionMode: string;
   calendarToken: string | null;
   tourDismissed: boolean;
   calendarTourDismissed: boolean;
@@ -57,4 +59,6 @@ export interface UpdateProfileData {
   allowEventInvitations?: boolean;
   noughterColor?: string | null;
   defaultScreen?: string;
+  eventsDefaultView?: string;
+  eventsAccordionMode?: string;
 }

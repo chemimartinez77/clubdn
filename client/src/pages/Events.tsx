@@ -16,6 +16,7 @@ import { useToast } from '../hooks/useToast';
 import { useTheme } from '../hooks/useTheme';
 import type { EventsResponse, EventStatus } from '../types/event';
 import type { ApiResponse } from '../types/auth';
+import type { UserProfile } from '../types/profile';
 
 type ViewMode = 'list' | 'calendar';
 type CalendarView = 'month' | 'week' | 'day';
@@ -29,6 +30,17 @@ export default function Events() {
   const { error: showError } = useToast();
   const { themeMode } = useTheme();
   const { shouldShow: showTour, dismissTour } = useTour('calendar');
+
+  const { data: profileData } = useQuery({
+    queryKey: ['profile', 'me'],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<{ profile: UserProfile }>>('/api/profile/me');
+      return response.data.data?.profile;
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!user,
+  });
+
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [calendarView, setCalendarView] = useState<CalendarView>('month');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('RECOMMENDED');
@@ -109,9 +121,26 @@ export default function Events() {
       return dateB - dateA;
     });
 
-  // Abrir el primer día al cargar los eventos (solo la primera vez)
+  // Aplicar vista por defecto del perfil (una sola vez cuando carga)
+  const [viewModeInitialized, setViewModeInitialized] = useState(false);
   useEffect(() => {
-    if (events.length > 0) {
+    if (profileData && !viewModeInitialized) {
+      const preferred = profileData.eventsDefaultView as ViewMode;
+      if (preferred === 'list' || preferred === 'calendar') {
+        setViewMode(preferred);
+      }
+      setViewModeInitialized(true);
+    }
+  }, [profileData, viewModeInitialized]);
+
+  // Abrir acordeones al cargar los eventos según preferencia del perfil
+  useEffect(() => {
+    if (events.length === 0) return;
+    const accordionMode = profileData?.eventsAccordionMode ?? 'current_only';
+    if (accordionMode === 'all_open') {
+      const allKeys = [...new Set(events.map(e => new Date(e.date).toISOString().slice(0, 10)))];
+      setOpenDays(new Set(allKeys));
+    } else {
       const firstDateKey = new Date(events[0].date).toISOString().slice(0, 10);
       setOpenDays(new Set([firstDateKey]));
     }
@@ -454,6 +483,23 @@ export default function Events() {
                 </Card>
               ) : (
                 <div className="space-y-3">
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => {
+                        const allKeys = [...new Set(events.map(e => new Date(e.date).toISOString().slice(0, 10)))];
+                        setOpenDays(new Set(allKeys));
+                      }}
+                      className="text-xs px-3 py-1 rounded border border-[var(--color-cardBorder)] text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors"
+                    >
+                      Desplegar todo
+                    </button>
+                    <button
+                      onClick={() => setOpenDays(new Set())}
+                      className="text-xs px-3 py-1 rounded border border-[var(--color-cardBorder)] text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors"
+                    >
+                      Plegar todo
+                    </button>
+                  </div>
                   {(() => {
                     // Colores por día de la semana (0=dom, 1=lun, ..., 6=sáb)
                     const dayColors: Record<number, string> = themeMode === 'dark' ? {

@@ -896,6 +896,52 @@ export default function Profile() {
                   </div>
 
                   <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Vista por defecto en Eventos</p>
+                    <div className="flex gap-3">
+                      {[
+                        { value: 'calendar', label: 'Calendario' },
+                        { value: 'list', label: 'Lista' }
+                      ].map(option => (
+                        <button
+                          key={option.value}
+                          onClick={() => updateMutation.mutate({ eventsDefaultView: option.value })}
+                          disabled={updateMutation.isPending}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                            profile.eventsDefaultView === option.value
+                              ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                              : 'bg-transparent text-[var(--color-textSecondary)] border-[var(--color-cardBorder)] hover:border-[var(--color-primary)]'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Acordeones en vista de lista</p>
+                    <div className="flex gap-3">
+                      {[
+                        { value: 'current_only', label: 'Solo día actual' },
+                        { value: 'all_open', label: 'Todos abiertos' }
+                      ].map(option => (
+                        <button
+                          key={option.value}
+                          onClick={() => updateMutation.mutate({ eventsAccordionMode: option.value })}
+                          disabled={updateMutation.isPending}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                            profile.eventsAccordionMode === option.value
+                              ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                              : 'bg-transparent text-[var(--color-textSecondary)] border-[var(--color-cardBorder)] hover:border-[var(--color-primary)]'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-[var(--color-cardBorder)]">
                     <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Tema de la aplicación</p>
                     <ThemeSelector />
                   </div>

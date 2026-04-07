@@ -183,8 +183,10 @@ model UserProfile {
   allowEventInvitations Boolean @default(true)   // Permitir ser apuntado a eventos por otros miembros
 
   // Personalización
-  defaultScreen   String   @default("home")  // Pantalla de inicio tras login: "home" o "events"
-  noughterColor   String?  // Color de Noughter: purple, blue, green, red, brown (null = usar tema activo)
+  defaultScreen        String   @default("home")       // Pantalla de inicio tras login: "home" o "events"
+  noughterColor        String?                         // Color de Noughter: purple, blue, green, red, brown (null = usar tema activo)
+  eventsDefaultView    String   @default("calendar")   // Vista por defecto en Eventos: "calendar" o "list"
+  eventsAccordionMode  String   @default("current_only") // Modo acordeón en lista: "current_only" o "all_open"
   tourDismissed              Boolean  @default(false)  // true = no volver a mostrar el tour de inicio
   calendarTourDismissed      Boolean  @default(false)  // true = no volver a mostrar el tour del calendario
   feedbackTourDismissed      Boolean  @default(false)  // true = no volver a mostrar el tour de feedback
