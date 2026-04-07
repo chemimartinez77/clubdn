@@ -637,6 +637,7 @@ model LibraryItem {
   name              String
   description       String?        @db.Text
   notes             String?        @db.Text
+  thumbnail         String?        // URL de miniatura (BGG o RPGGeek, cacheada)
 
   // Clasificación
   gameType          GameType       // wargame, mesa, cartas, mini, rol

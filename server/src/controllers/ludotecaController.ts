@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { GameType, GameCondition } from '@prisma/client';
+import { getRPGGeekItem } from '../services/bggService';
 
 /**
  * Obtener todos los items de la ludoteca con filtros opcionales
@@ -71,23 +72,22 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
       prisma.libraryItem.count({ where })
     ]);
 
-    // Para cada item, buscar si existe información del juego en la BD (thumbnail)
+    // Para cada item ROL sin thumbnail cacheado, consultar RPGGeek y guardarlo.
+    // Para el resto, el thumbnail ya viene en el propio item (campo de BD).
     const itemsWithThumbnails = await Promise.all(
       items.map(async (item) => {
-        if (item.bggId) {
-          const game = await prisma.game.findUnique({
-            where: { id: item.bggId },
-            select: { thumbnail: true }
-          });
-          return {
-            ...item,
-            gameThumbnail: game?.thumbnail || null
-          };
+        if (item.gameType === 'ROL' && item.bggId && !item.thumbnail) {
+          const rpggItem = await getRPGGeekItem(item.bggId);
+          const thumbnail = rpggItem?.thumbnail || null;
+          if (thumbnail) {
+            await prisma.libraryItem.update({
+              where: { id: item.id },
+              data: { thumbnail }
+            });
+          }
+          return { ...item, gameThumbnail: thumbnail };
         }
-        return {
-          ...item,
-          gameThumbnail: null
-        };
+        return { ...item, gameThumbnail: item.thumbnail || null };
       })
     );
 

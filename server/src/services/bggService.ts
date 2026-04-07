@@ -4,6 +4,7 @@ import type { AxiosInstance } from 'axios';
 import { parseStringPromise } from 'xml2js';
 
 const BGG_API_BASE = 'https://boardgamegeek.com/xmlapi2';
+const RPGG_API_BASE = 'https://rpggeek.com/xmlapi2';
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 const MAX_RETRIES = 4;
@@ -42,6 +43,19 @@ if (!authHeaders.Authorization) {
   );
 }
 
+const rpggClient: AxiosInstance = axios.create({
+  baseURL: RPGG_API_BASE,
+  timeout: 15000,
+  headers: {
+    'User-Agent': userAgent,
+    'Accept': 'application/xml',
+    'Cache-Control': 'no-cache'
+  },
+  validateStatus(status) {
+    return (status >= 200 && status < 300) || status === 202;
+  }
+});
+
 const bggClient: AxiosInstance = axios.create({
   baseURL: BGG_API_BASE,
   timeout: 15000,
@@ -61,13 +75,14 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function requestWithRetry(
   path: string,
-  params: Record<string, string | number | undefined>
+  params: Record<string, string | number | undefined>,
+  client: AxiosInstance = bggClient
 ): Promise<string> {
   let attempt = 0;
 
   while (attempt < MAX_RETRIES) {
     try {
-      const response = await bggClient.get(path, { params });
+      const response = await client.get(path, { params });
 
       if (response.status !== 202) {
         return response.data as string;
@@ -356,6 +371,42 @@ export async function getBGGGameFull(gameId: string): Promise<BGGGameFull | null
     };
   } catch (error) {
     console.error('Error al obtener detalles completos de BGG:', error);
+    return null;
+  }
+}
+
+export interface RPGGeekItem {
+  id: string;
+  name: string;
+  thumbnail: string;
+  image: string;
+  description: string;
+  yearPublished: number | null;
+}
+
+/**
+ * Obtener thumbnail y datos básicos de un ítem de RPGGeek.
+ * La API de rpggeek.com es idéntica a la de BGG; solo cambia el dominio y el tipo.
+ */
+export async function getRPGGeekItem(rpggId: string): Promise<RPGGeekItem | null> {
+  try {
+    const raw = await requestWithRetry('/thing', { id: rpggId, type: 'rpgitem', stats: 0 }, rpggClient);
+    const result = await parseStringPromise(raw);
+
+    if (!result.items?.item) return null;
+
+    const item = normalizeItems(result.items.item)[0];
+
+    return {
+      id: rpggId,
+      name: extractPrimaryName(item),
+      thumbnail: item.thumbnail?.[0] || '',
+      image: item.image?.[0] || '',
+      description: item.description?.[0] || '',
+      yearPublished: item.yearpublished?.[0]?.$.value ? parseInt(item.yearpublished[0].$.value) : null
+    };
+  } catch (error) {
+    console.error(`Error al obtener ítem de RPGGeek (id=${rpggId}):`, error);
     return null;
   }
 }
