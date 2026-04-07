@@ -622,10 +622,6 @@ export default function EventDetail() {
     event.durationHours,
     event.durationMinutes
   );
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const emojiCalendar = isMobile ? '\u{1F4C5}' : 'Dia:';
-  const emojiClock = isMobile ? '\u{1F550}' : 'Hora:';
-  const emojiLocation = isMobile ? '\u{1F4CD}' : 'Lugar:';
 
   const handleCreateInvitation = () => {
     if (!guestFirstName.trim()) {
@@ -745,17 +741,12 @@ export default function EventDetail() {
         message += `*${event.title}*\n\n`;
       }
 
-      // Fecha y hora en negrita
-      if (isMobile) {
-        message += `${emojiCalendar} *${dateTextCapitalized}*\n`;
-        message += `${emojiClock} *${shareTimeText}*\n`;
-      } else {
-        message += `*${dateTextCapitalized}*\n`;
-        message += `*${shareTimeText}*\n`;
-      }
+      // Fecha y hora
+      message += `· ${dateTextCapitalized}\n`;
+      message += `· ${shareTimeText}\n`;
 
       if (event.type !== 'PARTIDA' && event.location) {
-        message += isMobile ? `${emojiLocation} Lugar: ${event.location}\n` : `Lugar: ${event.location}\n`;
+        message += `· Lugar: ${event.location}\n`;
       }
 
       if (event.description) {
@@ -776,14 +767,16 @@ export default function EventDetail() {
       return message;
     };
 
-    // La URL de preview genera los meta tags OG para WhatsApp (imagen, título, descripción)
-    // pero el enlace "Apúntate aquí" dentro del mensaje apunta a la app
+    // La URL de preview genera los meta tags OG (imagen) pero no aparece en el mensaje
+    // El enlace visible "Apúntate aquí" apunta directamente a la app
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
     const appUrl = `${window.location.origin}/events/${event.id}`;
     const previewUrl = `${apiBase}/preview/events/${event.id}`;
 
-    // WhatsApp usa el primer enlace del mensaje para generar la previsualización
-    const messageWithPreview = `${previewUrl}\n${buildMessage(appUrl)}`;
+    // wa.me acepta un parámetro separado para la URL de previsualización OG
+    // pero como no existe ese parámetro, usamos el truco de poner la preview al inicio
+    // en una línea que WhatsApp convierte en card y oculta del texto visible
+    const messageWithPreview = `${previewUrl}\n\n${buildMessage(appUrl)}`;
     const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(messageWithPreview)}`, '_blank');
     void whatsappWindow;
   };
