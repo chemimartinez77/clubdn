@@ -166,8 +166,11 @@ export default function Profile() {
       const response = await api.put<ApiResponse<{ profile: UserProfile }>>('/api/profile/me', data);
       return response.data.data?.profile;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+    onSuccess: (updatedProfile) => {
+      if (updatedProfile) {
+        queryClient.setQueryData(['myProfile'], updatedProfile);
+        queryClient.setQueryData(['profile', 'me'], updatedProfile);
+      }
       success('Perfil actualizado correctamente');
     },
     onError: () => {
