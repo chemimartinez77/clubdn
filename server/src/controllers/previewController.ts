@@ -1,8 +1,44 @@
 // server/src/controllers/previewController.ts
 import { Request, Response } from 'express';
+import https from 'https';
+import http from 'http';
 import { prisma } from '../config/database';
 
 const CLIENT_URL = process.env.CLIENT_URL ?? 'https://app.clubdreadnought.org';
+
+// Proxy de imagen: descarga desde BGG (que bloquea hotlinking) y la sirve desde nuestro dominio
+export const proxyImage = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const event = await prisma.event.findUnique({
+      where: { id },
+      select: {
+        gameImage: true,
+        game: { select: { image: true } },
+      },
+    });
+
+    // Preferir la imagen de alta res de la tabla Game, con fallback al gameImage del evento
+    const imageUrl = event?.game?.image ?? event?.gameImage;
+    if (!imageUrl) {
+      res.redirect(`${CLIENT_URL}/og-image.png`);
+      return;
+    }
+    const protocol = imageUrl.startsWith('https') ? https : http;
+
+    protocol.get(imageUrl, (imgRes) => {
+      const contentType = imgRes.headers['content-type'] ?? 'image/jpeg';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      imgRes.pipe(res);
+    }).on('error', () => {
+      res.redirect(`${CLIENT_URL}/og-image.png`);
+    });
+  } catch {
+    res.redirect(`${CLIENT_URL}/og-image.png`);
+  }
+};
 
 export const previewEvent = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -19,6 +55,7 @@ export const previewEvent = async (req: Request, res: Response) => {
         startHour: true,
         startMinute: true,
         location: true,
+        game: { select: { image: true } },
       },
     });
 
@@ -42,7 +79,14 @@ export const previewEvent = async (req: Request, res: Response) => {
       : null;
     const ogDescription = [dateStr, timeStr, event.location].filter(Boolean).join(' · ');
 
-    const ogImage = event.gameImage ?? `${CLIENT_URL}/og-image.png`;
+    // Usar proxy para la imagen (BGG bloquea hotlinking directo)
+    // Preferir imagen de alta res de Game, con fallback al gameImage del evento
+    const hasImage = event.game?.image ?? event.gameImage;
+    const railwayDomain = process.env.RAILWAY_PUBLIC_DOMAIN;
+    const SERVER_URL = railwayDomain ? `https://${railwayDomain}` : (process.env.SERVER_URL ?? CLIENT_URL);
+    const ogImage = hasImage
+      ? `${SERVER_URL}/preview/image/${event.id}`
+      : `${CLIENT_URL}/og-image.png`;
 
     const html = `<!DOCTYPE html>
 <html lang="es">
