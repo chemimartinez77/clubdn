@@ -71,13 +71,7 @@ export const previewEvent = async (req: Request, res: Response) => {
       ? `${event.title} · ${event.gameName}`
       : event.title;
 
-    // Descripción: fecha, hora y lugar
-    const d = new Date(event.date);
-    const dateStr = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
-    const timeStr = event.startHour != null
-      ? `${String(event.startHour).padStart(2, '0')}:${String(event.startMinute ?? 0).padStart(2, '0')}`
-      : null;
-    const ogDescription = [dateStr, timeStr, event.location].filter(Boolean).join(' · ');
+    const ogDescription = '';
 
     // Usar proxy para la imagen (BGG bloquea hotlinking directo)
     // Preferir imagen de alta res de Game, con fallback al gameImage del evento

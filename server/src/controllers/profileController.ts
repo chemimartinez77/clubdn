@@ -186,13 +186,16 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
       discord,
       telegram,
       notifications,
+      emailUpdates,
       notifyNewEvents,
       notifyEventChanges,
       notifyEventCancelled,
       notifyInvitations,
       allowEventInvitations,
       noughterColor,
-      defaultScreen
+      defaultScreen,
+      eventsDefaultView,
+      eventsAccordionMode
     } = req.body;
 
     // Buscar o crear perfil
@@ -253,14 +256,16 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           ...(discord !== undefined && { discord }),
           ...(telegram !== undefined && { telegram }),
           ...(notifications !== undefined && { notifications }),
-          emailUpdates: false,
+          ...(emailUpdates !== undefined && { emailUpdates }),
           ...(notifyNewEvents !== undefined && { notifyNewEvents }),
           ...(notifyEventChanges !== undefined && { notifyEventChanges }),
           ...(notifyEventCancelled !== undefined && { notifyEventCancelled }),
           ...(notifyInvitations !== undefined && { notifyInvitations }),
           ...(allowEventInvitations !== undefined && { allowEventInvitations }),
           ...(noughterColor !== undefined && { noughterColor }),
-          ...(defaultScreen !== undefined && { defaultScreen })
+          ...(defaultScreen !== undefined && { defaultScreen }),
+          ...(eventsDefaultView !== undefined && { eventsDefaultView }),
+          ...(eventsAccordionMode !== undefined && { eventsAccordionMode })
         },
         include: {
           user: {
