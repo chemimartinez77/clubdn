@@ -776,11 +776,15 @@ export default function EventDetail() {
       return message;
     };
 
-    // Usar siempre la URL de preview para que WhatsApp genere la previsualización con meta tags OG
+    // La URL de preview genera los meta tags OG para WhatsApp (imagen, título, descripción)
+    // pero el enlace "Apúntate aquí" dentro del mensaje apunta a la app
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const appUrl = `${window.location.origin}/events/${event.id}`;
     const previewUrl = `${apiBase}/preview/events/${event.id}`;
 
-    const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(buildMessage(previewUrl))}`, '_blank');
+    // WhatsApp usa el primer enlace del mensaje para generar la previsualización
+    const messageWithPreview = `${previewUrl}\n${buildMessage(appUrl)}`;
+    const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(messageWithPreview)}`, '_blank');
     void whatsappWindow;
   };
 
