@@ -49,7 +49,8 @@ const rpggClient: AxiosInstance = axios.create({
   headers: {
     'User-Agent': userAgent,
     'Accept': 'application/xml',
-    'Cache-Control': 'no-cache'
+    'Cache-Control': 'no-cache',
+    ...authHeaders
   },
   validateStatus(status) {
     return (status >= 200 && status < 300) || status === 202;
