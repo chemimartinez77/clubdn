@@ -40,7 +40,7 @@ export default function CreatePartida() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       success(data.message || 'Partida creada correctamente');
-      navigate('/events');
+      navigate(`/events/${data.data?.event?.id ?? ''}`);
     },
     onError: (err: any) => {
       showError(err.response?.data?.message || 'Error al crear partida');
