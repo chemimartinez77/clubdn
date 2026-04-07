@@ -9,14 +9,18 @@ interface GameDetailModalProps {
   gameId: string | null;
   isOpen: boolean;
   onClose: () => void;
+  source?: 'bgg' | 'rpggeek';
 }
 
-export default function GameDetailModal({ gameId, isOpen, onClose }: GameDetailModalProps) {
+export default function GameDetailModal({ gameId, isOpen, onClose, source = 'bgg' }: GameDetailModalProps) {
   const { data: game, isLoading } = useQuery({
-    queryKey: ['game', gameId],
+    queryKey: ['game', gameId, source],
     queryFn: async () => {
       if (!gameId) return null;
-      const response = await api.get<ApiResponse<Game>>(`/api/games/${gameId}`);
+      const url = source === 'rpggeek'
+        ? `/api/ludoteca/${gameId}/detail`
+        : `/api/games/${gameId}`;
+      const response = await api.get<ApiResponse<Game>>(url);
       return response.data.data;
     },
     enabled: !!gameId && isOpen,
@@ -72,20 +76,31 @@ export default function GameDetailModal({ gameId, isOpen, onClose }: GameDetailM
                     </div>
                   )}
 
-                  {/* Logo BGG */}
+                  {/* Logo BGG / RPGGeek */}
                   <div className="mt-4 flex justify-center">
-                    <a
-                      href={`https://boardgamegeek.com/boardgame/${game.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:opacity-80 transition-opacity"
-                    >
-                      <img
-                        src="/bgg.powered.webp"
-                        alt="Powered by BoardGameGeek"
-                        className="h-8"
-                      />
-                    </a>
+                    {source === 'rpggeek' ? (
+                      <a
+                        href={`https://rpggeek.com/rpgitem/${game.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-[var(--color-textSecondary)] hover:underline"
+                      >
+                        Ver en RPGGeek
+                      </a>
+                    ) : (
+                      <a
+                        href={`https://boardgamegeek.com/boardgame/${game.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:opacity-80 transition-opacity"
+                      >
+                        <img
+                          src="/bgg.powered.webp"
+                          alt="Powered by BoardGameGeek"
+                          className="h-8"
+                        />
+                      </a>
+                    )}
                   </div>
                 </div>
 

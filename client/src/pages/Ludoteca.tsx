@@ -93,6 +93,7 @@ export default function Ludoteca() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [selectedGameSource, setSelectedGameSource] = useState<'bgg' | 'rpggeek'>('bgg');
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSearchActive, setMobileSearchActive] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -594,7 +595,15 @@ export default function Ludoteca() {
 
                       {item.bggId && (
                         <button
-                          onClick={() => setSelectedGameId(item.bggId)}
+                          onClick={() => {
+                            if (item.gameType === 'ROL') {
+                              setSelectedGameSource('rpggeek');
+                              setSelectedGameId(item.id);
+                            } else {
+                              setSelectedGameSource('bgg');
+                              setSelectedGameId(item.bggId);
+                            }
+                          }}
                           className="text-xs text-[var(--color-primary)] hover:underline flex items-center gap-1 transition-colors cursor-pointer"
                         >
                           Ver detalle
@@ -672,6 +681,7 @@ export default function Ludoteca() {
       {selectedGameId && (
         <GameDetailModal
           gameId={selectedGameId}
+          source={selectedGameSource}
           isOpen={!!selectedGameId}
           onClose={() => setSelectedGameId(null)}
         />

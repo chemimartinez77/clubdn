@@ -225,6 +225,58 @@ export const getLibraryStats = async (_req: Request, res: Response): Promise<voi
 /**
  * Obtener filtros disponibles (tipos, condiciones, propietarios)
  */
+export const getLibraryItemDetail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const item = await prisma.libraryItem.findUnique({
+      where: { id },
+      select: { id: true, name: true, gameType: true, bggId: true, description: true }
+    });
+
+    if (!item) {
+      res.status(404).json({ success: false, message: 'Item no encontrado' });
+      return;
+    }
+
+    if (item.gameType !== 'ROL' || !item.bggId) {
+      res.status(400).json({ success: false, message: 'Este item no tiene detalle en RPGGeek' });
+      return;
+    }
+
+    const rpgData = await getRPGGeekItem(item.bggId);
+
+    if (!rpgData) {
+      res.status(404).json({ success: false, message: 'No se encontró información en RPGGeek' });
+      return;
+    }
+
+    // Devolver en el mismo formato que /api/games/:id para que GameDetailModal lo consuma sin cambios
+    res.json({
+      success: true,
+      data: {
+        id: rpgData.id,
+        name: rpgData.name,
+        description: rpgData.description,
+        yearPublished: rpgData.yearPublished,
+        image: rpgData.image,
+        thumbnail: rpgData.thumbnail,
+        minPlayers: null, maxPlayers: null, playingTime: null,
+        minPlaytime: null, maxPlaytime: null, minAge: null,
+        usersRated: null, averageRating: null, bayesAverage: null,
+        rank: null, strategyRank: null, complexityRating: null,
+        numOwned: null, numWanting: null, numWishing: null, numComments: null,
+        categories: [], mechanics: [], families: [],
+        designers: [], artists: [], publishers: [],
+        isRpg: true,
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener detalle de item ROL:', error);
+    res.status(500).json({ success: false, message: 'Error al obtener detalle del item' });
+  }
+};
+
 export const getLibraryFilters = async (_req: Request, res: Response): Promise<void> => {
   try {
     // Tipos de juego disponibles

@@ -3,6 +3,7 @@ import { Router } from 'express';
 import {
   getLibraryItems,
   getLibraryItem,
+  getLibraryItemDetail,
   getLibraryStats,
   getLibraryFilters
 } from '../controllers/ludotecaController';
@@ -14,6 +15,7 @@ const router = Router();
 router.get('/', authenticate, getLibraryItems);
 router.get('/stats', authenticate, getLibraryStats);
 router.get('/filters', authenticate, getLibraryFilters);
+router.get('/:id/detail', authenticate, getLibraryItemDetail);
 router.get('/:id', authenticate, getLibraryItem);
 
 export default router;
