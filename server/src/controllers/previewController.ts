@@ -82,7 +82,13 @@ export const previewEvent = async (req: Request, res: Response) => {
       ? `${SERVER_URL}/preview/image/${event.id}`
       : `${CLIENT_URL}/og-image.png`;
 
-    const html = `<!DOCTYPE html>
+    const userAgent = req.headers['user-agent'] ?? '';
+    const isCrawler = /facebookexternalhit|whatsapp|twitterbot|linkedinbot|telegrambot|slackbot|discordbot/i.test(userAgent);
+
+    // Los crawlers NO deben recibir redirección — leen los meta tags y se quedan aquí
+    // Los usuarios normales se redirigen a la app
+    const html = isCrawler
+      ? `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -93,6 +99,13 @@ export const previewEvent = async (req: Request, res: Response) => {
   <meta property="og:url" content="${eventUrl}" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body></body>
+</html>`
+      : `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
   <meta http-equiv="refresh" content="0; url=${eventUrl}" />
 </head>
 <body>
