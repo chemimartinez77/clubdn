@@ -4,6 +4,84 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-08 (sesión 1)
+
+### Nuevas funcionalidades
+
+#### Preferencias de vista de eventos en el perfil
+
+- Se añaden dos nuevas preferencias al perfil del usuario: vista por defecto en la página de Eventos (Calendario / Lista) y modo de acordeones en la vista lista (Solo día actual / Todos abiertos).
+- Al entrar en Eventos, la app aplica automáticamente la preferencia guardada.
+- Se añaden también dos botones "Desplegar todo" / "Plegar todo" en la vista lista (estado local, sin llamada a BD).
+- Se corrige que el endpoint `PUT /api/profile/me` ignoraba los campos `emailUpdates`, `eventsDefaultView` y `eventsAccordionMode` — `emailUpdates` estaba hardcodeado a `false` y los otros dos no estaban en el destructuring.
+- Se corrige que los toggles y selectores del perfil no reflejaban el cambio visualmente al instante: ahora se usa `setQueryData` en lugar de solo `invalidateQueries`.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — campos `eventsDefaultView` y `eventsAccordionMode` en `UserProfile`
+- `server/prisma/migrations/20260407200000_add_events_view_preferences/migration.sql` — migración ALTER TABLE
+- `server/src/controllers/profileController.ts` — añadidos `emailUpdates`, `eventsDefaultView` y `eventsAccordionMode` al destructuring y al update
+- `client/src/pages/Events.tsx` — query de perfil, inicialización de `viewMode` y `openDays` según preferencias, botones plegar/desplegar
+- `client/src/pages/Profile.tsx` — selectores de vista y acordeón, `setQueryData` en `onSuccess`
+- `client/src/types/profile.ts` — campos `eventsDefaultView` y `eventsAccordionMode`
+
+#### Notificaciones por email en eventos
+
+- El organizador recibe un email cuando un miembro se apunta (CONFIRMED) o abandona su partida, si tiene `emailUpdates` activado.
+- El participante recibe siempre un email cuando es expulsado de una partida (con motivo obligatorio de una lista fija).
+- Todos los participantes reciben un email cuando se cancela un evento (con motivo obligatorio).
+- Los modales de expulsión y cancelación incluyen un selector desplegable con motivos predefinidos; el botón de confirmar queda desactivado hasta seleccionar uno.
+
+**Archivos modificados:**
+- `server/src/services/emailService.ts` — 4 nuevas funciones de email (apuntarse, abandonar, expulsión, cancelación)
+- `server/src/controllers/eventController.ts` — lógica de envío de emails y validación de motivos
+- `server/prisma/schema.prisma` — campos `cancellationReason` en `Event` y `removalReason` en `EventRegistration`
+- `server/prisma/migrations/20260407100000_add_event_reasons/migration.sql` — migración ALTER TABLE
+- `client/src/pages/EventDetail.tsx` — modales con selector de motivo obligatorio
+
+#### Detalle de libros ROL desde RPGGeek en la ludoteca
+
+- Los libros de rol de la ludoteca tienen un `bggId` que en realidad es un ID de RPGGeek. Al pulsar "Ver detalle", el modal intentaba consultar la API de BGG y fallaba.
+- Se añade el endpoint `GET /api/ludoteca/:id/detail` que consulta RPGGeek para items de tipo ROL y devuelve los datos en el mismo formato que `/api/games/:id`.
+- Los campos `image` y `yearPublished` se cachean en `LibraryItem` tras la primera consulta, igual que ya hacía el `thumbnail`.
+- El `GameDetailModal` muestra un enlace a RPGGeek en lugar del logo de BGG para estos items.
+- Se corrige que el cliente `rpggClient` no enviaba las credenciales de autenticación, causando 401.
+
+**Archivos modificados:**
+- `server/src/controllers/ludotecaController.ts` — endpoint `getLibraryItemDetail`, caché de `image` y `yearPublished`
+- `server/src/routes/ludotecaRoutes.ts` — ruta `GET /:id/detail`
+- `server/src/services/bggService.ts` — `rpggClient` con `authHeaders`
+- `server/prisma/schema.prisma` — campos `image` y `yearPublished` en `LibraryItem`
+- `server/prisma/migrations/20260407300000_add_library_item_image_year/migration.sql` — migración ALTER TABLE
+- `client/src/pages/Ludoteca.tsx` — pasa `source: 'rpggeek'` al modal para items ROL
+- `client/src/components/games/GameDetailModal.tsx` — prop `source`, endpoint y enlace según origen
+
+### Correcciones
+
+#### Previsualización WhatsApp al compartir partidas
+
+- Al compartir una partida, WhatsApp no mostraba la imagen del juego porque BGG bloquea el hotlinking y el scraper no podía cargarla.
+- Se añade la ruta `GET /preview/image/:id` que descarga la imagen desde BGG en el servidor y la sirve desde el propio dominio, evitando el bloqueo.
+- Se añade detección de User-Agent en el endpoint de preview: los crawlers reciben el HTML con meta OG sin redirección; los usuarios normales son redirigidos a la app.
+- El mensaje de WhatsApp ahora usa siempre la URL de preview para la previsualización, pero el enlace "Apúntate aquí" apunta directamente a la app.
+- Se eliminan los emojis condicionales por User-Agent en el mensaje (móvil/escritorio) — se usa un formato único con viñetas `·` para todos los dispositivos.
+- Se añade `og-image.png` (el noughter) en `client/public/` como fallback para eventos sin imagen de juego.
+
+**Archivos modificados:**
+- `server/src/controllers/previewController.ts` — proxy de imagen, detección de crawler, meta tags OG completos
+- `server/src/routes/previewRoutes.ts` — ruta `GET /image/:id`
+- `client/src/pages/EventDetail.tsx` — URL de preview siempre activa, formato de mensaje unificado
+- `client/public/og-image.png` — imagen de fallback
+
+#### Redirección al detalle tras crear una partida
+
+- Al crear una partida, la app redirigía al calendario en lugar de al detalle de la partida recién creada, impidiendo añadir miembros o compartirla de inmediato.
+- Se cambia la navegación post-creación a `/events/:id` usando el id devuelto por la API.
+
+**Archivos modificados:**
+- `client/src/pages/CreatePartida.tsx` — `navigate('/events')` → `navigate('/events/${data.data?.event?.id}')`
+
+---
+
 ## 2026-04-07 (sesión 2)
 
 ### Correcciones
