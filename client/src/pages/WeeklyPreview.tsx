@@ -147,22 +147,97 @@ function getTimeStr(event: Event, durationMinutes: number): string {
   return `${formatHour(startTotalMin)} – ${formatHour(startTotalMin + durationMinutes)}`;
 }
 
-function EventBlockView({ block, colors }: { block: EventBlock; colors: ThemeColors }) {
+function EventBlockView({ block, colors, colorIndex: _colorIndex = 0 }: { block: EventBlock; colors: ThemeColors; colorIndex?: number }) {
   const { event, startMinutes, durationMinutes, column, totalColumns } = block;
   const hasSocio = event.hasSocioRegistered;
+  const isOverlapping = totalColumns > 1;
 
-  // Con socio: color primary del tema. Sin socio: versión apagada mezclada con el fondo
-  const bg = hasSocio
+  // Color del tema: con socio = primary, sin socio = primary apagado
+  const bgBase = hasSocio
     ? colors.primary
     : hexMix(colors.primary, colors.background, 0.55);
-  const border = hasSocio
-    ? colors.primaryDark
-    : hexMix(colors.primaryDark, colors.background, 0.55);
+
+  const border = hexMix(bgBase, '#000000', 0.25);
 
   const top = (startMinutes / 60) * HOUR_HEIGHT;
   const height = Math.max((durationMinutes / 60) * HOUR_HEIGHT, 20);
   const widthPct = 100 / totalColumns;
   const timeStr = getTimeStr(event, durationMinutes);
+
+  // Patrón de rayas diagonales para eventos solapados
+  const stripeOverlay = isOverlapping
+    ? `repeating-linear-gradient(45deg, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.12) 3px, transparent 3px, transparent 9px)`
+    : undefined;
+
+  // ⚠ sin variante emoji (U+26A0 sin U+FE0F) para poder colorear con CSS
+  const warnIcon = !hasSocio
+    ? <span style={{ color: colors.accent, fontSize: '9px', marginRight: '2px' }}>&#x26A0;</span>
+    : null;
+
+  // Cuando solapa, el bloque es estrecho: texto vertical rotado
+  if (isOverlapping) {
+    const label = event.gameName && event.gameName !== event.title
+      ? `${event.title} · ${event.gameName}`
+      : event.title;
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          top: `${top}px`,
+          height: `${height}px`,
+          left: `${column * widthPct + 0.5}%`,
+          width: `${widthPct - 1}%`,
+          backgroundColor: bgBase,
+          backgroundImage: stripeOverlay,
+          borderLeft: `3px solid ${border}`,
+          color: '#ffffff',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          paddingTop: '4px',
+        }}
+      >
+        {!hasSocio && (
+          <span style={{ color: colors.accent, fontSize: '10px', lineHeight: 1, marginBottom: '2px' }}>&#x26A0;</span>
+        )}
+        <div
+          style={{
+            writingMode: 'vertical-rl',
+            textOrientation: 'mixed',
+            transform: 'rotate(180deg)',
+            fontSize: '10px',
+            fontWeight: 700,
+            lineHeight: 1.2,
+            overflow: 'hidden',
+            maxHeight: `${height - 20}px`,
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {label}
+        </div>
+        {height >= 40 && (
+          <div
+            style={{
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              transform: 'rotate(180deg)',
+              fontSize: '9px',
+              opacity: 0.85,
+              marginTop: '3px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {timeStr}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -172,7 +247,7 @@ function EventBlockView({ block, colors }: { block: EventBlock; colors: ThemeCol
         height: `${height}px`,
         left: `${column * widthPct + 0.5}%`,
         width: `${widthPct - 1}%`,
-        backgroundColor: bg,
+        backgroundColor: bgBase,
         borderLeft: `3px solid ${border}`,
         color: '#ffffff',
         borderRadius: '4px',
@@ -184,7 +259,7 @@ function EventBlockView({ block, colors }: { block: EventBlock; colors: ThemeCol
       }}
     >
       <div style={{ fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-        {event.title}
+        {warnIcon}{event.title}
       </div>
       {height >= 32 && (
         <div style={{ opacity: 0.85, fontSize: '10px', marginTop: '1px' }}>{timeStr}</div>
@@ -452,7 +527,6 @@ export default function WeeklyPreview() {
 
               {/* Columnas de días */}
               {weekDays.map((day, i) => {
-                const blocks = allDayBlocks[i].blocks;
                 const gaps = closedGapsPerDay[i];
                 const isToday = day.toDateString() === new Date().toDateString();
                 return (
@@ -486,8 +560,8 @@ export default function WeeklyPreview() {
                       {gaps.map((gap, gi) => (
                         <ClosedBlock key={gi} gap={gap} colors={colors} />
                       ))}
-                      {blocks.map(block => (
-                        <EventBlockView key={block.event.id} block={block} colors={colors} />
+                      {allDayBlocks[i].blocks.map((block, blockIdx) => (
+                        <EventBlockView key={block.event.id} block={block} colors={colors} colorIndex={blockIdx} />
                       ))}
                     </div>
                   </div>
@@ -499,11 +573,19 @@ export default function WeeklyPreview() {
             <div style={{ display: 'flex', gap: '16px', marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${gridBorder}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: colors.primary }} />
-                <span style={{ color: colors.textSecondary, fontSize: '11px' }}>Con socio</span>
+                <span style={{ color: colors.textSecondary, fontSize: '11px' }}>Con socio confirmado</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: hexMix(colors.primary, colors.background, 0.55) }} />
+                <span style={{ color: colors.accent, fontSize: '11px' }}>&#x26A0;</span>
                 <span style={{ color: colors.textSecondary, fontSize: '11px' }}>Sin socio confirmado</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{
+                  width: '10px', height: '10px', borderRadius: '2px',
+                  backgroundColor: colors.primary,
+                  backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.25) 0px, rgba(255,255,255,0.25) 2px, transparent 2px, transparent 6px)'
+                }} />
+                <span style={{ color: colors.textSecondary, fontSize: '11px' }}>Partidas solapadas</span>
               </div>
               <div style={{ marginLeft: 'auto', color: hexMix(colors.textSecondary, colors.background, 0.4), fontSize: '10px' }}>
                 clubdreadnought.com
