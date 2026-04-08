@@ -57,9 +57,61 @@ interface EventBlock {
   totalColumns: number;
 }
 
+interface OverlapGroup {
+  startMinutes: number;
+  durationMinutes: number;
+  events: Event[];
+}
+
 interface ClosedGap {
   startMinutes: number;
   endMinutes: number;
+}
+
+// Separa los eventos en grupos solapados (≥2) y eventos individuales
+function groupOverlappingEvents(events: Event[]): { groups: OverlapGroup[]; singles: Event[] } {
+  const sorted = [...events].sort((a, b) =>
+    ((a.startHour ?? 0) * 60 + (a.startMinute ?? 0)) - ((b.startHour ?? 0) * 60 + (b.startMinute ?? 0))
+  );
+
+  const getStart = (e: Event) => ((e.startHour ?? 0) - START_HOUR) * 60 + (e.startMinute ?? 0);
+  const getDuration = (e: Event) => (e.durationHours ?? 2) * 60 + (e.durationMinutes ?? 0);
+
+  const used = new Set<number>();
+  const groups: OverlapGroup[] = [];
+  const singles: Event[] = [];
+
+  for (let i = 0; i < sorted.length; i++) {
+    if (used.has(i)) continue;
+    const overlapping = [i];
+    const iStart = getStart(sorted[i]);
+    const iEnd = iStart + getDuration(sorted[i]);
+    let groupEnd = iEnd;
+
+    for (let j = i + 1; j < sorted.length; j++) {
+      if (used.has(j)) continue;
+      const jStart = getStart(sorted[j]);
+      const jEnd = jStart + getDuration(sorted[j]);
+      if (jStart < groupEnd) {
+        overlapping.push(j);
+        groupEnd = Math.max(groupEnd, jEnd);
+      }
+    }
+
+    if (overlapping.length >= 2) {
+      overlapping.forEach(idx => used.add(idx));
+      const groupEvents = overlapping.map(idx => sorted[idx]);
+      const start = Math.min(...groupEvents.map(getStart));
+      const end = Math.max(...groupEvents.map(e => getStart(e) + getDuration(e)));
+      groups.push({ startMinutes: start, durationMinutes: end - start, events: groupEvents });
+    }
+  }
+
+  for (let i = 0; i < sorted.length; i++) {
+    if (!used.has(i)) singles.push(sorted[i]);
+  }
+
+  return { groups, singles };
 }
 
 function layoutEventsForDay(events: Event[]): EventBlock[] {
@@ -194,6 +246,52 @@ function EventBlockView({ block, colors }: { block: EventBlock; colors: ThemeCol
           {event.gameName}
         </div>
       )}
+    </div>
+  );
+}
+
+function OverlapGroupView({ group, colors }: { group: OverlapGroup; colors: ThemeColors }) {
+  const hasSocio = group.events.some(e => e.hasSocioRegistered);
+  const bg = hasSocio
+    ? colors.primary
+    : hexMix(colors.primary, colors.background, 0.55);
+  const border = hasSocio
+    ? colors.primaryDark
+    : hexMix(colors.primaryDark, colors.background, 0.55);
+
+  const top = (group.startMinutes / 60) * HOUR_HEIGHT;
+  const height = Math.max((group.durationMinutes / 60) * HOUR_HEIGHT, 20);
+  const startLabel = formatHour(START_HOUR * 60 + group.startMinutes);
+  const endLabel = formatHour(START_HOUR * 60 + group.startMinutes + group.durationMinutes);
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: `${top}px`,
+        height: `${height}px`,
+        left: '0.5%',
+        width: '99%',
+        backgroundColor: bg,
+        borderLeft: `3px solid ${border}`,
+        color: '#ffffff',
+        borderRadius: '4px',
+        padding: '3px 4px',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
+        fontSize: '11px',
+        lineHeight: 1.2,
+      }}
+    >
+      <div style={{ fontWeight: 700 }}>{group.events.length} partidas</div>
+      {height >= 32 && (
+        <div style={{ opacity: 0.85, fontSize: '10px', marginTop: '1px' }}>{startLabel} – {endLabel}</div>
+      )}
+      {height >= 56 && group.events.map((e, idx) => (
+        <div key={idx} style={{ opacity: 0.85, fontSize: '9px', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          · {e.title}
+        </div>
+      ))}
     </div>
   );
 }
@@ -452,7 +550,6 @@ export default function WeeklyPreview() {
 
               {/* Columnas de días */}
               {weekDays.map((day, i) => {
-                const blocks = allDayBlocks[i].blocks;
                 const gaps = closedGapsPerDay[i];
                 const isToday = day.toDateString() === new Date().toDateString();
                 return (
@@ -486,9 +583,20 @@ export default function WeeklyPreview() {
                       {gaps.map((gap, gi) => (
                         <ClosedBlock key={gi} gap={gap} colors={colors} />
                       ))}
-                      {blocks.map(block => (
-                        <EventBlockView key={block.event.id} block={block} colors={colors} />
-                      ))}
+                      {(() => {
+                        const { groups, singles } = groupOverlappingEvents(eventsByDay[i]);
+                        const singleBlocks = layoutEventsForDay(singles);
+                        return (
+                          <>
+                            {groups.map((group, gi) => (
+                              <OverlapGroupView key={`group-${gi}`} group={group} colors={colors} />
+                            ))}
+                            {singleBlocks.map(block => (
+                              <EventBlockView key={block.event.id} block={block} colors={colors} />
+                            ))}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 );

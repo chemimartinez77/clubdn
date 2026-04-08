@@ -284,7 +284,7 @@ export default function Events() {
           const timeRange = estimatedEndTime ? `${time}-${estimatedEndTime}` : time;
           const durationText = estimatedDuration ? ` (${estimatedDuration})` : '';
           const socioMark = event.hasSocioRegistered ? ' ✓' : '';
-          lines.push(`- ${emojiClock} ${timeRange}${durationText} - ${event.title}${socioMark}`);
+          lines.push(`${emojiClock} ${timeRange}${durationText} - ${event.title}${socioMark}`);
         });
       lines.push('');
     });
