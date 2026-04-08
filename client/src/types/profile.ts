@@ -31,6 +31,7 @@ export interface UserProfile {
   eventsDefaultView: string;
   eventsAccordionMode: string;
   calendarToken: string | null;
+  onboardingCompleted: boolean;
   tourDismissed: boolean;
   calendarTourDismissed: boolean;
   feedbackTourDismissed: boolean;

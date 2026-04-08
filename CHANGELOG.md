@@ -4,6 +4,32 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 1)
+
+### Nuevas funcionalidades
+
+#### Formulario de onboarding obligatorio para nuevos socios
+
+- Al aprobar un usuario, antes de poder acceder a la app debe completar una ficha de socio obligatoria. Si no la completa, se le redirige a `/onboarding` en cada acceso hasta que lo haga.
+- El formulario recoge: nombre, apellidos, DNI/NIE, teléfono, dirección completa (calle, ciudad, provincia, CP), IBAN y dos consentimientos de imagen (actividades y redes sociales). Todos los campos son obligatorios excepto los consentimientos, que son opt-in.
+- Al completar el formulario, los admins reciben una notificación de campanita ("Nuevo socio registrado").
+- Se elimina el envío de email a todos los admins al verificar el email (era redundante con la notificación de campanita existente).
+- El campo `onboardingCompleted` se añade a `UserProfile` con valor por defecto `false`. Los usuarios existentes tienen `false` y necesitarán completar el formulario en su próximo acceso — considerar hacer un script de backfill si se quiere evitar que los socios actuales tengan que rellenarlo.
+- `ProtectedRoute` en el cliente consulta el perfil y redirige a `/onboarding` si `onboardingCompleted === false`.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — campo `onboardingCompleted Boolean @default(false)` en `UserProfile`
+- `server/prisma/migrations/20260409000000_add_onboarding_completed/migration.sql` — migración ALTER TABLE
+- `server/src/controllers/authController.ts` — eliminado bucle de emails a admins en `verifyEmail`
+- `server/src/controllers/profileController.ts` — nuevo handler `completeOnboarding`
+- `server/src/routes/profileRoutes.ts` — ruta `PATCH /me/onboarding`
+- `server/src/services/notificationService.ts` — nueva función `notifyAdminsOnboardingCompleted`
+- `client/src/pages/Onboarding.tsx` — nueva página con formulario de ficha de socio
+- `client/src/types/profile.ts` — campo `onboardingCompleted: boolean`
+- `client/src/App.tsx` — `ProtectedRoute` con comprobación de onboarding, ruta `/onboarding`
+
+---
+
 ## 2026-04-08 (sesión 1)
 
 ### Mejoras visuales

@@ -181,6 +181,32 @@ export const notifyAdminsNewUser = async (newUserName: string, newUserEmail: str
 };
 
 /**
+ * Notificar a los admins que un usuario ha completado el onboarding
+ */
+export const notifyAdminsOnboardingCompleted = async (userName: string, userEmail: string) => {
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } },
+      select: { id: true },
+    });
+
+    const adminIds = admins.map(a => a.id);
+    if (adminIds.length === 0) return { success: true, count: 0 };
+
+    return await createBulkNotifications({
+      userIds: adminIds,
+      type: 'ADMIN_NEW_USER',
+      title: 'Nuevo socio registrado',
+      message: `${userName} (${userEmail}) ha completado su ficha de socio.`,
+      metadata: { userName, userEmail },
+    });
+  } catch (error) {
+    console.error('Error notificando onboarding completado:', error);
+    return { success: false, error };
+  }
+};
+
+/**
  * Notificar sobre una nueva partida — genera 1 sola fila global en lugar de una por usuario
  */
 export const notifyNewEvent = async (
