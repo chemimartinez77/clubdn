@@ -51,6 +51,7 @@ export default function Events() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [sortOption, setSortOption] = useState<SortOption>('date_asc');
   const [openDays, setOpenDays] = useState<Set<string>>(new Set());
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
   const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -249,7 +250,7 @@ export default function Events() {
       '_✓ indica que hay socios apuntados_',
       ''
     ];
-    const emojiClock = String.fromCodePoint(0x1F550);
+    const emojiClock = '·';
 
     const formatEstimatedDuration = (durationHours?: number | null, durationMinutes?: number | null) => {
       const hours = durationHours ?? 0;
@@ -338,7 +339,20 @@ export default function Events() {
         {viewMode === 'list' && (
           <Card id="events-filters">
             <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {/* Cabecera acordeón — solo visible en móvil */}
+              <button
+                className="md:hidden w-full flex items-center justify-between text-sm font-medium text-[var(--color-textSecondary)] mb-0"
+                onClick={() => setFiltersOpen(o => !o)}
+              >
+                <span>Filtros</span>
+                <svg
+                  className={`w-4 h-4 transition-transform ${filtersOpen ? 'rotate-180' : ''}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            <div className={`grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 ${filtersOpen ? 'mt-4' : 'hidden'} md:grid`}>
               {/* Type Filter */}
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
