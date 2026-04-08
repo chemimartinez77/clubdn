@@ -200,14 +200,13 @@ export default function Events() {
 
   const handleShareWeeklyForecast = () => {
     const { weekStart, weekEnd } = getWeekRange(currentMonth);
-    const socioEvents = events.filter(event => {
-      if (!event.hasSocioRegistered) return false;
+    const weekEvents = events.filter(event => {
       const eventDate = new Date(event.date);
       return eventDate >= weekStart && eventDate <= weekEnd;
     });
 
-    if (socioEvents.length === 0) {
-      showError('No hay partidas con socios esta semana');
+    if (weekEvents.length === 0) {
+      showError('No hay partidas esta semana');
       return;
     }
 
@@ -226,8 +225,8 @@ export default function Events() {
     });
     const rangeTitle = `${rangeFormat.format(weekStart)} - ${rangeFormat.format(weekEnd)}`;
 
-    const grouped: Record<string, { label: string; events: typeof socioEvents }> = {};
-    socioEvents.forEach(event => {
+    const grouped: Record<string, { label: string; events: typeof weekEvents }> = {};
+    weekEvents.forEach(event => {
       const eventDate = new Date(event.date);
       const key = eventDate.toDateString();
       if (!grouped[key]) {
@@ -246,8 +245,8 @@ export default function Events() {
     });
 
     const lines = [
-      `*Prevision semanal Club Dreadnought (${rangeTitle})*`,
-      '_Solo partidas con socios_',
+      `*Previsión semanal Club Dreadnought (${rangeTitle})*`,
+      '_✓ indica que hay socios apuntados_',
       ''
     ];
     const emojiClock = String.fromCodePoint(0x1F550);
@@ -283,7 +282,8 @@ export default function Events() {
           const estimatedDuration = formatEstimatedDuration(event.durationHours, event.durationMinutes);
           const timeRange = estimatedEndTime ? `${time}-${estimatedEndTime}` : time;
           const durationText = estimatedDuration ? ` (${estimatedDuration})` : '';
-          lines.push(`- ${emojiClock} ${timeRange}${durationText} - ${event.title}`);
+          const socioMark = event.hasSocioRegistered ? ' ✓' : '';
+          lines.push(`- ${emojiClock} ${timeRange}${durationText} - ${event.title}${socioMark}`);
         });
       lines.push('');
     });
