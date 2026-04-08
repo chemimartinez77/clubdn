@@ -4,6 +4,21 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-08 (sesión 1)
+
+### Mejoras visuales
+
+#### Previsión semanal: colores alternos y rayas en eventos solapados
+
+- El enfoque anterior agrupaba los eventos solapados en un solo bloque "N partidas", lo que perdía información individual y generaba artefactos visuales (el patrón del bloque "Club cerrado" se filtraba por debajo).
+- Nuevo enfoque: se mantienen los bloques individuales con su posición y anchura calculadas por `layoutEventsForDay`. Los eventos con solapamiento (`totalColumns > 1`) muestran un **patrón de rayas diagonales** (`repeating-linear-gradient`) sobre el color de fondo para indicar visualmente la coincidencia. Los eventos sin solapamiento alternan entre una **paleta de 5 colores** (azul, morado, teal, ámbar, rosa) según su índice en el día.
+- Se eliminan `groupOverlappingEvents`, la interfaz `OverlapGroup` y el componente `OverlapGroupView` que ya no son necesarios. El renderizado del timeline vuelve a usar `allDayBlocks` directamente.
+
+**Archivos modificados:**
+- `client/src/pages/WeeklyPreview.tsx` — nueva lógica de color alternante y patrón de rayas para solapados
+
+---
+
 ## 2026-04-07 (sesión 2)
 
 ### Correcciones
