@@ -147,28 +147,15 @@ function getTimeStr(event: Event, durationMinutes: number): string {
   return `${formatHour(startTotalMin)} – ${formatHour(startTotalMin + durationMinutes)}`;
 }
 
-// Paleta de colores alternos para eventos no solapados (con y sin socio)
-const ALT_COLORS_SOCIO = ['#2563eb', '#7c3aed', '#0f766e', '#b45309', '#be185d'];
-const ALT_COLORS_NO_SOCIO_ALPHA = 0.55; // mezcla con background
-
-function EventBlockView({ block, colors, colorIndex = 0 }: { block: EventBlock; colors: ThemeColors; colorIndex?: number }) {
+function EventBlockView({ block, colors, colorIndex: _colorIndex = 0 }: { block: EventBlock; colors: ThemeColors; colorIndex?: number }) {
   const { event, startMinutes, durationMinutes, column, totalColumns } = block;
   const hasSocio = event.hasSocioRegistered;
   const isOverlapping = totalColumns > 1;
 
-  // Color base: si solapa usamos primary (las rayas ya distinguen visualmente),
-  // si no solapa alternamos entre colores de la paleta
-  let bgBase: string;
-  if (isOverlapping) {
-    bgBase = hasSocio
-      ? colors.primary
-      : hexMix(colors.primary, colors.background, 0.55);
-  } else {
-    const paletteColor = ALT_COLORS_SOCIO[colorIndex % ALT_COLORS_SOCIO.length];
-    bgBase = hasSocio
-      ? paletteColor
-      : hexMix(paletteColor, colors.background, ALT_COLORS_NO_SOCIO_ALPHA);
-  }
+  // Color del tema: con socio = primary, sin socio = primary apagado
+  const bgBase = hasSocio
+    ? colors.primary
+    : hexMix(colors.primary, colors.background, 0.55);
 
   const border = hexMix(bgBase, '#000000', 0.25);
 
@@ -182,6 +169,76 @@ function EventBlockView({ block, colors, colorIndex = 0 }: { block: EventBlock; 
     ? `repeating-linear-gradient(45deg, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.12) 3px, transparent 3px, transparent 9px)`
     : undefined;
 
+  // ⚠ sin variante emoji (U+26A0 sin U+FE0F) para poder colorear con CSS
+  const warnIcon = !hasSocio
+    ? <span style={{ color: colors.accent, fontSize: '9px', marginRight: '2px' }}>&#x26A0;</span>
+    : null;
+
+  // Cuando solapa, el bloque es estrecho: texto vertical rotado
+  if (isOverlapping) {
+    const label = event.gameName && event.gameName !== event.title
+      ? `${event.title} · ${event.gameName}`
+      : event.title;
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          top: `${top}px`,
+          height: `${height}px`,
+          left: `${column * widthPct + 0.5}%`,
+          width: `${widthPct - 1}%`,
+          backgroundColor: bgBase,
+          backgroundImage: stripeOverlay,
+          borderLeft: `3px solid ${border}`,
+          color: '#ffffff',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          paddingTop: '4px',
+        }}
+      >
+        {!hasSocio && (
+          <span style={{ color: colors.accent, fontSize: '10px', lineHeight: 1, marginBottom: '2px' }}>&#x26A0;</span>
+        )}
+        <div
+          style={{
+            writingMode: 'vertical-rl',
+            textOrientation: 'mixed',
+            transform: 'rotate(180deg)',
+            fontSize: '10px',
+            fontWeight: 700,
+            lineHeight: 1.2,
+            overflow: 'hidden',
+            maxHeight: `${height - 20}px`,
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {label}
+        </div>
+        {height >= 40 && (
+          <div
+            style={{
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              transform: 'rotate(180deg)',
+              fontSize: '9px',
+              opacity: 0.85,
+              marginTop: '3px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {timeStr}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -191,7 +248,6 @@ function EventBlockView({ block, colors, colorIndex = 0 }: { block: EventBlock; 
         left: `${column * widthPct + 0.5}%`,
         width: `${widthPct - 1}%`,
         backgroundColor: bgBase,
-        backgroundImage: stripeOverlay,
         borderLeft: `3px solid ${border}`,
         color: '#ffffff',
         borderRadius: '4px',
@@ -203,7 +259,7 @@ function EventBlockView({ block, colors, colorIndex = 0 }: { block: EventBlock; 
       }}
     >
       <div style={{ fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-        {event.title}
+        {warnIcon}{event.title}
       </div>
       {height >= 32 && (
         <div style={{ opacity: 0.85, fontSize: '10px', marginTop: '1px' }}>{timeStr}</div>
@@ -517,11 +573,19 @@ export default function WeeklyPreview() {
             <div style={{ display: 'flex', gap: '16px', marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${gridBorder}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: colors.primary }} />
-                <span style={{ color: colors.textSecondary, fontSize: '11px' }}>Con socio</span>
+                <span style={{ color: colors.textSecondary, fontSize: '11px' }}>Con socio confirmado</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: hexMix(colors.primary, colors.background, 0.55) }} />
+                <span style={{ color: colors.accent, fontSize: '11px' }}>&#x26A0;</span>
                 <span style={{ color: colors.textSecondary, fontSize: '11px' }}>Sin socio confirmado</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{
+                  width: '10px', height: '10px', borderRadius: '2px',
+                  backgroundColor: colors.primary,
+                  backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.25) 0px, rgba(255,255,255,0.25) 2px, transparent 2px, transparent 6px)'
+                }} />
+                <span style={{ color: colors.textSecondary, fontSize: '11px' }}>Partidas solapadas</span>
               </div>
               <div style={{ marginLeft: 'auto', color: hexMix(colors.textSecondary, colors.background, 0.4), fontSize: '10px' }}>
                 clubdreadnought.com

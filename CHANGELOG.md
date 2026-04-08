@@ -8,6 +8,18 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### Mejoras visuales
 
+#### Previsión semanal: texto vertical, icono de aviso y leyenda mejorada
+
+- Los bloques solapados son estrechos y el texto horizontal quedaba cortado. Ahora cuando un bloque tiene solapamiento (`totalColumns > 1`) el texto se renderiza en vertical (`writing-mode: vertical-rl` + `rotate(180deg)`), mostrando título y hora de forma legible.
+- Se añade el símbolo `⚠` (U+26A0, sin variante emoji para poder colorearlo con CSS) en el color `accent` del tema, tanto en bloques normales (antes del título) como en bloques verticales (encima del texto). Indica que la partida no tiene ningún socio confirmado apuntado.
+- Se restaura el color original del tema para todos los bloques (se revierte el intento previo de paleta de colores alternos que el usuario no aprobó).
+- La leyenda inferior se actualiza: se elimina el cuadrado apagado para "sin socio", se añade el `⚠` con su color de acento, y se añade un tercer elemento con el patrón de rayas para "Partidas solapadas".
+
+**Archivos modificados:**
+- `client/src/pages/WeeklyPreview.tsx` — texto vertical en solapados, icono ⚠, leyenda actualizada
+
+---
+
 #### Previsión semanal: colores alternos y rayas en eventos solapados
 
 - El enfoque anterior agrupaba los eventos solapados en un solo bloque "N partidas", lo que perdía información individual y generaba artefactos visuales (el patrón del bloque "Club cerrado" se filtraba por debajo).
