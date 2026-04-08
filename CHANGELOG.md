@@ -8,6 +8,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### Mejoras visuales
 
+#### Previsión semanal: ajustes de legibilidad y visibilidad
+
+- El color de los bloques sin socio confirmado era demasiado claro (mezcla con fondo al 55%); se reduce a 25% para que sean mucho más visibles.
+- El icono ⚠ era demasiado pequeño; se aumenta de 9px a 12px en bloques normales y de 10px a 13px en bloques verticales.
+- El texto vertical pasa de 10px a 12px y se elimina la negrita (`fontWeight: 400`) para mejorar la legibilidad.
+- El texto vertical se rota hacia la derecha (se elimina `rotate(180deg)`) para que lea de arriba hacia abajo de forma natural.
+- El nombre del juego en bloques normales se marca explícitamente sin negrita.
+- La leyenda inferior sube de 11px a 14px (~30% más grande) y los iconos de 10px a 13px.
+
+**Archivos modificados:**
+- `client/src/pages/WeeklyPreview.tsx` — colores, tamaños de fuente, rotación de texto vertical, leyenda
+
+---
+
 #### Previsión semanal: texto vertical, icono de aviso y leyenda mejorada
 
 - Los bloques solapados son estrechos y el texto horizontal quedaba cortado. Ahora cuando un bloque tiene solapamiento (`totalColumns > 1`) el texto se renderiza en vertical (`writing-mode: vertical-rl` + `rotate(180deg)`), mostrando título y hora de forma legible.
