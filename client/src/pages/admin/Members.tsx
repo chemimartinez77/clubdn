@@ -12,6 +12,12 @@ import { api } from '../../api/axios';
 import type { MemberData, MemberFilters, MemberProfileResponse } from '../../types/members';
 import type { ApiResponse } from '../../types/auth';
 
+const EMPTY_PROFILE_FORM = {
+  firstName: '', lastName: '', dni: '',
+  phone: '', address: '', city: '', province: '', postalCode: '', iban: '',
+  avatar: '', imageConsentActivities: false, imageConsentSocial: false, membershipType: ''
+};
+
 export default function Members() {
   const { success, error } = useToast();
   const { user: currentUser, impersonate } = useAuth();
@@ -39,15 +45,7 @@ export default function Members() {
   const [membershipChangeModalOpen, setMembershipChangeModalOpen] = useState(false);
   const [membershipChangeReason, setMembershipChangeReason] = useState('');
   const [originalMembershipType, setOriginalMembershipType] = useState('');
-  const [profileForm, setProfileForm] = useState({
-    firstName: '',
-    lastName: '',
-    dni: '',
-    avatar: '',
-    imageConsentActivities: false,
-    imageConsentSocial: false,
-    membershipType: ''
-  });
+  const [profileForm, setProfileForm] = useState(EMPTY_PROFILE_FORM);
 
   // Create user modal
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -119,6 +117,12 @@ export default function Members() {
         firstName: string;
         lastName: string;
         dni: string;
+        phone: string;
+        address: string;
+        city: string;
+        province: string;
+        postalCode: string;
+        iban: string;
         avatar: string;
         imageConsentActivities: boolean;
         imageConsentSocial: boolean;
@@ -128,6 +132,12 @@ export default function Members() {
         firstName: profileForm.firstName.trim(),
         lastName: profileForm.lastName.trim(),
         dni: profileForm.dni.trim(),
+        phone: profileForm.phone.trim(),
+        address: profileForm.address.trim(),
+        city: profileForm.city.trim(),
+        province: profileForm.province.trim(),
+        postalCode: profileForm.postalCode.trim(),
+        iban: profileForm.iban.trim(),
         avatar: profileForm.avatar,
         imageConsentActivities: profileForm.imageConsentActivities,
         imageConsentSocial: profileForm.imageConsentSocial
@@ -158,13 +168,20 @@ export default function Members() {
 
   useEffect(() => {
     if (!memberProfile?.member) return;
+    const p = memberProfile.member.profile;
     setProfileForm({
-      firstName: memberProfile.member.profile.firstName || '',
-      lastName: memberProfile.member.profile.lastName || '',
-      dni: memberProfile.member.profile.dni || '',
-      avatar: memberProfile.member.profile.avatar || '',
-      imageConsentActivities: memberProfile.member.profile.imageConsentActivities,
-      imageConsentSocial: memberProfile.member.profile.imageConsentSocial,
+      firstName: p.firstName || '',
+      lastName: p.lastName || '',
+      dni: p.dni || '',
+      phone: p.phone || '',
+      address: p.address || '',
+      city: p.city || '',
+      province: p.province || '',
+      postalCode: p.postalCode || '',
+      iban: p.iban || '',
+      avatar: p.avatar || '',
+      imageConsentActivities: p.imageConsentActivities,
+      imageConsentSocial: p.imageConsentSocial,
       membershipType: memberProfile.member.membershipType || ''
     });
     setOriginalMembershipType(memberProfile.member.membershipType || '');
@@ -243,15 +260,7 @@ export default function Members() {
   // Action handlers
   const handleViewMember = (member: MemberData) => {
     setSelectedMember(member);
-    setProfileForm({
-      firstName: '',
-      lastName: '',
-      dni: '',
-      avatar: '',
-      imageConsentActivities: false,
-      imageConsentSocial: false,
-      membershipType: ''
-    });
+    setProfileForm(EMPTY_PROFILE_FORM);
     setViewModalOpen(true);
   };
 
@@ -871,6 +880,65 @@ export default function Members() {
                       className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Teléfono</label>
+                    <input
+                      type="text"
+                      value={profileForm.phone}
+                      onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Dirección</label>
+                  <input
+                    type="text"
+                    value={profileForm.address}
+                    onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
+                    className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Ciudad</label>
+                    <input
+                      type="text"
+                      value={profileForm.city}
+                      onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Provincia</label>
+                    <input
+                      type="text"
+                      value={profileForm.province}
+                      onChange={(e) => setProfileForm({ ...profileForm, province: e.target.value })}
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Código Postal</label>
+                    <input
+                      type="text"
+                      value={profileForm.postalCode}
+                      onChange={(e) => setProfileForm({ ...profileForm, postalCode: e.target.value })}
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">IBAN</label>
+                  <input
+                    type="text"
+                    value={profileForm.iban}
+                    onChange={(e) => setProfileForm({ ...profileForm, iban: e.target.value })}
+                    className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                  />
                 </div>
 
                 <div className="text-sm text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] border border-[var(--color-cardBorder)] rounded-lg p-3">

@@ -24,6 +24,12 @@ export interface MemberProfileInfo {
   firstName: string | null;
   lastName: string | null;
   dni: string | null;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  province: string | null;
+  postalCode: string | null;
+  iban: string | null;
   imageConsentActivities: boolean;
   imageConsentSocial: boolean;
 }

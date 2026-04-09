@@ -4,6 +4,30 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 14)
+
+### Nuevas funcionalidades
+
+#### Ficha del miembro: campos completos del perfil visibles y editables por admin
+
+- La modal "Ficha del miembro" en el Directorio de Miembros ahora muestra y permite editar todos los campos del formulario de onboarding: **Teléfono**, **Dirección**, **Ciudad**, **Provincia**, **Código Postal** e **IBAN**, además de los ya existentes (Nombre, Apellidos, DNI, consentimientos de imagen).
+- El backend devuelve estos campos en `GET /api/admin/members/:id/profile` y los guarda en `PUT /api/admin/members/:id/profile`.
+- Se define `EMPTY_PROFILE_FORM` como constante compartida para los resets del formulario, eliminando la duplicación de los objetos inline.
+
+### Correcciones
+
+#### Reactivación de miembros con tipo BAJA
+
+- El endpoint de reactivación ahora detecta también `membership.type === 'BAJA'` como condición válida para reactivar, cubriendo el caso de miembros importados cuyo `fechaBaja` es `null` pero cuyo tipo de membresía ya es `BAJA`.
+- Al reactivar, si el tipo era `BAJA`, se restaura automáticamente a `COLABORADOR`.
+
+**Archivos modificados:**
+- `server/src/controllers/memberController.ts` — GET devuelve campos completos; PUT los acepta y guarda; fix reactivación con `type === 'BAJA'`
+- `client/src/types/members.ts` — `MemberProfileInfo` ampliado con los 6 campos nuevos
+- `client/src/pages/admin/Members.tsx` — formulario, payload y UI del modal actualizados
+
+---
+
 ## 2026-04-09 (sesión 13)
 
 ### Mejoras UI
