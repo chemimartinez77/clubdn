@@ -754,15 +754,7 @@ export default function Members() {
         onClose={() => {
           setViewModalOpen(false);
           setSelectedMember(null);
-          setProfileForm({
-            firstName: '',
-            lastName: '',
-            dni: '',
-            avatar: '',
-            imageConsentActivities: false,
-            imageConsentSocial: false,
-            membershipType: ''
-          });
+          setProfileForm(EMPTY_PROFILE_FORM);
         }}
         title="Ficha del miembro"
         size="lg"
@@ -1011,15 +1003,7 @@ export default function Members() {
                     onClick={() => {
                       setViewModalOpen(false);
                       setSelectedMember(null);
-                      setProfileForm({
-                        firstName: '',
-                        lastName: '',
-                        dni: '',
-                        avatar: '',
-                        imageConsentActivities: false,
-                        imageConsentSocial: false,
-                        membershipType: ''
-                      });
+                      setProfileForm(EMPTY_PROFILE_FORM);
                     }}
                   >
                     Cerrar
