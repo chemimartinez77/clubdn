@@ -4,6 +4,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 10)
+
+### Mejoras
+
+#### Gestión de pagos: columna Membresía y búsqueda sin acentos
+
+- Se extrae el badge de tipo de membresía de la celda "Nombre" a una columna propia "Membresía", mejorando la legibilidad de la tabla.
+- La búsqueda por nombre pasa a ser insensible a mayúsculas y a tildes/acentos (normalización NFD): buscar "jose" encuentra "José" y viceversa.
+
+**Archivos modificados:**
+- `client/src/pages/admin/MembershipManagement.tsx` — nueva columna Membresía en thead y tbody; función `normalize()` para búsqueda sin acentos
+
+---
+
 ## 2026-04-09 (sesión 9)
 
 ### Correcciones

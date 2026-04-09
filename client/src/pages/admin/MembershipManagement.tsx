@@ -119,10 +119,13 @@ export default function MembershipManagement() {
     setStatusFilters(prev => ({ ...prev, [status]: !prev[status] }));
   };
 
+  const normalize = (str: string) =>
+    str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
   // Filtrar usuarios
   const filteredUsers = (response?.users || []).filter(user => {
-    // Filtro de búsqueda
-    if (searchTerm && !user.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+    // Filtro de búsqueda (case e accent insensitive)
+    if (searchTerm && !normalize(user.name).includes(normalize(searchTerm))) {
       return false;
     }
 
@@ -265,6 +268,9 @@ export default function MembershipManagement() {
                         Nombre
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
+                        Membresía
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Estado
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
@@ -281,12 +287,10 @@ export default function MembershipManagement() {
                     {filteredUsers.map((user) => (
                       <tr key={user.id} className="hover:bg-[var(--color-tableRowHover)]">
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-[var(--color-text)]">{user.name}</div>
-                            <div className="text-xs text-[var(--color-textSecondary)]">
-                              {user.membership ? getMembershipBadge(user.membership.type) : '-'}
-                            </div>
-                          </div>
+                          <div className="text-sm font-medium text-[var(--color-text)]">{user.name}</div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {user.membership ? getMembershipBadge(user.membership.type) : '-'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           {getStatusBadge(user.status)}
