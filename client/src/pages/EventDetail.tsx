@@ -66,6 +66,7 @@ export default function EventDetail() {
   const [isEditGameModalOpen, setIsEditGameModalOpen] = useState(false);
   const [editSelectedGame, setEditSelectedGame] = useState<BGGGame | null>(null);
   const [editSelectedCategory, setEditSelectedCategory] = useState('');
+  const [editConfirmedCategory, setEditConfirmedCategory] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState({
     title: '',
     description: '',
@@ -270,6 +271,7 @@ export default function EventDetail() {
     });
     setEditSelectedGame(event.bggId ? { id: event.bggId, name: event.gameName ?? '', image: event.gameImage ?? '', thumbnail: '', yearPublished: '' } : null);
     setEditSelectedCategory(event.gameCategory ?? '');
+    setEditConfirmedCategory(event.confirmedCategory ?? null);
     setIsEditModalOpen(true);
   };
 
@@ -1914,13 +1916,13 @@ export default function EventDetail() {
                 <div className="flex-1">
                   <p className="font-medium text-sm text-[var(--color-text)]">{editSelectedGame.name}</p>
                 </div>
-                <button type="button" onClick={() => { setEditSelectedGame(null); setEditSelectedCategory(''); }} className="text-red-500 hover:text-red-600">
+                <button type="button" onClick={() => { setEditSelectedGame(null); setEditSelectedCategory(''); setEditConfirmedCategory(null); }} className="text-red-500 hover:text-red-600">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
             ) : (
               <button type="button" onClick={() => setIsEditGameModalOpen(true)} className="w-full px-4 py-3 border-2 border-dashed border-[var(--color-inputBorder)] rounded-lg hover:border-[var(--color-primary)] transition-colors text-[var(--color-textSecondary)] text-sm">
-                Buscar juego en BoardGameGeek
+                Buscar juego
               </button>
             )}
           </div>
@@ -1928,7 +1930,7 @@ export default function EventDetail() {
           {/* Categoría */}
           <div>
             <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Categoría del juego (opcional)</label>
-            <select value={editSelectedCategory} onChange={(e) => setEditSelectedCategory(e.target.value)} className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]">
+            <select value={editSelectedCategory} onChange={(e) => setEditSelectedCategory(e.target.value)} disabled={!!editConfirmedCategory} className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)] disabled:opacity-60 disabled:cursor-not-allowed">
               <option value="">Sin categoría</option>
               <option value="EUROGAMES">{getCategoryIcon('EUROGAMES')} {getCategoryDisplayName('EUROGAMES')}</option>
               <option value="TEMATICOS">{getCategoryIcon('TEMATICOS')} {getCategoryDisplayName('TEMATICOS')}</option>
@@ -1937,7 +1939,11 @@ export default function EventDetail() {
               <option value="MINIATURAS">{getCategoryIcon('MINIATURAS')} {getCategoryDisplayName('MINIATURAS')}</option>
               <option value="WARHAMMER">{getCategoryIcon('WARHAMMER')} {getCategoryDisplayName('WARHAMMER')}</option>
               <option value="FILLERS_PARTY">{getCategoryIcon('FILLERS_PARTY')} {getCategoryDisplayName('FILLERS_PARTY')}</option>
+              <option value="CARTAS_LCG_TCG">{getCategoryIcon('CARTAS_LCG_TCG')} {getCategoryDisplayName('CARTAS_LCG_TCG')}</option>
             </select>
+            {editConfirmedCategory && (
+              <p className="text-xs text-[var(--color-textSecondary)] mt-1">Categoría fijada por la comunidad. Contacta con un admin para cambiarla.</p>
+            )}
           </div>
 
           {/* Requiere aprobación */}
@@ -2034,10 +2040,14 @@ export default function EventDetail() {
         onClose={() => setIsEditGameModalOpen(false)}
         onSelect={async (game) => {
           setEditSelectedGame(game);
+          setEditConfirmedCategory(null);
           setIsEditGameModalOpen(false);
           try {
             const response = await api.get(`/api/games/${game.id}`);
-            if (response.data?.data?.badgeCategory) {
+            if (response.data?.data?.confirmedCategory) {
+              setEditSelectedCategory(response.data.data.confirmedCategory);
+              setEditConfirmedCategory(response.data.data.confirmedCategory);
+            } else if (response.data?.data?.badgeCategory) {
               setEditSelectedCategory(response.data.data.badgeCategory);
             }
           } catch {

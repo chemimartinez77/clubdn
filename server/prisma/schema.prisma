@@ -127,8 +127,10 @@ model User {
   azulGamesAsPlayer2  AzulGame[]          @relation("AzulGamesAsPlayer2")
   viernesGames        ViernesGame[]       @relation("ViernesGamesAsPlayer")
   pageViews           PageView[]
-  gameValidationsAsScanner GameValidation[] @relation("GameValidationScanner")
-  gameValidationsAsScanned GameValidation[] @relation("GameValidationScanned")
+  gameValidationsAsScanner GameValidation[]    @relation("GameValidationScanner")
+  gameValidationsAsScanned GameValidation[]    @relation("GameValidationScanned")
+  gameCategoryVotes        GameCategoryVote[]
+  genreConsensusHistory    GenreConsensusHistory[]
 
   @@index([email])
   @@index([status])
@@ -563,6 +565,12 @@ model Game {
   // Categoría para badges (asignada manualmente)
   badgeCategory     BadgeCategory?
 
+  // Categoría confirmada por consenso de la comunidad (2 votos coincidentes)
+  confirmedCategory BadgeCategory?
+
+  // Votos de categoría de la comunidad
+  categoryVotes     GameCategoryVote[]
+
   // Creadores
   designers         String[] // Nombres de diseñadores
   artists           String[] // Nombres de artistas
@@ -839,10 +847,13 @@ enum BadgeCategory {
   MINIATURAS
   WARHAMMER
   FILLERS_PARTY
+  CARTAS_LCG_TCG
   CATALOGADOR
   ORGANIZADOR
   REPETIDOR
   VALIDADOR
+  CONOCEDOR_GENEROS
+  FOTOGRAFO
 }
 
 // Tipos de notificaciones
@@ -944,6 +955,34 @@ model BadgeDefinition {
   @@unique([category, level])
   @@index([category])
   @@index([level])
+}
+
+// Votos de categoría de juego por la comunidad
+model GameCategoryVote {
+  id        String        @id @default(cuid())
+  bggId     String
+  game      Game          @relation(fields: [bggId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category  BadgeCategory
+  createdAt DateTime      @default(now())
+
+  @@unique([bggId, userId])
+  @@index([bggId])
+  @@index([userId])
+}
+
+// Historial de consensos de categoría (para badge CONOCEDOR_GENEROS)
+model GenreConsensusHistory {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bggId     String
+  category  BadgeCategory
+  createdAt DateTime      @default(now())
+
+  @@unique([userId, bggId])
+  @@index([userId])
 }
 
 // Validación cruzada de partidas por QR

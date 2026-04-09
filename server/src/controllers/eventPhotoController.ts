@@ -1,9 +1,9 @@
 // server/src/controllers/eventPhotoController.ts
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { v2 as cloudinary } from 'cloudinary';
-
-const prisma = new PrismaClient();
+import { prisma } from '../config/database';
+import { BadgeCategory } from '@prisma/client';
+import { checkAndUnlockBadges } from './badgeController';
 
 // Configurar Cloudinary
 cloudinary.config({
@@ -237,6 +237,14 @@ export const uploadEventPhoto = async (req: Request, res: Response): Promise<voi
         }
       }
     });
+
+    // Acreditar punto de FOTOGRAFO si es la primera foto del usuario en esta partida
+    const photoCountForUser = await prisma.eventPhoto.count({
+      where: { eventId, uploadedById: userId }
+    });
+    if (photoCountForUser === 1) {
+      await checkAndUnlockBadges(userId, BadgeCategory.FOTOGRAFO);
+    }
 
     res.status(201).json({
       success: true,

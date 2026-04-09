@@ -2,7 +2,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { BadgeCategory, RegistrationStatus } from '@prisma/client';
-import { checkAndUnlockBadges } from './badgeController';
+import { checkAndUnlockBadges, processGameCategoryVote } from './badgeController';
 import { processEventPlayHistory } from './statsController';
 import {
   sendRegistrationJoinedEmail,
@@ -547,6 +547,11 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
 
     }
 
+    // Procesar voto de categoría si hay bggId y gameCategory
+    if (event.bggId && event.gameCategory) {
+      await processGameCategoryVote(userId, event.bggId, event.gameCategory as BadgeCategory);
+    }
+
     // Notificar a usuarios con preferencia activada
     const { notifyNewEvent } = await import('../services/notificationService');
     await notifyNewEvent(event.id, event.title, event.date, userId);
@@ -698,6 +703,11 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
           })
         }
       });
+    }
+
+    // Procesar voto de categoría si se actualizó con bggId y gameCategory
+    if (event.bggId && event.gameCategory) {
+      await processGameCategoryVote(userId!, event.bggId, event.gameCategory as BadgeCategory);
     }
 
     res.status(200).json({

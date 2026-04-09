@@ -118,7 +118,7 @@ export default function Onboarding() {
             Bienvenido al club
           </h1>
           <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
-            Antes de continuar necesitamos que completes tu ficha de socio. Solo tendrás que hacerlo una vez.
+            Antes de continuar necesitamos que completes tu ficha de colaborador. Sólo tendrás que hacerlo una vez.
           </p>
         </div>
 

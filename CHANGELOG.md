@@ -4,6 +4,58 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 2)
+
+### Nuevas funcionalidades
+
+#### Toggle BGG / RPGGeek en el modal de búsqueda de juegos
+
+- Al crear o editar una partida, el modal de búsqueda de juegos incluye ahora un toggle "Juego de mesa / Juego de rol" que cambia el backend de búsqueda entre BoardGameGeek y RPGGeek. Por defecto busca en BGG; si se activa el toggle, busca en RPGGeek (útil para juegos de rol que no están en BGG).
+- El toggle se resetea a BGG cada vez que se abre el modal.
+
+**Archivos modificados:**
+- `server/src/services/bggService.ts` — nueva función `searchRPGGeekGames`
+- `server/src/controllers/bggController.ts` — nuevo handler `searchRPGGGames`
+- `server/src/routes/bggRoutes.ts` — ruta `GET /api/bgg/rpgg/search`
+- `client/src/components/events/GameSearchModal.tsx` — toggle de fuente, reset al abrir
+
+#### Nueva categoría de juego: Cartas / LCG / TCG
+
+- Se añade la categoría `CARTAS_LCG_TCG` al enum `BadgeCategory` para poder clasificar juegos de cartas tipo Magic, Keyforge, etc.
+- Aparece como opción en el selector de categoría al crear/editar partidas.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — nuevo valor en enum `BadgeCategory`
+- `server/prisma/migrations/20260409010000_add_cartas_lcg_tcg_category/migration.sql` — `ALTER TYPE ADD VALUE`
+- `client/src/types/badge.ts` — tipo, nombre (`Cartas / LCG / TCG`) e icono (`🃏`)
+- `client/src/pages/CreatePartida.tsx` y `client/src/pages/EventDetail.tsx` — nueva opción en el select
+
+#### Dos nuevos badges: Conocedor de Géneros y Fotógrafo
+
+**Conocedor de Géneros** — sistema de votación comunitaria de categoría de juego por `bggId`:
+- Cuando 2 usuarios coinciden en la categoría de un mismo juego, ambos reciben 1 punto y la categoría queda fijada en BD (`Game.confirmedCategory`). El juego puede necesitar más de 2 votos si no hay coincidencia entre los primeros.
+- Una vez fijada, el selector de categoría aparece bloqueado con el mensaje "Categoría fijada por la comunidad".
+- Niveles (umbrales 2/5/10/20/35/50): Aficionado Curioso, Conocedor de Géneros, Experto en Géneros, Maestro Clasificador, Gran Árbitro Lúdico, Enciclopedia Viviente.
+
+**Fotógrafo** — se acredita 1 punto cada vez que un usuario sube al menos una foto a una partida (máximo 1 punto por partida aunque suba varias):
+- Niveles (umbrales 1/5/10/20/35/60): Testigo Ocular, Cazador de Instantes, Reportero de Mesa, Fotógrafo Oficial, Maestro del Objetivo, Gran Cronista del Club.
+
+La descripción de cómo se obtiene cada badge especial ahora aparece integrada en el header del logro (entre el nombre y el contador), visible sin necesidad de desplegar.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — enum `CONOCEDOR_GENEROS` y `FOTOGRAFO`, modelos `GameCategoryVote` y `GenreConsensusHistory`, campo `confirmedCategory` en `Game`
+- `server/prisma/migrations/20260409020000_add_new_badges/migration.sql` — nuevas tablas y columnas
+- `server/src/controllers/badgeController.ts` — contadores para nuevos badges, función `processGameCategoryVote`
+- `server/src/controllers/eventController.ts` — llama a `processGameCategoryVote` al crear/actualizar eventos
+- `server/src/controllers/eventPhotoController.ts` — acredita punto FOTOGRAFO al subir primera foto; migrado a singleton de Prisma
+- `server/prisma/seeds/badgeDefinitions.ts` — 12 nuevas definiciones
+- `client/src/types/badge.ts` — tipos, nombres, iconos y descripciones para nuevos badges
+- `client/src/types/event.ts` — campo `confirmedCategory` en interfaz `Event`
+- `client/src/pages/CreatePartida.tsx` y `client/src/pages/EventDetail.tsx` — select bloqueado si hay categoría confirmada
+- `client/src/components/badges/BadgeGrid.tsx` — descripción visible en el header del badge
+
+---
+
 ## 2026-04-09 (sesión 1)
 
 ### Nuevas funcionalidades

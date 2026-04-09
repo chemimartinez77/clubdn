@@ -1,6 +1,6 @@
 // server/src/controllers/bggController.ts
 import { Request, Response } from 'express';
-import { searchBGGGames, getBGGGame } from '../services/bggService';
+import { searchBGGGames, getBGGGame, searchRPGGeekGames } from '../services/bggService';
 
 /**
  * GET /api/bgg/search?query=catan&page=1&pageSize=10
@@ -42,6 +42,35 @@ export const searchGames = async (req: Request, res: Response): Promise<void> =>
       success: false,
       message: 'Error al buscar juegos'
     });
+  }
+};
+
+/**
+ * GET /api/bgg/rpgg/search?query=...&page=1&pageSize=10
+ */
+export const searchRPGGGames = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { query, page, pageSize } = req.query;
+    if (!query || typeof query !== 'string') {
+      res.status(400).json({ success: false, message: 'Query parameter is required' });
+      return;
+    }
+    const pageNumber = typeof page === 'string' ? Number.parseInt(page, 10) : undefined;
+    const pageSizeNumber = typeof pageSize === 'string' ? Number.parseInt(pageSize, 10) : undefined;
+    const searchResult = await searchRPGGeekGames(query, pageNumber, pageSizeNumber);
+    res.status(200).json({
+      success: true,
+      data: {
+        games: searchResult.games,
+        total: searchResult.total,
+        page: searchResult.page,
+        pageSize: searchResult.pageSize,
+        totalPages: searchResult.pageSize > 0 ? Math.ceil(searchResult.total / searchResult.pageSize) : 0
+      }
+    });
+  } catch (error) {
+    console.error('[RPGG SEARCH] Error:', error);
+    res.status(500).json({ success: false, message: 'Error al buscar juegos de rol' });
   }
 };
 

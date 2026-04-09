@@ -386,6 +386,67 @@ export interface RPGGeekItem {
 }
 
 /**
+ * Buscar juegos de rol en RPGGeek
+ */
+export async function searchRPGGeekGames(
+  query: string,
+  page = 1,
+  pageSize = DEFAULT_PAGE_SIZE
+): Promise<BGGSearchResult> {
+  try {
+    if (!query || query.trim().length < 2) return { games: [], total: 0, page, pageSize };
+
+    const trimmedQuery = query.trim();
+    const safePage = Number.isFinite(page) ? Math.max(1, Math.floor(page)) : 1;
+    const safePageSize = Number.isFinite(pageSize)
+      ? Math.max(1, Math.min(MAX_PAGE_SIZE, Math.floor(pageSize)))
+      : DEFAULT_PAGE_SIZE;
+
+    const rawSearch = await requestWithRetry('/search', {
+      query: trimmedQuery,
+      type: 'rpgitem',
+      exact: 0
+    }, rpggClient);
+
+    const searchResult = await parseStringPromise(rawSearch);
+
+    if (!searchResult.items?.item) return { games: [], total: 0, page: safePage, pageSize: safePageSize };
+
+    const items = normalizeItems(searchResult.items.item);
+    const totalFromApi = Number.parseInt(searchResult.items?.$?.total ?? '', 10);
+    const total = Number.isFinite(totalFromApi) && totalFromApi > 0 ? totalFromApi : items.length;
+    const startIndex = (safePage - 1) * safePageSize;
+    const pagedItems = items.slice(startIndex, startIndex + safePageSize);
+    const ids = pagedItems.map((item: any) => item.$.id);
+
+    if (ids.length === 0) return { games: [], total, page: safePage, pageSize: safePageSize };
+
+    const rawDetails = await requestWithRetry('/thing', {
+      id: ids.join(','),
+      type: 'rpgitem',
+      stats: 0
+    }, rpggClient);
+
+    const detailsResult = await parseStringPromise(rawDetails);
+    if (!detailsResult.items?.item) return { games: [], total, page: safePage, pageSize: safePageSize };
+
+    const detailItems = normalizeItems(detailsResult.items.item);
+    const games: BGGGame[] = detailItems.map((item: any) => ({
+      id: item.$.id,
+      name: extractPrimaryName(item),
+      yearPublished: item.yearpublished?.[0]?.$.value || '',
+      image: item.image?.[0] || '',
+      thumbnail: item.thumbnail?.[0] || ''
+    }));
+
+    return { games, total, page: safePage, pageSize: safePageSize };
+  } catch (error) {
+    console.error('Error al buscar en RPGGeek:', error);
+    return { games: [], total: 0, page, pageSize };
+  }
+}
+
+/**
  * Obtener thumbnail y datos básicos de un ítem de RPGGeek.
  * La API de rpggeek.com es idéntica a la de BGG; solo cambia el dominio y el tipo.
  */

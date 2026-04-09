@@ -8,10 +8,13 @@ export type BadgeCategory =
   | 'MINIATURAS'
   | 'WARHAMMER'
   | 'FILLERS_PARTY'
+  | 'CARTAS_LCG_TCG'
   | 'CATALOGADOR'
   | 'ORGANIZADOR'
   | 'REPETIDOR'
-  | 'VALIDADOR';
+  | 'VALIDADOR'
+  | 'CONOCEDOR_GENEROS'
+  | 'FOTOGRAFO';
 
 export interface BadgeDefinition {
   id: string;
@@ -90,7 +93,10 @@ export const getCategoryDisplayName = (category: BadgeCategory): string => {
     MINIATURAS: 'Miniaturas',
     WARHAMMER: 'Warhammer',
     FILLERS_PARTY: 'Fillers / Party',
+    CARTAS_LCG_TCG: 'Cartas / LCG / TCG',
     CATALOGADOR: 'Catalogador',
+    CONOCEDOR_GENEROS: 'Conocedor de Géneros',
+    FOTOGRAFO: 'Fotógrafo',
     ORGANIZADOR: 'Organizador',
     REPETIDOR: 'Repetidor',
     VALIDADOR: 'Validador'
@@ -101,7 +107,9 @@ export const getCategoryDisplayName = (category: BadgeCategory): string => {
 // Helper para obtener descripción de categoría
 export const getCategoryDescription = (category: BadgeCategory): string | undefined => {
   const descriptions: Partial<Record<BadgeCategory, string>> = {
-    CATALOGADOR: 'Se obtiene jugando partidas en las que hayas seleccionado el género del juego al crearlas.'
+    CATALOGADOR: 'Se obtiene jugando partidas en las que hayas seleccionado el género del juego al crearlas.',
+    CONOCEDOR_GENEROS: 'Se obtiene cuando otro miembro coincide en la categoría que asignaste a un juego. El juego queda fijado con esa categoría para todos.',
+    FOTOGRAFO: 'Se obtiene subiendo al menos una foto a una partida. Solo cuenta una vez por partida.'
   };
   return descriptions[category];
 };
@@ -134,7 +142,10 @@ export const getCategoryIcon = (category: BadgeCategory): string => {
     MINIATURAS: '🗿',
     WARHAMMER: '⚡',
     FILLERS_PARTY: '🎉',
+    CARTAS_LCG_TCG: '🃏',
     CATALOGADOR: '📚',
+    CONOCEDOR_GENEROS: '🎓',
+    FOTOGRAFO: '📸',
     ORGANIZADOR: '🏛️',
     REPETIDOR: '🔁',
     VALIDADOR: '✅'

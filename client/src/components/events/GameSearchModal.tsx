@@ -1,5 +1,5 @@
 // client/src/components/events/GameSearchModal.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../api/axios';
 import Button from '../ui/Button';
@@ -16,7 +16,17 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
   const [searchQuery, setSearchQuery] = useState('');
   const [searchTrigger, setSearchTrigger] = useState('');
   const [page, setPage] = useState(1);
+  const [isRPGG, setIsRPGG] = useState(false);
   const pageSize = 10;
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsRPGG(false);
+      setSearchQuery('');
+      setSearchTrigger('');
+      setPage(1);
+    }
+  }, [isOpen]);
 
   const emptyResult = {
     games: [],
@@ -27,9 +37,10 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
   };
 
   const { data: searchResult = emptyResult, isLoading } = useQuery({
-    queryKey: ['bgg-search', searchTrigger, page],
+    queryKey: ['bgg-search', searchTrigger, page, isRPGG],
     queryFn: async () => {
       if (!searchTrigger || searchTrigger.length < 2) return emptyResult;
+      const endpoint = isRPGG ? '/api/bgg/rpgg/search' : '/api/bgg/search';
       const response = await api.get<ApiResponse<{
         games: BGGGame[];
         total: number;
@@ -37,13 +48,19 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
         pageSize: number;
         totalPages: number;
       }>>(
-        `/api/bgg/search?query=${encodeURIComponent(searchTrigger)}&page=${page}&pageSize=${pageSize}`
+        `${endpoint}?query=${encodeURIComponent(searchTrigger)}&page=${page}&pageSize=${pageSize}`
       );
       return response.data.data || emptyResult;
     },
-    enabled: !!searchTrigger && searchTrigger.length >= 2, // Ejecutar cuando hay searchTrigger
-    staleTime: 5 * 60 * 1000 // 5 minutos
+    enabled: !!searchTrigger && searchTrigger.length >= 2,
+    staleTime: 5 * 60 * 1000
   });
+
+  const handleToggleSource = () => {
+    setIsRPGG((prev) => !prev);
+    setSearchTrigger('');
+    setPage(1);
+  };
 
   const handleSearchClick = () => {
     if (searchQuery.length >= 2) {
@@ -83,6 +100,25 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+          </div>
+
+          {/* Toggle BGG / RPGGeek */}
+          <div className="flex items-center gap-3 mb-4">
+            <span className={`text-sm ${!isRPGG ? 'text-[var(--color-text)] font-medium' : 'text-[var(--color-textSecondary)]'}`}>
+              Juego de mesa
+            </span>
+            <button
+              type="button"
+              onClick={handleToggleSource}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isRPGG ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-cardBorder)]'}`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isRPGG ? 'translate-x-6' : 'translate-x-1'}`}
+              />
+            </button>
+            <span className={`text-sm ${isRPGG ? 'text-[var(--color-text)] font-medium' : 'text-[var(--color-textSecondary)]'}`}>
+              Juego de rol
+            </span>
           </div>
 
           {/* Search Input */}
@@ -127,7 +163,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)] mx-auto mb-4"></div>
-                <p className="text-[var(--color-textSecondary)]">Buscando juegos en BoardGameGeek...</p>
+                <p className="text-[var(--color-textSecondary)]">{isRPGG ? 'Buscando juegos en RPGGeek...' : 'Buscando juegos en BoardGameGeek...'}</p>
               </div>
             </div>
           ) : !searchTrigger ? (
