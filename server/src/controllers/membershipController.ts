@@ -15,7 +15,7 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
       where: {
         status: 'APPROVED',
         membership: {
-          isNot: null
+          type: { notIn: ['EN_PRUEBAS', 'BAJA'] }
         }
       },
       include: {
