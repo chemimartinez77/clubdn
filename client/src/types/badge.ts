@@ -105,9 +105,20 @@ export const getCategoryDisplayName = (category: BadgeCategory): string => {
 };
 
 // Helper para obtener descripción de categoría
-export const getCategoryDescription = (category: BadgeCategory): string | undefined => {
-  const descriptions: Partial<Record<BadgeCategory, string>> = {
+export const getCategoryDescription = (category: BadgeCategory): string => {
+  const descriptions: Record<BadgeCategory, string> = {
+    EUROGAMES: 'Se obtiene jugando partidas de juegos de estilo eurogame: gestión de recursos, optimización y poca azar.',
+    TEMATICOS: 'Se obtiene jugando partidas de juegos temáticos: aventura, narrativa y ambientación por encima de la mecánica.',
+    WARGAMES: 'Se obtiene jugando partidas de wargames: simulación de conflictos históricos o ficticios con mapas y unidades.',
+    ROL: 'Se obtiene jugando partidas de juegos de rol de mesa, tanto de sistema como narrativos.',
+    MINIATURAS: 'Se obtiene jugando partidas de juegos de miniaturas (excepto Warhammer, que tiene su propio logro).',
+    WARHAMMER: 'Se obtiene jugando partidas de cualquier juego del universo Warhammer (40K, Age of Sigmar, etc.).',
+    FILLERS_PARTY: 'Se obtiene jugando partidas de fillers o juegos de fiesta: rápidos, sencillos y para animar cualquier reunión.',
+    CARTAS_LCG_TCG: 'Se obtiene jugando partidas de juegos de cartas: LCG, TCG, juegos de cartas coleccionables o similares.',
     CATALOGADOR: 'Se obtiene jugando partidas en las que hayas seleccionado el género del juego al crearlas.',
+    ORGANIZADOR: 'Se obtiene organizando partidas. Cuenta cada partida que hayas creado y que haya llegado a celebrarse.',
+    REPETIDOR: 'Se obtiene cuando juegas al mismo juego 3 o más veces. Cuenta el número de juegos distintos con al menos 3 partidas.',
+    VALIDADOR: 'Se obtiene validando partidas con el código QR. Escanea el QR de otro jugador (o que te escaneen) al terminar una partida.',
     CONOCEDOR_GENEROS: 'Se obtiene cuando otro miembro coincide en la categoría que asignaste a un juego. El juego queda fijado con esa categoría para todos.',
     FOTOGRAFO: 'Se obtiene subiendo al menos una foto a una partida. Solo cuenta una vez por partida.'
   };

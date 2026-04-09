@@ -182,6 +182,15 @@ export default function Onboarding() {
             {mutation.isPending ? 'Guardando...' : 'Completar registro'}
           </button>
         </form>
+
+        <button
+          type="button"
+          onClick={() => { localStorage.removeItem('token'); navigate('/login', { replace: true }); }}
+          className="mt-4 w-full py-2 rounded-lg text-sm transition-opacity hover:opacity-70"
+          style={{ color: colors.textSecondary }}
+        >
+          Cerrar sesión
+        </button>
       </div>
     </div>
   );
