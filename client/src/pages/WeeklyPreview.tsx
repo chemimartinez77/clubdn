@@ -171,7 +171,7 @@ function EventBlockView({ block, colors, colorIndex: _colorIndex = 0 }: { block:
 
   // ⚠ sin variante emoji (U+26A0 sin U+FE0F) para poder colorear con CSS
   const warnIcon = !hasSocio
-    ? <span style={{ color: colors.accent, fontSize: '12px', marginRight: '3px' }}>&#x26A0;</span>
+    ? <span style={{ position: 'absolute', bottom: '3px', right: '3px', color: colors.accent, fontSize: '18px', lineHeight: 1 }}>&#x26A0;</span>
     : null;
 
   // Cuando solapa, el bloque es estrecho: texto vertical rotado
@@ -202,7 +202,7 @@ function EventBlockView({ block, colors, colorIndex: _colorIndex = 0 }: { block:
         }}
       >
         {!hasSocio && (
-          <span style={{ color: colors.accent, fontSize: '13px', lineHeight: 1, marginBottom: '2px' }}>&#x26A0;</span>
+          <span style={{ position: 'absolute', bottom: '3px', right: '3px', color: colors.accent, fontSize: '18px', lineHeight: 1 }}>&#x26A0;</span>
         )}
         <div
           style={{
@@ -256,8 +256,9 @@ function EventBlockView({ block, colors, colorIndex: _colorIndex = 0 }: { block:
         lineHeight: 1.2,
       }}
     >
+      {warnIcon}
       <div style={{ fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-        {warnIcon}{event.title}
+        {event.title}
       </div>
       {height >= 32 && (
         <div style={{ opacity: 0.85, fontSize: '10px', marginTop: '1px' }}>{timeStr}</div>

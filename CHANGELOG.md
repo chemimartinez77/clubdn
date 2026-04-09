@@ -4,6 +4,19 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 7)
+
+### Mejoras visuales
+
+#### Previsión semanal: icono de aviso abajo a la derecha y más grande
+
+- El icono ⚠ (sin socio confirmado) se mueve de la parte superior al **rincón inferior derecho** del bloque, tanto en bloques normales como en bloques solapados (verticales). Se aumenta de 12-13px a 18px (~50% más grande) para que sea más visible sin estorbar el título.
+
+**Archivos modificados:**
+- `client/src/pages/WeeklyPreview.tsx` — `warnIcon` y el span en bloques solapados pasan a `position: absolute; bottom: 3px; right: 3px; fontSize: 18px`
+
+---
+
 ## 2026-04-09 (sesión 6)
 
 ### Mejoras visuales
