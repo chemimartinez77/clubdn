@@ -30,9 +30,7 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
           }
         }
       },
-      orderBy: {
-        profile: { lastName: 'asc' }
-      }
+      orderBy: { name: 'asc' } // real sort done in-memory after resolving firstName/lastName
     });
 
     // Calcular información adicional y mapear pagos por mes
@@ -69,11 +67,15 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
         now
       });
 
+      const nameParts = user.name.trim().split(/\s+/);
+      const resolvedFirstName = user.profile?.firstName || nameParts[0] || '';
+      const resolvedLastName = user.profile?.lastName || nameParts.slice(1).join(' ') || '';
+
       return {
         id: user.id,
         name: user.name,
-        firstName: user.profile?.firstName || '',
-        lastName: user.profile?.lastName || '',
+        firstName: resolvedFirstName,
+        lastName: resolvedLastName,
         email: user.email,
         membership: user.membership,
         monthsAsMember,
@@ -83,6 +85,12 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
         status: paymentStatus
       };
     });
+
+    // Sort by lastName ascending in-memory (handles null profiles correctly)
+    const normalizeSort = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    usersWithPaymentStatus.sort((a, b) =>
+      normalizeSort(a.lastName).localeCompare(normalizeSort(b.lastName))
+    );
 
     res.status(200).json({
       success: true,

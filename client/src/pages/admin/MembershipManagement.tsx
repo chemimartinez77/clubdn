@@ -167,9 +167,11 @@ export default function MembershipManagement() {
   }).sort((a, b) => {
     let cmp = 0;
     if (sortCol === 'firstName') {
-      cmp = normalize(a.firstName || a.name).localeCompare(normalize(b.firstName || b.name));
+      cmp = normalize(a.firstName || a.name.trim().split(/\s+/)[0] || '').localeCompare(normalize(b.firstName || b.name.trim().split(/\s+/)[0] || ''));
     } else if (sortCol === 'lastName') {
-      cmp = normalize(a.lastName || '').localeCompare(normalize(b.lastName || ''));
+      const lastA = a.lastName || a.name.trim().split(/\s+/).slice(1).join(' ') || '';
+      const lastB = b.lastName || b.name.trim().split(/\s+/).slice(1).join(' ') || '';
+      cmp = normalize(lastA).localeCompare(normalize(lastB));
     } else if (sortCol === 'status') {
       cmp = (statusOrder[a.status] ?? 0) - (statusOrder[b.status] ?? 0);
     }

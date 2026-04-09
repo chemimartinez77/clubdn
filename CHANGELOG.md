@@ -4,6 +4,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 12)
+
+### Correcciones
+
+#### Directorio de Miembros y Gestión de Pagos: fallback de nombre/apellidos y ordenación consistente
+
+- Se corrige la resolución de `firstName` y `lastName` cuando el perfil del usuario no tiene esos campos rellenos: el backend ahora hace fallback automático a partir de `user.name`, separando nombre y apellidos en memoria para no dejar columnas vacías.
+- En el **Directorio de Miembros**, la ordenación por **Nombre**, **Apellidos** y **Estado de Pago** pasa a resolverse en memoria después de construir los datos, evitando resultados incorrectos cuando faltan valores en `UserProfile`.
+- En **Gestión de Pagos**, la ordenación client-side por nombre y apellidos también usa fallback desde `user.name`, de modo que la tabla mantiene un orden coherente incluso si `firstName` o `lastName` vienen vacíos del perfil.
+- El endpoint de gestión de pagos deja de depender de `profile.lastName` en la query SQL y ordena por apellidos resueltos en memoria, lo que evita perder consistencia con usuarios migrados o incompletos.
+
+**Archivos modificados:**
+- `server/src/controllers/memberController.ts` — fallback desde `user.name` para `firstName`/`lastName`; ordenación en memoria para `firstName`, `lastName` y `paymentStatus`
+- `server/src/controllers/membershipController.ts` — fallback desde `user.name` y ordenación final por apellidos resueltos en memoria
+- `client/src/pages/admin/MembershipManagement.tsx` — ordenación por nombre/apellidos con fallback cuando el perfil no trae datos separados
+
+---
 ## 2026-04-09 (sesión 11)
 
 ### Nuevas funcionalidades

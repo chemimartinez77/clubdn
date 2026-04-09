@@ -82,18 +82,16 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
     }
     // Si no hay filtro específico, mostrar TODOS los usuarios (con o sin membresía)
 
-    // Determine orderBy — firstName/lastName sort via profile relation, rest via user fields
+    // Determine orderBy — email/startDate sort via Prisma; firstName/lastName/paymentStatus in-memory
     const dir = (sortDir as string) === 'desc' ? 'desc' : 'asc';
     let orderBy: any;
-    if (sortBy === 'firstName' || sortBy === 'lastName') {
-      orderBy = { profile: { [sortBy as string]: dir } };
-    } else if (sortBy === 'email') {
+    const inMemorySort = sortBy === 'firstName' || sortBy === 'lastName' || sortBy === 'paymentStatus';
+    if (sortBy === 'email') {
       orderBy = { email: dir };
     } else if (sortBy === 'startDate') {
       orderBy = { membership: { startDate: dir } };
     } else {
-      // paymentStatus sorting is done in-memory after calculation; default to lastName
-      orderBy = { profile: { lastName: dir } };
+      orderBy = { name: 'asc' }; // fallback stable sort; real sort done in-memory
     }
 
     // Get users with pagination
@@ -112,8 +110,8 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
             }
           }
         },
-        skip: sortBy === 'paymentStatus' ? 0 : skip,
-        take: sortBy === 'paymentStatus' ? undefined : pageSizeNum,
+        skip: inMemorySort ? 0 : skip,
+        take: inMemorySort ? undefined : pageSizeNum,
         orderBy
       }),
       prisma.user.count({ where })
@@ -136,11 +134,16 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
         }
       }
 
+      // Fallback to splitting user.name when profile fields are empty
+      const nameParts = user.name.trim().split(/\s+/);
+      const resolvedFirstName = user.profile?.firstName || nameParts[0] || '';
+      const resolvedLastName = user.profile?.lastName || nameParts.slice(1).join(' ') || '';
+
       return {
         id: user.id,
         name: user.name,
-        firstName: user.profile?.firstName || '',
-        lastName: user.profile?.lastName || '',
+        firstName: resolvedFirstName,
+        lastName: resolvedLastName,
         email: user.email,
         membershipType,
         startDate: user.membership?.startDate.toISOString() || null,
@@ -158,14 +161,22 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
       filteredMembers = membersData.filter(m => m.paymentStatus === paymentStatusFilter);
     }
 
-    // Sort by paymentStatus in-memory if requested
+    // In-memory sort for firstName, lastName and paymentStatus
     const paymentStatusOrder: Record<string, number> = {
       NUEVO: 0, PENDIENTE: 1, IMPAGADO: 2, PAGADO: 3, ANO_COMPLETO: 4
     };
-    if (sortBy === 'paymentStatus') {
+    const normalizeSort = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (inMemorySort) {
       filteredMembers.sort((a, b) => {
-        const diff = (paymentStatusOrder[a.paymentStatus] ?? 0) - (paymentStatusOrder[b.paymentStatus] ?? 0);
-        return dir === 'asc' ? diff : -diff;
+        let cmp = 0;
+        if (sortBy === 'firstName') {
+          cmp = normalizeSort(a.firstName).localeCompare(normalizeSort(b.firstName));
+        } else if (sortBy === 'lastName') {
+          cmp = normalizeSort(a.lastName).localeCompare(normalizeSort(b.lastName));
+        } else {
+          cmp = (paymentStatusOrder[a.paymentStatus] ?? 0) - (paymentStatusOrder[b.paymentStatus] ?? 0);
+        }
+        return dir === 'asc' ? cmp : -cmp;
       });
       filteredMembers = filteredMembers.slice(skip, skip + pageSizeNum);
     }
