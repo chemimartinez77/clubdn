@@ -105,22 +105,28 @@ async function getCategoryCount(userId: string, category: BadgeCategory): Promis
     return groups.length;
   }
   if (category === BadgeCategory.VALIDADOR) {
-    // Cuenta partidas únicas en las que el usuario participó en una validación QR
-    const asScanner = await prisma.gameValidation.findMany({
-      where: { scannerId: userId },
-      select: { eventId: true },
-      distinct: ['eventId']
-    });
-    const asScanned = await prisma.gameValidation.findMany({
+    // Solo cuenta el que fue escaneado (muestra su QR)
+    const validations = await prisma.gameValidation.findMany({
       where: { scannedId: userId },
       select: { eventId: true },
       distinct: ['eventId']
     });
-    const uniqueEvents = new Set([
-      ...asScanner.map(v => v.eventId),
-      ...asScanned.map(v => v.eventId)
-    ]);
-    return uniqueEvents.size;
+    return validations.length;
+  }
+  if (category === BadgeCategory.TESTIGO_MESA) {
+    // Solo cuenta el que escanea el QR (testigo con la cámara)
+    const validations = await prisma.gameValidation.findMany({
+      where: { scannerId: userId },
+      select: { eventId: true },
+      distinct: ['eventId']
+    });
+    return validations.length;
+  }
+  if (category === BadgeCategory.AUDITOR_LUDICO) {
+    // Cuenta partidas confirmadas como celebradas por el organizador
+    return prisma.event.count({
+      where: { createdBy: userId, disputeResult: true }
+    });
   }
   if (category === BadgeCategory.CONOCEDOR_GENEROS) {
     return prisma.genreConsensusHistory.count({ where: { userId } });
@@ -402,6 +408,8 @@ function getCategoryDisplayName(category: BadgeCategory): string {
     [BadgeCategory.ORGANIZADOR]: 'Organizador',
     [BadgeCategory.REPETIDOR]: 'Repetidor',
     [BadgeCategory.VALIDADOR]: 'Validador',
+    [BadgeCategory.TESTIGO_MESA]: 'Testigo de Mesa',
+    [BadgeCategory.AUDITOR_LUDICO]: 'Auditor Lúdico',
     [BadgeCategory.CONOCEDOR_GENEROS]: 'Conocedor de Géneros',
     [BadgeCategory.FOTOGRAFO]: 'Fotógrafo'
   };

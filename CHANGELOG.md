@@ -4,6 +4,45 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 5)
+
+### Correcciones
+
+#### Inversión de roles en badges Validador y Testigo de Mesa
+
+- Los roles de VALIDADOR y TESTIGO_MESA estaban intercambiados. Se corrige la lógica: **VALIDADOR** lo obtiene quien muestra su propio QR (el `scannedId`), y **TESTIGO_MESA** quien escanea el QR de otro (el `scannerId`). El nombre "testigo" hace referencia a quien "ve" con la cámara, de ahí el cambio.
+- Las descripciones en la UI se actualizan para reflejar el comportamiento correcto.
+
+**Archivos modificados:**
+- `server/src/controllers/badgeController.ts` — `getCategoryCount` intercambia `scannedId`/`scannerId` entre VALIDADOR y TESTIGO_MESA
+- `server/src/controllers/eventController.ts` — `validateGameQr` llama a `checkAndUnlockBadges` con los IDs correctos para cada badge
+- `client/src/types/badge.ts` — descripciones de VALIDADOR y TESTIGO_MESA actualizadas
+
+---
+
+## 2026-04-09 (sesión 4)
+
+### Nuevas funcionalidades y correcciones
+
+#### Nuevos badges: Testigo de Mesa y Auditor Lúdico
+
+- Se añaden dos nuevos badges al sistema de logros:
+  - **TESTIGO_MESA**: se otorga al jugador que es escaneado por otro con el QR al terminar una partida. 6 niveles con umbrales 5/10/20/40/70/100 (Presente y Acreditado → Leyenda del Acta).
+  - **AUDITOR_LUDICO**: se otorga al organizador cuando confirma que su partida se celebró. 6 niveles con umbrales 5/10/20/40/70/100 (Inspector Novato → Guardián de la Verdad Lúdica).
+- El badge **VALIDADOR** se corrige para que solo cuente al jugador que escanea el QR (antes contaba también al escaneado, lo que hacía que ambos sumaran al mismo logro). Su descripción en la UI se actualiza en consecuencia.
+- Las notificaciones de tipo `EVENT_DISPUTE_CONFIRMATION` se eliminan automáticamente pasadas 48 horas desde su creación, evitando que queden pendientes eternamente en la bandeja del organizador.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — enum `BadgeCategory` con `TESTIGO_MESA` y `AUDITOR_LUDICO`
+- `server/prisma/migrations/20260409030000_add_testigo_auditor_badges/migration.sql` — nuevo fichero de migración
+- `server/prisma/seeds/badgeDefinitions.ts` — 12 nuevas definiciones (90 total)
+- `server/src/controllers/badgeController.ts` — `getCategoryCount` separado en VALIDADOR (solo scanner) y TESTIGO_MESA (solo scanned); nuevo caso AUDITOR_LUDICO; display names actualizados
+- `server/src/controllers/eventController.ts` — `validateGameQr` llama a `checkAndUnlockBadges` para TESTIGO_MESA; `confirmEventPlayed` llama a `checkAndUnlockBadges` para AUDITOR_LUDICO
+- `server/src/controllers/statsController.ts` — `completePassedEvents` limpia notificaciones `EVENT_DISPUTE_CONFIRMATION` con más de 48h
+- `client/src/types/badge.ts` — nuevas entradas en `BadgeCategory`, `getCategoryDisplayName`, `getCategoryDescription`, `getCategoryColor` y `getCategoryIcon` para TESTIGO_MESA y AUDITOR_LUDICO; descripción de VALIDADOR corregida
+
+---
+
 ## 2026-04-09 (sesión 3)
 
 ### Mejoras

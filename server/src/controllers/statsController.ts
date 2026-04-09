@@ -36,7 +36,11 @@ export async function completePassedEvents(): Promise<void> {
     return endDate <= now;
   });
 
-  if (passedEvents.length === 0) return;
+  if (passedEvents.length === 0) {
+    // Aun así limpiar notificaciones caducadas
+    await cleanExpiredDisputeNotifications(now);
+    return;
+  }
 
   for (const event of passedEvents) {
     // Marcar el evento como completado
@@ -50,6 +54,21 @@ export async function completePassedEvents(): Promise<void> {
       await notifyEventDisputeConfirmation(event.id, event.title, event.createdBy);
     }
   }
+
+  await cleanExpiredDisputeNotifications(now);
+}
+
+/**
+ * Elimina notificaciones EVENT_DISPUTE_CONFIRMATION con más de 48h de antigüedad.
+ */
+async function cleanExpiredDisputeNotifications(now: Date): Promise<void> {
+  const cutoff = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+  await prisma.notification.deleteMany({
+    where: {
+      type: 'EVENT_DISPUTE_CONFIRMATION',
+      createdAt: { lt: cutoff }
+    }
+  });
 }
 
 /**

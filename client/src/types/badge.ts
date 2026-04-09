@@ -13,6 +13,8 @@ export type BadgeCategory =
   | 'ORGANIZADOR'
   | 'REPETIDOR'
   | 'VALIDADOR'
+  | 'TESTIGO_MESA'
+  | 'AUDITOR_LUDICO'
   | 'CONOCEDOR_GENEROS'
   | 'FOTOGRAFO';
 
@@ -99,7 +101,9 @@ export const getCategoryDisplayName = (category: BadgeCategory): string => {
     FOTOGRAFO: 'Fotógrafo',
     ORGANIZADOR: 'Organizador',
     REPETIDOR: 'Repetidor',
-    VALIDADOR: 'Validador'
+    VALIDADOR: 'Validador',
+    TESTIGO_MESA: 'Testigo de Mesa',
+    AUDITOR_LUDICO: 'Auditor Lúdico'
   };
   return categoryNames[category];
 };
@@ -118,9 +122,11 @@ export const getCategoryDescription = (category: BadgeCategory): string => {
     CATALOGADOR: 'Se obtiene jugando partidas en las que hayas seleccionado el género del juego al crearlas.',
     ORGANIZADOR: 'Se obtiene organizando partidas. Cuenta cada partida que hayas creado y que haya llegado a celebrarse.',
     REPETIDOR: 'Se obtiene cuando juegas al mismo juego 3 o más veces. Cuenta el número de juegos distintos con al menos 3 partidas.',
-    VALIDADOR: 'Se obtiene validando partidas con el código QR. Escanea el QR de otro jugador (o que te escaneen) al terminar una partida.',
+    VALIDADOR: 'Se obtiene mostrando tu QR a otro jugador al terminar una partida. Tú eres quien enseña el código.',
     CONOCEDOR_GENEROS: 'Se obtiene cuando otro miembro coincide en la categoría que asignaste a un juego. El juego queda fijado con esa categoría para todos.',
-    FOTOGRAFO: 'Se obtiene subiendo al menos una foto a una partida. Solo cuenta una vez por partida.'
+    FOTOGRAFO: 'Se obtiene subiendo al menos una foto a una partida. Solo cuenta una vez por partida.',
+    TESTIGO_MESA: 'Se obtiene escaneando el QR de otro jugador al terminar una partida. Tú eres el testigo con la cámara.',
+    AUDITOR_LUDICO: 'Se obtiene cuando confirmas como organizador que una de tus partidas se celebró. Cada confirmación cuenta un punto.'
   };
   return descriptions[category];
 };
@@ -141,7 +147,9 @@ export const getCategoryColor = (category: BadgeCategory): string => {
     VALIDADOR: '#10b981',       // Esmeralda
     CARTAS_LCG_TCG: '#dc2626',  // Rojo oscuro
     CONOCEDOR_GENEROS: '#7c3aed', // Violeta
-    FOTOGRAFO: '#0891b2'        // Azul cyan
+    FOTOGRAFO: '#0891b2',       // Azul cyan
+    TESTIGO_MESA: '#0d9488',    // Teal
+    AUDITOR_LUDICO: '#b45309'   // Ámbar oscuro
   };
   return categoryColors[category];
 };
@@ -162,7 +170,9 @@ export const getCategoryIcon = (category: BadgeCategory): string => {
     FOTOGRAFO: '📸',
     ORGANIZADOR: '🏛️',
     REPETIDOR: '🔁',
-    VALIDADOR: '✅'
+    VALIDADOR: '✅',
+    TESTIGO_MESA: '👁️',
+    AUDITOR_LUDICO: '🔍'
   };
   return categoryIcons[category];
 };
