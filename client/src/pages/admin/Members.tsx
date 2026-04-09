@@ -50,6 +50,7 @@ export default function Members() {
   });
 
   // Create user modal
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createForm, setCreateForm] = useState({
     firstName: '',
@@ -379,41 +380,50 @@ export default function Members() {
     <Layout>
       <div className="max-w-full mx-auto space-y-6 px-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-[var(--color-text)]">Directorio de Miembros</h1>
-            <p className="text-[var(--color-textSecondary)] mt-1">
-              Gestiona y consulta la información de todos los miembros del club
-            </p>
-          </div>
-          <div className="flex gap-2">
+        <div>
+          <h1 className="text-3xl font-bold text-[var(--color-text)]">Directorio de Miembros</h1>
+          <p className="text-[var(--color-textSecondary)] mt-1">
+            Gestiona y consulta la información de todos los miembros del club
+          </p>
+          <div className="flex gap-2 mt-3 justify-end">
             <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
               <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
               Actualizar
             </Button>
-            <Button onClick={() => setCreateModalOpen(true)} variant="outline" size="sm">
-              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Crear Usuario
-            </Button>
-            <Button onClick={exportCSV} variant="primary" size="sm">
+            <Button onClick={exportCSV} variant="outline" size="sm">
               <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               Exportar CSV
+            </Button>
+            <Button onClick={() => setCreateModalOpen(true)} variant="primary" size="sm">
+              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Crear Usuario
             </Button>
           </div>
         </div>
 
         {/* Filters Card */}
         <Card>
-          <CardHeader>
-            <h2 className="text-xl font-semibold text-[var(--color-text)]">Filtros</h2>
+          <CardHeader
+            className="cursor-pointer select-none"
+            onClick={() => setFiltersOpen(o => !o)}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-[var(--color-text)]">Filtros</h2>
+              <svg
+                className={`w-5 h-5 text-[var(--color-textSecondary)] transition-transform duration-200 ${filtersOpen ? 'rotate-180' : ''}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </CardHeader>
-          <CardContent>
+          {filtersOpen && <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Search */}
               <div className="lg:col-span-2">
@@ -538,7 +548,7 @@ export default function Members() {
                 </Button>
               </div>
             </div>
-          </CardContent>
+          </CardContent>}
         </Card>
 
         {/* Members Table */}

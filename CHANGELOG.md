@@ -4,6 +4,22 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 13)
+
+### Mejoras UI
+
+#### Directorio de Miembros: filtros plegables y reordenación de botones
+
+- La sección de **Filtros** aparece ahora **plegada por defecto** y se puede expandir haciendo clic en su cabecera. Se añade un icono de chevron que rota para indicar el estado abierto/cerrado.
+- El botón **Exportar CSV** pasa a estilo `outline` y **Crear Usuario** pasa a estilo primario (fondo sólido), invirtiendo el diseño anterior que los tenía al revés.
+- Los tres botones (Actualizar, Exportar CSV, Crear Usuario) se mueven **por debajo del texto descriptivo** y se alinean a la derecha dentro del encabezado, mejorando la jerarquía visual.
+- El botón **Crear Usuario** queda en la posición más a la derecha, siendo el CTA principal de la página.
+
+**Archivos modificados:**
+- `client/src/pages/admin/Members.tsx` — filtros colapsables, layout de botones reestructurado
+
+---
+
 ## 2026-04-09 (sesión 12)
 
 ### Correcciones
