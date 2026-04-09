@@ -639,7 +639,11 @@ export const reactivateMember = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    if (!membership.fechaBaja) {
+    // Verificar que el usuario esté en algún estado de baja
+    const user = await prisma.user.findUnique({ where: { id: memberId }, select: { status: true } });
+    const isBaja = membership.fechaBaja !== null || user?.status === 'SUSPENDED';
+
+    if (!isBaja) {
       res.status(400).json({
         success: false,
         message: 'El miembro no está marcado como BAJA'
