@@ -4,6 +4,21 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 3)
+
+### Mejoras
+
+#### Descripciones en todos los badges + botón de cerrar sesión en onboarding
+
+- Todos los badges muestran ahora una breve descripción de cómo se obtienen, visible directamente en el header del logro (entre el nombre y el contador), sin necesidad de desplegarlo. Anteriormente solo Catalogador, Conocedor de Géneros y Fotógrafo tenían descripción.
+- Se añade botón "Cerrar sesión" en la pantalla de onboarding, para que un usuario que haya entrado con la cuenta equivocada pueda salir sin tener que manipular el navegador.
+
+**Archivos modificados:**
+- `client/src/types/badge.ts` — `getCategoryDescription` pasa de `Partial<Record>` a `Record` completo con descripción para todas las categorías
+- `client/src/pages/Onboarding.tsx` — botón de cerrar sesión que limpia el token y redirige a `/login`
+
+---
+
 ## 2026-04-09 (sesión 2)
 
 ### Nuevas funcionalidades
