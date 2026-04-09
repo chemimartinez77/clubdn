@@ -33,8 +33,11 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
       orderBy: { name: 'asc' } // real sort done in-memory after resolving firstName/lastName
     });
 
+    // Excluir EN_PRUEBAS y BAJA — no pagan cuota mensual
+    const activeUsers = users.filter(u => u.membership && !['EN_PRUEBAS', 'BAJA'].includes(u.membership.type));
+
     // Calcular información adicional y mapear pagos por mes
-    const usersWithPaymentStatus = users.map(user => {
+    const usersWithPaymentStatus = activeUsers.map(user => {
       const now = new Date();
 
       // Crear mapa de pagos por mes (1-12)
