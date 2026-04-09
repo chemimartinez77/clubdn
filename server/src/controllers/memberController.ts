@@ -558,6 +558,11 @@ export const markMemberAsBaja = async (req: Request, res: Response): Promise<voi
       }
     });
 
+    await prisma.user.update({
+      where: { id: memberId },
+      data: { status: 'SUSPENDED' }
+    });
+
     res.status(200).json({
       success: true,
       message: 'Miembro marcado como BAJA exitosamente'
@@ -605,6 +610,11 @@ export const reactivateMember = async (req: Request, res: Response): Promise<voi
         fechaBaja: null,
         isActive: true
       }
+    });
+
+    await prisma.user.update({
+      where: { id: memberId },
+      data: { status: 'APPROVED' }
     });
 
     res.status(200).json({
