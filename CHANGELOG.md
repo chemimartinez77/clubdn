@@ -4,6 +4,26 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-10 (sesión 2)
+
+### Correcciones
+
+#### RPGGeek: búsqueda filtrada por nombre para evitar resultados irrelevantes
+
+- La búsqueda en RPGGeek devolvía items que no tenían el término buscado en el título (ej: buscar "runequest" traía "Abenteuer in Meeros" porque RPGGeek los asocia por metadatos/familia). Ahora se filtran en memoria los resultados cuyo nombre primario no contiene el término buscado.
+- Los resultados se ordenan por relevancia: coincidencia exacta > empieza por el término > contiene el término.
+- El total paginado refleja el número real de resultados relevantes tras el filtrado.
+
+#### Familiares incluidos en el buscador de invitaciones de eventos
+
+- El buscador de miembros que usa el organizador para añadir participantes a un evento ahora incluye el tipo de membresía `FAMILIAR`, que anteriormente quedaba excluido.
+
+**Archivos modificados:**
+- `server/src/services/bggService.ts` — filtrado y ordenación por relevancia en `searchRPGGeekGames`
+- `server/src/controllers/eventController.ts` — añadido `FAMILIAR` al filtro de búsqueda de invitados
+
+---
+
 ## 2026-04-10 (sesión 1)
 
 ### Nuevas funcionalidades

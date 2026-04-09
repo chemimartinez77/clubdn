@@ -28,6 +28,7 @@ type CombatZoneGame = {
 
 const COMBAT_ZONE_GAMES = [
   { bggId: '230802', name: 'Azul',      path: '/azul/combatzone',           solo: false, launchMode: 'AZUL_CREATE', fetchInfo: true },
+  { bggId: '173346', name: '7 Wonders Duel', path: '/7-wonders-duel',       solo: false, launchMode: 'NAVIGATE',    fetchInfo: true },
   { bggId: '43570',  name: 'Viernes',   path: '/viernes',                   solo: true,  launchMode: 'NAVIGATE',    fetchInfo: true },
   { bggId: '2243',   name: 'Centipede', path: '/azul/combatzone/centipede', solo: true,  launchMode: 'NAVIGATE',    fetchInfo: false },
 ] satisfies ReadonlyArray<CombatZoneGame>;
@@ -51,6 +52,7 @@ const GAME_FALLBACK_EMOJI: Record<string, string> = {
   '43570':  '🏝️', // Viernes
 };
 
+GAME_FALLBACK_EMOJI['173346'] = '\u2694\uFE0F'; // 7 Wonders Duel
 GAME_FALLBACK_EMOJI['2243'] = '\uD83D\uDC1B'; // Centipede
 
 function GameCard({ bggId, name, solo, fetchInfo, isSelected, onClick }: {

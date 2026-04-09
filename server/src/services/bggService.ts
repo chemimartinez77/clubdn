@@ -435,21 +435,28 @@ export async function searchRPGGeekGames(
     if (!searchResult.items?.item) return { games: [], total: 0, page: safePage, pageSize: safePageSize };
 
     const items = normalizeItems(searchResult.items.item);
-    const totalFromApi = Number.parseInt(searchResult.items?.$?.total ?? '', 10);
-
     // Ordenar por relevancia: exacto > empieza por > contiene
+    // En la respuesta de /search, el nombre viene en item.name[0].$.value (tipo primary/alternate)
     const lq = trimmedQuery.toLowerCase();
+    const getSearchName = (item: any): string => {
+      const names = normalizeItems(item?.name);
+      const primary = names.find((n: any) => n?.$?.type === 'primary');
+      return ((primary || names[0])?.$?.value || '').toLowerCase();
+    };
     const scored = items.map((item: any) => {
-      const name = (extractPrimaryName(item) || '').toLowerCase();
+      const name = getSearchName(item);
       const score = name === lq ? 0 : name.startsWith(lq) ? 1 : 2;
       return { item, score };
     });
     scored.sort((a: any, b: any) => a.score - b.score);
-    const sortedItems = scored.map((s: any) => s.item);
+    // Quedarse solo con items cuyo nombre contiene el término (descarta los que RPGGeek devuelve por metadatos)
+    const nameFilteredItems = scored
+      .map((s: any) => s.item)
+      .filter((item: any) => getSearchName(item).includes(lq));
 
-    const total = Number.isFinite(totalFromApi) && totalFromApi > 0 ? totalFromApi : sortedItems.length;
+    const total = nameFilteredItems.length;
     const startIndex = (safePage - 1) * safePageSize;
-    const pagedItems = sortedItems.slice(startIndex, startIndex + safePageSize);
+    const pagedItems = nameFilteredItems.slice(startIndex, startIndex + safePageSize);
     const ids = pagedItems.map((item: any) => item.$.id);
 
     if (ids.length === 0) return { games: [], total, page: safePage, pageSize: safePageSize };

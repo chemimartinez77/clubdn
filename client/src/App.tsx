@@ -47,6 +47,7 @@ import ViernesHub from './pages/viernes/ViernesHub';
 import ViernesGame from './pages/viernes/ViernesGame';
 import CentipedeGame from './pages/centipede/CentipedeGame';
 import CombatZoneComingSoon from './pages/CombatZoneComingSoon';
+import SevenWondersDuelHub from './pages/sevenWondersDuel/SevenWondersDuelHub';
 import WeeklyPreview from './pages/WeeklyPreview';
 
 // Componente para rutas protegidas
@@ -326,6 +327,14 @@ function App() {
             element={
               <CombatZoneRoute>
                 <ViernesGame />
+              </CombatZoneRoute>
+            }
+          />
+          <Route
+            path="/7-wonders-duel"
+            element={
+              <CombatZoneRoute>
+                <SevenWondersDuelHub />
               </CombatZoneRoute>
             }
           />
