@@ -105,18 +105,18 @@ async function getCategoryCount(userId: string, category: BadgeCategory): Promis
     return groups.length;
   }
   if (category === BadgeCategory.VALIDADOR) {
-    // Solo cuenta el que enseña el QR (scanner)
+    // Solo cuenta el que fue escaneado (muestra su QR)
     const validations = await prisma.gameValidation.findMany({
-      where: { scannerId: userId },
+      where: { scannedId: userId },
       select: { eventId: true },
       distinct: ['eventId']
     });
     return validations.length;
   }
   if (category === BadgeCategory.TESTIGO_MESA) {
-    // Solo cuenta el que fue escaneado (scanned)
+    // Solo cuenta el que escanea el QR (testigo con la cámara)
     const validations = await prisma.gameValidation.findMany({
-      where: { scannedId: userId },
+      where: { scannerId: userId },
       select: { eventId: true },
       distinct: ['eventId']
     });

@@ -4,6 +4,22 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 5)
+
+### Correcciones
+
+#### Inversión de roles en badges Validador y Testigo de Mesa
+
+- Los roles de VALIDADOR y TESTIGO_MESA estaban intercambiados. Se corrige la lógica: **VALIDADOR** lo obtiene quien muestra su propio QR (el `scannedId`), y **TESTIGO_MESA** quien escanea el QR de otro (el `scannerId`). El nombre "testigo" hace referencia a quien "ve" con la cámara, de ahí el cambio.
+- Las descripciones en la UI se actualizan para reflejar el comportamiento correcto.
+
+**Archivos modificados:**
+- `server/src/controllers/badgeController.ts` — `getCategoryCount` intercambia `scannedId`/`scannerId` entre VALIDADOR y TESTIGO_MESA
+- `server/src/controllers/eventController.ts` — `validateGameQr` llama a `checkAndUnlockBadges` con los IDs correctos para cada badge
+- `client/src/types/badge.ts` — descripciones de VALIDADOR y TESTIGO_MESA actualizadas
+
+---
+
 ## 2026-04-09 (sesión 4)
 
 ### Nuevas funcionalidades y correcciones

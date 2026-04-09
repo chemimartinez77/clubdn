@@ -122,10 +122,10 @@ export const getCategoryDescription = (category: BadgeCategory): string => {
     CATALOGADOR: 'Se obtiene jugando partidas en las que hayas seleccionado el género del juego al crearlas.',
     ORGANIZADOR: 'Se obtiene organizando partidas. Cuenta cada partida que hayas creado y que haya llegado a celebrarse.',
     REPETIDOR: 'Se obtiene cuando juegas al mismo juego 3 o más veces. Cuenta el número de juegos distintos con al menos 3 partidas.',
-    VALIDADOR: 'Se obtiene escaneando el QR de otro jugador al terminar una partida. Tú debes ser quien saque la cámara.',
+    VALIDADOR: 'Se obtiene mostrando tu QR a otro jugador al terminar una partida. Tú eres quien enseña el código.',
     CONOCEDOR_GENEROS: 'Se obtiene cuando otro miembro coincide en la categoría que asignaste a un juego. El juego queda fijado con esa categoría para todos.',
     FOTOGRAFO: 'Se obtiene subiendo al menos una foto a una partida. Solo cuenta una vez por partida.',
-    TESTIGO_MESA: 'Se obtiene cuando otro jugador escanea tu QR al terminar una partida. Acredita tu presencia en la mesa.',
+    TESTIGO_MESA: 'Se obtiene escaneando el QR de otro jugador al terminar una partida. Tú eres el testigo con la cámara.',
     AUDITOR_LUDICO: 'Se obtiene cuando confirmas como organizador que una de tus partidas se celebró. Cada confirmación cuenta un punto.'
   };
   return descriptions[category];

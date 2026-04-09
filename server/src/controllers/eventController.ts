@@ -2219,10 +2219,10 @@ export const validateGameQr = async (req: Request, res: Response): Promise<void>
       await processEventPlayHistory(eventId);
     }
 
-    // Desbloquear badge VALIDADOR solo para el que enseña el QR (scanner)
-    await checkAndUnlockBadges(scannerId, BadgeCategory.VALIDADOR);
-    // Desbloquear badge TESTIGO_MESA para el que fue escaneado
-    await checkAndUnlockBadges(scannedUserId, BadgeCategory.TESTIGO_MESA);
+    // Desbloquear badge VALIDADOR para el que muestra su QR (scanned)
+    await checkAndUnlockBadges(scannedUserId, BadgeCategory.VALIDADOR);
+    // Desbloquear badge TESTIGO_MESA para el que escanea (scanner)
+    await checkAndUnlockBadges(scannerId, BadgeCategory.TESTIGO_MESA);
 
     res.status(200).json({ success: true, message: 'Partida validada correctamente' });
   } catch (error) {
