@@ -209,32 +209,30 @@ function EventBlockView({ block, colors, colorIndex: _colorIndex = 0 }: { block:
             writingMode: 'vertical-rl',
             textOrientation: 'mixed',
             transform: 'rotate(0deg)',
+            fontSize: '10px',
+            opacity: 0.85,
+            whiteSpace: 'nowrap',
+            marginBottom: '2px',
+          }}
+        >
+          {timeStr.split(' – ')[0]}
+        </div>
+        <div
+          style={{
+            writingMode: 'vertical-rl',
+            textOrientation: 'mixed',
+            transform: 'rotate(0deg)',
             fontSize: '12px',
             fontWeight: 400,
             lineHeight: 1.2,
             overflow: 'hidden',
-            maxHeight: `${height - 20}px`,
+            maxHeight: `${height - 30}px`,
             whiteSpace: 'nowrap',
             textOverflow: 'ellipsis',
           }}
         >
           {label}
         </div>
-        {height >= 40 && (
-          <div
-            style={{
-              writingMode: 'vertical-rl',
-              textOrientation: 'mixed',
-              transform: 'rotate(0deg)',
-              fontSize: '10px',
-              opacity: 0.85,
-              marginTop: '3px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {timeStr}
-          </div>
-        )}
       </div>
     );
   }
@@ -572,16 +570,16 @@ export default function WeeklyPreview() {
             {/* Leyenda */}
             <div style={{ display: 'flex', gap: '16px', marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${gridBorder}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '13px', height: '13px', borderRadius: '2px', backgroundColor: colors.primary }} />
+                <div style={{ width: '17px', height: '17px', borderRadius: '2px', backgroundColor: colors.primary }} />
                 <span style={{ color: colors.textSecondary, fontSize: '14px' }}>Con socio confirmado</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ color: colors.accent, fontSize: '14px' }}>&#x26A0;</span>
+                <span style={{ color: colors.accent, fontSize: '18px' }}>&#x26A0;</span>
                 <span style={{ color: colors.textSecondary, fontSize: '14px' }}>Sin socio confirmado</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <div style={{
-                  width: '13px', height: '13px', borderRadius: '2px',
+                  width: '17px', height: '17px', borderRadius: '2px',
                   backgroundColor: colors.primary,
                   backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.25) 0px, rgba(255,255,255,0.25) 2px, transparent 2px, transparent 6px)'
                 }} />
