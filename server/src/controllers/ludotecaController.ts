@@ -246,27 +246,57 @@ export const getLibraryItemDetail = async (req: Request, res: Response): Promise
       return;
     }
 
-    // Usar datos cacheados si los tenemos, si no consultar RPGGeek
-    let image = item.image;
-    let thumbnail = item.thumbnail;
-    let yearPublished = item.yearPublished;
-    let description = item.description;
-    const rpggId = item.bggId;
+    // Intentar obtener datos completos desde la tabla Game (ya cacheados) o consultar RPGGeek
+    const prefixedId = item.bggId.startsWith('rpgg-') ? item.bggId : `rpgg-${item.bggId}`;
+    let gameData = await prisma.game.findUnique({ where: { id: prefixedId } });
 
-    if (!image) {
+    if (!gameData) {
+      // No está en Game — consultar RPGGeek y guardar
       const rpgData = await getRPGGeekItem(item.bggId);
       if (!rpgData) {
         res.status(404).json({ success: false, message: 'No se encontró información en RPGGeek' });
         return;
       }
-      image = rpgData.image;
-      thumbnail = rpgData.thumbnail;
-      yearPublished = rpgData.yearPublished;
-      description = description || rpgData.description;
-      // Cachear en BD
+      gameData = await prisma.game.create({
+        data: {
+          id: prefixedId,
+          name: rpgData.name,
+          alternateNames: rpgData.alternateNames,
+          description: rpgData.description,
+          yearPublished: rpgData.yearPublished,
+          image: rpgData.image,
+          thumbnail: rpgData.thumbnail,
+          minPlayers: rpgData.minPlayers,
+          maxPlayers: rpgData.maxPlayers,
+          playingTime: rpgData.playingTime,
+          minPlaytime: rpgData.minPlaytime,
+          maxPlaytime: rpgData.maxPlaytime,
+          minAge: rpgData.minAge,
+          usersRated: rpgData.usersRated,
+          averageRating: rpgData.averageRating,
+          bayesAverage: rpgData.bayesAverage,
+          rank: rpgData.rank,
+          complexityRating: rpgData.complexityRating,
+          numOwned: rpgData.numOwned,
+          numWanting: rpgData.numWanting,
+          numWishing: rpgData.numWishing,
+          numComments: rpgData.numComments,
+          categories: rpgData.categories,
+          mechanics: rpgData.mechanics,
+          families: rpgData.families,
+          designers: rpgData.designers,
+          artists: rpgData.artists,
+          publishers: rpgData.publishers,
+          lastSyncedAt: new Date()
+        }
+      });
+    }
+
+    // Actualizar caché en LibraryItem si faltaban imagen/año
+    if (!item.image && gameData.image) {
       await prisma.libraryItem.update({
         where: { id },
-        data: { image, thumbnail, yearPublished }
+        data: { image: gameData.image, thumbnail: gameData.thumbnail, yearPublished: gameData.yearPublished }
       });
     }
 
@@ -274,19 +304,7 @@ export const getLibraryItemDetail = async (req: Request, res: Response): Promise
     res.json({
       success: true,
       data: {
-        id: rpggId,
-        name: item.name,
-        description: description || '',
-        yearPublished,
-        image,
-        thumbnail,
-        minPlayers: null, maxPlayers: null, playingTime: null,
-        minPlaytime: null, maxPlaytime: null, minAge: null,
-        usersRated: null, averageRating: null, bayesAverage: null,
-        rank: null, strategyRank: null, complexityRating: null,
-        numOwned: null, numWanting: null, numWishing: null, numComments: null,
-        categories: [], mechanics: [], families: [],
-        designers: [], artists: [], publishers: [],
+        ...gameData,
         isRpg: true,
       }
     });

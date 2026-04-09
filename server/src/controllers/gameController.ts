@@ -1,9 +1,7 @@
 // server/src/controllers/gameController.ts
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { getBGGGameFull } from '../services/bggService';
-
-const prisma = new PrismaClient();
+import { prisma } from '../config/database';
+import { getBGGGameFull, getRPGGeekItem } from '../services/bggService';
 
 /**
  * Obtener o crear un juego en la base de datos
@@ -315,5 +313,81 @@ export const getGameBasicInfo = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('[GAME] Error al obtener info del juego:', error);
     return res.status(500).json({ success: false, message: 'Error fetching game info' });
+  }
+};
+
+/**
+ * GET /api/games/rpgg/:gameId
+ * Obtener o crear un juego de RPGGeek en la tabla Game (id con prefijo "rpgg-")
+ */
+export const getOrCreateRPGGame = async (req: Request, res: Response) => {
+  try {
+    const { gameId } = req.params;
+    if (!gameId) {
+      return res.status(400).json({ success: false, message: 'Game ID is required' });
+    }
+
+    const prefixedId = gameId.startsWith('rpgg-') ? gameId : `rpgg-${gameId}`;
+
+    // Comprobar si ya existe en BD
+    let game = await prisma.game.findUnique({ where: { id: prefixedId } });
+
+    if (game) {
+      // Actualizar imágenes si han cambiado (llamada ligera)
+      const rpggItem = await getRPGGeekItem(prefixedId);
+      if (rpggItem && (game.image !== rpggItem.image || game.thumbnail !== rpggItem.thumbnail)) {
+        game = await prisma.game.update({
+          where: { id: prefixedId },
+          data: { image: rpggItem.image, thumbnail: rpggItem.thumbnail, lastSyncedAt: new Date() }
+        });
+      }
+      return res.json({ success: true, data: game, cached: true });
+    }
+
+    // No existe — obtener datos completos y guardar
+    const rpggItem = await getRPGGeekItem(prefixedId);
+    if (!rpggItem) {
+      return res.status(404).json({ success: false, message: 'Game not found in RPGGeek' });
+    }
+
+    game = await prisma.game.create({
+      data: {
+        id: prefixedId,
+        name: rpggItem.name,
+        alternateNames: rpggItem.alternateNames,
+        description: rpggItem.description,
+        yearPublished: rpggItem.yearPublished,
+        image: rpggItem.image,
+        thumbnail: rpggItem.thumbnail,
+        minPlayers: rpggItem.minPlayers,
+        maxPlayers: rpggItem.maxPlayers,
+        playingTime: rpggItem.playingTime,
+        minPlaytime: rpggItem.minPlaytime,
+        maxPlaytime: rpggItem.maxPlaytime,
+        minAge: rpggItem.minAge,
+        usersRated: rpggItem.usersRated,
+        averageRating: rpggItem.averageRating,
+        bayesAverage: rpggItem.bayesAverage,
+        rank: rpggItem.rank,
+        complexityRating: rpggItem.complexityRating,
+        numOwned: rpggItem.numOwned,
+        numWanting: rpggItem.numWanting,
+        numWishing: rpggItem.numWishing,
+        numComments: rpggItem.numComments,
+        categories: rpggItem.categories,
+        mechanics: rpggItem.mechanics,
+        families: rpggItem.families,
+        designers: rpggItem.designers,
+        artists: rpggItem.artists,
+        publishers: rpggItem.publishers,
+        lastSyncedAt: new Date()
+      }
+    });
+
+    console.log(`[GAME] RPGGeek juego ${game.name} guardado en BD con id ${prefixedId}`);
+    return res.json({ success: true, data: game, cached: false });
+  } catch (error) {
+    console.error('[GAME] Error al obtener/crear juego de RPGGeek:', error);
+    return res.status(500).json({ success: false, message: 'Error retrieving or creating RPG game' });
   }
 };

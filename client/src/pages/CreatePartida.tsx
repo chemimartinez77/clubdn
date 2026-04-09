@@ -95,7 +95,11 @@ export default function CreatePartida() {
 
     // Guardar el juego completo en la base de datos y obtener la categoría si existe
     try {
-      const response = await api.get(`/api/games/${game.id}`);
+      const isRpg = game.id.startsWith('rpgg-');
+      const endpoint = isRpg
+        ? `/api/games/rpgg/${game.id.slice(5)}`
+        : `/api/games/${game.id}`;
+      const response = await api.get(endpoint);
 
       // Si el juego tiene categoría confirmada por la comunidad, tiene prioridad
       if (response.data?.data?.confirmedCategory) {

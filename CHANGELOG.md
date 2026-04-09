@@ -4,6 +4,27 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-10 (sesión 1)
+
+### Nuevas funcionalidades
+
+#### RPGGeek: datos completos de juegos de rol (mismo comportamiento que BGG)
+
+- Al buscar un juego de rol en el modal de búsqueda, los resultados ahora devuelven IDs con prefijo `rpgg-` para distinguirlos inequívocamente de los IDs de BGG en la tabla `Game`.
+- La función `getRPGGeekItem` en `bggService.ts` se amplía para extraer todos los campos que ya se extraen de BGG: jugadores, tiempo de partida, rating, complejidad, ranking, categorías, mecánicas, familias, diseñadores, artistas y editoriales.
+- Nuevo endpoint `GET /api/games/rpgg/:gameId` (`getOrCreateRPGGame`): busca en `Game` por `rpgg-{id}`, y si no existe consulta RPGGeek, guarda todos los datos y los devuelve. Mismo patrón que `getOrCreateGame` para BGG.
+- En `CreatePartida.tsx`, al seleccionar un juego ROL (id empieza por `rpgg-`), se llama al nuevo endpoint en lugar del de BGG.
+- En la ludoteca, "Ver detalle" de un item ROL ahora busca primero en la tabla `Game` (datos ya cacheados). Si no existe, consulta RPGGeek con los datos completos, guarda en `Game` y actualiza el caché de `LibraryItem`. El modal `GameDetailModal` recibe todos los campos igual que con un juego de mesa.
+
+**Archivos modificados:**
+- `server/src/services/bggService.ts` — prefijo `rpgg-` en búsqueda; `RPGGeekItem` y `getRPGGeekItem` ampliados con todos los campos
+- `server/src/controllers/gameController.ts` — nuevo `getOrCreateRPGGame`; corregido import de prisma (singleton)
+- `server/src/routes/gameRoutes.ts` — nueva ruta `GET /api/games/rpgg/:gameId`
+- `server/src/controllers/ludotecaController.ts` — `getLibraryItemDetail` usa `Game` como caché y devuelve datos completos
+- `client/src/pages/CreatePartida.tsx` — `handleGameSelect` enruta a `/api/games/rpgg/` para juegos ROL
+
+---
+
 ## 2026-04-09 (sesión 14)
 
 ### Nuevas funcionalidades

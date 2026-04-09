@@ -377,12 +377,34 @@ export async function getBGGGameFull(gameId: string): Promise<BGGGameFull | null
 }
 
 export interface RPGGeekItem {
-  id: string;
+  id: string;        // prefijado con "rpgg-"
   name: string;
+  alternateNames: string[];
   thumbnail: string;
   image: string;
   description: string;
   yearPublished: number | null;
+  minPlayers: number | null;
+  maxPlayers: number | null;
+  playingTime: number | null;
+  minPlaytime: number | null;
+  maxPlaytime: number | null;
+  minAge: number | null;
+  usersRated: number | null;
+  averageRating: number | null;
+  bayesAverage: number | null;
+  rank: number | null;
+  complexityRating: number | null;
+  numOwned: number | null;
+  numWanting: number | null;
+  numWishing: number | null;
+  numComments: number | null;
+  categories: string[];
+  mechanics: string[];
+  families: string[];
+  designers: string[];
+  artists: string[];
+  publishers: string[];
 }
 
 /**
@@ -432,7 +454,7 @@ export async function searchRPGGeekGames(
 
     const detailItems = normalizeItems(detailsResult.items.item);
     const games: BGGGame[] = detailItems.map((item: any) => ({
-      id: item.$.id,
+      id: `rpgg-${item.$.id}`,
       name: extractPrimaryName(item),
       yearPublished: item.yearpublished?.[0]?.$.value || '',
       image: item.image?.[0] || '',
@@ -450,22 +472,64 @@ export async function searchRPGGeekGames(
  * Obtener thumbnail y datos básicos de un ítem de RPGGeek.
  * La API de rpggeek.com es idéntica a la de BGG; solo cambia el dominio y el tipo.
  */
+// rpggId puede venir con o sin prefijo "rpgg-"; siempre usamos el numérico para la API
 export async function getRPGGeekItem(rpggId: string): Promise<RPGGeekItem | null> {
   try {
-    const raw = await requestWithRetry('/thing', { id: rpggId, type: 'rpgitem', stats: 0 }, rpggClient);
+    const numericId = rpggId.startsWith('rpgg-') ? rpggId.slice(5) : rpggId;
+    const raw = await requestWithRetry('/thing', { id: numericId, type: 'rpgitem', stats: 1 }, rpggClient);
     const result = await parseStringPromise(raw);
 
     if (!result.items?.item) return null;
 
     const item = normalizeItems(result.items.item)[0];
 
+    const names = normalizeItems(item?.name);
+    const alternateNames = names
+      .filter((n: any) => n?.$?.type === 'alternate')
+      .map((n: any) => n?.$?.value || '')
+      .filter(Boolean);
+
+    const links = normalizeItems(item?.link);
+    const categories = links.filter((l: any) => l?.$?.type === 'rpgcategory').map((l: any) => l?.$?.value || '').filter(Boolean);
+    const mechanics  = links.filter((l: any) => l?.$?.type === 'rpgmechanic').map((l: any) => l?.$?.value || '').filter(Boolean);
+    const families   = links.filter((l: any) => l?.$?.type === 'rpgfamily').map((l: any) => l?.$?.value || '').filter(Boolean);
+    const designers  = links.filter((l: any) => l?.$?.type === 'rpgdesigner').map((l: any) => l?.$?.value || '').filter(Boolean);
+    const artists    = links.filter((l: any) => l?.$?.type === 'rpgartist').map((l: any) => l?.$?.value || '').filter(Boolean);
+    const publishers = links.filter((l: any) => l?.$?.type === 'rpgpublisher').map((l: any) => l?.$?.value || '').filter(Boolean);
+
+    const stats = item?.statistics?.[0]?.ratings?.[0];
+    const ranks = normalizeItems(stats?.ranks?.[0]?.rank);
+    const rpgRank = ranks.find((r: any) => r?.$?.name === 'rpg' || r?.$?.type === 'subtype');
+
     return {
-      id: rpggId,
+      id: `rpgg-${numericId}`,
       name: extractPrimaryName(item),
+      alternateNames,
       thumbnail: item.thumbnail?.[0] || '',
       image: item.image?.[0] || '',
       description: item.description?.[0] || '',
-      yearPublished: item.yearpublished?.[0]?.$.value ? parseInt(item.yearpublished[0].$.value) : null
+      yearPublished: item.yearpublished?.[0]?.$.value ? parseInt(item.yearpublished[0].$.value) : null,
+      minPlayers: item.minplayers?.[0]?.$.value ? parseInt(item.minplayers[0].$.value) : null,
+      maxPlayers: item.maxplayers?.[0]?.$.value ? parseInt(item.maxplayers[0].$.value) : null,
+      playingTime: item.playingtime?.[0]?.$.value ? parseInt(item.playingtime[0].$.value) : null,
+      minPlaytime: item.minplaytime?.[0]?.$.value ? parseInt(item.minplaytime[0].$.value) : null,
+      maxPlaytime: item.maxplaytime?.[0]?.$.value ? parseInt(item.maxplaytime[0].$.value) : null,
+      minAge: item.minage?.[0]?.$.value ? parseInt(item.minage[0].$.value) : null,
+      usersRated: stats?.usersrated?.[0]?.$.value ? parseInt(stats.usersrated[0].$.value) : null,
+      averageRating: stats?.average?.[0]?.$.value ? parseFloat(stats.average[0].$.value) : null,
+      bayesAverage: stats?.bayesaverage?.[0]?.$.value ? parseFloat(stats.bayesaverage[0].$.value) : null,
+      rank: rpgRank?.$?.value && rpgRank.$.value !== 'Not Ranked' ? parseInt(rpgRank.$.value) : null,
+      complexityRating: stats?.averageweight?.[0]?.$.value ? parseFloat(stats.averageweight[0].$.value) : null,
+      numOwned: stats?.owned?.[0]?.$.value ? parseInt(stats.owned[0].$.value) : null,
+      numWanting: stats?.wanting?.[0]?.$.value ? parseInt(stats.wanting[0].$.value) : null,
+      numWishing: stats?.wishing?.[0]?.$.value ? parseInt(stats.wishing[0].$.value) : null,
+      numComments: stats?.numcomments?.[0]?.$.value ? parseInt(stats.numcomments[0].$.value) : null,
+      categories,
+      mechanics,
+      families,
+      designers,
+      artists,
+      publishers
     };
   } catch (error) {
     console.error(`Error al obtener ítem de RPGGeek (id=${rpggId}):`, error);
