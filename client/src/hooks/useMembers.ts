@@ -16,6 +16,8 @@ export const useMembers = (filters: MemberFilters) => {
     paymentStatus: filters.paymentStatus || 'all',
     page: filters.page.toString(),
     pageSize: filters.pageSize.toString(),
+    sortBy: filters.sortBy || 'lastName',
+    sortDir: filters.sortDir || 'asc',
   }).toString();
 
   const { data, isLoading, error, refetch } = useQuery({

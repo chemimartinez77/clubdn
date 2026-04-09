@@ -33,6 +33,8 @@ export interface Payment {
 export interface UserWithMembership {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   membership: Membership | null;
   monthsAsMember: number;

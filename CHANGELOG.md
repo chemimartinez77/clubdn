@@ -4,6 +4,76 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 11)
+
+### Nuevas funcionalidades
+
+#### Creación de usuarios desde el panel de admin
+
+- Los administradores pueden crear usuarios directamente desde el Directorio de Miembros sin necesidad de que el usuario se registre por su cuenta. Se añade el botón "+ Crear Usuario" junto a "Actualizar" y "Exportar CSV".
+- El modal replica los campos del onboarding (nombre, apellidos, email, DNI, teléfono, dirección, ciudad, provincia, código postal, IBAN, consentimientos de imagen). Solo nombre y apellidos son obligatorios; el resto son opcionales.
+- Si no se proporciona email se genera un placeholder interno único (`sin-email-<uuid>@clubdreadnought.internal`) para no bloquear la restricción `UNIQUE` de la BD.
+- El usuario se crea directamente con `status: APPROVED` y `emailVerified: true` (sin pasar por verificación ni aprobación).
+- Se añade endpoint `POST /api/admin/members` protegido con `requireAdmin`.
+
+**Archivos modificados:**
+- `server/src/controllers/memberController.ts` — nueva función `createMember`; imports `bcryptjs` y `randomUUID`
+- `server/src/routes/adminRoutes.ts` — `POST /api/admin/members` → `createMember`
+- `client/src/pages/admin/Members.tsx` — estado `createForm` + `createMemberMutation`, botón "+ Crear Usuario", modal con todos los campos del onboarding
+
+#### Separación Nombre / Apellidos y ordenación en Gestión de Pagos y Directorio de Miembros
+
+- En ambas pantallas se separa la columna "Nombre" en dos columnas independientes: **Nombre** y **Apellidos**, usando `firstName`/`lastName` del perfil.
+- **Gestión de Pagos**: ordenación client-side por Nombre, Apellidos (defecto ▲) y Estado. Click en cabecera alterna asc/desc; triangulito indica dirección.
+- **Directorio de Miembros**: ordenación server-side vía query params `sortBy`/`sortDir`. Columnas ordenables: Nombre, Apellidos (defecto ▲), Email, Fecha Incorporación, Estado de Pago. Ordenación por `paymentStatus` se hace en memoria tras calcular el estado.
+- El backend de `getMembers` ahora incluye `profile.firstName` y `profile.lastName` en cada entrada de `MemberData`.
+- El backend de `getUsersWithMembership` (gestión de pagos) incluye `profile.firstName`/`lastName` y ordena por `profile.lastName asc` por defecto.
+
+**Archivos modificados:**
+- `server/src/controllers/memberController.ts` — incluye perfil firstName/lastName; acepta `sortBy`/`sortDir`; añade `firstName`/`lastName` a respuesta
+- `server/src/controllers/membershipController.ts` — incluye perfil firstName/lastName; ordena por lastName por defecto
+- `server/src/types/members.ts` — `MemberData` y `MemberFilters` actualizados con `firstName`, `lastName`, `sortBy`, `sortDir`
+- `client/src/types/members.ts` — ídem en cliente
+- `client/src/types/membership.ts` — `UserWithMembership` añade `firstName`/`lastName`
+- `client/src/hooks/useMembers.ts` — pasa `sortBy`/`sortDir` al query string
+- `client/src/pages/admin/Members.tsx` — columnas Nombre/Apellidos, cabeceras sortables, `handleSort`/`SortIcon`
+- `client/src/pages/admin/MembershipManagement.tsx` — columnas Nombre/Apellidos, ordenación client-side, `handleSort`/`SortIcon`/`statusOrder`
+
+#### Directorio de Miembros: miembros en BAJA visibles + columna Estado
+
+- Los miembros dados de baja (`status: SUSPENDED`) ahora aparecen en el Directorio de Miembros, ya que pueden necesitar ser reactivados.
+- Se añade una columna "Estado" que muestra **ACTIVO** (verde) o **BAJA** (gris) basándose en `membershipType === 'BAJA'`.
+- El botón "Dar de baja" se sustituye por "Reactivar" para los miembros en BAJA (ya estaba implementado el handler, ahora es visible).
+- El backend de `getMembers` cambia el filtro `status: 'APPROVED'` por `status: { in: ['APPROVED', 'SUSPENDED'] }`.
+
+**Archivos modificados:**
+- `server/src/controllers/memberController.ts` — filtro `status` ampliado a APPROVED + SUSPENDED
+- `client/src/pages/admin/Members.tsx` — columna Estado en thead y tbody; botón condicional Dar de baja / Reactivar
+
+#### Preview semanal: icono ⚠️ emoji y marcador en lista de partidas
+
+- El icono de aviso en los bloques del calendario y en la leyenda pasa de `&#x26A0;` (carácter Unicode coloreado por CSS) al emoji ⚠️ real, que destaca mucho más visualmente.
+- En la sección de detalle inferior (lista de partidas por día), los eventos sin socio confirmado dejan de mostrar un cuadrado verde apagado y pasan a mostrar el emoji ⚠️ a 10px (pequeño pero distinguible). Los eventos con socio confirmado siguen mostrando el cuadrado verde.
+
+**Archivos modificados:**
+- `client/src/pages/WeeklyPreview.tsx` — emoji ⚠️ en bloques normales, solapados y leyenda; `EventIndex` usa ⚠️ para sin socio
+
+#### Job automático: promoción de miembros EN_PRUEBAS a COLABORADOR
+
+- Cron job diario a las 08:00 que detecta todos los miembros con membresía `EN_PRUEBAS` y `fechaBaja` nula cuya `startDate` sea anterior a hace 60 días, y los promueve automáticamente a `COLABORADOR` (cuota 15€/mes).
+- Tras cada promoción se envía: notificación de campanita (`MEMBER_PROMOTED`) a todos los admins/super admins, y email a cada admin con nombre, email del promovido y enlace al directorio.
+- Se añade el valor `MEMBER_PROMOTED` al enum `NotificationType` de Prisma con su correspondiente migración.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — `MEMBER_PROMOTED` en enum `NotificationType`
+- `server/prisma/migrations/20260409040000_add_member_promoted_notification/migration.sql` — `ALTER TYPE "NotificationType" ADD VALUE 'MEMBER_PROMOTED'`
+- `server/src/services/notificationService.ts` — `notifyAdminsMemberPromoted()`
+- `server/src/services/emailService.ts` — `sendMemberPromotedEmail()`
+- `server/src/jobs/memberPromotionJob.ts` — nuevo job `promoteTrialMembers()` + `startMemberPromotionJob()`
+- `server/src/index.ts` — registra `startMemberPromotionJob()` al arrancar
+
+---
+
 ## 2026-04-09 (sesión 10)
 
 ### Mejoras

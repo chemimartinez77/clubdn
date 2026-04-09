@@ -30,6 +30,7 @@ import pageViewRoutes from './routes/pageViewRoutes';
 import announcementRoutes from './routes/announcementRoutes';
 import previewRoutes from './routes/previewRoutes';
 import { startEventCompletionJob } from './jobs/eventCompletionJob';
+import { startMemberPromotionJob } from './jobs/memberPromotionJob';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -164,6 +165,7 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
     console.log(`📝 Entorno: ${process.env.NODE_ENV || 'development'}`);
     startEventCompletionJob();
+    startMemberPromotionJob();
   });
 
   // Manejo de cierre graceful

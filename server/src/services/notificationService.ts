@@ -527,6 +527,32 @@ export const notifyReportComment = async (
 };
 
 /**
+ * Notificar a admins que un miembro EN_PRUEBAS ha sido promovido automáticamente a COLABORADOR
+ */
+export const notifyAdminsMemberPromoted = async (userName: string, userEmail: string, userId: string) => {
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } },
+      select: { id: true },
+    });
+
+    const adminIds = admins.map(a => a.id);
+    if (adminIds.length === 0) return { success: true, count: 0 };
+
+    return await createBulkNotifications({
+      userIds: adminIds,
+      type: 'MEMBER_PROMOTED',
+      title: 'Miembro promovido automáticamente',
+      message: `${userName} (${userEmail}) ha completado su período de prueba y ha pasado a ser COLABORADOR.`,
+      metadata: { userName, userEmail, userId },
+    });
+  } catch (error) {
+    console.error('Error notificando promoción de miembro:', error);
+    return { success: false, error };
+  }
+};
+
+/**
  * Notificar a todos los usuarios sobre un nuevo anuncio en el tablón
  */
 export const notifyNewAnnouncement = async (

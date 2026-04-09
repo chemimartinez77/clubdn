@@ -879,6 +879,7 @@ enum NotificationType {
   REPORT_COMMENT          // Nuevo comentario en reporte
   EVENT_DISPUTE_CONFIRMATION // Confirmar si la partida se disputó (para organizador)
   ANNOUNCEMENT_CREATED       // Nuevo anuncio publicado en el tablón
+  MEMBER_PROMOTED            // Miembro EN_PRUEBAS promovido a COLABORADOR automáticamente
 }
 
 // Notificaciones del sistema

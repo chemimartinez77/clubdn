@@ -2,6 +2,8 @@
 import { Request, Response } from 'express';
 import { v2 as cloudinary } from 'cloudinary';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 import { prisma } from '../config/database';
 import { MemberData, MembersResponse } from '../types/members';
 import { getPaymentStatus } from '../utils/paymentStatus';
@@ -32,16 +34,18 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
       dateTo,
       paymentStatus: paymentStatusFilter = 'all',
       page = '1',
-      pageSize = '25'
+      pageSize = '25',
+      sortBy = 'lastName',
+      sortDir = 'asc'
     } = req.query;
 
     const pageNum = parseInt(page as string);
     const pageSizeNum = parseInt(pageSize as string);
     const skip = (pageNum - 1) * pageSizeNum;
 
-    // Build where clause
+    // Build where clause — incluir APPROVED y SUSPENDED (dados de baja)
     const where: any = {
-      status: 'APPROVED',
+      status: { in: ['APPROVED', 'SUSPENDED'] },
     };
 
     // Search filter (name or email)
@@ -78,6 +82,20 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
     }
     // Si no hay filtro específico, mostrar TODOS los usuarios (con o sin membresía)
 
+    // Determine orderBy — firstName/lastName sort via profile relation, rest via user fields
+    const dir = (sortDir as string) === 'desc' ? 'desc' : 'asc';
+    let orderBy: any;
+    if (sortBy === 'firstName' || sortBy === 'lastName') {
+      orderBy = { profile: { [sortBy as string]: dir } };
+    } else if (sortBy === 'email') {
+      orderBy = { email: dir };
+    } else if (sortBy === 'startDate') {
+      orderBy = { membership: { startDate: dir } };
+    } else {
+      // paymentStatus sorting is done in-memory after calculation; default to lastName
+      orderBy = { profile: { lastName: dir } };
+    }
+
     // Get users with pagination
     const [users, totalCount] = await Promise.all([
       prisma.user.findMany({
@@ -85,7 +103,7 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
         include: {
           membership: true,
           profile: {
-            select: { phone: true }
+            select: { phone: true, firstName: true, lastName: true }
           },
           payments: {
             select: {
@@ -94,9 +112,9 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
             }
           }
         },
-        skip,
-        take: pageSizeNum,
-        orderBy: { name: 'asc' }
+        skip: sortBy === 'paymentStatus' ? 0 : skip,
+        take: sortBy === 'paymentStatus' ? undefined : pageSizeNum,
+        orderBy
       }),
       prisma.user.count({ where })
     ]);
@@ -121,6 +139,8 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
       return {
         id: user.id,
         name: user.name,
+        firstName: user.profile?.firstName || '',
+        lastName: user.profile?.lastName || '',
         email: user.email,
         membershipType,
         startDate: user.membership?.startDate.toISOString() || null,
@@ -136,6 +156,18 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
     let filteredMembers = membersData;
     if (paymentStatusFilter !== 'all') {
       filteredMembers = membersData.filter(m => m.paymentStatus === paymentStatusFilter);
+    }
+
+    // Sort by paymentStatus in-memory if requested
+    const paymentStatusOrder: Record<string, number> = {
+      NUEVO: 0, PENDIENTE: 1, IMPAGADO: 2, PAGADO: 3, ANO_COMPLETO: 4
+    };
+    if (sortBy === 'paymentStatus') {
+      filteredMembers.sort((a, b) => {
+        const diff = (paymentStatusOrder[a.paymentStatus] ?? 0) - (paymentStatusOrder[b.paymentStatus] ?? 0);
+        return dir === 'asc' ? diff : -diff;
+      });
+      filteredMembers = filteredMembers.slice(skip, skip + pageSizeNum);
     }
 
     const response: MembersResponse = {
@@ -1028,5 +1060,101 @@ export const impersonateMember = async (req: Request, res: Response): Promise<vo
   } catch (error) {
     console.error('[MEMBER] Error al impersonar usuario:', error);
     res.status(500).json({ success: false, message: 'Error al impersonar usuario' });
+  }
+};
+
+/**
+ * POST /api/admin/members
+ * Crear un usuario directamente desde el panel de admin
+ */
+export const createMember = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const {
+      firstName,
+      lastName,
+      email,
+      dni,
+      phone,
+      address,
+      city,
+      province,
+      postalCode,
+      iban,
+      imageConsentActivities,
+      imageConsentSocial,
+    } = req.body;
+
+    if (!firstName?.trim() || firstName.trim().length < 2) {
+      res.status(400).json({ success: false, message: 'El nombre es obligatorio' });
+      return;
+    }
+    if (!lastName?.trim() || lastName.trim().length < 2) {
+      res.status(400).json({ success: false, message: 'Los apellidos son obligatorios' });
+      return;
+    }
+
+    const normalizedFirstName = normalizeText(firstName);
+    const normalizedLastName = normalizeText(lastName);
+    const fullName = `${normalizedFirstName} ${normalizedLastName}`;
+
+    // Email opcional: si se proporciona, verificar que no exista ya
+    let userEmail: string;
+    if (email?.trim()) {
+      userEmail = email.trim().toLowerCase();
+      const existing = await prisma.user.findUnique({ where: { email: userEmail } });
+      if (existing) {
+        res.status(400).json({ success: false, message: 'Ya existe un usuario con ese email' });
+        return;
+      }
+    } else {
+      // Generar email placeholder único para no bloquear el unique constraint
+      userEmail = `sin-email-${randomUUID()}@clubdreadnought.internal`;
+    }
+
+    // Contraseña aleatoria segura (el admin la compartirá o el usuario usará "olvidé contraseña")
+    const randomPassword = randomUUID();
+    const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+    const user = await prisma.user.create({
+      data: {
+        name: fullName,
+        email: userEmail,
+        password: hashedPassword,
+        status: 'APPROVED',
+        emailVerified: true,
+      },
+    });
+
+    // Crear perfil con los datos opcionales
+    const dniNormalized = dni?.trim() ? normalizeDni(dni.trim()) : '';
+    await prisma.userProfile.create({
+      data: {
+        userId: user.id,
+        firstName: normalizedFirstName,
+        lastName: normalizedLastName,
+        dni: dni?.trim() || '',
+        dniNormalized,
+        phone: phone?.trim() || '',
+        address: address?.trim() || '',
+        city: city?.trim() || '',
+        province: province?.trim() || '',
+        postalCode: postalCode?.trim() || '',
+        iban: iban?.trim() || '',
+        imageConsentActivities: imageConsentActivities === true,
+        imageConsentSocial: imageConsentSocial === true,
+        onboardingCompleted: false,
+        favoriteGames: [],
+        emailUpdates: false,
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Usuario creado correctamente',
+      data: { id: user.id, name: user.name, email: user.email },
+    });
+  } catch (error) {
+    console.error('[MEMBER] Error al crear usuario:', error);
+    res.status(500).json({ success: false, message: 'Error al crear el usuario' });
   }
 };

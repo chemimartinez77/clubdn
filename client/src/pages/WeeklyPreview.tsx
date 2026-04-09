@@ -169,9 +169,8 @@ function EventBlockView({ block, colors, colorIndex: _colorIndex = 0 }: { block:
     ? `repeating-linear-gradient(45deg, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.12) 3px, transparent 3px, transparent 9px)`
     : undefined;
 
-  // ⚠ sin variante emoji (U+26A0 sin U+FE0F) para poder colorear con CSS
   const warnIcon = !hasSocio
-    ? <span style={{ position: 'absolute', bottom: '3px', right: '3px', color: colors.accent, fontSize: '18px', lineHeight: 1 }}>&#x26A0;</span>
+    ? <span style={{ position: 'absolute', bottom: '3px', right: '3px', fontSize: '18px', lineHeight: 1 }}>⚠️</span>
     : null;
 
   // Cuando solapa, el bloque es estrecho: texto vertical rotado
@@ -202,7 +201,7 @@ function EventBlockView({ block, colors, colorIndex: _colorIndex = 0 }: { block:
         }}
       >
         {!hasSocio && (
-          <span style={{ position: 'absolute', bottom: '3px', right: '3px', color: colors.accent, fontSize: '18px', lineHeight: 1 }}>&#x26A0;</span>
+          <span style={{ position: 'absolute', bottom: '3px', right: '3px', fontSize: '18px', lineHeight: 1 }}>⚠️</span>
         )}
         <div
           style={{
@@ -330,11 +329,13 @@ function EventIndex({ allBlocks, colors }: { allBlocks: { day: Date; blocks: Eve
             </div>
             {blocks.map(block => {
               const hasSocio = block.event.hasSocioRegistered;
-              const dotColor = hasSocio ? colors.primary : hexMix(colors.primary, colors.background, 0.55);
               const timeStr = getTimeStr(block.event, block.durationMinutes);
               return (
                 <div key={block.event.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '5px', marginBottom: '4px' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: dotColor, flexShrink: 0, marginTop: '2px' }} />
+                  {hasSocio
+                    ? <div style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: colors.primary, flexShrink: 0, marginTop: '2px' }} />
+                    : <span style={{ fontSize: '10px', lineHeight: 1, flexShrink: 0, marginTop: '1px' }}>⚠️</span>
+                  }
                   <div>
                     <div style={{ color: colors.text, fontSize: '10px', fontWeight: 600, lineHeight: 1.2 }}>
                       {block.event.title}
@@ -575,7 +576,7 @@ export default function WeeklyPreview() {
                 <span style={{ color: colors.textSecondary, fontSize: '14px' }}>Con socio confirmado</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ color: colors.accent, fontSize: '18px' }}>&#x26A0;</span>
+                <span style={{ fontSize: '18px' }}>⚠️</span>
                 <span style={{ color: colors.textSecondary, fontSize: '14px' }}>Sin socio confirmado</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

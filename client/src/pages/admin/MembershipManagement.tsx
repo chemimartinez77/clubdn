@@ -17,6 +17,8 @@ export default function MembershipManagement() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [searchTerm, setSearchTerm] = useState('');
   const [membershipFilter, setMembershipFilter] = useState<'all' | MembershipType>('all');
+  const [sortCol, setSortCol] = useState<'firstName' | 'lastName' | 'status'>('lastName');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [statusFilters, setStatusFilters] = useState({
     nuevo: true,
     pendiente: true,
@@ -122,6 +124,24 @@ export default function MembershipManagement() {
   const normalize = (str: string) =>
     str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+  const handleSort = (col: 'firstName' | 'lastName' | 'status') => {
+    if (sortCol === col) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortCol(col);
+      setSortDir('asc');
+    }
+  };
+
+  const SortIcon = ({ col }: { col: 'firstName' | 'lastName' | 'status' }) => {
+    if (sortCol !== col) return null;
+    return <span className="ml-1">{sortDir === 'asc' ? '▲' : '▼'}</span>;
+  };
+
+  const statusOrder: Record<string, number> = {
+    NUEVO: 0, PENDIENTE: 1, IMPAGADO: 2, PAGADO: 3, ANO_COMPLETO: 4
+  };
+
   // Filtrar usuarios
   const filteredUsers = (response?.users || []).filter(user => {
     // Filtro de búsqueda (case e accent insensitive)
@@ -144,6 +164,16 @@ export default function MembershipManagement() {
     };
 
     return statusMap[user.status] !== false;
+  }).sort((a, b) => {
+    let cmp = 0;
+    if (sortCol === 'firstName') {
+      cmp = normalize(a.firstName || a.name).localeCompare(normalize(b.firstName || b.name));
+    } else if (sortCol === 'lastName') {
+      cmp = normalize(a.lastName || '').localeCompare(normalize(b.lastName || ''));
+    } else if (sortCol === 'status') {
+      cmp = (statusOrder[a.status] ?? 0) - (statusOrder[b.status] ?? 0);
+    }
+    return sortDir === 'asc' ? cmp : -cmp;
   });
 
   return (
@@ -264,14 +294,26 @@ export default function MembershipManagement() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-[var(--color-tableRowHover)]">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
-                        Nombre
+                      <th
+                        className="px-4 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider cursor-pointer select-none hover:text-[var(--color-text)]"
+                        onClick={() => handleSort('firstName')}
+                      >
+                        Nombre<SortIcon col="firstName" />
+                      </th>
+                      <th
+                        className="px-4 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider cursor-pointer select-none hover:text-[var(--color-text)]"
+                        onClick={() => handleSort('lastName')}
+                      >
+                        Apellidos{sortCol === 'lastName' ? <span className="ml-1">{sortDir === 'asc' ? '▲' : '▼'}</span> : <span className="ml-1 opacity-0">▲</span>}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Membresía
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
-                        Estado
+                      <th
+                        className="px-4 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider cursor-pointer select-none hover:text-[var(--color-text)]"
+                        onClick={() => handleSort('status')}
+                      >
+                        Estado<SortIcon col="status" />
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                         Acciones
@@ -287,7 +329,10 @@ export default function MembershipManagement() {
                     {filteredUsers.map((user) => (
                       <tr key={user.id} className="hover:bg-[var(--color-tableRowHover)]">
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm font-medium text-[var(--color-text)]">{user.name}</div>
+                          <div className="text-sm font-medium text-[var(--color-text)]">{user.firstName || user.name.split(' ')[0]}</div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm font-medium text-[var(--color-text)]">{user.lastName || user.name.split(' ').slice(1).join(' ')}</div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           {user.membership ? getMembershipBadge(user.membership.type) : '-'}

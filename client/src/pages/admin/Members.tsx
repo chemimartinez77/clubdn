@@ -27,6 +27,8 @@ export default function Members() {
     paymentStatus: 'all',
     page: 1,
     pageSize: 25,
+    sortBy: 'lastName',
+    sortDir: 'asc',
   });
 
   // Modal states
@@ -46,6 +48,54 @@ export default function Members() {
     imageConsentSocial: false,
     membershipType: ''
   });
+
+  // Create user modal
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    dni: '',
+    phone: '',
+    address: '',
+    city: '',
+    province: '',
+    postalCode: '',
+    iban: '',
+    imageConsentActivities: false,
+    imageConsentSocial: false,
+  });
+  const [createErrors, setCreateErrors] = useState<Partial<Record<keyof typeof createForm, string>>>({});
+
+  const createMemberMutation = useMutation({
+    mutationFn: async (data: typeof createForm) => {
+      const response = await api.post('/api/admin/members', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+      success('Usuario creado correctamente');
+      setCreateModalOpen(false);
+      setCreateForm({
+        firstName: '', lastName: '', email: '', dni: '', phone: '',
+        address: '', city: '', province: '', postalCode: '', iban: '',
+        imageConsentActivities: false, imageConsentSocial: false,
+      });
+      setCreateErrors({});
+    },
+    onError: (err: any) => {
+      error(err.response?.data?.message || 'Error al crear el usuario');
+    }
+  });
+
+  const handleCreateSubmit = () => {
+    const e: Partial<Record<keyof typeof createForm, string>> = {};
+    if (!createForm.firstName.trim()) e.firstName = 'Campo obligatorio';
+    if (!createForm.lastName.trim()) e.lastName = 'Campo obligatorio';
+    setCreateErrors(e);
+    if (Object.keys(e).length > 0) return;
+    createMemberMutation.mutate(createForm);
+  };
 
   // Fetch members data
   const { data, isLoading, refetch, markAsBaja, isMarkingBaja, reactivateMember, isReactivating, exportCSV } = useMembers(filters);
@@ -164,6 +214,20 @@ export default function Members() {
   // Update filter and reset to page 1
   const updateFilter = <K extends keyof MemberFilters>(key: K, value: MemberFilters[K]) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
+  };
+
+  const handleSort = (col: MemberFilters['sortBy']) => {
+    setFilters(prev => ({
+      ...prev,
+      page: 1,
+      sortBy: col,
+      sortDir: prev.sortBy === col && prev.sortDir === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const SortIcon = ({ col }: { col: MemberFilters['sortBy'] }) => {
+    if (filters.sortBy !== col) return null;
+    return <span className="ml-1">{filters.sortDir === 'asc' ? '▲' : '▼'}</span>;
   };
 
   // Pagination handlers
@@ -329,6 +393,12 @@ export default function Members() {
               </svg>
               Actualizar
             </Button>
+            <Button onClick={() => setCreateModalOpen(true)} variant="outline" size="sm">
+              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Crear Usuario
+            </Button>
             <Button onClick={exportCSV} variant="primary" size="sm">
               <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -458,6 +528,8 @@ export default function Members() {
                       paymentStatus: 'all',
                       page: 1,
                       pageSize: 25,
+                      sortBy: 'lastName',
+                      sortDir: 'asc',
                     })
                   }
                   className="w-full"
@@ -500,20 +572,41 @@ export default function Members() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-[var(--color-tableRowHover)]">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
-                          Nombre
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider cursor-pointer select-none hover:text-[var(--color-text)]"
+                          onClick={() => handleSort('firstName')}
+                        >
+                          Nombre<SortIcon col="firstName" />
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
-                          Email
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider cursor-pointer select-none hover:text-[var(--color-text)]"
+                          onClick={() => handleSort('lastName')}
+                        >
+                          Apellidos{filters.sortBy === 'lastName' ? <span className="ml-1">{filters.sortDir === 'asc' ? '▲' : '▼'}</span> : <span className="ml-1 opacity-0">▲</span>}
+                        </th>
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider cursor-pointer select-none hover:text-[var(--color-text)]"
+                          onClick={() => handleSort('email')}
+                        >
+                          Email<SortIcon col="email" />
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                           Tipo
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
-                          Fecha Incorporación
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider cursor-pointer select-none hover:text-[var(--color-text)]"
+                          onClick={() => handleSort('startDate')}
+                        >
+                          Fecha Incorporación<SortIcon col="startDate" />
+                        </th>
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider cursor-pointer select-none hover:text-[var(--color-text)]"
+                          onClick={() => handleSort('paymentStatus')}
+                        >
+                          Estado de Pago<SortIcon col="paymentStatus" />
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
-                          Estado de Pago
+                          Estado
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
                           Acciones
@@ -528,7 +621,15 @@ export default function Members() {
                               onClick={() => handleViewMember(member)}
                               className="text-sm font-medium text-[var(--color-text)] hover:underline"
                             >
-                              {member.name}
+                              {member.firstName || member.name.split(' ')[0]}
+                            </button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <button
+                              onClick={() => handleViewMember(member)}
+                              className="text-sm font-medium text-[var(--color-text)] hover:underline"
+                            >
+                              {member.lastName || member.name.split(' ').slice(1).join(' ')}
                             </button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -547,6 +648,12 @@ export default function Members() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {getPaymentStatusBadge(member.paymentStatus)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {member.membershipType === 'BAJA'
+                              ? <span className="px-2 py-1 text-xs font-semibold rounded bg-[var(--color-cardBorder)] text-[var(--color-textSecondary)]">BAJA</span>
+                              : <span className="px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800">ACTIVO</span>
+                            }
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex items-center justify-end gap-2">
@@ -854,6 +961,192 @@ export default function Members() {
             )}
           </div>
         )}
+      </Modal>
+
+      {/* Create User Modal */}
+      <Modal
+        isOpen={createModalOpen}
+        onClose={() => {
+          setCreateModalOpen(false);
+          setCreateErrors({});
+        }}
+        title="Crear Usuario"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--color-textSecondary)]">
+            Crea un usuario directamente desde el panel de administración. El nombre y apellidos son obligatorios; el resto de campos son opcionales.
+          </p>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Nombre */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                Nombre <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={createForm.firstName}
+                onChange={(e) => setCreateForm(f => ({ ...f, firstName: e.target.value }))}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)] ${createErrors.firstName ? 'border-red-500' : 'border-[var(--color-inputBorder)]'}`}
+              />
+              {createErrors.firstName && <p className="text-xs text-red-500 mt-1">{createErrors.firstName}</p>}
+            </div>
+
+            {/* Apellidos */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                Apellidos <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={createForm.lastName}
+                onChange={(e) => setCreateForm(f => ({ ...f, lastName: e.target.value }))}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)] ${createErrors.lastName ? 'border-red-500' : 'border-[var(--color-inputBorder)]'}`}
+              />
+              {createErrors.lastName && <p className="text-xs text-red-500 mt-1">{createErrors.lastName}</p>}
+            </div>
+
+            {/* Email */}
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                value={createForm.email}
+                onChange={(e) => setCreateForm(f => ({ ...f, email: e.target.value }))}
+                className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                placeholder="Si no tiene email, se generará uno interno"
+              />
+            </div>
+
+            {/* DNI */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">DNI / NIE</label>
+              <input
+                type="text"
+                value={createForm.dni}
+                onChange={(e) => setCreateForm(f => ({ ...f, dni: e.target.value }))}
+                className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+              />
+            </div>
+
+            {/* Teléfono */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Teléfono</label>
+              <input
+                type="text"
+                value={createForm.phone}
+                onChange={(e) => setCreateForm(f => ({ ...f, phone: e.target.value }))}
+                className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+              />
+            </div>
+
+            {/* Dirección */}
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Dirección</label>
+              <input
+                type="text"
+                value={createForm.address}
+                onChange={(e) => setCreateForm(f => ({ ...f, address: e.target.value }))}
+                className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+              />
+            </div>
+
+            {/* Ciudad */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Ciudad</label>
+              <input
+                type="text"
+                value={createForm.city}
+                onChange={(e) => setCreateForm(f => ({ ...f, city: e.target.value }))}
+                className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+              />
+            </div>
+
+            {/* Provincia */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Provincia</label>
+              <input
+                type="text"
+                value={createForm.province}
+                onChange={(e) => setCreateForm(f => ({ ...f, province: e.target.value }))}
+                className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+              />
+            </div>
+
+            {/* Código Postal */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Código Postal</label>
+              <input
+                type="text"
+                value={createForm.postalCode}
+                onChange={(e) => setCreateForm(f => ({ ...f, postalCode: e.target.value }))}
+                className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+              />
+            </div>
+
+            {/* IBAN */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">IBAN</label>
+              <input
+                type="text"
+                value={createForm.iban}
+                onChange={(e) => setCreateForm(f => ({ ...f, iban: e.target.value }))}
+                className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+              />
+            </div>
+          </div>
+
+          {/* Consentimientos */}
+          <div className="space-y-3 pt-2">
+            <p className="text-sm font-medium text-[var(--color-text)]">Consentimientos de imagen</p>
+            <label className="flex items-start gap-3 cursor-pointer rounded-lg p-3 bg-[var(--color-tableRowHover)]">
+              <input
+                type="checkbox"
+                checked={createForm.imageConsentActivities}
+                onChange={(e) => setCreateForm(f => ({ ...f, imageConsentActivities: e.target.checked }))}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-primary)]"
+              />
+              <span className="text-sm text-[var(--color-textSecondary)]">
+                Autorización para captación y publicación de imagen en fotografías y videos de actividades.
+              </span>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer rounded-lg p-3 bg-[var(--color-tableRowHover)]">
+              <input
+                type="checkbox"
+                checked={createForm.imageConsentSocial}
+                onChange={(e) => setCreateForm(f => ({ ...f, imageConsentSocial: e.target.checked }))}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-primary)]"
+              />
+              <span className="text-sm text-[var(--color-textSecondary)]">
+                Autorización para publicación de imagen en redes sociales de la asociación.
+              </span>
+            </label>
+          </div>
+
+          <div className="pt-4 flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCreateModalOpen(false);
+                setCreateErrors({});
+              }}
+              disabled={createMemberMutation.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateSubmit}
+              isLoading={createMemberMutation.isPending}
+              disabled={createMemberMutation.isPending}
+            >
+              {createMemberMutation.isPending ? 'Creando...' : 'Crear Usuario'}
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       {/* Mark as BAJA Confirmation Modal */}

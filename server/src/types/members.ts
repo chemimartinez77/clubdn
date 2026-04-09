@@ -7,11 +7,15 @@ export interface MemberFilters {
   paymentStatus?: 'NUEVO' | 'PENDIENTE' | 'IMPAGADO' | 'PAGADO' | 'ANO_COMPLETO' | 'all';
   page?: number;
   pageSize?: number;
+  sortBy?: 'firstName' | 'lastName' | 'email' | 'startDate' | 'paymentStatus';
+  sortDir?: 'asc' | 'desc';
 }
 
 export interface MemberData {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   membershipType: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA' | null;
   startDate: string | null;

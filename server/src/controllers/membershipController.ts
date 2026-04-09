@@ -20,6 +20,9 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
       },
       include: {
         membership: true,
+        profile: {
+          select: { firstName: true, lastName: true }
+        },
         payments: {
           select: {
             month: true,
@@ -28,7 +31,7 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
         }
       },
       orderBy: {
-        name: 'asc'
+        profile: { lastName: 'asc' }
       }
     });
 
@@ -69,6 +72,8 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
       return {
         id: user.id,
         name: user.name,
+        firstName: user.profile?.firstName || '',
+        lastName: user.profile?.lastName || '',
         email: user.email,
         membership: user.membership,
         monthsAsMember,

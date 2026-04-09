@@ -17,7 +17,8 @@ import {
   uploadMemberAvatar,
   getMembershipHistory,
   changeMemberRole,
-  impersonateMember
+  impersonateMember,
+  createMember
 } from '../controllers/memberController';
 import { updateReportAdmin } from '../controllers/reportController';
 
@@ -56,6 +57,12 @@ router.post('/reject/:userId', rejectUser);
  * Obtener listado de miembros con filtros y paginación
  */
 router.get('/members', getMembers);
+
+/**
+ * POST /api/admin/members
+ * Crear un nuevo usuario desde el panel de admin
+ */
+router.post('/members', createMember);
 
 /**
  * GET /api/admin/members/:memberId/profile
