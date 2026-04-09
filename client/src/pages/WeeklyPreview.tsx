@@ -212,7 +212,7 @@ function EventBlockView({ block, colors, colorIndex: _colorIndex = 0 }: { block:
             fontSize: '10px',
             opacity: 0.85,
             whiteSpace: 'nowrap',
-            marginBottom: '2px',
+            marginBottom: '6px',
           }}
         >
           {timeStr.split(' – ')[0]}
