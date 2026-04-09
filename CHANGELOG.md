@@ -4,6 +4,19 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 6)
+
+### Mejoras visuales
+
+#### Previsión semanal: hora de inicio en bloques verticales
+
+- En los bloques solapados (texto vertical), ahora se muestra primero la hora de inicio (solo la de inicio, sin el rango "– fin") y luego el nombre del juego. Antes aparecía primero el nombre y la hora al final, lo que dificultaba la lectura de un vistazo.
+
+**Archivos modificados:**
+- `client/src/pages/WeeklyPreview.tsx` — reordenados hora y nombre en bloques verticales; hora solo muestra inicio (`timeStr.split(' – ')[0]`)
+
+---
+
 ## 2026-04-09 (sesión 5)
 
 ### Correcciones
@@ -27,9 +40,9 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 #### Nuevos badges: Testigo de Mesa y Auditor Lúdico
 
 - Se añaden dos nuevos badges al sistema de logros:
-  - **TESTIGO_MESA**: se otorga al jugador que es escaneado por otro con el QR al terminar una partida. 6 niveles con umbrales 5/10/20/40/70/100 (Presente y Acreditado → Leyenda del Acta).
+  - **TESTIGO_MESA**: se otorga al jugador que escanea el QR de otro con la cámara al terminar una partida. 6 niveles con umbrales 5/10/20/40/70/100 (Presente y Acreditado → Leyenda del Acta).
   - **AUDITOR_LUDICO**: se otorga al organizador cuando confirma que su partida se celebró. 6 niveles con umbrales 5/10/20/40/70/100 (Inspector Novato → Guardián de la Verdad Lúdica).
-- El badge **VALIDADOR** se corrige para que solo cuente al jugador que escanea el QR (antes contaba también al escaneado, lo que hacía que ambos sumaran al mismo logro). Su descripción en la UI se actualiza en consecuencia.
+- El badge **VALIDADOR** lo obtiene quien muestra su propio QR para ser escaneado (valida su presencia en la partida).
 - Las notificaciones de tipo `EVENT_DISPUTE_CONFIRMATION` se eliminan automáticamente pasadas 48 horas desde su creación, evitando que queden pendientes eternamente en la bandeja del organizador.
 
 **Archivos modificados:**
