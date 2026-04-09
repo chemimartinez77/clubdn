@@ -127,7 +127,10 @@ export const getCategoryColor = (category: BadgeCategory): string => {
     CATALOGADOR: '#06b6d4',     // Cian
     ORGANIZADOR: '#f97316',     // Naranja
     REPETIDOR: '#ec4899',       // Rosa
-    VALIDADOR: '#10b981'        // Esmeralda
+    VALIDADOR: '#10b981',       // Esmeralda
+    CARTAS_LCG_TCG: '#dc2626',  // Rojo oscuro
+    CONOCEDOR_GENEROS: '#7c3aed', // Violeta
+    FOTOGRAFO: '#0891b2'        // Azul cyan
   };
   return categoryColors[category];
 };
