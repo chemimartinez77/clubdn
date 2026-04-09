@@ -111,7 +111,7 @@ export const getCategoryDisplayName = (category: BadgeCategory): string => {
 // Helper para obtener descripción de categoría
 export const getCategoryDescription = (category: BadgeCategory): string => {
   const descriptions: Record<BadgeCategory, string> = {
-    EUROGAMES: 'Se obtiene jugando partidas de juegos de estilo eurogame: gestión de recursos, optimización y poca azar.',
+    EUROGAMES: 'Se obtiene jugando partidas de juegos de estilo eurogame: gestión de recursos, optimización y poco azar.',
     TEMATICOS: 'Se obtiene jugando partidas de juegos temáticos: aventura, narrativa y ambientación por encima de la mecánica.',
     WARGAMES: 'Se obtiene jugando partidas de wargames: simulación de conflictos históricos o ficticios con mapas y unidades.',
     ROL: 'Se obtiene jugando partidas de juegos de rol de mesa, tanto de sistema como narrativos.',
@@ -126,7 +126,7 @@ export const getCategoryDescription = (category: BadgeCategory): string => {
     CONOCEDOR_GENEROS: 'Se obtiene cuando otro miembro coincide en la categoría que asignaste a un juego. El juego queda fijado con esa categoría para todos.',
     FOTOGRAFO: 'Se obtiene subiendo al menos una foto a una partida. Solo cuenta una vez por partida.',
     TESTIGO_MESA: 'Se obtiene escaneando el QR de otro jugador al terminar una partida. Tú eres el testigo con la cámara.',
-    AUDITOR_LUDICO: 'Se obtiene cuando confirmas como organizador que una de tus partidas se celebró. Cada confirmación cuenta un punto.'
+    AUDITOR_LUDICO: 'Se obtiene cuando confirmas como organizador que una de tus partidas no validadas se celebró.'
   };
   return descriptions[category];
 };
