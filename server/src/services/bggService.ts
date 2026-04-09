@@ -436,9 +436,20 @@ export async function searchRPGGeekGames(
 
     const items = normalizeItems(searchResult.items.item);
     const totalFromApi = Number.parseInt(searchResult.items?.$?.total ?? '', 10);
-    const total = Number.isFinite(totalFromApi) && totalFromApi > 0 ? totalFromApi : items.length;
+
+    // Ordenar por relevancia: exacto > empieza por > contiene
+    const lq = trimmedQuery.toLowerCase();
+    const scored = items.map((item: any) => {
+      const name = (extractPrimaryName(item) || '').toLowerCase();
+      const score = name === lq ? 0 : name.startsWith(lq) ? 1 : 2;
+      return { item, score };
+    });
+    scored.sort((a: any, b: any) => a.score - b.score);
+    const sortedItems = scored.map((s: any) => s.item);
+
+    const total = Number.isFinite(totalFromApi) && totalFromApi > 0 ? totalFromApi : sortedItems.length;
     const startIndex = (safePage - 1) * safePageSize;
-    const pagedItems = items.slice(startIndex, startIndex + safePageSize);
+    const pagedItems = sortedItems.slice(startIndex, startIndex + safePageSize);
     const ids = pagedItems.map((item: any) => item.$.id);
 
     if (ids.length === 0) return { games: [], total, page: safePage, pageSize: safePageSize };
