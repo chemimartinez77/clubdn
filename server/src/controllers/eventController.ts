@@ -2063,6 +2063,9 @@ export const confirmEventPlayed = async (req: Request, res: Response): Promise<v
       where: { userId, type: 'EVENT_DISPUTE_CONFIRMATION', metadata: { path: ['eventId'], equals: id } }
     });
 
+    // Badge AUDITOR_LUDICO: el organizador confirmó que se celebró
+    await checkAndUnlockBadges(userId, BadgeCategory.AUDITOR_LUDICO);
+
     res.status(200).json({ success: true, message: 'Partida confirmada como disputada' });
   } catch (error) {
     console.error('Error al confirmar disputa:', error);
@@ -2216,9 +2219,10 @@ export const validateGameQr = async (req: Request, res: Response): Promise<void>
       await processEventPlayHistory(eventId);
     }
 
-    // Desbloquear badge VALIDADOR para ambos jugadores
+    // Desbloquear badge VALIDADOR solo para el que enseña el QR (scanner)
     await checkAndUnlockBadges(scannerId, BadgeCategory.VALIDADOR);
-    await checkAndUnlockBadges(scannedUserId, BadgeCategory.VALIDADOR);
+    // Desbloquear badge TESTIGO_MESA para el que fue escaneado
+    await checkAndUnlockBadges(scannedUserId, BadgeCategory.TESTIGO_MESA);
 
     res.status(200).json({ success: true, message: 'Partida validada correctamente' });
   } catch (error) {

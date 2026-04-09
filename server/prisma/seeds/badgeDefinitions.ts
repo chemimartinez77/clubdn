@@ -107,6 +107,22 @@ const badgeDefinitions = [
   { category: BadgeCategory.FOTOGRAFO, level: 4, name: 'Fotógrafo Oficial', requiredCount: 20 },
   { category: BadgeCategory.FOTOGRAFO, level: 5, name: 'Maestro del Objetivo', requiredCount: 35 },
   { category: BadgeCategory.FOTOGRAFO, level: 6, name: 'Gran Cronista del Club', requiredCount: 60 },
+
+  // TESTIGO_MESA (por ser escaneado con QR en partidas)
+  { category: BadgeCategory.TESTIGO_MESA, level: 1, name: 'Presente y Acreditado', requiredCount: 5 },
+  { category: BadgeCategory.TESTIGO_MESA, level: 2, name: 'Testigo Recurrente', requiredCount: 10 },
+  { category: BadgeCategory.TESTIGO_MESA, level: 3, name: 'Testigo de Confianza', requiredCount: 20 },
+  { category: BadgeCategory.TESTIGO_MESA, level: 4, name: 'Perito de Mesa', requiredCount: 40 },
+  { category: BadgeCategory.TESTIGO_MESA, level: 5, name: 'Gran Testigo Lúdico', requiredCount: 70 },
+  { category: BadgeCategory.TESTIGO_MESA, level: 6, name: 'Leyenda del Acta', requiredCount: 100 },
+
+  // AUDITOR_LUDICO (por confirmar partidas como celebradas siendo organizador)
+  { category: BadgeCategory.AUDITOR_LUDICO, level: 1, name: 'Inspector Novato', requiredCount: 5 },
+  { category: BadgeCategory.AUDITOR_LUDICO, level: 2, name: 'Auditor de Campo', requiredCount: 10 },
+  { category: BadgeCategory.AUDITOR_LUDICO, level: 3, name: 'Supervisor de Partidas', requiredCount: 20 },
+  { category: BadgeCategory.AUDITOR_LUDICO, level: 4, name: 'Jefe de Inspección', requiredCount: 40 },
+  { category: BadgeCategory.AUDITOR_LUDICO, level: 5, name: 'Gran Auditor', requiredCount: 70 },
+  { category: BadgeCategory.AUDITOR_LUDICO, level: 6, name: 'Guardián de la Verdad Lúdica', requiredCount: 100 },
 ];
 
 export async function seedBadges() {
