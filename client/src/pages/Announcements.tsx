@@ -1,5 +1,6 @@
 // client/src/pages/Announcements.tsx
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import ReactMarkdown from 'react-markdown';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
 import { api } from '../api/axios';
@@ -66,7 +67,9 @@ export default function Announcements() {
                         <span className="font-semibold text-[var(--color-text)]">{a.title}</span>
                       )}
                     </div>
-                    <p className="text-sm text-[var(--color-text)] whitespace-pre-wrap">{a.content}</p>
+                    <div className="announcement-content text-sm text-[var(--color-text)]">
+                      <ReactMarkdown>{a.content}</ReactMarkdown>
+                    </div>
                     <p className="text-xs text-[var(--color-textSecondary)] mt-3">
                       {new Date(a.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>

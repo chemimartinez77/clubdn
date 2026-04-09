@@ -1,6 +1,7 @@
 // client/src/pages/admin/Announcements.tsx
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import ReactMarkdown from 'react-markdown';
 import Layout from '../../components/layout/Layout';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -150,8 +151,8 @@ export default function AdminAnnouncements() {
                   value={form.content}
                   onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
                   rows={4}
-                  placeholder="Escribe el anuncio aquí..."
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-inputBackground)] text-[var(--color-text)] text-sm focus:outline-none focus:border-[var(--color-primary)] resize-none"
+                  placeholder="Escribe el anuncio aquí... Puedes usar Markdown: **negrita**, *cursiva*, - listas"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-inputBackground)] text-[var(--color-text)] text-sm focus:outline-none focus:border-[var(--color-primary)] resize-y min-h-[100px]"
                 />
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
@@ -197,7 +198,9 @@ export default function AdminAnnouncements() {
                           <span className="font-semibold text-[var(--color-text)]">{a.title}</span>
                         )}
                       </div>
-                      <p className="text-sm text-[var(--color-text)] whitespace-pre-wrap">{a.content}</p>
+                      <div className="announcement-content text-sm text-[var(--color-text)]">
+                        <ReactMarkdown>{a.content}</ReactMarkdown>
+                      </div>
                       <p className="text-xs text-[var(--color-textSecondary)] mt-2">
                         {a.author.name} · {new Date(a.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </p>

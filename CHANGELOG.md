@@ -4,6 +4,25 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 8)
+
+### Nuevas funcionalidades
+
+#### Markdown en el tablón de anuncios + textarea redimensionable
+
+- Los anuncios del tablón ahora se renderizan con Markdown: soporta `**negrita**`, `*cursiva*`, listas (`-`), encabezados (`##`), enlaces y código inline. Antes el contenido se mostraba como texto plano.
+- El textarea del formulario de admin pasa de `resize-none` a `resize-y` con altura mínima de 100px, para que se pueda arrastrar y agrandar al escribir anuncios largos.
+- El placeholder del textarea indica que se puede usar Markdown.
+- Los estilos de renderizado se añaden como clase `.announcement-content` en el CSS global.
+
+**Archivos modificados:**
+- `client/package.json` + `client/package-lock.json` — nueva dependencia `react-markdown`
+- `client/src/pages/Announcements.tsx` — renderizado con `ReactMarkdown` en vista pública
+- `client/src/pages/admin/Announcements.tsx` — renderizado con `ReactMarkdown` en vista admin; textarea `resize-y`; placeholder actualizado
+- `client/src/index.css` — estilos `.announcement-content` para markdown (párrafos, listas, negritas, cursivas, enlaces, código)
+
+---
+
 ## 2026-04-09 (sesión 7)
 
 ### Mejoras visuales
