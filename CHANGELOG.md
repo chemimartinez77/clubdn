@@ -4,6 +4,22 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 9)
+
+### Correcciones
+
+#### Preview WhatsApp: fix imagen y CORS en staging
+
+- La imagen del juego en la previsión de WhatsApp no se cargaba en staging porque `SERVER_URL` no estaba definida y se usaba `CLIENT_URL` (producción) como base para el proxy de imagen. Se refactoriza para que `SERVER_URL` tenga prioridad sobre `RAILWAY_PUBLIC_DOMAIN`, de modo que se pueda fijar manualmente por entorno en Railway.
+- Se añade `staging.clubdreadnought.org` a la lista de orígenes CORS permitidos en el servidor, necesario tras activar el dominio personalizado en Railway staging.
+- Variable `SERVER_URL=https://clubdn-api-staging.up.railway.app` añadida en Railway API staging para que el proxy de imagen funcione correctamente.
+
+**Archivos modificados:**
+- `server/src/controllers/previewController.ts` — `SERVER_URL` toma prioridad sobre `RAILWAY_PUBLIC_DOMAIN`
+- `server/src/index.ts` — añadido `https://staging.clubdreadnought.org` a `allowedOrigins`
+
+---
+
 ## 2026-04-09 (sesión 8)
 
 ### Nuevas funcionalidades
