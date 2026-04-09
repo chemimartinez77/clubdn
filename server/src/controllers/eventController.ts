@@ -1459,7 +1459,7 @@ export const searchMembersForEvent = async (req: Request, res: Response): Promis
       where: {
         status: 'APPROVED',
         membership: {
-          type: { in: ['SOCIO', 'COLABORADOR', 'EN_PRUEBAS'] },
+          type: { in: ['SOCIO', 'COLABORADOR', 'EN_PRUEBAS', 'FAMILIAR'] },
           isActive: true
         },
         profile: {
