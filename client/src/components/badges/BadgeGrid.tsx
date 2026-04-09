@@ -168,6 +168,9 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
                   <CategoryIconLarge>{getCategoryIcon(category)}</CategoryIconLarge>
                   <div>
                     <CategoryName>{getCategoryDisplayName(category)}</CategoryName>
+                    {getCategoryDescription(category) && (
+                      <CategoryDescription style={{ margin: '2px 0 4px', padding: '0', borderLeft: 'none', background: 'none', fontStyle: 'italic', fontSize: '0.75rem' }}>{getCategoryDescription(category)}</CategoryDescription>
+                    )}
                     <CategoryStats theme={theme}>
                       {unlockedInCategory} / {categoryBadges.length} desbloqueados
                       {categoryProgress && (
@@ -178,10 +181,6 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
                 </CategoryTitle>
                 <ExpandIcon isExpanded={isExpanded}>▾</ExpandIcon>
               </CategoryHeader>
-
-              {isExpanded && getCategoryDescription(category) && (
-                <CategoryDescription>{getCategoryDescription(category)}</CategoryDescription>
-              )}
 
               {isExpanded && (
                 <BadgeList>

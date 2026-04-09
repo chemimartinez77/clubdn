@@ -26,6 +26,7 @@ export default function CreatePartida() {
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<BGGGame | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [confirmedCategory, setConfirmedCategory] = useState<string | null>(null);
 
   // Generar opciones para horas (0-23)
   const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -90,26 +91,28 @@ export default function CreatePartida() {
 
   const handleGameSelect = async (game: BGGGame) => {
     setSelectedGame(game);
+    setConfirmedCategory(null);
 
     // Guardar el juego completo en la base de datos y obtener la categoría si existe
     try {
       const response = await api.get(`/api/games/${game.id}`);
-      console.log(`Juego ${game.name} guardado en BD`);
 
-      // Si el juego tiene una categoría asignada, establecerla automáticamente
-      if (response.data?.data?.badgeCategory) {
+      // Si el juego tiene categoría confirmada por la comunidad, tiene prioridad
+      if (response.data?.data?.confirmedCategory) {
+        setSelectedCategory(response.data.data.confirmedCategory);
+        setConfirmedCategory(response.data.data.confirmedCategory);
+      } else if (response.data?.data?.badgeCategory) {
         setSelectedCategory(response.data.data.badgeCategory);
-        console.log(`Categoría cargada automáticamente: ${response.data.data.badgeCategory}`);
       }
     } catch (error) {
       console.error('Error al guardar juego en BD:', error);
-      // No mostramos error al usuario porque el juego ya se seleccionó correctamente
     }
   };
 
   const handleRemoveGame = () => {
     setSelectedGame(null);
-    setSelectedCategory(''); // Limpiar también la categoría
+    setSelectedCategory('');
+    setConfirmedCategory(null);
   };
 
   // Fecha mínima (hoy)
@@ -177,7 +180,7 @@ export default function CreatePartida() {
                     <svg className="w-6 h-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    Buscar juego en BoardGameGeek
+                    Buscar juego
                   </button>
                 )}
               </div>
@@ -191,7 +194,8 @@ export default function CreatePartida() {
                   name="gameCategory"
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
+                  disabled={!!confirmedCategory}
+                  className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <option value="">Sin categoría</option>
                   <option value="EUROGAMES">{getCategoryIcon('EUROGAMES')} {getCategoryDisplayName('EUROGAMES')}</option>
@@ -201,9 +205,14 @@ export default function CreatePartida() {
                   <option value="MINIATURAS">{getCategoryIcon('MINIATURAS')} {getCategoryDisplayName('MINIATURAS')}</option>
                   <option value="WARHAMMER">{getCategoryIcon('WARHAMMER')} {getCategoryDisplayName('WARHAMMER')}</option>
                   <option value="FILLERS_PARTY">{getCategoryIcon('FILLERS_PARTY')} {getCategoryDisplayName('FILLERS_PARTY')}</option>
+                  <option value="CARTAS_LCG_TCG">{getCategoryIcon('CARTAS_LCG_TCG')} {getCategoryDisplayName('CARTAS_LCG_TCG')}</option>
                 </select>
                 <p className="text-xs text-[var(--color-textSecondary)] mt-1">
-                  {selectedCategory ? 'Categoría cargada automáticamente desde la BD. Puedes cambiarla si es incorrecta.' : 'Ayuda a otros miembros a desbloquear badges automáticamente'}
+                  {confirmedCategory
+                    ? 'Categoría fijada por la comunidad. Contacta con un admin para cambiarla.'
+                    : selectedCategory
+                      ? 'Categoría cargada automáticamente. Puedes cambiarla si es incorrecta.'
+                      : 'Ayuda a otros miembros a desbloquear badges automáticamente'}
                 </p>
               </div>
 

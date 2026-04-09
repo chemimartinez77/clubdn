@@ -4,9 +4,101 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-09 (sesión 2)
+
+### Nuevas funcionalidades
+
+#### Toggle BGG / RPGGeek en el modal de búsqueda de juegos
+
+- Al crear o editar una partida, el modal de búsqueda de juegos incluye ahora un toggle "Juego de mesa / Juego de rol" que cambia el backend de búsqueda entre BoardGameGeek y RPGGeek. Por defecto busca en BGG; si se activa el toggle, busca en RPGGeek (útil para juegos de rol que no están en BGG).
+- El toggle se resetea a BGG cada vez que se abre el modal.
+
+**Archivos modificados:**
+- `server/src/services/bggService.ts` — nueva función `searchRPGGeekGames`
+- `server/src/controllers/bggController.ts` — nuevo handler `searchRPGGGames`
+- `server/src/routes/bggRoutes.ts` — ruta `GET /api/bgg/rpgg/search`
+- `client/src/components/events/GameSearchModal.tsx` — toggle de fuente, reset al abrir
+
+#### Nueva categoría de juego: Cartas / LCG / TCG
+
+- Se añade la categoría `CARTAS_LCG_TCG` al enum `BadgeCategory` para poder clasificar juegos de cartas tipo Magic, Keyforge, etc.
+- Aparece como opción en el selector de categoría al crear/editar partidas.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — nuevo valor en enum `BadgeCategory`
+- `server/prisma/migrations/20260409010000_add_cartas_lcg_tcg_category/migration.sql` — `ALTER TYPE ADD VALUE`
+- `client/src/types/badge.ts` — tipo, nombre (`Cartas / LCG / TCG`) e icono (`🃏`)
+- `client/src/pages/CreatePartida.tsx` y `client/src/pages/EventDetail.tsx` — nueva opción en el select
+
+#### Dos nuevos badges: Conocedor de Géneros y Fotógrafo
+
+**Conocedor de Géneros** — sistema de votación comunitaria de categoría de juego por `bggId`:
+- Cuando 2 usuarios coinciden en la categoría de un mismo juego, ambos reciben 1 punto y la categoría queda fijada en BD (`Game.confirmedCategory`). El juego puede necesitar más de 2 votos si no hay coincidencia entre los primeros.
+- Una vez fijada, el selector de categoría aparece bloqueado con el mensaje "Categoría fijada por la comunidad".
+- Niveles (umbrales 2/5/10/20/35/50): Aficionado Curioso, Conocedor de Géneros, Experto en Géneros, Maestro Clasificador, Gran Árbitro Lúdico, Enciclopedia Viviente.
+
+**Fotógrafo** — se acredita 1 punto cada vez que un usuario sube al menos una foto a una partida (máximo 1 punto por partida aunque suba varias):
+- Niveles (umbrales 1/5/10/20/35/60): Testigo Ocular, Cazador de Instantes, Reportero de Mesa, Fotógrafo Oficial, Maestro del Objetivo, Gran Cronista del Club.
+
+La descripción de cómo se obtiene cada badge especial ahora aparece integrada en el header del logro (entre el nombre y el contador), visible sin necesidad de desplegar.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — enum `CONOCEDOR_GENEROS` y `FOTOGRAFO`, modelos `GameCategoryVote` y `GenreConsensusHistory`, campo `confirmedCategory` en `Game`
+- `server/prisma/migrations/20260409020000_add_new_badges/migration.sql` — nuevas tablas y columnas
+- `server/src/controllers/badgeController.ts` — contadores para nuevos badges, función `processGameCategoryVote`
+- `server/src/controllers/eventController.ts` — llama a `processGameCategoryVote` al crear/actualizar eventos
+- `server/src/controllers/eventPhotoController.ts` — acredita punto FOTOGRAFO al subir primera foto; migrado a singleton de Prisma
+- `server/prisma/seeds/badgeDefinitions.ts` — 12 nuevas definiciones
+- `client/src/types/badge.ts` — tipos, nombres, iconos y descripciones para nuevos badges
+- `client/src/types/event.ts` — campo `confirmedCategory` en interfaz `Event`
+- `client/src/pages/CreatePartida.tsx` y `client/src/pages/EventDetail.tsx` — select bloqueado si hay categoría confirmada
+- `client/src/components/badges/BadgeGrid.tsx` — descripción visible en el header del badge
+
+---
+
+## 2026-04-09 (sesión 1)
+
+### Nuevas funcionalidades
+
+#### Formulario de onboarding obligatorio para nuevos socios
+
+- Al aprobar un usuario, antes de poder acceder a la app debe completar una ficha de socio obligatoria. Si no la completa, se le redirige a `/onboarding` en cada acceso hasta que lo haga.
+- El formulario recoge: nombre, apellidos, DNI/NIE, teléfono, dirección completa (calle, ciudad, provincia, CP), IBAN y dos consentimientos de imagen (actividades y redes sociales). Todos los campos son obligatorios excepto los consentimientos, que son opt-in.
+- Al completar el formulario, los admins reciben una notificación de campanita ("Nuevo socio registrado").
+- Se elimina el envío de email a todos los admins al verificar el email (era redundante con la notificación de campanita existente).
+- El campo `onboardingCompleted` se añade a `UserProfile` con valor por defecto `false`. Los usuarios existentes tienen `false` y necesitarán completar el formulario en su próximo acceso — considerar hacer un script de backfill si se quiere evitar que los socios actuales tengan que rellenarlo.
+- `ProtectedRoute` en el cliente consulta el perfil y redirige a `/onboarding` si `onboardingCompleted === false`.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — campo `onboardingCompleted Boolean @default(false)` en `UserProfile`
+- `server/prisma/migrations/20260409000000_add_onboarding_completed/migration.sql` — migración ALTER TABLE
+- `server/src/controllers/authController.ts` — eliminado bucle de emails a admins en `verifyEmail`
+- `server/src/controllers/profileController.ts` — nuevo handler `completeOnboarding`
+- `server/src/routes/profileRoutes.ts` — ruta `PATCH /me/onboarding`
+- `server/src/services/notificationService.ts` — nueva función `notifyAdminsOnboardingCompleted`
+- `client/src/pages/Onboarding.tsx` — nueva página con formulario de ficha de socio
+- `client/src/types/profile.ts` — campo `onboardingCompleted: boolean`
+- `client/src/App.tsx` — `ProtectedRoute` con comprobación de onboarding, ruta `/onboarding`
+
+---
+
 ## 2026-04-08 (sesión 1)
 
 ### Mejoras visuales
+
+#### Previsión semanal: ajustes de legibilidad y visibilidad
+
+- El color de los bloques sin socio confirmado era demasiado claro (mezcla con fondo al 55%); se reduce a 25% para que sean mucho más visibles.
+- El icono ⚠ era demasiado pequeño; se aumenta de 9px a 12px en bloques normales y de 10px a 13px en bloques verticales.
+- El texto vertical pasa de 10px a 12px y se elimina la negrita (`fontWeight: 400`) para mejorar la legibilidad.
+- El texto vertical se rota hacia la derecha (se elimina `rotate(180deg)`) para que lea de arriba hacia abajo de forma natural.
+- El nombre del juego en bloques normales se marca explícitamente sin negrita.
+- La leyenda inferior sube de 11px a 14px (~30% más grande) y los iconos de 10px a 13px.
+
+**Archivos modificados:**
+- `client/src/pages/WeeklyPreview.tsx` — colores, tamaños de fuente, rotación de texto vertical, leyenda
+
+---
 
 #### Previsión semanal: texto vertical, icono de aviso y leyenda mejorada
 

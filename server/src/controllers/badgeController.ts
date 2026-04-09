@@ -122,6 +122,16 @@ async function getCategoryCount(userId: string, category: BadgeCategory): Promis
     ]);
     return uniqueEvents.size;
   }
+  if (category === BadgeCategory.CONOCEDOR_GENEROS) {
+    return prisma.genreConsensusHistory.count({ where: { userId } });
+  }
+  if (category === BadgeCategory.FOTOGRAFO) {
+    const groups = await prisma.eventPhoto.groupBy({
+      by: ['eventId'],
+      where: { uploadedById: userId }
+    });
+    return groups.length;
+  }
   return prisma.gamePlayHistory.count({ where: { userId, gameCategory: category } });
 }
 
@@ -387,10 +397,81 @@ function getCategoryDisplayName(category: BadgeCategory): string {
     [BadgeCategory.MINIATURAS]: 'Miniaturas',
     [BadgeCategory.WARHAMMER]: 'Warhammer',
     [BadgeCategory.FILLERS_PARTY]: 'Fillers / Party',
+    [BadgeCategory.CARTAS_LCG_TCG]: 'Cartas / LCG / TCG',
     [BadgeCategory.CATALOGADOR]: 'Catalogador',
     [BadgeCategory.ORGANIZADOR]: 'Organizador',
     [BadgeCategory.REPETIDOR]: 'Repetidor',
-    [BadgeCategory.VALIDADOR]: 'Validador'
+    [BadgeCategory.VALIDADOR]: 'Validador',
+    [BadgeCategory.CONOCEDOR_GENEROS]: 'Conocedor de Géneros',
+    [BadgeCategory.FOTOGRAFO]: 'Fotógrafo'
   };
   return names[category];
 }
+
+/**
+ * Procesar voto de categoría de juego.
+ * Si 2 usuarios votan la misma categoría para un bggId, se fija en Game.confirmedCategory
+ * y ambos reciben 1 punto para el badge CONOCEDOR_GENEROS.
+ */
+export const processGameCategoryVote = async (
+  userId: string,
+  bggId: string,
+  category: BadgeCategory
+): Promise<void> => {
+  try {
+    // Si el juego ya tiene categoría confirmada, no hacer nada
+    const game = await prisma.game.findUnique({
+      where: { id: bggId },
+      select: { confirmedCategory: true }
+    });
+    if (!game || game.confirmedCategory !== null) return;
+
+    // Upsert del voto (el usuario puede cambiar su voto previo)
+    await prisma.gameCategoryVote.upsert({
+      where: { bggId_userId: { bggId, userId } },
+      update: { category },
+      create: { bggId, userId, category }
+    });
+
+    // Contar votos por categoría
+    const votes = await prisma.gameCategoryVote.findMany({
+      where: { bggId },
+      select: { userId: true, category: true }
+    });
+
+    // Agrupar por categoría
+    const countByCategory: Record<string, string[]> = {};
+    for (const vote of votes) {
+      if (!countByCategory[vote.category]) countByCategory[vote.category] = [];
+      countByCategory[vote.category]!.push(vote.userId);
+    }
+
+    // Buscar si alguna categoría tiene >= 2 votos
+    const winner = Object.entries(countByCategory).find(([, voters]) => voters.length >= 2);
+    if (!winner) return;
+
+    const [winningCategory, voters] = winner;
+
+    // Fijar categoría confirmada en el juego
+    await prisma.game.update({
+      where: { id: bggId },
+      data: { confirmedCategory: winningCategory as BadgeCategory }
+    });
+
+    // Acreditar punto a los 2 primeros votantes de la categoría ganadora
+    const winningVoters = voters.slice(0, 2);
+    for (const voterId of winningVoters) {
+      // Crear registro de consenso (@@unique evita duplicados si ya existía)
+      await prisma.genreConsensusHistory.upsert({
+        where: { userId_bggId: { userId: voterId, bggId } },
+        update: {},
+        create: { userId: voterId, bggId, category: winningCategory as BadgeCategory }
+      });
+      await checkAndUnlockBadges(voterId, BadgeCategory.CONOCEDOR_GENEROS);
+    }
+
+    console.log(`[CONOCEDOR_GENEROS] Juego ${bggId} fijado como ${winningCategory}. Puntos a: ${winningVoters.join(', ')}`);
+  } catch (error) {
+    console.error('[CONOCEDOR_GENEROS] Error procesando voto:', error);
+  }
+};

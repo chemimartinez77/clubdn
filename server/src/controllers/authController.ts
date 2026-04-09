@@ -6,7 +6,6 @@ import { randomUUID } from 'crypto';
 import { prisma } from '../config/database';
 import {
   sendVerificationEmail,
-  sendAdminNotification,
   sendPasswordResetEmail,
 } from '../services/emailService';
 import { logLoginAttempt, checkLoginRateLimit } from '../services/loginAttemptService';
@@ -192,23 +191,8 @@ export const verifyEmail = async (req: Request, res: Response) => {
       },
     });
 
-    // Notificar a los admins
+    // Notificar a los admins (solo campanita)
     try {
-      // Buscar todos los admins
-      const admins = await prisma.user.findMany({
-        where: {
-          role: { in: ['ADMIN', 'SUPER_ADMIN'] },
-          status: 'APPROVED',
-        },
-        select: { email: true },
-      });
-
-      // Enviar email a cada admin
-      for (const admin of admins) {
-        await sendAdminNotification(admin.email, user.name, user.email);
-      }
-
-      // Crear notificación en la campanita para los admins
       await notifyAdminsNewUser(user.name, user.email);
     } catch (mailError) {
       console.error('Error enviando notificación a admins:', mailError);

@@ -91,6 +91,22 @@ const badgeDefinitions = [
   { category: BadgeCategory.VALIDADOR, level: 4, name: 'Inspector del Tablero', requiredCount: 40 },
   { category: BadgeCategory.VALIDADOR, level: 5, name: 'Gran Notario Lúdico', requiredCount: 70 },
   { category: BadgeCategory.VALIDADOR, level: 6, name: 'Guardián del Resultado', requiredCount: 100 },
+
+  // CONOCEDOR_GENEROS (por consensos de categoría de juego)
+  { category: BadgeCategory.CONOCEDOR_GENEROS, level: 1, name: 'Aficionado Curioso', requiredCount: 2 },
+  { category: BadgeCategory.CONOCEDOR_GENEROS, level: 2, name: 'Conocedor de Géneros', requiredCount: 5 },
+  { category: BadgeCategory.CONOCEDOR_GENEROS, level: 3, name: 'Experto en Géneros', requiredCount: 10 },
+  { category: BadgeCategory.CONOCEDOR_GENEROS, level: 4, name: 'Maestro Clasificador', requiredCount: 20 },
+  { category: BadgeCategory.CONOCEDOR_GENEROS, level: 5, name: 'Gran Árbitro Lúdico', requiredCount: 35 },
+  { category: BadgeCategory.CONOCEDOR_GENEROS, level: 6, name: 'Enciclopedia Viviente', requiredCount: 50 },
+
+  // FOTOGRAFO (por partidas en las que se subió al menos 1 foto)
+  { category: BadgeCategory.FOTOGRAFO, level: 1, name: 'Testigo Ocular', requiredCount: 1 },
+  { category: BadgeCategory.FOTOGRAFO, level: 2, name: 'Cazador de Instantes', requiredCount: 5 },
+  { category: BadgeCategory.FOTOGRAFO, level: 3, name: 'Reportero de Mesa', requiredCount: 10 },
+  { category: BadgeCategory.FOTOGRAFO, level: 4, name: 'Fotógrafo Oficial', requiredCount: 20 },
+  { category: BadgeCategory.FOTOGRAFO, level: 5, name: 'Maestro del Objetivo', requiredCount: 35 },
+  { category: BadgeCategory.FOTOGRAFO, level: 6, name: 'Gran Cronista del Club', requiredCount: 60 },
 ];
 
 export async function seedBadges() {

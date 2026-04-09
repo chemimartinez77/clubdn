@@ -152,10 +152,10 @@ function EventBlockView({ block, colors, colorIndex: _colorIndex = 0 }: { block:
   const hasSocio = event.hasSocioRegistered;
   const isOverlapping = totalColumns > 1;
 
-  // Color del tema: con socio = primary, sin socio = primary apagado
+  // Color del tema: con socio = primary, sin socio = primary ligeramente apagado
   const bgBase = hasSocio
     ? colors.primary
-    : hexMix(colors.primary, colors.background, 0.55);
+    : hexMix(colors.primary, colors.background, 0.25);
 
   const border = hexMix(bgBase, '#000000', 0.25);
 
@@ -171,7 +171,7 @@ function EventBlockView({ block, colors, colorIndex: _colorIndex = 0 }: { block:
 
   // ⚠ sin variante emoji (U+26A0 sin U+FE0F) para poder colorear con CSS
   const warnIcon = !hasSocio
-    ? <span style={{ color: colors.accent, fontSize: '9px', marginRight: '2px' }}>&#x26A0;</span>
+    ? <span style={{ color: colors.accent, fontSize: '12px', marginRight: '3px' }}>&#x26A0;</span>
     : null;
 
   // Cuando solapa, el bloque es estrecho: texto vertical rotado
@@ -202,15 +202,15 @@ function EventBlockView({ block, colors, colorIndex: _colorIndex = 0 }: { block:
         }}
       >
         {!hasSocio && (
-          <span style={{ color: colors.accent, fontSize: '10px', lineHeight: 1, marginBottom: '2px' }}>&#x26A0;</span>
+          <span style={{ color: colors.accent, fontSize: '13px', lineHeight: 1, marginBottom: '2px' }}>&#x26A0;</span>
         )}
         <div
           style={{
             writingMode: 'vertical-rl',
             textOrientation: 'mixed',
-            transform: 'rotate(180deg)',
-            fontSize: '10px',
-            fontWeight: 700,
+            transform: 'rotate(0deg)',
+            fontSize: '12px',
+            fontWeight: 400,
             lineHeight: 1.2,
             overflow: 'hidden',
             maxHeight: `${height - 20}px`,
@@ -225,8 +225,8 @@ function EventBlockView({ block, colors, colorIndex: _colorIndex = 0 }: { block:
             style={{
               writingMode: 'vertical-rl',
               textOrientation: 'mixed',
-              transform: 'rotate(180deg)',
-              fontSize: '9px',
+              transform: 'rotate(0deg)',
+              fontSize: '10px',
               opacity: 0.85,
               marginTop: '3px',
               whiteSpace: 'nowrap',
@@ -265,7 +265,7 @@ function EventBlockView({ block, colors, colorIndex: _colorIndex = 0 }: { block:
         <div style={{ opacity: 0.85, fontSize: '10px', marginTop: '1px' }}>{timeStr}</div>
       )}
       {height >= 48 && event.gameName && event.gameName !== event.title && (
-        <div style={{ opacity: 0.75, fontSize: '10px', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ fontWeight: 400, opacity: 0.75, fontSize: '10px', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {event.gameName}
         </div>
       )}
@@ -572,22 +572,22 @@ export default function WeeklyPreview() {
             {/* Leyenda */}
             <div style={{ display: 'flex', gap: '16px', marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${gridBorder}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: colors.primary }} />
-                <span style={{ color: colors.textSecondary, fontSize: '11px' }}>Con socio confirmado</span>
+                <div style={{ width: '13px', height: '13px', borderRadius: '2px', backgroundColor: colors.primary }} />
+                <span style={{ color: colors.textSecondary, fontSize: '14px' }}>Con socio confirmado</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ color: colors.accent, fontSize: '11px' }}>&#x26A0;</span>
-                <span style={{ color: colors.textSecondary, fontSize: '11px' }}>Sin socio confirmado</span>
+                <span style={{ color: colors.accent, fontSize: '14px' }}>&#x26A0;</span>
+                <span style={{ color: colors.textSecondary, fontSize: '14px' }}>Sin socio confirmado</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <div style={{
-                  width: '10px', height: '10px', borderRadius: '2px',
+                  width: '13px', height: '13px', borderRadius: '2px',
                   backgroundColor: colors.primary,
                   backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.25) 0px, rgba(255,255,255,0.25) 2px, transparent 2px, transparent 6px)'
                 }} />
-                <span style={{ color: colors.textSecondary, fontSize: '11px' }}>Partidas solapadas</span>
+                <span style={{ color: colors.textSecondary, fontSize: '14px' }}>Partidas solapadas</span>
               </div>
-              <div style={{ marginLeft: 'auto', color: hexMix(colors.textSecondary, colors.background, 0.4), fontSize: '10px' }}>
+              <div style={{ marginLeft: 'auto', color: hexMix(colors.textSecondary, colors.background, 0.4), fontSize: '13px' }}>
                 clubdreadnought.com
               </div>
             </div>

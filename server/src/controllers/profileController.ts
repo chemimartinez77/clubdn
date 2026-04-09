@@ -1,6 +1,7 @@
 // server/src/controllers/profileController.ts
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
+import { notifyAdminsOnboardingCompleted } from '../services/notificationService';
 import { v2 as cloudinary } from 'cloudinary';
 
 // Configurar Cloudinary
@@ -464,5 +465,105 @@ export const dismissTour = async (req: Request, res: Response): Promise<void> =>
   } catch (error) {
     console.error('Error al guardar preferencia del tour:', error);
     res.status(500).json({ success: false, message: 'Error al guardar preferencia' });
+  }
+};
+
+/**
+ * Completar onboarding — marca onboardingCompleted = true y notifica a admins
+ */
+export const completeOnboarding = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+      return;
+    }
+
+    const {
+      firstName,
+      lastName,
+      dni,
+      phone,
+      address,
+      city,
+      province,
+      postalCode,
+      iban,
+      imageConsentActivities,
+      imageConsentSocial,
+    } = req.body;
+
+    // Validar campos obligatorios
+    const missing = [];
+    if (!firstName?.trim()) missing.push('firstName');
+    if (!lastName?.trim()) missing.push('lastName');
+    if (!dni?.trim()) missing.push('dni');
+    if (!phone?.trim()) missing.push('phone');
+    if (!address?.trim()) missing.push('address');
+    if (!city?.trim()) missing.push('city');
+    if (!province?.trim()) missing.push('province');
+    if (!postalCode?.trim()) missing.push('postalCode');
+    if (!iban?.trim()) missing.push('iban');
+
+    if (missing.length > 0) {
+      res.status(400).json({ success: false, message: `Faltan campos obligatorios: ${missing.join(', ')}` });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, email: true }
+    });
+
+    const dniNormalized = dni.trim().toUpperCase().replace(/\s/g, '');
+
+    await prisma.userProfile.upsert({
+      where: { userId },
+      update: {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        dni: dni.trim(),
+        dniNormalized,
+        phone: phone.trim(),
+        address: address.trim(),
+        city: city.trim(),
+        province: province.trim(),
+        postalCode: postalCode.trim(),
+        iban: iban.trim(),
+        imageConsentActivities: imageConsentActivities === true,
+        imageConsentSocial: imageConsentSocial === true,
+        onboardingCompleted: true,
+      },
+      create: {
+        userId,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        dni: dni.trim(),
+        dniNormalized,
+        phone: phone.trim(),
+        address: address.trim(),
+        city: city.trim(),
+        province: province.trim(),
+        postalCode: postalCode.trim(),
+        iban: iban.trim(),
+        imageConsentActivities: imageConsentActivities === true,
+        imageConsentSocial: imageConsentSocial === true,
+        onboardingCompleted: true,
+        favoriteGames: [],
+        emailUpdates: false,
+      }
+    });
+
+    // Notificar a admins
+    try {
+      await notifyAdminsOnboardingCompleted(user?.name ?? userId, user?.email ?? '');
+    } catch (e) {
+      console.error('Error notificando onboarding:', e);
+    }
+
+    res.status(200).json({ success: true, message: 'Onboarding completado' });
+  } catch (error) {
+    console.error('Error al completar onboarding:', error);
+    res.status(500).json({ success: false, message: 'Error al guardar los datos' });
   }
 };

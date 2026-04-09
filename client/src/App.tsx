@@ -4,12 +4,15 @@ import { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { usePageTracking } from './hooks/usePageTracking';
 import { ToastProvider } from './contexts/ToastContext';
+import { useQuery } from '@tanstack/react-query';
+import { api } from './api/axios';
 import TipOfTheDayModal from './components/tips/TipOfTheDayModal';
 import { getRandomTip, shouldShowTip } from './data/tips';
 import type { Tip } from './data/tips';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Register from './pages/Register';
 import Login from './pages/Login';
+import Onboarding from './pages/Onboarding';
 import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -49,8 +52,16 @@ import WeeklyPreview from './pages/WeeklyPreview';
 // Componente para rutas protegidas
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
 
-  if (isLoading) {
+  const { data: profileData, isLoading: profileLoading } = useQuery({
+    queryKey: ['myProfile'],
+    queryFn: () => api.get('/api/profile/me').then(r => r.data.data?.profile),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (isLoading || (!!user && profileLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[var(--color-primary)]"></div>
@@ -60,6 +71,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Si el onboarding no está completo y no estamos ya en /onboarding, redirigir
+  if (
+    profileData &&
+    !profileData.onboardingCompleted &&
+    location.pathname !== '/onboarding'
+  ) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return <>{children}</>;
@@ -179,6 +199,7 @@ function App() {
             }
           />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           {/* Enlace de invitación por WhatsApp — público */}
           <Route path="/join/:token" element={<JoinViaShareLink />} />
           {/* Sandbox Azul — pública para pruebas sin login */}

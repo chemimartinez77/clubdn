@@ -16,6 +16,7 @@ export interface Event {
   gameImage?: string | null;
   bggId?: string | null;
   gameCategory?: BadgeCategory | null;
+  confirmedCategory?: BadgeCategory | null;
   game?: {
     thumbnail: string | null;
     image: string | null;
