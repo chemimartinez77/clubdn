@@ -409,11 +409,8 @@ export default function Members() {
 
         {/* Filters Card */}
         <Card>
-          <CardHeader
-            className="cursor-pointer select-none"
-            onClick={() => setFiltersOpen(o => !o)}
-          >
-            <div className="flex items-center justify-between">
+          <CardHeader className="cursor-pointer select-none">
+            <div className="flex items-center justify-between" onClick={() => setFiltersOpen(o => !o)}>
               <h2 className="text-xl font-semibold text-[var(--color-text)]">Filtros</h2>
               <svg
                 className={`w-5 h-5 text-[var(--color-textSecondary)] transition-transform duration-200 ${filtersOpen ? 'rotate-180' : ''}`}
