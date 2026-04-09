@@ -765,12 +765,12 @@ export default function EventDetail() {
         message += `\nHay socios apuntados\n`;
       }
 
-      message += `\nApúntate aquí: ${shareUrl}`;
+      message += `\nMás info aquí: ${shareUrl}`;
       return message;
     };
 
     // La URL de preview genera los meta tags OG (imagen) pero no aparece en el mensaje
-    // El enlace visible "Apúntate aquí" apunta directamente a la app
+    // El enlace visible "Más info aquí" apunta directamente a la app
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
     const appUrl = `${window.location.origin}/events/${event.id}`;
     const previewUrl = `${apiBase}/preview/events/${event.id}`;

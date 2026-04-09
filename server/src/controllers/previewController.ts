@@ -77,9 +77,10 @@ export const previewEvent = async (req: Request, res: Response) => {
     // Preferir imagen de alta res de Game, con fallback al gameImage del evento
     const hasImage = event.game?.image ?? event.gameImage;
     const railwayDomain = process.env.RAILWAY_PUBLIC_DOMAIN;
-    const SERVER_URL = railwayDomain ? `https://${railwayDomain}` : (process.env.SERVER_URL ?? CLIENT_URL);
+    const serverUrl = process.env.SERVER_URL
+      ?? (railwayDomain ? `https://${railwayDomain}` : CLIENT_URL);
     const ogImage = hasImage
-      ? `${SERVER_URL}/preview/image/${event.id}`
+      ? `${serverUrl}/preview/image/${event.id}`
       : `${CLIENT_URL}/og-image.png`;
 
     const userAgent = req.headers['user-agent'] ?? '';
