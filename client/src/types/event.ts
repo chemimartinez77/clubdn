@@ -86,6 +86,41 @@ export interface Event {
   disputeResult?: boolean | null;
 }
 
+export interface CloneableAttendee {
+  id: string;
+  name: string;
+  nick: string | null;
+  avatar: string | null;
+  membershipType: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA' | null;
+}
+
+export interface CreatePartidaClonePrefill {
+  title: string;
+  description: string;
+  gameName?: string | null;
+  gameImage?: string | null;
+  bggId?: string | null;
+  gameCategory?: BadgeCategory | null;
+  location: string;
+  address?: string | null;
+  maxAttendees: number;
+  requiresApproval: boolean;
+  startHour?: number | null;
+  startMinute?: number | null;
+  durationHours?: number | null;
+  durationMinutes?: number | null;
+}
+
+export interface CreatePartidaCloneState {
+  mode: 'clone';
+  sourceEventId: string;
+  sourceTitle: string;
+  sourceStatus: EventStatus;
+  prefill: CreatePartidaClonePrefill;
+  clonedAttendees: CloneableAttendee[];
+  hadExternalGuests: boolean;
+}
+
 export interface EventGuest {
   id: string;
   guestFirstName: string;

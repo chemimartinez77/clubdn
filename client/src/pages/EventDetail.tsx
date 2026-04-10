@@ -12,7 +12,7 @@ import { GameImage } from '../components/events/EventCard';
 import EventPhotoGallery from '../components/events/EventPhotoGallery';
 import GameSearchModal from '../components/events/GameSearchModal';
 import { useAuth } from '../contexts/AuthContext';
-import type { Event, BGGGame, UpdateEventData, PendingInvitation } from '../types/event';
+import type { Event, BGGGame, UpdateEventData, PendingInvitation, CreatePartidaCloneState } from '../types/event';
 import type { ApiResponse } from '../types/auth';
 import type { Invitation, InvitationCreateResponse } from '../types/invitation';
 import { getCategoryDisplayName, getCategoryIcon } from '../types/badge';
@@ -565,6 +565,7 @@ export default function EventDetail() {
   const canDelete = isPartida && !isPast && event.status !== 'CANCELLED' && (isAdmin || user?.id === event.createdBy);
   const canEdit = isOrganizerOrAdmin && event.status !== 'CANCELLED' && !isPast;
   const canAddMember = isOrganizerOrAdmin && event.status !== 'CANCELLED' && !isPast && !isFull;
+  const canClone = isPartida && isOrganizerOrAdmin && ['SCHEDULED', 'ONGOING', 'COMPLETED', 'CANCELLED'].includes(event.status);
   const canCloseCapacity = isPartida
     && !isPast
     && (isAdmin || user?.id === event.createdBy)
@@ -778,6 +779,47 @@ export default function EventDetail() {
     void whatsappWindow;
   };
 
+  const handleCloneEvent = () => {
+    if (!event || !canClone) return;
+
+    const confirmedAttendees = (event.registrations || [])
+      .filter((registration) => registration.status === 'CONFIRMED' && registration.user)
+      .map((registration) => ({
+        id: registration.user!.id,
+        name: registration.user!.name,
+        nick: registration.user!.profile?.nick ?? null,
+        avatar: registration.user!.profile?.avatar ?? null,
+        membershipType: registration.user!.membership?.type ?? null
+      }));
+
+    const cloneState: CreatePartidaCloneState = {
+      mode: 'clone',
+      sourceEventId: event.id,
+      sourceTitle: event.title,
+      sourceStatus: event.status,
+      prefill: {
+        title: event.title,
+        description: event.description,
+        gameName: event.gameName ?? null,
+        gameImage: event.gameImage ?? null,
+        bggId: event.bggId ?? null,
+        gameCategory: event.gameCategory ?? null,
+        location: event.location || 'Club Dreadnought',
+        address: event.address ?? null,
+        maxAttendees: event.maxAttendees,
+        requiresApproval: event.requiresApproval ?? true,
+        startHour: event.startHour ?? null,
+        startMinute: event.startMinute ?? null,
+        durationHours: event.durationHours ?? null,
+        durationMinutes: event.durationMinutes ?? null
+      },
+      clonedAttendees: confirmedAttendees,
+      hadExternalGuests: (event.invitations?.filter((invitation) => invitation.status !== 'CANCELLED').length ?? 0) > 0
+    };
+
+    navigate('/events/crear-partida', { state: cloneState });
+  };
+
   return (
     <Layout>
       <div className="max-w-5xl mx-auto space-y-6">
@@ -966,6 +1008,21 @@ export default function EventDetail() {
                       </svg>
                     </span>
                   </Button>
+
+                  {canClone && (
+                    <Button
+                      onClick={handleCloneEvent}
+                      className="w-full sm:w-auto !bg-sky-600 hover:!bg-sky-700 !text-white transition-all duration-300"
+                      title="Clonar partida"
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        <span>Clonar partida</span>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m-6 4h6m-7 8h8a2 2 0 002-2V7a2 2 0 00-2-2h-1l-.447-.894A1 1 0 0013.658 3h-3.316a1 1 0 00-.895.553L9 5H8a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </span>
+                    </Button>
+                  )}
 
                   {canCloseCapacity && (
                     <Button

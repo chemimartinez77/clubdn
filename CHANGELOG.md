@@ -4,6 +4,28 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-10 (sesión 4)
+
+### Nuevas funcionalidades
+
+#### Clonado de partidas desde el detalle
+
+- Se añade un botón **Clonar partida** en la ficha de detalle para partidas en estado `SCHEDULED`, `ONGOING`, `COMPLETED` y `CANCELLED`, visible para el organizador y administradores.
+- El clonado no crea la partida directamente: abre el formulario de **Organizar una Partida** con la ficha precargada a partir de la partida original.
+- Se copian el **título**, **juego**, **categoría**, **descripción**, **cupo**, **ubicación**, **dirección**, **requiere aprobación**, **hora de inicio** y **duración**.
+- La **fecha no se copia** y sigue siendo obligatoria, para forzar que la nueva partida tenga una programación válida.
+- Se muestran los **asistentes confirmados** de la partida original como lista preseleccionada para clonarlos también en la nueva.
+- Al guardar, primero se crea la nueva partida y después se apunta automáticamente a los miembros seleccionados reutilizando el endpoint existente de **apuntar miembro**.
+- Si algunos asistentes no pueden ser añadidos, la partida igualmente se crea y se informa del resultado parcial.
+- Si la partida original tenía **invitados externos**, se muestra un aviso indicando que **no se copian** y que deben volver a invitarse manualmente.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — botón de clonado, construcción del estado de clonación y navegación a creación
+- `client/src/pages/CreatePartida.tsx` — soporte de modo clonado, precarga de formulario, selección de asistentes y alta posterior tras crear la partida
+- `client/src/types/event.ts` — nuevos tipos `CreatePartidaCloneState`, `CreatePartidaClonePrefill` y `CloneableAttendee`
+
+---
+
 ## 2026-04-10 (sesión 3)
 
 ### Correcciones

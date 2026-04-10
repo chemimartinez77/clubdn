@@ -8,47 +8,68 @@ import Button from '../components/ui/Button';
 import GameSearchModal from '../components/events/GameSearchModal';
 import { useToast } from '../hooks/useToast';
 import { api } from '../api/axios';
-import type { BGGGame, CreateEventData } from '../types/event';
+import { useAuth } from '../contexts/AuthContext';
+import type { ApiResponse } from '../types/auth';
+import type { BGGGame, CreateEventData, CreatePartidaCloneState } from '../types/event';
 import { getCategoryDisplayName, getCategoryIcon } from '../types/badge';
 import CreatePartidaTour from '../components/tour/CreatePartidaTour';
 import { useTour } from '../hooks/useTour';
 
+type CreatePartidaLocationState = {
+  selectedDate?: string;
+} | CreatePartidaCloneState | null;
+
+interface CreatedEventResponse {
+  event?: {
+    id: string;
+  };
+}
+
 export default function CreatePartida() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const { shouldShow: showTour, dismissTour } = useTour('createPartida');
 
-  // Obtener fecha predefinida del estado de navegación (desde el calendario)
-  const preselectedDate = (location.state as { selectedDate?: string })?.selectedDate;
+  const locationState = location.state as CreatePartidaLocationState;
+  const cloneState = locationState && 'mode' in locationState && locationState.mode === 'clone'
+    ? locationState
+    : null;
+  const preselectedDate = locationState && !('mode' in locationState) ? locationState.selectedDate : undefined;
+  const clonePrefill = cloneState?.prefill;
+  const cloneAttendees = cloneState?.clonedAttendees ?? [];
+  const currentUserWasConfirmed = !!user && cloneAttendees.some((attendee) => attendee.id === user.id);
 
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
-  const [selectedGame, setSelectedGame] = useState<BGGGame | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedGame, setSelectedGame] = useState<BGGGame | null>(() => (
+    clonePrefill?.bggId
+      ? {
+          id: clonePrefill.bggId,
+          name: clonePrefill.gameName ?? clonePrefill.title,
+          image: clonePrefill.gameImage ?? '',
+          thumbnail: '',
+          yearPublished: ''
+        }
+      : null
+  ));
+  const [selectedCategory, setSelectedCategory] = useState<string>(clonePrefill?.gameCategory ?? '');
   const [confirmedCategory, setConfirmedCategory] = useState<string | null>(null);
+  const [selectedClonedAttendeeIds, setSelectedClonedAttendeeIds] = useState<string[]>(() => cloneAttendees.map((attendee) => attendee.id));
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Generar opciones para horas (0-23)
   const hours = Array.from({ length: 24 }, (_, i) => i);
-  // Opciones para minutos (0, 15, 30, 45)
   const minutes = [0, 15, 30, 45];
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateEventData) => {
-      const response = await api.post('/api/events', data);
+      const response = await api.post<ApiResponse<CreatedEventResponse>>('/api/events', data);
       return response.data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      success(data.message || 'Partida creada correctamente');
-      navigate(`/events/${data.data?.event?.id ?? ''}`);
-    },
-    onError: (err: any) => {
-      showError(err.response?.data?.message || 'Error al crear partida');
     }
   });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
@@ -59,10 +80,9 @@ export default function CreatePartida() {
     const attend = formData.get('attend') === 'on';
     const requiresApproval = formData.get('requiresApproval') === 'on';
 
-    // Crear fecha completa con hora
     const eventDate = new Date(dateValue);
-    if (startHour) eventDate.setHours(parseInt(startHour));
-    if (startMinute) eventDate.setMinutes(parseInt(startMinute));
+    if (startHour) eventDate.setHours(parseInt(startHour, 10));
+    if (startMinute) eventDate.setMinutes(parseInt(startMinute, 10));
 
     const gameCategory = formData.get('gameCategory') as string;
 
@@ -71,13 +91,13 @@ export default function CreatePartida() {
       title: formData.get('title') as string,
       description: formData.get('description') as string,
       date: eventDate.toISOString(),
-      startHour: startHour ? parseInt(startHour) : undefined,
-      startMinute: startMinute ? parseInt(startMinute) : undefined,
-      durationHours: formData.get('durationHours') ? parseInt(formData.get('durationHours') as string) : undefined,
-      durationMinutes: formData.get('durationMinutes') ? parseInt(formData.get('durationMinutes') as string) : undefined,
+      startHour: startHour ? parseInt(startHour, 10) : undefined,
+      startMinute: startMinute ? parseInt(startMinute, 10) : undefined,
+      durationHours: formData.get('durationHours') ? parseInt(formData.get('durationHours') as string, 10) : undefined,
+      durationMinutes: formData.get('durationMinutes') ? parseInt(formData.get('durationMinutes') as string, 10) : undefined,
       location: locationValue || 'Club Dreadnought',
       address: (formData.get('address') as string) || undefined,
-      maxAttendees: parseInt(formData.get('maxAttendees') as string),
+      maxAttendees: parseInt(formData.get('maxAttendees') as string, 10),
       attend,
       requiresApproval,
       gameName: selectedGame?.name,
@@ -86,14 +106,51 @@ export default function CreatePartida() {
       gameCategory: gameCategory || undefined
     };
 
-    createMutation.mutate(data);
+    try {
+      setIsSubmitting(true);
+      const response = await createMutation.mutateAsync(data);
+      const newEventId = response.data?.event?.id;
+
+      if (!newEventId) {
+        throw new Error('No se pudo obtener la nueva partida creada');
+      }
+
+      const attendeeIdsToAdd = cloneState
+        ? selectedClonedAttendeeIds.filter((attendeeId) => !(attend && attendeeId === user?.id))
+        : [];
+
+      const addAttendeeResults = await Promise.allSettled(
+        attendeeIdsToAdd.map((attendeeId) => api.post(`/api/events/${newEventId}/add-member`, { userId: attendeeId }))
+      );
+
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['event', newEventId] });
+
+      const failedAttendees = cloneState
+        ? addAttendeeResults
+            .map((result, index) => ({ result, attendee: cloneAttendees.find((attendee) => attendee.id === attendeeIdsToAdd[index]) }))
+            .filter((entry) => entry.result.status === 'rejected' && entry.attendee)
+            .map((entry) => entry.attendee!.nick || entry.attendee!.name)
+        : [];
+
+      if (failedAttendees.length > 0) {
+        showError(`Partida creada, pero no se pudo apuntar a: ${failedAttendees.join(', ')}`);
+      } else {
+        success(response.message || 'Partida creada correctamente');
+      }
+
+      navigate(`/events/${newEventId}`);
+    } catch (err: any) {
+      showError(err.response?.data?.message || err.message || 'Error al crear partida');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleGameSelect = async (game: BGGGame) => {
     setSelectedGame(game);
     setConfirmedCategory(null);
 
-    // Guardar el juego completo en la base de datos y obtener la categoría si existe
     try {
       const isRpg = game.id.startsWith('rpgg-');
       const endpoint = isRpg
@@ -101,7 +158,6 @@ export default function CreatePartida() {
         : `/api/games/${game.id}`;
       const response = await api.get(endpoint);
 
-      // Si el juego tiene categoría confirmada por la comunidad, tiene prioridad
       if (response.data?.data?.confirmedCategory) {
         setSelectedCategory(response.data.data.confirmedCategory);
         setConfirmedCategory(response.data.data.confirmedCategory);
@@ -119,13 +175,38 @@ export default function CreatePartida() {
     setConfirmedCategory(null);
   };
 
-  // Fecha mínima (hoy)
+  const handleToggleClonedAttendee = (attendeeId: string) => {
+    setSelectedClonedAttendeeIds((current) => (
+      current.includes(attendeeId)
+        ? current.filter((id) => id !== attendeeId)
+        : [...current, attendeeId]
+    ));
+  };
+
   const today = new Date().toISOString().split('T')[0];
+  const titleDefaultValue = clonePrefill?.title ?? (selectedGame ? `${selectedGame.name}` : '');
+  const descriptionDefaultValue = clonePrefill?.description ?? '';
+  const locationDefaultValue = clonePrefill?.location ?? '';
+  const addressDefaultValue = clonePrefill?.address ?? '';
+  const maxAttendeesDefaultValue = clonePrefill?.maxAttendees ?? 4;
+  const startHourDefaultValue = clonePrefill?.startHour !== null && clonePrefill?.startHour !== undefined
+    ? String(clonePrefill.startHour)
+    : '17';
+  const startMinuteDefaultValue = clonePrefill?.startMinute !== null && clonePrefill?.startMinute !== undefined
+    ? String(clonePrefill.startMinute)
+    : '0';
+  const durationHoursDefaultValue = clonePrefill?.durationHours !== null && clonePrefill?.durationHours !== undefined
+    ? String(clonePrefill.durationHours)
+    : '3';
+  const durationMinutesDefaultValue = clonePrefill?.durationMinutes !== null && clonePrefill?.durationMinutes !== undefined
+    ? String(clonePrefill.durationMinutes)
+    : '0';
+  const requiresApprovalDefaultValue = clonePrefill?.requiresApproval ?? true;
+  const attendDefaultValue = cloneState ? currentUserWasConfirmed : true;
 
   return (
     <Layout>
       <div className="max-w-3xl mx-auto space-y-6">
-        {/* Header */}
         <div id="create-partida-header">
           <button
             onClick={() => navigate(-1)}
@@ -136,15 +217,25 @@ export default function CreatePartida() {
             </svg>
             Volver
           </button>
-          <h1 className="text-3xl font-bold text-[var(--color-text)]">Organizar una Partida</h1>
-          <p className="text-[var(--color-textSecondary)] mt-1">Crea una partida para jugar con otros miembros del club</p>
+          <h1 className="text-3xl font-bold text-[var(--color-text)]">
+            {cloneState ? 'Clonar partida' : 'Organizar una Partida'}
+          </h1>
+          <p className="text-[var(--color-textSecondary)] mt-1">
+            {cloneState
+              ? `Nueva partida basada en "${cloneState.sourceTitle}".`
+              : 'Crea una partida para jugar con otros miembros del club'}
+          </p>
         </div>
 
-        {/* Form */}
         <Card>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Juego */}
+              {cloneState && (
+                <div className="rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+                  Se ha copiado la ficha, la hora y la duración de la partida original. La fecha no se copia y debes elegir una nueva.
+                </div>
+              )}
+
               <div id="create-partida-game">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Elige un juego (opcional)
@@ -189,7 +280,6 @@ export default function CreatePartida() {
                 )}
               </div>
 
-              {/* Categoría del juego (para badges) */}
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Categoría del juego (opcional)
@@ -220,13 +310,12 @@ export default function CreatePartida() {
                 </p>
               </div>
 
-              {/* Asistencia */}
               <div className="flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] px-4 py-3">
                 <input
                   id="attend"
                   name="attend"
                   type="checkbox"
-                  defaultChecked
+                  defaultChecked={attendDefaultValue}
                   className="h-4 w-4 rounded border-[var(--color-inputBorder)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                 />
                 <label htmlFor="attend" className="text-sm text-[var(--color-textSecondary)]">
@@ -234,13 +323,12 @@ export default function CreatePartida() {
                 </label>
               </div>
 
-              {/* Requiere aprobación */}
               <div className="flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] px-4 py-3">
                 <input
                   id="requiresApproval"
                   name="requiresApproval"
                   type="checkbox"
-                  defaultChecked
+                  defaultChecked={requiresApprovalDefaultValue}
                   className="h-4 w-4 rounded border-[var(--color-inputBorder)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                 />
                 <label htmlFor="requiresApproval" className="text-sm text-[var(--color-textSecondary)]">
@@ -248,7 +336,6 @@ export default function CreatePartida() {
                 </label>
               </div>
 
-              {/* Título */}
               <div id="create-partida-title">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Título de la partida *
@@ -259,13 +346,12 @@ export default function CreatePartida() {
                   required
                   minLength={3}
                   maxLength={100}
-                  defaultValue={selectedGame ? `${selectedGame.name}` : ''}
+                  defaultValue={titleDefaultValue}
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)] placeholder:text-gray-500"
                   placeholder="Ej: Partida de Catan"
                 />
               </div>
 
-              {/* Descripción */}
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Descripción de la partida (opcional)
@@ -273,12 +359,12 @@ export default function CreatePartida() {
                 <textarea
                   name="description"
                   rows={4}
+                  defaultValue={descriptionDefaultValue}
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none bg-[var(--color-inputBackground)] text-[var(--color-inputText)] placeholder:text-gray-500"
                   placeholder="Dale a los jugadores más información acerca de la partida..."
                 />
               </div>
 
-              {/* Fecha y Hora */}
               <div id="create-partida-datetime">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   ¿Cuándo será la partida? *
@@ -291,7 +377,7 @@ export default function CreatePartida() {
                       name="date"
                       required
                       min={today}
-                      defaultValue={preselectedDate || ''}
+                      defaultValue={cloneState ? '' : (preselectedDate || '')}
                       className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)] [color-scheme:dark]"
                     />
                   </div>
@@ -299,7 +385,7 @@ export default function CreatePartida() {
                     <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Hora</label>
                     <select
                       name="startHour"
-                      defaultValue="17"
+                      defaultValue={startHourDefaultValue}
                       className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
                     >
                       <option value="">--</option>
@@ -314,7 +400,7 @@ export default function CreatePartida() {
                     <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Minutos</label>
                     <select
                       name="startMinute"
-                      defaultValue="0"
+                      defaultValue={startMinuteDefaultValue}
                       className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
                     >
                       {minutes.map(minute => (
@@ -327,7 +413,6 @@ export default function CreatePartida() {
                 </div>
               </div>
 
-              {/* Duración estimada */}
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Duración estimada (opcional)
@@ -337,7 +422,7 @@ export default function CreatePartida() {
                     <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Horas</label>
                     <select
                       name="durationHours"
-                      defaultValue="3"
+                      defaultValue={durationHoursDefaultValue}
                       className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
                     >
                       <option value="">--</option>
@@ -350,7 +435,7 @@ export default function CreatePartida() {
                     <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Minutos</label>
                     <select
                       name="durationMinutes"
-                      defaultValue="0"
+                      defaultValue={durationMinutesDefaultValue}
                       className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
                     >
                       {minutes.map(minute => (
@@ -361,7 +446,6 @@ export default function CreatePartida() {
                 </div>
               </div>
 
-              {/* Número de jugadores */}
               <div id="create-partida-attendees">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   ¿Cuántos jugadores o jugadoras seréis en la partida? *
@@ -372,7 +456,7 @@ export default function CreatePartida() {
                   required
                   min={1}
                   max={100}
-                  defaultValue={4}
+                  defaultValue={maxAttendeesDefaultValue}
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
                 />
                 <p className="text-xs text-[var(--color-textSecondary)] mt-1">
@@ -380,7 +464,6 @@ export default function CreatePartida() {
                 </p>
               </div>
 
-              {/* Ubicación */}
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Ubicación (opcional)
@@ -389,12 +472,12 @@ export default function CreatePartida() {
                   type="text"
                   name="location"
                   minLength={3}
+                  defaultValue={locationDefaultValue}
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)] placeholder:text-gray-500"
                   placeholder="Club Dreadnought"
                 />
               </div>
 
-              {/* Dirección */}
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Dirección (opcional)
@@ -402,20 +485,72 @@ export default function CreatePartida() {
                 <input
                   type="text"
                   name="address"
+                  defaultValue={addressDefaultValue}
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)] placeholder:text-gray-500"
                   placeholder="Direccion completa"
                 />
               </div>
 
-              {/* Submit Buttons */}
+              {cloneState && (
+                <div className="space-y-4 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] p-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-[var(--color-text)]">Asistentes clonados</h2>
+                    <p className="text-sm text-[var(--color-textSecondary)]">
+                      Los miembros seleccionados se apuntarán a la nueva partida y recibirán la notificación habitual.
+                    </p>
+                    {cloneState.hadExternalGuests && (
+                      <p className="mt-2 text-sm text-amber-700">
+                        La partida original tenía invitados externos. No se copian y tendrás que volver a invitarlos manualmente.
+                      </p>
+                    )}
+                  </div>
+
+                  {cloneAttendees.length === 0 ? (
+                    <p className="text-sm text-[var(--color-textSecondary)]">La partida original no tenía asistentes confirmados para clonar.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {cloneAttendees.map((attendee) => (
+                        <label
+                          key={attendee.id}
+                          className="flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] px-3 py-2 text-sm text-[var(--color-text)]"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedClonedAttendeeIds.includes(attendee.id)}
+                            onChange={() => handleToggleClonedAttendee(attendee.id)}
+                            className="h-4 w-4 rounded border-[var(--color-inputBorder)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                          />
+                          {attendee.avatar ? (
+                            <img src={attendee.avatar} alt={attendee.name} className="h-8 w-8 rounded-full object-cover" />
+                          ) : (
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-tableRowHover)] text-xs font-semibold">
+                              {attendee.name.slice(0, 1).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-medium">{attendee.nick || attendee.name}</p>
+                            {attendee.nick && (
+                              <p className="truncate text-xs text-[var(--color-textSecondary)]">{attendee.name}</p>
+                            )}
+                          </div>
+                          {attendee.membershipType && (
+                            <span className="text-xs text-[var(--color-textSecondary)]">{attendee.membershipType}</span>
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div id="create-partida-submit" className="flex gap-3 pt-4">
                 <Button
                   type="submit"
                   variant="primary"
-                  disabled={createMutation.isPending}
+                  disabled={createMutation.isPending || isSubmitting}
                   className="flex-1"
                 >
-                  {createMutation.isPending ? 'Creando...' : 'Guardar'}
+                  {createMutation.isPending || isSubmitting ? 'Creando...' : 'Guardar'}
                 </Button>
                 <Button
                   type="button"
@@ -431,7 +566,6 @@ export default function CreatePartida() {
         </Card>
       </div>
 
-      {/* Game Search Modal */}
       <GameSearchModal
         isOpen={isGameModalOpen}
         onClose={() => setIsGameModalOpen(false)}
@@ -442,4 +576,3 @@ export default function CreatePartida() {
     </Layout>
   );
 }
-
