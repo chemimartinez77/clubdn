@@ -31,9 +31,11 @@ export const proxyImage = async (req: Request, res: Response) => {
 
     protocol.get(imageUrl, (imgRes) => {
       const contentType = imgRes.headers['content-type'] ?? 'image/jpeg';
-      console.log(`[proxyImage] event=${id} status=${imgRes.statusCode} contentType=${contentType}`);
+      const contentLength = imgRes.headers['content-length'];
+      console.log(`[proxyImage] event=${id} status=${imgRes.statusCode} contentType=${contentType} contentLength=${contentLength ?? 'unknown'}`);
       res.setHeader('Content-Type', contentType);
       res.setHeader('Cache-Control', 'public, max-age=86400');
+      if (contentLength) res.setHeader('Content-Length', contentLength);
       imgRes.pipe(res);
     }).on('error', (err) => {
       console.log(`[proxyImage] event=${id} error=${err.message} → redirect og-image.png`);
