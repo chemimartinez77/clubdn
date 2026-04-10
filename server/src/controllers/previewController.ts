@@ -83,9 +83,16 @@ export const previewEvent = async (req: Request, res: Response) => {
       ? `${serverUrl}/preview/image/${event.id}`
       : `${CLIENT_URL}/og-image.png`;
 
-    // Siempre incluir meta OG + redirección: los crawlers ignoran JS/meta-refresh,
-    // los usuarios normales se redirigen automáticamente a la app
-    const html = `<!DOCTYPE html>
+    const userAgent = req.headers['user-agent'] ?? '';
+    // WhatsApp usa facebookexternalhit o WhatsApp/x.x como UA
+    const isCrawler = /facebookexternalhit|whatsapp|twitterbot|linkedinbot|telegrambot|slackbot|discordbot/i.test(userAgent);
+    console.log(`[preview] event=${event.id} isCrawler=${isCrawler} ua="${userAgent}"`);
+
+    // Los crawlers deben quedarse en esta página para leer los meta tags.
+    // Si se les añade redirección, la siguen y aterrizan en la SPA (index.html genérico),
+    // perdiendo los meta tags específicos del evento.
+    const html = isCrawler
+      ? `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -97,6 +104,13 @@ export const previewEvent = async (req: Request, res: Response) => {
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="${ogImage}" />
+</head>
+<body></body>
+</html>`
+      : `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
   <meta http-equiv="refresh" content="0; url=${eventUrl}" />
 </head>
 <body>

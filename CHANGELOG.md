@@ -8,13 +8,14 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### Correcciones
 
-#### Preview de eventos: imagen en WhatsApp inconsistente por detección de crawler por User-Agent
+#### Preview de eventos: imagen en WhatsApp inconsistente — investigación y corrección iterativa
 
-- WhatsApp (y otras apps) usan distintos User-Agents según versión y plataforma, lo que hacía que algunos usuarios vieran la imagen al compartir un evento y otros no.
-- Se elimina la detección de crawler basada en User-Agent. Ahora la respuesta del endpoint `/preview/:id` incluye siempre los meta tags OG y la redirección (`meta http-equiv="refresh"` + JS). Los crawlers ignoran la redirección y leen los meta tags; los usuarios normales son redirigidos a la app automáticamente.
+- **Intento 1 (revertido):** Se eliminó la detección de crawler por User-Agent para unificar la respuesta con meta OG + redirección. Comprobado con el depurador de Meta que el crawler sigue la redirección `meta http-equiv="refresh"` y aterriza en la SPA (index.html genérico), perdiendo los meta tags específicos del evento. El enfoque no funciona.
+- **Solución final:** Se restaura la detección de crawler por User-Agent (regex incluye `facebookexternalhit`, `whatsapp`, y otros bots). Los crawlers reciben solo los meta OG sin redirección; los usuarios normales reciben la redirección a la SPA.
+- **Log de diagnóstico añadido:** Se registra en consola el User-Agent y el resultado de `isCrawler` en cada petición al endpoint `/preview/events/:id`, para identificar si WhatsApp manda algún UA no cubierto por el regex.
 
 **Archivos modificados:**
-- `server/src/controllers/previewController.ts` — eliminada lógica de `isCrawler`; HTML unificado con meta OG + redirección
+- `server/src/controllers/previewController.ts` — restaurada lógica de `isCrawler`; añadido `console.log` de diagnóstico
 
 ---
 
