@@ -63,16 +63,27 @@ export default function EventDetail() {
 
   // Estado dropdown opciones
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+  const [optionsPos, setOptionsPos] = useState<{ top: number; right: number } | null>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
+  const optionsBtnRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (optionsRef.current && !optionsRef.current.contains(e.target as Node)) {
+      if (optionsRef.current && !optionsRef.current.contains(e.target as Node) &&
+          optionsBtnRef.current && !optionsBtnRef.current.contains(e.target as Node)) {
         setIsOptionsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleToggleOptions = () => {
+    if (!isOptionsOpen && optionsBtnRef.current) {
+      const rect = optionsBtnRef.current.getBoundingClientRect();
+      setOptionsPos({ top: rect.bottom + window.scrollY + 8, right: window.innerWidth - rect.right });
+    }
+    setIsOptionsOpen(prev => !prev);
+  };
 
   // Estado modal edición
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -967,9 +978,10 @@ export default function EventDetail() {
                   )}
 
                   {/* Dropdown Opciones */}
-                  <div className="relative" ref={optionsRef}>
+                  <div className="relative">
                     <Button
-                      onClick={() => setIsOptionsOpen(prev => !prev)}
+                      ref={optionsBtnRef}
+                      onClick={handleToggleOptions}
                       className="w-full sm:w-auto transition-all duration-300"
                     >
                       <span className="flex items-center justify-center gap-2">
@@ -979,8 +991,12 @@ export default function EventDetail() {
                         </svg>
                       </span>
                     </Button>
-                    {isOptionsOpen && (
-                      <div className="absolute right-0 mt-2 w-52 rounded-lg shadow-lg bg-[var(--color-card)] border border-[var(--color-cardBorder)] z-50 overflow-hidden">
+                    {isOptionsOpen && optionsPos && (
+                      <div
+                        ref={optionsRef}
+                        className="fixed w-52 rounded-lg shadow-lg bg-[var(--color-card)] border border-[var(--color-cardBorder)] overflow-hidden"
+                        style={{ top: optionsPos.top, right: optionsPos.right, zIndex: 9999 }}
+                      >
                         {isOrganizerOrAdmin && (
                           <button
                             onClick={() => { setIsAddMemberModalOpen(true); setIsOptionsOpen(false); }}
