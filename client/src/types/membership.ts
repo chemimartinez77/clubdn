@@ -6,7 +6,6 @@ export interface Membership {
   id: string;
   userId: string;
   type: MembershipType;
-  monthlyFee: number;
   startDate: string;
   becameSocioAt: string | null;
   isActive: boolean;

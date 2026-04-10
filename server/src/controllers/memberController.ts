@@ -8,6 +8,7 @@ import { prisma } from '../config/database';
 import { MemberData, MembersResponse } from '../types/members';
 import { getPaymentStatus } from '../utils/paymentStatus';
 import { normalizeDni, isValidSpanishDni } from '../utils/dni';
+import { getMembershipFeeMap } from '../services/membershipFeeService';
 
 // Configurar Cloudinary
 cloudinary.config({
@@ -117,6 +118,8 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
       prisma.user.count({ where })
     ]);
 
+    const feeMap = await getMembershipFeeMap();
+
     // Calculate payment status for each member
     const membersData: MemberData[] = users.map(user => {
       const computedPaymentStatus = getPaymentStatus({
@@ -149,7 +152,7 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
         startDate: user.membership?.startDate.toISOString() || null,
         fechaBaja: user.membership?.fechaBaja?.toISOString() || null,
         paymentStatus: computedPaymentStatus,
-        monthlyFee: user.membership ? parseFloat(user.membership.monthlyFee.toString()) : null,
+        monthlyFee: user.membership ? (feeMap[user.membership.type] ?? 0) : null,
         phone: user.profile?.phone || null,
         lastPaymentDate: user.membership?.lastPaymentDate?.toISOString() || null
       };
@@ -494,7 +497,6 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
               userId: existingUser.id,
               type: newMembershipType,
               startDate: new Date(),
-              monthlyFee: newMembershipType === 'SOCIO' ? 10 : 0,
               isActive: true
             }
           })
@@ -514,14 +516,11 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
         );
       } else if (existingMembership.type !== newMembershipType) {
         // Actualizar tipo de membresía existente
-        const newMonthlyFee = newMembershipType === 'SOCIO' ? 10 : newMembershipType === 'COLABORADOR' ? 0 : existingMembership.monthlyFee;
-
         transactionOperations.push(
           prisma.membership.update({
             where: { userId: existingUser.id },
             data: {
               type: newMembershipType,
-              monthlyFee: newMonthlyFee,
               becameSocioAt: newMembershipType === 'SOCIO' && existingMembership.type !== 'SOCIO'
                 ? new Date()
                 : existingMembership.becameSocioAt,
@@ -773,6 +772,7 @@ export const exportMembersCSV = async (req: Request, res: Response): Promise<voi
 
     // Build CSV content
     const csvHeader = 'Nombre,Email,Tipo de Membresía,Fecha de Incorporación,Fecha de Baja,Estado de Pago,Cuota Mensual,Teléfono\n';
+    const feeMapCsv = await getMembershipFeeMap();
 
     const csvRows = users.map(user => {
       const membershipType = user.membership?.fechaBaja
@@ -797,7 +797,7 @@ export const exportMembersCSV = async (req: Request, res: Response): Promise<voi
         : computedPaymentStatus === 'ANO_COMPLETO'
         ? 'Año completo'
         : 'Nuevo';
-      const monthlyFee = user.membership?.monthlyFee || '';
+      const monthlyFee = user.membership ? (feeMapCsv[user.membership.type] ?? 0) : '';
       const phone = user.profile?.phone || '';
 
       // Apply payment status filter

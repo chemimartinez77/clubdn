@@ -13,7 +13,6 @@ export interface MemberData {
   startDate: string | null;
   fechaBaja: string | null;
   paymentStatus: PaymentStatusType;
-  monthlyFee: number | null;
   phone: string | null;
   lastPaymentDate: string | null;
 }

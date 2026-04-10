@@ -153,7 +153,7 @@ async function main() {
     console.log(`  ✅ Perfil creado`);
 
     // Crear membresía
-    const monthlyFee = userData.membershipType === 'SOCIO' ? 19.00 : 15.00;
+    const seedFee = userData.membershipType === 'SOCIO' ? 19.00 : 15.00;
     const becameSocioAt = userData.membershipType === 'SOCIO'
       ? new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000) // 1 año después
       : null;
@@ -162,7 +162,6 @@ async function main() {
       data: {
         userId: user.id,
         type: userData.membershipType,
-        monthlyFee,
         startDate,
         becameSocioAt,
         isActive: userData.hasPaidCurrentMonth,
@@ -170,7 +169,7 @@ async function main() {
       }
     });
 
-    console.log(`  ✅ Membresía ${userData.membershipType} creada (${monthlyFee}€/mes)`);
+    console.log(`  ✅ Membresía ${userData.membershipType} creada`);
 
     // Crear pagos históricos (últimos 3-5 meses dependiendo de antigüedad)
     const paymentsToCreate = Math.min(userData.monthsAsMember, 5);
@@ -196,7 +195,7 @@ async function main() {
         await prisma.payment.create({
           data: {
             userId: user.id,
-            amount: monthlyFee,
+            amount: seedFee,
             month: paymentMonthAdjusted,
             year: paymentYear,
             paymentMethod: ['efectivo', 'transferencia', 'bizum'][Math.floor(Math.random() * 3)],
@@ -215,7 +214,7 @@ async function main() {
       await prisma.payment.create({
         data: {
           userId: user.id,
-          amount: monthlyFee,
+          amount: seedFee,
           month: currentMonth,
           year: currentYear,
           paymentMethod: ['efectivo', 'transferencia', 'bizum'][Math.floor(Math.random() * 3)],

@@ -74,6 +74,30 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 - `server/src/controllers/memberController.ts` — setear `trialStartDate = new Date()` al cambiar a EN_PRUEBAS
 - `server/src/jobs/memberPromotionJob.ts` — filtrado en memoria usando `trialStartDate ?? startDate`
 
+#### Membresía: eliminar columna `monthlyFee` y centralizar precios en ClubConfig
+
+- El campo `monthlyFee` en la tabla `Membership` era redundante: todos los socios del mismo tipo siempre pagan lo mismo, y los precios ya están definidos en `ClubConfig.membershipTypes`.
+- Además había inconsistencias graves entre controladores (SOCIO=10 en `memberController`, 19 en `membershipController`, COLABORADOR=16 en el job, 15 en el resto).
+- Se crea el servicio `membershipFeeService.ts` con `getMembershipFee(type)` y `getMembershipFeeMap()`, que leen `ClubConfig.membershipTypes` con fallback a unos valores por defecto canónicos (`SOCIO: 19, COLABORADOR: 15, FAMILIAR: 10`).
+- Se elimina `monthlyFee` de todos los `prisma.membership.create/update` en los controladores y el job de promoción.
+- Los cálculos de importe en `Payment.amount` (al marcar pagos individuales o año completo) pasan a usar el servicio.
+- La respuesta de `getPaymentStatus` sigue devolviendo `monthlyFee` calculado dinámicamente para no romper el frontend.
+- Se elimina la columna del schema y se crea la migración correspondiente.
+
+**Archivos modificados:**
+- `server/src/services/membershipFeeService.ts` — nuevo servicio centralizado de precios
+- `server/prisma/schema.prisma` — eliminado `monthlyFee Decimal` de model `Membership`
+- `server/prisma/migrations/20260410030000_remove_monthly_fee/migration.sql` — migración SQL
+- `server/src/controllers/membershipController.ts` — eliminado `monthlyFee` de creates/updates, usa `getMembershipFee`/`getMembershipFeeMap`
+- `server/src/controllers/adminController.ts` — eliminado `monthlyFeeMap` y `monthlyFee` del create de membresía en `approveUser`
+- `server/src/controllers/memberController.ts` — usa `getMembershipFeeMap()` en `getMembers` y export CSV; eliminado `monthlyFee` de create/update en `editMember`
+- `server/src/jobs/memberPromotionJob.ts` — eliminado `monthlyFee: 16.00` del update a COLABORADOR
+- `server/src/scripts/seedMemberships.ts` — eliminado `monthlyFee` del create de membresía; pagos históricos usan variable local `seedFee`
+- `server/src/tests/uat/tester4.uat.test.ts` — eliminado `monthlyFee: 10.00` de los 4 seeds de test
+- `server/src/types/members.ts` — eliminado `monthlyFee` de la interfaz `MemberData`
+- `client/src/types/members.ts` — eliminado `monthlyFee` de la interfaz `MemberData`
+- `client/src/types/membership.ts` — eliminado `monthlyFee` de la interfaz `Membership`
+
 ---
 
 ## 2026-04-10 (sesión 3)

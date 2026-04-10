@@ -53,7 +53,6 @@ export async function promoteTrialMembers(): Promise<void> {
         where: { id: membership.id },
         data: {
           type: 'COLABORADOR',
-          monthlyFee: 16.00,
         },
       });
 

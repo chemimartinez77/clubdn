@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { getCycleMonths, getPaymentStatus as calculatePaymentStatus } from '../utils/paymentStatus';
+import { getMembershipFee, getMembershipFeeMap } from '../services/membershipFeeService';
 
 /**
  * GET /api/membership/users?year=2025
@@ -150,7 +151,6 @@ export const createMembership = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const monthlyFee = type === 'SOCIO' ? 19.00 : 15.00;
     const now = new Date();
     const nextMonth = new Date(now);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -159,7 +159,6 @@ export const createMembership = async (req: Request, res: Response): Promise<voi
       data: {
         userId: userId!,
         type,
-        monthlyFee,
         startDate: now,
         becameSocioAt: type === 'SOCIO' ? now : null,
         nextPaymentDue: nextMonth
@@ -226,7 +225,6 @@ export const upgradeToSocio = async (req: Request, res: Response): Promise<void>
       where: { userId },
       data: {
         type: 'SOCIO',
-        monthlyFee: 19.00,
         becameSocioAt: now
       }
     });
@@ -370,12 +368,14 @@ export const getPaymentStatus = async (_req: Request, res: Response): Promise<vo
       }
     });
 
+    const feeMap = await getMembershipFeeMap();
+
     const paymentStatus = users.map(user => ({
       id: user.id,
       name: user.name,
       email: user.email,
       membershipType: user.membership?.type,
-      monthlyFee: user.membership?.monthlyFee,
+      monthlyFee: feeMap[user.membership?.type ?? ''] ?? 0,
       hasPaid: user.payments.length > 0,
       paymentDate: user.payments[0]?.paidAt || null
     }));
@@ -482,12 +482,13 @@ export const togglePayment = async (req: Request, res: Response): Promise<void> 
       });
     } else {
       // Crear el pago (marcar)
+      const fee = await getMembershipFee(user.membership!.type);
       const payment = await prisma.payment.create({
         data: {
           userId,
           month: parseInt(month),
           year: parseInt(year),
-          amount: user.membership!.monthlyFee,
+          amount: fee,
           paymentMethod: 'efectivo',
           registeredBy: adminId!
         }
@@ -573,13 +574,14 @@ export const markFullYear = async (req: Request, res: Response): Promise<void> =
     });
 
     const existingSet = new Set(existingPayments.map(p => `${p.year}-${p.month}`));
+    const fee = await getMembershipFee(user.membership!.type);
     const monthsToCreate = cycleMonths
       .filter(month => !existingSet.has(`${month.year}-${month.month}`))
       .map(month => ({
         userId,
         month: month.month,
         year: month.year,
-        amount: user.membership!.monthlyFee,
+        amount: fee,
         paymentMethod: 'efectivo',
         registeredBy: adminId!
       }));

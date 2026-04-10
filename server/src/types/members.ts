@@ -21,7 +21,6 @@ export interface MemberData {
   startDate: string | null;
   fechaBaja: string | null;
   paymentStatus: 'NUEVO' | 'PENDIENTE' | 'IMPAGADO' | 'PAGADO' | 'ANO_COMPLETO';
-  monthlyFee: number | null;
   phone: string | null;
   lastPaymentDate: string | null;
 }

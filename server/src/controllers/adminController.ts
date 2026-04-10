@@ -139,18 +139,10 @@ export const approveUser = async (req: Request, res: Response) => {
         },
       });
 
-      const monthlyFeeMap: Record<string, number> = {
-        EN_PRUEBAS: 0,
-        COLABORADOR: 15,
-        SOCIO: 19,
-        FAMILIAR: 0,
-      };
-
       await tx.membership.create({
         data: {
           userId,
           type: membershipType,
-          monthlyFee: monthlyFeeMap[membershipType] ?? 0,
           startDate: new Date(),
         },
       });
