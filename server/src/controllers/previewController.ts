@@ -21,7 +21,9 @@ export const proxyImage = async (req: Request, res: Response) => {
 
     // Preferir la imagen de alta res de la tabla Game, con fallback al gameImage del evento
     const imageUrl = event?.game?.image ?? event?.gameImage;
+    console.log(`[proxyImage] event=${id} imageUrl=${imageUrl ?? 'null'}`);
     if (!imageUrl) {
+      console.log(`[proxyImage] event=${id} no image → redirect og-image.png`);
       res.redirect(`${CLIENT_URL}/og-image.png`);
       return;
     }
@@ -29,10 +31,12 @@ export const proxyImage = async (req: Request, res: Response) => {
 
     protocol.get(imageUrl, (imgRes) => {
       const contentType = imgRes.headers['content-type'] ?? 'image/jpeg';
+      console.log(`[proxyImage] event=${id} status=${imgRes.statusCode} contentType=${contentType}`);
       res.setHeader('Content-Type', contentType);
       res.setHeader('Cache-Control', 'public, max-age=86400');
       imgRes.pipe(res);
-    }).on('error', () => {
+    }).on('error', (err) => {
+      console.log(`[proxyImage] event=${id} error=${err.message} → redirect og-image.png`);
       res.redirect(`${CLIENT_URL}/og-image.png`);
     });
   } catch {
