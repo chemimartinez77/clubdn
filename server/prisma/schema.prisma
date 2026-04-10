@@ -446,6 +446,7 @@ model Membership {
 
   type              MembershipType @default(COLABORADOR)
   iban              String?
+  notes             String?        @db.Text  // Observaciones internas del admin
 
   // Fechas importantes
   memberSince       DateTime?      // Fecha real de alta en el club (del CSV histórico)

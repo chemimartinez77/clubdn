@@ -313,6 +313,7 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
           startDate: user.membership?.startDate?.toISOString() || null,
           fechaBaja: user.membership?.fechaBaja?.toISOString() || null,
           paymentStatus,
+          notes: user.membership?.notes || null,
           profile: {
             id: profile.id,
             avatar: profile.avatar,
@@ -362,7 +363,9 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
       imageConsentActivities,
       imageConsentSocial,
       membershipType: newMembershipType,
-      membershipChangeReason
+      membershipChangeReason,
+      notes,
+      startDate: startDateRaw
     } = req.body;
 
     // Obtener ID del admin que hace el cambio
@@ -489,6 +492,8 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
 
     // Manejar cambios de tipo de membresía
     if (newMembershipType) {
+      const parsedStartDate = startDateRaw ? new Date(startDateRaw) : null;
+
       if (!existingMembership) {
         // Crear nueva membresía
         transactionOperations.push(
@@ -496,8 +501,10 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
             data: {
               userId: existingUser.id,
               type: newMembershipType,
-              startDate: new Date(),
-              isActive: true
+              startDate: parsedStartDate ?? new Date(),
+              isActive: true,
+              notes: notes?.trim() || null,
+              trialStartDate: newMembershipType === 'EN_PRUEBAS' ? new Date() : null
             }
           })
         );
@@ -521,12 +528,16 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
             where: { userId: existingUser.id },
             data: {
               type: newMembershipType,
+              ...(parsedStartDate && { startDate: parsedStartDate }),
               becameSocioAt: newMembershipType === 'SOCIO' && existingMembership.type !== 'SOCIO'
                 ? new Date()
                 : existingMembership.becameSocioAt,
-              // Al marcar manualmente como EN_PRUEBAS, registrar la fecha de inicio del período de prueba
-              // para que el job use esta fecha en lugar de startDate (que puede ser antigua)
-              trialStartDate: newMembershipType === 'EN_PRUEBAS' ? new Date() : existingMembership.trialStartDate
+              trialStartDate: newMembershipType === 'EN_PRUEBAS'
+                ? new Date()
+                : existingMembership.type === 'EN_PRUEBAS'
+                  ? null
+                  : existingMembership.trialStartDate,
+              notes: notes !== undefined ? (notes?.trim() || null) : existingMembership.notes
             }
           })
         );
@@ -541,6 +552,33 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
               reason: membershipChangeReason || 'Cambio de tipo de membresía',
               changedBy: adminId
             }
+          })
+        );
+      } else {
+        // Mismo tipo: actualizar startDate y/o notes
+        const sameTypeUpdate: Record<string, any> = {};
+        if (parsedStartDate) sameTypeUpdate.startDate = parsedStartDate;
+        if (notes !== undefined) sameTypeUpdate.notes = notes?.trim() || null;
+        if (Object.keys(sameTypeUpdate).length > 0) {
+          transactionOperations.push(
+            prisma.membership.update({
+              where: { userId: existingUser.id },
+              data: sameTypeUpdate
+            })
+          );
+        }
+      }
+    } else if (existingMembership) {
+      // Sin cambio de tipo: actualizar startDate y/o notes si se envían
+      const parsedStartDate = startDateRaw ? new Date(startDateRaw) : null;
+      const update: Record<string, any> = {};
+      if (parsedStartDate) update.startDate = parsedStartDate;
+      if (notes !== undefined) update.notes = notes?.trim() || null;
+      if (Object.keys(update).length > 0) {
+        transactionOperations.push(
+          prisma.membership.update({
+            where: { userId: existingUser.id },
+            data: update
           })
         );
       }

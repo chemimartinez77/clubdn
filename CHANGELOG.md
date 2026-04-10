@@ -62,6 +62,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 **Archivos modificados:**
 - `client/src/pages/EventDetail.tsx` — `optionsBtnRef`, `optionsPos`, `handleToggleOptions`, listener de scroll, dropdown con `position: fixed`
 
+#### Ficha de miembro: campo Observaciones y edición de fecha de incorporación
+
+- Se añade el campo `notes` (texto libre) a la tabla `Membership` para que los admins puedan guardar notas internas sobre un miembro (no visible para el propio miembro).
+- Se añade un campo `<input type="date">` en la ficha de edición para modificar la `startDate` (fecha de incorporación al club), que antes no era editable manualmente.
+- Se corrige el comportamiento de `trialStartDate`: al crear una membresía nueva como EN_PRUEBAS se setea a `now()` (antes quedaba `null`); al cambiar desde EN_PRUEBAS a otro tipo se setea a `null` (antes se conservaba el valor anterior).
+- La lógica de `updateMemberProfile` se refactoriza para actualizar `notes` y `startDate` en todos los casos: membresía nueva, cambio de tipo, o guardado sin cambio de tipo.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — campo `notes String? @db.Text` en model `Membership`
+- `server/prisma/migrations/20260410040000_add_membership_notes/migration.sql` — migración SQL
+- `server/src/controllers/memberController.ts` — `getMemberProfile` devuelve `notes`; `updateMemberProfile` acepta y persiste `notes` y `startDate`; fix de `trialStartDate` en creación y al salir de EN_PRUEBAS
+- `client/src/pages/admin/Members.tsx` — campo fecha de incorporación y textarea de observaciones en el formulario de edición
+- `client/src/types/members.ts` — `notes: string | null` añadido a `MemberProfileDetails`
+
 #### Membresía: campo trialStartDate para controlar promoción de miembros reactivados
 
 - El job `memberPromotionJob` promovía a COLABORADOR a cualquier miembro EN_PRUEBAS con `startDate >= 60 días`, incluyendo miembros antiguos que volvían al club y eran marcados en pruebas manualmente (con `startDate` de años atrás).

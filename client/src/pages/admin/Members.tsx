@@ -15,7 +15,8 @@ import type { ApiResponse } from '../../types/auth';
 const EMPTY_PROFILE_FORM = {
   firstName: '', lastName: '', dni: '',
   phone: '', address: '', city: '', province: '', postalCode: '', iban: '',
-  avatar: '', imageConsentActivities: false, imageConsentSocial: false, membershipType: ''
+  avatar: '', imageConsentActivities: false, imageConsentSocial: false, membershipType: '',
+  notes: '', startDate: ''
 };
 
 export default function Members() {
@@ -128,6 +129,7 @@ export default function Members() {
         imageConsentSocial: boolean;
         membershipType?: string;
         membershipChangeReason?: string;
+        notes?: string;
       } = {
         firstName: profileForm.firstName.trim(),
         lastName: profileForm.lastName.trim(),
@@ -140,7 +142,9 @@ export default function Members() {
         iban: profileForm.iban.trim(),
         avatar: profileForm.avatar,
         imageConsentActivities: profileForm.imageConsentActivities,
-        imageConsentSocial: profileForm.imageConsentSocial
+        imageConsentSocial: profileForm.imageConsentSocial,
+        notes: profileForm.notes.trim() || undefined,
+        startDate: profileForm.startDate || undefined
       };
       // Incluir membershipType si hay cambio o es nuevo
       if (profileForm.membershipType) {
@@ -182,7 +186,9 @@ export default function Members() {
       avatar: p.avatar || '',
       imageConsentActivities: p.imageConsentActivities,
       imageConsentSocial: p.imageConsentSocial,
-      membershipType: memberProfile.member.membershipType || ''
+      membershipType: memberProfile.member.membershipType || '',
+      notes: memberProfile.member.notes || '',
+      startDate: memberProfile.member.startDate ? memberProfile.member.startDate.slice(0, 10) : ''
     });
     setOriginalMembershipType(memberProfile.member.membershipType || '');
   }, [memberProfile]);
@@ -844,6 +850,16 @@ export default function Members() {
                   </p>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Fecha de incorporación</label>
+                  <input
+                    type="date"
+                    value={profileForm.startDate}
+                    onChange={(e) => setProfileForm({ ...profileForm, startDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Nombre</label>
@@ -930,6 +946,17 @@ export default function Members() {
                     value={profileForm.iban}
                     onChange={(e) => setProfileForm({ ...profileForm, iban: e.target.value })}
                     className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Observaciones</label>
+                  <textarea
+                    value={profileForm.notes}
+                    onChange={(e) => setProfileForm({ ...profileForm, notes: e.target.value })}
+                    rows={3}
+                    placeholder="Notas internas visibles solo para administradores..."
+                    className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)] resize-none"
                   />
                 </div>
 

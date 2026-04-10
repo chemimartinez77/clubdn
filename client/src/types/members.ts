@@ -50,6 +50,7 @@ export interface MemberProfileDetails {
   startDate: string | null;
   fechaBaja: string | null;
   paymentStatus: PaymentStatusType;
+  notes: string | null;
   profile: MemberProfileInfo;
   reliability: MemberReliability;
 }
