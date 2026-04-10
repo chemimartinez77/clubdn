@@ -73,14 +73,19 @@ export default function EventDetail() {
         setIsOptionsOpen(false);
       }
     };
+    const handleScroll = () => setIsOptionsOpen(false);
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, []);
 
   const handleToggleOptions = () => {
     if (!isOptionsOpen && optionsBtnRef.current) {
       const rect = optionsBtnRef.current.getBoundingClientRect();
-      setOptionsPos({ top: rect.bottom + window.scrollY + 8, right: window.innerWidth - rect.right });
+      setOptionsPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
     }
     setIsOptionsOpen(prev => !prev);
   };
