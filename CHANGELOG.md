@@ -35,6 +35,18 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 **Archivos modificados:**
 - `client/src/pages/EventDetail.tsx` — estado `isOptionsOpen` + `optionsRef`, `useEffect` de cierre, reemplazo del bloque de botones por dropdown
+- `client/src/components/ui/Button.tsx` — añadido `forwardRef` para soportar `ref` externo
+
+#### Correcciones del dropdown Opciones en móvil
+
+- El dropdown se renderizaba con `position: absolute` y quedaba tapado por otros elementos con contexto de apilamiento (se veía transparente y solapado con el contenido).
+- Se cambió a `position: fixed` con coordenadas calculadas via `getBoundingClientRect` al abrir, usando un `ref` en el botón para obtener la posición exacta.
+- Se corrigió el cálculo de `top` (no sumar `scrollY` con `fixed`).
+- Se añadió listener de `scroll` para cerrar el dropdown al desplazar la página (evita que quede "flotando" desenganchado del botón).
+- Se forzó fondo opaco con `isolation: isolate` y `backdropFilter: none` para evitar la transparencia.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — `optionsBtnRef`, `optionsPos`, `handleToggleOptions`, listener de scroll, dropdown con `position: fixed`
 
 #### Membresía: campo trialStartDate para controlar promoción de miembros reactivados
 
