@@ -773,7 +773,7 @@ export default function EventDetail() {
     // El enlace visible "Más info aquí" apunta directamente a la app
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
     const appUrl = `${window.location.origin}/events/${event.id}`;
-    const previewUrl = `${apiBase}/preview/events/${event.id}`;
+    const previewUrl = `${apiBase}/preview/events/${event.id}?v=${Date.now()}`;
 
     // wa.me acepta un parámetro separado para la URL de previsualización OG
     // pero como no existe ese parámetro, usamos el truco de poner la preview al inicio
