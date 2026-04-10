@@ -23,6 +23,14 @@ Proceso de diagnóstico e iteración:
 - `server/package.json` — añadida dependencia `sharp` y `@types/sharp`
 - `client/src/pages/EventDetail.tsx` — añadido `?v=${Date.now()}` a la URL de preview de WhatsApp
 
+#### Compartir por WhatsApp: URL doble en el mensaje
+
+- El mensaje generado incluía dos URLs: la `previewUrl` (servidor Railway) al inicio para forzar la card con imagen, y la `appUrl` al final en el texto "Más info aquí". WhatsApp mostraba ambas visiblemente.
+- Se unifica en una sola URL: la `previewUrl` se usa como enlace del "Más info aquí". Para usuarios normales, el servidor redirige automáticamente a la app. La imagen OG sigue funcionando porque WhatsApp sigue scrapeando esa URL.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — eliminada `appUrl` y `messageWithPreview`; `buildMessage` recibe directamente `previewUrl`
+
 ---
 
 ## 2026-04-10 (sesión 2)
