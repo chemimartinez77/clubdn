@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import https from 'https';
 import http from 'http';
+import sharp from 'sharp';
 import { prisma } from '../config/database';
 
 const CLIENT_URL = process.env.CLIENT_URL ?? 'https://app.clubdreadnought.org';
@@ -30,13 +31,14 @@ export const proxyImage = async (req: Request, res: Response) => {
     const protocol = imageUrl.startsWith('https') ? https : http;
 
     protocol.get(imageUrl, (imgRes) => {
-      const contentType = imgRes.headers['content-type'] ?? 'image/jpeg';
       const contentLength = imgRes.headers['content-length'];
-      console.log(`[proxyImage] event=${id} status=${imgRes.statusCode} contentType=${contentType} contentLength=${contentLength ?? 'unknown'}`);
-      res.setHeader('Content-Type', contentType);
+      console.log(`[proxyImage] event=${id} status=${imgRes.statusCode} contentLength=${contentLength ?? 'unknown'}`);
+      // Redimensionar a max 600px y convertir a JPEG para que quede por debajo de los 300KB
+      // que WhatsApp acepta para imágenes OG
+      const resizer = sharp().resize(600, 600, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80 });
+      res.setHeader('Content-Type', 'image/jpeg');
       res.setHeader('Cache-Control', 'public, max-age=86400');
-      if (contentLength) res.setHeader('Content-Length', contentLength);
-      imgRes.pipe(res);
+      imgRes.pipe(resizer).pipe(res);
     }).on('error', (err) => {
       console.log(`[proxyImage] event=${id} error=${err.message} → redirect og-image.png`);
       res.redirect(`${CLIENT_URL}/og-image.png`);

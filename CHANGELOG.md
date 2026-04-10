@@ -8,14 +8,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### Correcciones
 
-#### Preview de eventos: imagen en WhatsApp inconsistente — investigación y corrección iterativa
+#### Preview de eventos: imagen en WhatsApp no se mostraba por exceso de tamaño
 
-- **Intento 1 (revertido):** Se eliminó la detección de crawler por User-Agent para unificar la respuesta con meta OG + redirección. Comprobado con el depurador de Meta que el crawler sigue la redirección `meta http-equiv="refresh"` y aterriza en la SPA (index.html genérico), perdiendo los meta tags específicos del evento. El enfoque no funciona.
-- **Solución final:** Se restaura la detección de crawler por User-Agent (regex incluye `facebookexternalhit`, `whatsapp`, y otros bots). Los crawlers reciben solo los meta OG sin redirección; los usuarios normales reciben la redirección a la SPA.
-- **Log de diagnóstico añadido:** Se registra en consola el User-Agent y el resultado de `isCrawler` en cada petición al endpoint `/preview/events/:id`, para identificar si WhatsApp manda algún UA no cubierto por el regex.
+Proceso de diagnóstico e iteración:
+
+1. Se identificó que el crawler de WhatsApp (`WhatsApp/2.23.20.0`) sí llegaba correctamente con `isCrawler=true` y la imagen se servía con status 200.
+2. Las imágenes originales de BGG pesaban entre 1.4MB y 1.8MB. WhatsApp tiene un límite de ~300KB para imágenes OG y las descarta silenciosamente si lo superan.
+3. Se añadió `sharp` para redimensionar la imagen a máximo 600×600px y convertirla a JPEG con calidad 80 antes de servirla, quedando bien por debajo del límite.
+4. Se añadió `?v=${Date.now()}` a la URL de preview al compartir por WhatsApp para evitar que se use caché obsoleta.
+5. Logs de diagnóstico añadidos en `proxyImage` y `previewEvent` (temporales, para monitoreo).
 
 **Archivos modificados:**
-- `server/src/controllers/previewController.ts` — restaurada lógica de `isCrawler`; añadido `console.log` de diagnóstico
+- `server/src/controllers/previewController.ts` — añadido `sharp` para comprimir imagen; logs de diagnóstico
+- `server/package.json` — añadida dependencia `sharp` y `@types/sharp`
+- `client/src/pages/EventDetail.tsx` — añadido `?v=${Date.now()}` a la URL de preview de WhatsApp
 
 ---
 
