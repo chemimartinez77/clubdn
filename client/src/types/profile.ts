@@ -30,6 +30,7 @@ export interface UserProfile {
   defaultScreen: string;
   eventsDefaultView: string;
   eventsAccordionMode: string;
+  eventButtonStyle: string;
   calendarToken: string | null;
   onboardingCompleted: boolean;
   tourDismissed: boolean;
@@ -62,4 +63,5 @@ export interface UpdateProfileData {
   defaultScreen?: string;
   eventsDefaultView?: string;
   eventsAccordionMode?: string;
+  eventButtonStyle?: string;
 }
