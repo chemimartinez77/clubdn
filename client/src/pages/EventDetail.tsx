@@ -999,8 +999,8 @@ export default function EventDetail() {
                     {isOptionsOpen && optionsPos && (
                       <div
                         ref={optionsRef}
-                        className="fixed w-52 rounded-lg shadow-lg bg-[var(--color-card)] border border-[var(--color-cardBorder)] overflow-hidden"
-                        style={{ top: optionsPos.top, right: optionsPos.right, zIndex: 9999 }}
+                        className="fixed w-52 rounded-lg shadow-xl bg-[var(--color-card)] border border-[var(--color-cardBorder)] overflow-hidden"
+                        style={{ top: optionsPos.top, right: optionsPos.right, zIndex: 9999, backdropFilter: 'none', isolation: 'isolate' }}
                       >
                         {isOrganizerOrAdmin && (
                           <button
