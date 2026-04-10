@@ -8,6 +8,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### Nuevas funcionalidades
 
+#### Preferencia de estilo de botones en detalle de evento
+
+- Varios usuarios preferían los botones multicolor originales frente al nuevo dropdown "Opciones".
+- Se añade una preferencia por usuario (`eventButtonStyle`: `dropdown` | `multicolor`) con valor por defecto `dropdown`.
+- En la página de perfil, sección de personalización, aparece un nuevo toggle "Botones en detalle de evento" con las opciones "Menú desplegable" y "Botones multicolor".
+- En `EventDetail`, el render es condicional: si el usuario tiene `multicolor`, se muestran todos los botones individuales con colores; si tiene `dropdown` (o no ha configurado nada), se muestra el menú desplegable.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — campo `eventButtonStyle String @default("dropdown")` en `UserProfile`
+- `server/prisma/migrations/20260410020000_add_event_button_style/migration.sql` — migración SQL
+- `server/src/controllers/profileController.ts` — `eventButtonStyle` en destructuring y update
+- `client/src/pages/Profile.tsx` — toggle de preferencia en sección de personalización
+- `client/src/pages/EventDetail.tsx` — query de perfil, `useMulticolorButtons`, render condicional
+
 #### Clonado de partidas desde el detalle
 
 - Se añade un botón **Clonar partida** en la ficha de detalle para partidas en estado `SCHEDULED`, `ONGOING`, `COMPLETED` y `CANCELLED`, visible para el organizador y administradores.

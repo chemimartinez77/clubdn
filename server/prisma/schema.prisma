@@ -189,6 +189,7 @@ model UserProfile {
   noughterColor        String?                         // Color de Noughter: purple, blue, green, red, brown (null = usar tema activo)
   eventsDefaultView    String   @default("calendar")   // Vista por defecto en Eventos: "calendar" o "list"
   eventsAccordionMode  String   @default("current_only") // Modo acordeón en lista: "current_only" o "all_open"
+  eventButtonStyle     String   @default("dropdown")     // Estilo de botones en detalle de evento: "dropdown" o "multicolor"
   onboardingCompleted        Boolean  @default(false)  // true = ha completado el formulario de bienvenida obligatorio
   tourDismissed              Boolean  @default(false)  // true = no volver a mostrar el tour de inicio
   calendarTourDismissed      Boolean  @default(false)  // true = no volver a mostrar el tour del calendario
