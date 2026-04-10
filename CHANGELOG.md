@@ -24,6 +24,30 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 - `client/src/pages/CreatePartida.tsx` — soporte de modo clonado, precarga de formulario, selección de asistentes y alta posterior tras crear la partida
 - `client/src/types/event.ts` — nuevos tipos `CreatePartidaCloneState`, `CreatePartidaClonePrefill` y `CloneableAttendee`
 
+#### Detalle de evento: acciones secundarias agrupadas en dropdown "Opciones"
+
+- La pantalla de detalle tenía demasiados botones visibles simultáneamente (hasta 8), especialmente problemático en móvil.
+- Se mantienen visibles solo las acciones principales del usuario: "Apuntarme" y "No asistiré" / "Cancelar solicitud".
+- El resto de acciones (Apuntar miembro, Invitar externo, WhatsApp, Cerrar plazas, Añadir al calendario, Clonar partida, Editar, Eliminar) se agrupan en un dropdown "Opciones" con icono de chevron.
+- El dropdown se cierra al hacer click fuera o al seleccionar una opción.
+- "Eliminar" aparece en rojo para distinguirla visualmente como acción destructiva.
+- Cada opción respeta las mismas condiciones de visibilidad y disabled que antes.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — estado `isOptionsOpen` + `optionsRef`, `useEffect` de cierre, reemplazo del bloque de botones por dropdown
+
+#### Membresía: campo trialStartDate para controlar promoción de miembros reactivados
+
+- El job `memberPromotionJob` promovía a COLABORADOR a cualquier miembro EN_PRUEBAS con `startDate >= 60 días`, incluyendo miembros antiguos que volvían al club y eran marcados en pruebas manualmente (con `startDate` de años atrás).
+- Se añade el campo `trialStartDate` (nullable) a la tabla `Membership`. Cuando un admin cambia manualmente la membresía a EN_PRUEBAS, se rellena con la fecha actual.
+- El job usa `trialStartDate ?? startDate` para calcular el cutoff: si existe `trialStartDate`, los 60 días se cuentan desde ahí; si no, desde `startDate` (comportamiento original para miembros nuevos).
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — campo `trialStartDate DateTime?` en model `Membership`
+- `server/prisma/migrations/20260410010000_add_trial_start_date/migration.sql` — migración SQL
+- `server/src/controllers/memberController.ts` — setear `trialStartDate = new Date()` al cambiar a EN_PRUEBAS
+- `server/src/jobs/memberPromotionJob.ts` — filtrado en memoria usando `trialStartDate ?? startDate`
+
 ---
 
 ## 2026-04-10 (sesión 3)

@@ -14,18 +14,24 @@ export async function promoteTrialMembers(): Promise<void> {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - TRIAL_DAYS);
 
-  // Buscar membresías EN_PRUEBAS cuya fecha de inicio es anterior al cutoff
-  const memberships = await prisma.membership.findMany({
+  // Buscar membresías EN_PRUEBAS sin fecha de baja.
+  // Filtramos en memoria porque el cutoff debe aplicarse sobre trialStartDate si existe,
+  // o sobre startDate si no (miembros nuevos sin reactivación manual).
+  const candidates = await prisma.membership.findMany({
     where: {
       type: 'EN_PRUEBAS',
       fechaBaja: null,
-      startDate: { lte: cutoff },
     },
     include: {
       user: {
         select: { id: true, name: true, email: true },
       },
     },
+  });
+
+  const memberships = candidates.filter(m => {
+    const referenceDate = m.trialStartDate ?? m.startDate;
+    return referenceDate <= cutoff;
   });
 
   if (memberships.length === 0) return;
@@ -47,7 +53,7 @@ export async function promoteTrialMembers(): Promise<void> {
         where: { id: membership.id },
         data: {
           type: 'COLABORADOR',
-          monthlyFee: 15.00,
+          monthlyFee: 16.00,
         },
       });
 

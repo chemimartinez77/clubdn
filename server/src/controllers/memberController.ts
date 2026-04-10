@@ -524,7 +524,10 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
               monthlyFee: newMonthlyFee,
               becameSocioAt: newMembershipType === 'SOCIO' && existingMembership.type !== 'SOCIO'
                 ? new Date()
-                : existingMembership.becameSocioAt
+                : existingMembership.becameSocioAt,
+              // Al marcar manualmente como EN_PRUEBAS, registrar la fecha de inicio del período de prueba
+              // para que el job use esta fecha en lugar de startDate (que puede ser antigua)
+              trialStartDate: newMembershipType === 'EN_PRUEBAS' ? new Date() : existingMembership.trialStartDate
             }
           })
         );
