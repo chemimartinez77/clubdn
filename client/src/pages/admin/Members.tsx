@@ -130,6 +130,7 @@ export default function Members() {
         membershipType?: string;
         membershipChangeReason?: string;
         notes?: string;
+        startDate?: string;
       } = {
         firstName: profileForm.firstName.trim(),
         lastName: profileForm.lastName.trim(),
