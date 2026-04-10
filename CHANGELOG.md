@@ -4,6 +4,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-10 (sesión 3)
+
+### Correcciones
+
+#### Preview de eventos: imagen en WhatsApp inconsistente por detección de crawler por User-Agent
+
+- WhatsApp (y otras apps) usan distintos User-Agents según versión y plataforma, lo que hacía que algunos usuarios vieran la imagen al compartir un evento y otros no.
+- Se elimina la detección de crawler basada en User-Agent. Ahora la respuesta del endpoint `/preview/:id` incluye siempre los meta tags OG y la redirección (`meta http-equiv="refresh"` + JS). Los crawlers ignoran la redirección y leen los meta tags; los usuarios normales son redirigidos a la app automáticamente.
+
+**Archivos modificados:**
+- `server/src/controllers/previewController.ts` — eliminada lógica de `isCrawler`; HTML unificado con meta OG + redirección
+
+---
+
 ## 2026-04-10 (sesión 2)
 
 ### Correcciones
