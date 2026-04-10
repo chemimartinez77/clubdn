@@ -769,17 +769,12 @@ export default function EventDetail() {
       return message;
     };
 
-    // La URL de preview genera los meta tags OG (imagen) pero no aparece en el mensaje
-    // El enlace visible "Más info aquí" apunta directamente a la app
+    // Usamos la URL de preview como enlace del mensaje: genera los meta tags OG (imagen)
+    // y redirige automáticamente a los usuarios a la app
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const appUrl = `${window.location.origin}/events/${event.id}`;
     const previewUrl = `${apiBase}/preview/events/${event.id}?v=${Date.now()}`;
 
-    // wa.me acepta un parámetro separado para la URL de previsualización OG
-    // pero como no existe ese parámetro, usamos el truco de poner la preview al inicio
-    // en una línea que WhatsApp convierte en card y oculta del texto visible
-    const messageWithPreview = `${previewUrl}\n\n${buildMessage(appUrl)}`;
-    const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(messageWithPreview)}`, '_blank');
+    const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(buildMessage(previewUrl))}`, '_blank');
     void whatsappWindow;
   };
 
