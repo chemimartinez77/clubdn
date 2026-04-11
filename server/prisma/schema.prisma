@@ -131,6 +131,11 @@ model User {
   gameValidationsAsScanned GameValidation[]    @relation("GameValidationScanned")
   gameCategoryVotes        GameCategoryVote[]
   genreConsensusHistory    GenreConsensusHistory[]
+  marketplaceListings      MarketplaceListing[]         @relation("MarketplaceListingAuthor")
+  marketplaceConversations MarketplaceConversation[]    @relation("MarketplaceConversationBuyer")
+  marketplaceMessages      MarketplaceMessage[]         @relation("MarketplaceMessageSender")
+  marketplaceOffers        MarketplaceOffer[]           @relation("MarketplaceOfferProposer")
+  marketplaceCancellations MarketplaceCancellation[]    @relation("MarketplaceCancellationUser")
 
   @@index([email])
   @@index([status])
@@ -882,6 +887,12 @@ enum NotificationType {
   EVENT_DISPUTE_CONFIRMATION // Confirmar si la partida se disputó (para organizador)
   ANNOUNCEMENT_CREATED       // Nuevo anuncio publicado en el tablón
   MEMBER_PROMOTED            // Miembro EN_PRUEBAS promovido a COLABORADOR automáticamente
+  MARKETPLACE_NEW_MESSAGE      // Nuevo mensaje en conversación de mercadillo
+  MARKETPLACE_NEW_OFFER        // Nueva oferta recibida
+  MARKETPLACE_OFFER_ACCEPTED   // Tu oferta fue aceptada
+  MARKETPLACE_OFFER_REJECTED   // Tu oferta fue rechazada
+  MARKETPLACE_OFFER_COUNTERED  // El vendedor ha contraofertado
+  MARKETPLACE_NEW_CONVERSATION // Alguien ha abierto un hilo sobre tu anuncio
 }
 
 // Notificaciones del sistema
@@ -1157,4 +1168,124 @@ model PageViewArchive {
   toDate      DateTime // Fecha de fin del periodo archivado
   totalViews  Int      // Total de registros archivados
   data        Json     // Snapshot agregado: top páginas, usuarios activos, etc.
+}
+
+// ─── Mercadillo ───────────────────────────────────────────────────────────────
+
+enum MarketplaceListingStatus {
+  PUBLICADO
+  RESERVADO
+  VENDIDO
+}
+
+enum MarketplaceOfferStatus {
+  PENDIENTE
+  ACEPTADA
+  RECHAZADA
+  CANCELADA
+  CONTRAOFERTA
+}
+
+enum MarketplaceCancellationRole {
+  BUYER
+  SELLER
+}
+
+enum MarketplaceCategory {
+  JUEGOS_MESA
+  ROL
+  WARGAMES
+  MINIATURAS
+  ACCESORIOS
+  MATERIAL_RELACIONADO
+}
+
+model MarketplaceListing {
+  id           String                   @id @default(cuid())
+  authorId     String
+  author       User                     @relation("MarketplaceListingAuthor", fields: [authorId], references: [id])
+  title        String
+  description  String                   @db.Text
+  category     MarketplaceCategory
+  price        Decimal                  @db.Decimal(10, 2)
+  status       MarketplaceListingStatus @default(PUBLICADO)
+  images       String[]
+  contactExtra String?
+  isArchived   Boolean                  @default(false)
+  isHidden     Boolean                  @default(false)
+
+  conversations MarketplaceConversation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([status])
+  @@index([category])
+  @@index([isArchived])
+  @@index([isHidden])
+}
+
+model MarketplaceConversation {
+  id        String             @id @default(cuid())
+  listingId String
+  listing   MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyerId   String
+  buyer     User               @relation("MarketplaceConversationBuyer", fields: [buyerId], references: [id])
+
+  messages      MarketplaceMessage[]
+  offers        MarketplaceOffer[]
+  cancellations MarketplaceCancellation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([listingId, buyerId])
+  @@index([listingId])
+  @@index([buyerId])
+}
+
+model MarketplaceMessage {
+  id             String                  @id @default(cuid())
+  conversationId String
+  conversation   MarketplaceConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User                    @relation("MarketplaceMessageSender", fields: [senderId], references: [id])
+  body           String                  @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId])
+  @@index([senderId])
+}
+
+model MarketplaceOffer {
+  id             String                  @id @default(cuid())
+  conversationId String
+  conversation   MarketplaceConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  proposedById   String
+  proposedBy     User                    @relation("MarketplaceOfferProposer", fields: [proposedById], references: [id])
+  amount         Decimal                 @db.Decimal(10, 2)
+  status         MarketplaceOfferStatus  @default(PENDIENTE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([conversationId])
+  @@index([proposedById])
+}
+
+model MarketplaceCancellation {
+  id             String                      @id @default(cuid())
+  conversationId String
+  conversation   MarketplaceConversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  cancelledById  String
+  cancelledBy    User                        @relation("MarketplaceCancellationUser", fields: [cancelledById], references: [id])
+  role           MarketplaceCancellationRole
+  reason         String
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId])
+  @@index([cancelledById])
 }

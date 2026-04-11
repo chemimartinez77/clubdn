@@ -49,6 +49,13 @@ import CentipedeGame from './pages/centipede/CentipedeGame';
 import CombatZoneComingSoon from './pages/CombatZoneComingSoon';
 import SevenWondersDuelHub from './pages/sevenWondersDuel/SevenWondersDuelHub';
 import WeeklyPreview from './pages/WeeklyPreview';
+import Marketplace from './pages/marketplace/Marketplace';
+import MarketplaceNew from './pages/marketplace/MarketplaceNew';
+import MarketplaceListing from './pages/marketplace/MarketplaceListing';
+import MarketplaceEdit from './pages/marketplace/MarketplaceEdit';
+import MarketplaceMine from './pages/marketplace/MarketplaceMine';
+import MarketplaceConversations from './pages/marketplace/MarketplaceConversations';
+import MarketplaceChat from './pages/marketplace/MarketplaceChat';
 
 // Componente para rutas protegidas
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -396,6 +403,15 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Rutas de Mercadillo */}
+          <Route path="/mercadillo" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
+          <Route path="/mercadillo/nuevo" element={<ProtectedRoute><MarketplaceNew /></ProtectedRoute>} />
+          <Route path="/mercadillo/mis-anuncios" element={<ProtectedRoute><MarketplaceMine /></ProtectedRoute>} />
+          <Route path="/mercadillo/conversaciones" element={<ProtectedRoute><MarketplaceConversations /></ProtectedRoute>} />
+          <Route path="/mercadillo/conversaciones/:id" element={<ProtectedRoute><MarketplaceChat /></ProtectedRoute>} />
+          <Route path="/mercadillo/:id" element={<ProtectedRoute><MarketplaceListing /></ProtectedRoute>} />
+          <Route path="/mercadillo/:id/editar" element={<ProtectedRoute><MarketplaceEdit /></ProtectedRoute>} />
 
           {/* Rutas de administración */}
           <Route

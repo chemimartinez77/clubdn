@@ -4,6 +4,59 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-11 (sesión 1)
+
+### Nuevas funcionalidades
+
+#### Módulo Mercadillo (marketplace)
+
+Se implementa el módulo completo de compraventa entre miembros del club, accesible desde el menú **Comunidad → Mercadillo**.
+
+**Backend:**
+
+- Nuevos modelos en Prisma: `MarketplaceListing`, `MarketplaceConversation`, `MarketplaceMessage`, `MarketplaceOffer`, `MarketplaceCancellation`, con 4 enums (`MarketplaceListingStatus`, `MarketplaceOfferStatus`, `MarketplaceCategory`, `MarketplaceCancellationRole`).
+- Los anuncios tienen estado `PUBLICADO / RESERVADO / VENDIDO` y flag `isArchived` (no se borra, se retira).
+- Las conversaciones son únicas por par `(listingId, buyerId)` — no se pueden abrir dos hilos sobre el mismo anuncio.
+- Sistema de ofertas: el comprador propone, el vendedor acepta / rechaza / contraoferta. Aceptar una oferta reserva automáticamente el anuncio.
+- Cancelación de reserva con motivo obligatorio (6 opciones predefinidas) y nota opcional; devuelve el anuncio a `PUBLICADO`.
+- Upload de imágenes a Cloudinary (máx. 4 por anuncio, 5 MB cada una).
+- Notificaciones internas para nuevos mensajes, nuevas conversaciones, nuevas ofertas, aceptación, rechazo y contraoferta.
+- Middleware `requireMarketplaceAccess`: solo miembros aprobados y activos (SOCIO, COLABORADOR, FAMILIAR, EN_PRUEBAS) pueden acceder.
+- Panel de administración: listar todos los anuncios, ocultar, cerrar (marcar como vendido) y eliminar.
+
+**Migración SQL:** `server/prisma/migrations/20260411010000_add_marketplace/migration.sql`
+
+**Archivos nuevos (servidor):**
+- `server/src/controllers/marketplaceController.ts`
+- `server/src/routes/marketplaceRoutes.ts`
+- `server/src/middleware/marketplaceAccess.ts`
+
+**Archivos modificados (servidor):**
+- `server/prisma/schema.prisma` — nuevos modelos, enums y tipos de notificación
+- `server/src/index.ts` — registro de rutas `/api/marketplace`
+- `server/src/services/notificationService.ts` — 6 funciones de notificación de mercadillo
+
+**Frontend:**
+
+- 7 páginas nuevas bajo `client/src/pages/marketplace/`:
+  - `Marketplace.tsx` — listado con filtros (texto, categoría, precio mín/máx) y 6 opciones de ordenación
+  - `MarketplaceNew.tsx` — formulario de publicación con upload de hasta 4 imágenes
+  - `MarketplaceListing.tsx` — detalle con galería de imágenes, acciones de contactar, editar y retirar
+  - `MarketplaceEdit.tsx` — edición de anuncio con gestión de imágenes existentes y nuevas
+  - `MarketplaceMine.tsx` — mis anuncios activos y retirados, cambio de estado inline
+  - `MarketplaceConversations.tsx` — lista de todos los hilos (como comprador o como vendedor)
+  - `MarketplaceChat.tsx` — hilo de chat con mensajes y ofertas intercalados cronológicamente, formulario de oferta, contraoferta y cancelación de reserva con motivo
+- Tipos TypeScript: `client/src/types/marketplace.ts`
+- Menú **Comunidad** en `Header.tsx` — enlace "Mercadillo" añadido en desktop y móvil
+- `App.tsx` — 7 rutas nuevas bajo `/mercadillo/*`
+
+**Archivos modificados (cliente):**
+- `client/src/App.tsx`
+- `client/src/components/layout/Header.tsx`
+- `client/src/types/marketplace.ts` (nuevo)
+
+---
+
 ## 2026-04-10 (sesión 4)
 
 ### Nuevas funcionalidades

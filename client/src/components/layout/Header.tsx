@@ -223,6 +223,13 @@ export default function Header() {
                     >
                       Tablón de anuncios
                     </Link>
+                    <Link
+                      to="/mercadillo"
+                      className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                      onClick={() => setIsComunidadMenuOpen(false)}
+                    >
+                      Mercadillo
+                    </Link>
                   </div>
                 </>
               )}
@@ -586,6 +593,13 @@ export default function Header() {
                       onClick={closeAllMenus}
                     >
                       Tablón de anuncios
+                    </Link>
+                    <Link
+                      to="/mercadillo"
+                      className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                      onClick={closeAllMenus}
+                    >
+                      Mercadillo
                     </Link>
                   </div>
                 )}

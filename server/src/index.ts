@@ -28,6 +28,7 @@ import viernesRoutes from './routes/viernesRoutes';
 import calendarRoutes from './routes/calendarRoutes';
 import pageViewRoutes from './routes/pageViewRoutes';
 import announcementRoutes from './routes/announcementRoutes';
+import marketplaceRoutes from './routes/marketplaceRoutes';
 import previewRoutes from './routes/previewRoutes';
 import { startEventCompletionJob } from './jobs/eventCompletionJob';
 import { startMemberPromotionJob } from './jobs/memberPromotionJob';
@@ -139,6 +140,7 @@ app.use('/api/viernes', viernesRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/pageviews', pageViewRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/marketplace', marketplaceRoutes);
 app.use('/preview', previewRoutes);
 
 // Ruta 404

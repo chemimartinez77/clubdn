@@ -577,3 +577,128 @@ export const notifyNewAnnouncement = async (
     return { success: false, error };
   }
 };
+
+// ─── Mercadillo ───────────────────────────────────────────────────────────────
+
+export const notifyMarketplaceNewMessage = async (
+  recipientId: string,
+  senderName: string,
+  listingTitle: string,
+  conversationId: string
+) => {
+  try {
+    return await createNotification({
+      userId: recipientId,
+      type: 'MARKETPLACE_NEW_MESSAGE',
+      title: 'Nuevo mensaje en el mercadillo',
+      message: `${senderName} te ha enviado un mensaje sobre "${listingTitle}".`,
+      metadata: { conversationId },
+    });
+  } catch (error) {
+    console.error('Error notificando mensaje mercadillo:', error);
+    return { success: false, error };
+  }
+};
+
+export const notifyMarketplaceNewConversation = async (
+  sellerId: string,
+  buyerName: string,
+  listingTitle: string,
+  conversationId: string
+) => {
+  try {
+    return await createNotification({
+      userId: sellerId,
+      type: 'MARKETPLACE_NEW_CONVERSATION',
+      title: 'Alguien está interesado en tu anuncio',
+      message: `${buyerName} ha iniciado una conversación sobre "${listingTitle}".`,
+      metadata: { conversationId },
+    });
+  } catch (error) {
+    console.error('Error notificando nueva conversación mercadillo:', error);
+    return { success: false, error };
+  }
+};
+
+export const notifyMarketplaceNewOffer = async (
+  sellerId: string,
+  buyerName: string,
+  listingTitle: string,
+  amount: number,
+  conversationId: string
+) => {
+  try {
+    return await createNotification({
+      userId: sellerId,
+      type: 'MARKETPLACE_NEW_OFFER',
+      title: 'Nueva oferta en el mercadillo',
+      message: `${buyerName} ha hecho una oferta de ${amount}€ por "${listingTitle}".`,
+      metadata: { conversationId, amount },
+    });
+  } catch (error) {
+    console.error('Error notificando nueva oferta mercadillo:', error);
+    return { success: false, error };
+  }
+};
+
+export const notifyMarketplaceOfferAccepted = async (
+  buyerId: string,
+  listingTitle: string,
+  amount: number,
+  conversationId: string
+) => {
+  try {
+    return await createNotification({
+      userId: buyerId,
+      type: 'MARKETPLACE_OFFER_ACCEPTED',
+      title: 'Tu oferta ha sido aceptada',
+      message: `Tu oferta de ${amount}€ por "${listingTitle}" ha sido aceptada.`,
+      metadata: { conversationId, amount },
+    });
+  } catch (error) {
+    console.error('Error notificando oferta aceptada mercadillo:', error);
+    return { success: false, error };
+  }
+};
+
+export const notifyMarketplaceOfferRejected = async (
+  buyerId: string,
+  listingTitle: string,
+  amount: number,
+  conversationId: string
+) => {
+  try {
+    return await createNotification({
+      userId: buyerId,
+      type: 'MARKETPLACE_OFFER_REJECTED',
+      title: 'Tu oferta ha sido rechazada',
+      message: `Tu oferta de ${amount}€ por "${listingTitle}" ha sido rechazada.`,
+      metadata: { conversationId, amount },
+    });
+  } catch (error) {
+    console.error('Error notificando oferta rechazada mercadillo:', error);
+    return { success: false, error };
+  }
+};
+
+export const notifyMarketplaceOfferCountered = async (
+  buyerId: string,
+  sellerName: string,
+  listingTitle: string,
+  newAmount: number,
+  conversationId: string
+) => {
+  try {
+    return await createNotification({
+      userId: buyerId,
+      type: 'MARKETPLACE_OFFER_COUNTERED',
+      title: 'Has recibido una contraoferta',
+      message: `${sellerName} ha contraofertado ${newAmount}€ por "${listingTitle}".`,
+      metadata: { conversationId, amount: newAmount },
+    });
+  } catch (error) {
+    console.error('Error notificando contraoferta mercadillo:', error);
+    return { success: false, error };
+  }
+};
+
