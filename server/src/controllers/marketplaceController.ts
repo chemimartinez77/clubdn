@@ -538,8 +538,8 @@ export const getMyConversations = async (req: Request, res: Response): Promise<v
       include: {
         listing: { select: { id: true, title: true, price: true, status: true, images: true, isArchived: true, author: { select: { id: true, name: true } } } },
         buyer: { select: { id: true, name: true } },
-        messages: { orderBy: { createdAt: 'desc' }, take: 1 },
-        offers: { orderBy: { createdAt: 'desc' }, take: 1 },
+        messages: { orderBy: { createdAt: 'desc' }, take: 1, include: { sender: { select: { id: true, name: true } } } },
+        offers: { orderBy: { createdAt: 'desc' }, take: 1, include: { proposedBy: { select: { id: true, name: true } } } },
       },
       orderBy: { updatedAt: 'desc' },
     });

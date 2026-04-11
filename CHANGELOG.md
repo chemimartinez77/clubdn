@@ -6,6 +6,34 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-11 (sesión 1)
 
+### Correcciones
+
+#### Bypass de onboarding durante impersonación
+
+- Un `SUPER_ADMIN` que usaba "Login as" era redirigido a `/onboarding` si el usuario impersonado tenía `onboardingCompleted = false`, impidiendo las pruebas funcionales de soporte.
+- Se añade la condición `!impersonating` en `ProtectedRoute` antes de forzar la redirección, dejando pasar las sesiones impersonadas directamente a la app.
+- Se endurece la autocreación de `UserProfile`: si el usuario ya está `APPROVED`, el perfil se crea con `onboardingCompleted = true` para no bloquear cuentas históricas tras el backfill.
+- Se actualiza el script de backfill para que también cree perfiles mínimos con `onboardingCompleted = true` para usuarios `APPROVED` que todavía no tuvieran `UserProfile`.
+- En `createMember` (alta manual por admin), el perfil se crea con `onboardingCompleted = true` ya que el admin ya ha completado los datos necesarios.
+- En `seedMemberships.ts`, el perfil de seed se crea con `onboardingCompleted = true`.
+
+**Archivos modificados:**
+- `client/src/App.tsx` — condición `!impersonating` en `ProtectedRoute`
+- `server/src/controllers/profileController.ts` — `shouldAutoCompleteOnboarding()` al autocrear perfil en `getMyProfile` y `updateMyProfile`
+- `server/src/controllers/memberController.ts` — `onboardingCompleted: true` en alta manual; helper `shouldAutoCompleteOnboardingForStatus`
+- `server/src/scripts/backfill-onboarding-completed.ts` — crea perfiles mínimos para usuarios `APPROVED` sin perfil
+- `server/src/scripts/seedMemberships.ts` — `onboardingCompleted: true` en seed
+
+#### Fix: crash en lista de conversaciones del Mercadillo
+
+- Al entrar en "Ver conversaciones", se producía un `TypeError: Cannot read properties of undefined (reading 'id')` porque la query `getMyConversations` incluía mensajes y ofertas sin sus relaciones anidadas (`sender` y `proposedBy`), que llegaban `undefined` en el frontend.
+- Se añaden `include: { sender: ... }` e `include: { proposedBy: ... }` en el `include` de messages y offers respectivamente.
+
+**Archivos modificados:**
+- `server/src/controllers/marketplaceController.ts` — `getMyConversations`: include de `sender` en messages y `proposedBy` en offers
+
+---
+
 ### Nuevas funcionalidades
 
 #### Módulo Mercadillo (marketplace)

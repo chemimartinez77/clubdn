@@ -59,7 +59,7 @@ import MarketplaceChat from './pages/marketplace/MarketplaceChat';
 
 // Componente para rutas protegidas
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, impersonating } = useAuth();
   const location = useLocation();
 
   const { data: profileData, isLoading: profileLoading } = useQuery({
@@ -85,6 +85,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (
     profileData &&
     !profileData.onboardingCompleted &&
+    !impersonating &&
     location.pathname !== '/onboarding'
   ) {
     return <Navigate to="/onboarding" replace />;

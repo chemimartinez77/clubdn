@@ -15,6 +15,15 @@ cloudinary.config({
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
 
+const shouldAutoCompleteOnboarding = async (userId: string): Promise<boolean> => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { status: true }
+  });
+
+  return user?.status === 'APPROVED';
+};
+
 /**
  * Obtener el perfil del usuario autenticado
  */
@@ -50,9 +59,12 @@ export const getMyProfile = async (req: Request, res: Response): Promise<void> =
 
     // Si no existe el perfil, crearlo con valores por defecto
     if (!profile) {
+      const onboardingCompleted = await shouldAutoCompleteOnboarding(userId);
+
       profile = await prisma.userProfile.create({
         data: {
           userId,
+          onboardingCompleted,
           favoriteGames: [],
           notifications: true,
           emailUpdates: false,
@@ -207,6 +219,8 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
 
     if (!profile) {
       // Crear perfil si no existe
+      const onboardingCompleted = await shouldAutoCompleteOnboarding(userId);
+
       profile = await prisma.userProfile.create({
         data: {
           userId,
@@ -227,7 +241,8 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           notifyInvitations: notifyInvitations ?? true,
           allowEventInvitations: allowEventInvitations ?? true,
           noughterColor: noughterColor ?? null,
-          defaultScreen: defaultScreen ?? 'home'
+          defaultScreen: defaultScreen ?? 'home',
+          onboardingCompleted
         },
         include: {
           user: {

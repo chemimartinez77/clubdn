@@ -146,7 +146,8 @@ async function main() {
         userId: user.id,
         bio: `Miembro del club desde hace ${userData.monthsAsMember} meses`,
         notifications: true,
-        emailUpdates: false
+        emailUpdates: false,
+        onboardingCompleted: true
       }
     });
 

@@ -21,6 +21,7 @@ const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/web
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
 
 const normalizeText = (value: string) => value.trim().replace(/\s+/g, ' ');
+const shouldAutoCompleteOnboardingForStatus = (status?: string | null) => status === 'APPROVED';
 
 /**
  * GET /api/admin/members
@@ -244,7 +245,8 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
           userId: user.id,
           favoriteGames: [],
           notifications: true,
-          emailUpdates: false
+          emailUpdates: false,
+          onboardingCompleted: shouldAutoCompleteOnboardingForStatus(user.status)
         }
       });
     }
@@ -1223,7 +1225,7 @@ export const createMember = async (req: Request, res: Response): Promise<void> =
         iban: iban?.trim() || '',
         imageConsentActivities: imageConsentActivities === true,
         imageConsentSocial: imageConsentSocial === true,
-        onboardingCompleted: false,
+        onboardingCompleted: true,
         favoriteGames: [],
         emailUpdates: false,
       },
