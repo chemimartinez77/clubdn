@@ -4,12 +4,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../../components/layout/Layout';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import InfoTooltip from '../../components/ui/InfoTooltip';
 import { useToast } from '../../hooks/useToast';
 import { api } from '../../api/axios';
 import type { UserWithMembership, TogglePaymentData, MarkFullYearData, MembershipType, PaymentStatus } from '../../types/membership';
 import type { ApiResponse } from '../../types/auth';
 
 const MONTHS = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+
+const formatTrialPromotionMessage = (date: string | null) => {
+  if (!date) return 'Este miembro pasó de "en pruebas" a "colaborador" este mes.';
+
+  const formattedDate = new Intl.DateTimeFormat('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(new Date(date));
+
+  return `Este miembro pasó de "en pruebas" a "colaborador" el día ${formattedDate}.`;
+};
 
 export default function MembershipManagement() {
   const { success, error } = useToast();
@@ -339,7 +352,12 @@ export default function MembershipManagement() {
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className="flex items-center gap-1">
                             {user.showTrialPromotionWarning && (
-                              <span title="Acaba de pasar de EN_PRUEBAS a COLABORADOR este mes">⚠️</span>
+                              <InfoTooltip
+                                content={formatTrialPromotionMessage(user.trialPromotionWarningDate)}
+                                ariaLabel="Información sobre promoción reciente"
+                              >
+                                <span className="text-sm leading-none">⚠️</span>
+                              </InfoTooltip>
                             )}
                             {user.membership ? getMembershipBadge(user.membership.type) : '-'}
                           </span>

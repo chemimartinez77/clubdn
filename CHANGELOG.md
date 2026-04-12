@@ -7,6 +7,26 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 ## 2026-04-12 (sesión 1)
 
 ### Nuevas funcionalidades
+#### Tooltips unificados en desktop y móvil para iconos de información y warning temporal
+
+- Se crea un componente compartido `InfoTooltip` que unifica la ayuda contextual: en desktop muestra tooltip visual al hover/focus y en móvil abre un overlay flotante al tocar, por encima de todas las capas.
+- El icono `(i)` de las estadísticas del dashboard se migra a este componente compartido.
+- Los estados de invitación en `EventDetail` conservan el tooltip visual en desktop y ahora muestran el mismo contenido en un overlay táctil en móvil.
+- El warning temporal `⚠️` de promoción `EN_PRUEBAS -> COLABORADOR` deja de depender de `title` y pasa a usar tooltip/overlay consistente en **Gestión de pagos** y **Directorio de miembros**.
+- El backend expone la fecha exacta del cambio como `trialPromotionWarningDate`, usada para mensajes dinámicos como: `Este miembro pasó de "en pruebas" a "colaborador" el día 12 de abril de 2026.`
+
+**Archivos modificados:**
+- `client/src/components/ui/InfoTooltip.tsx` - nuevo componente compartido de tooltip/overlay
+- `client/src/components/dashboard/StatsCard.tsx` - migración del icono `(i)` al nuevo componente
+- `client/src/pages/EventDetail.tsx` - tooltips de estados de invitación migrados al nuevo componente
+- `client/src/pages/admin/MembershipManagement.tsx` - warning temporal `⚠️` con mensaje dinámico y soporte táctil
+- `client/src/pages/admin/Members.tsx` - warning temporal `⚠️` con mensaje dinámico en tabla y ficha
+- `client/src/types/membership.ts` - añadido `trialPromotionWarningDate`
+- `client/src/types/members.ts` - añadido `trialPromotionWarningDate`
+- `server/src/controllers/membershipController.ts` - expone `trialPromotionWarningDate` en usuarios de pagos
+- `server/src/controllers/memberController.ts` - expone `trialPromotionWarningDate` en listado y ficha de miembros
+- `server/src/types/members.ts` - añadido `trialPromotionWarningDate`
+
 
 #### Globo de no leídos en ficha de anuncio para el comprador
 
@@ -2530,3 +2550,4 @@ Incluye:
 ---
 
 **Última actualización:** 10 de Marzo de 2026
+

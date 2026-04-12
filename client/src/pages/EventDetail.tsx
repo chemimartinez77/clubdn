@@ -6,6 +6,7 @@ import Layout from '../components/layout/Layout';
 import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
+import InfoTooltip from '../components/ui/InfoTooltip';
 import { useToast } from '../hooks/useToast';
 import { api } from '../api/axios';
 import { GameImage } from '../components/events/EventCard';
@@ -1412,20 +1413,28 @@ export default function EventDetail() {
                       </div>
                       <span className="text-[var(--color-text)] flex-1">{guest.guestFirstName} {guest.guestLastName}</span>
                       <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Invitado</span>
-                      <span className="relative group" tabIndex={0}>
+                      {invitationStatusTooltips[guest.status] ? (
+                        <InfoTooltip
+                          content={invitationStatusTooltips[guest.status]}
+                          ariaLabel={`Información del estado ${invitationStatusLabels[guest.status] || guest.status}`}
+                        >
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full cursor-help select-none ${
+                              invitationStatusStyles[guest.status] || 'text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)]'
+                            }`}
+                          >
+                            {invitationStatusLabels[guest.status] || guest.status}
+                          </span>
+                        </InfoTooltip>
+                      ) : (
                         <span
-                          className={`text-xs px-2 py-0.5 rounded-full cursor-default select-none ${
+                          className={`text-xs px-2 py-0.5 rounded-full select-none ${
                             invitationStatusStyles[guest.status] || 'text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)]'
                           }`}
                         >
                           {invitationStatusLabels[guest.status] || guest.status}
                         </span>
-                        {invitationStatusTooltips[guest.status] && (
-                          <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[200px] rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50 text-center whitespace-normal">
-                            {invitationStatusTooltips[guest.status]}
-                          </span>
-                        )}
-                      </span>
+                      )}
                       {(() => {
                         const inv = invitations.find(i => i.id === guest.id);
                         return inv?.qrUrl ? (
@@ -2014,22 +2023,32 @@ export default function EventDetail() {
                           {new Date(invite.validDate).toLocaleDateString('es-ES')}
                         </p>
                       </div>
-                      <span className="relative group" tabIndex={0}>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium cursor-default select-none ${
+                      {invitationStatusTooltips[invite.status] ? (
+                        <InfoTooltip
+                          content={invitationStatusTooltips[invite.status]}
+                          ariaLabel={`Información del estado ${invitationStatusLabels[invite.status] || invite.status}`}
+                        >
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium cursor-help select-none ${
+                            invite.status === 'USED'
+                              ? 'bg-green-700 text-green-100'
+                              : invite.status === 'EXPIRED' || invite.status === 'CANCELLED'
+                                ? 'bg-red-700 text-red-100'
+                                : 'bg-yellow-700 text-yellow-100'
+                          }`}>
+                            {invitationStatusLabels[invite.status] || invite.status}
+                          </span>
+                        </InfoTooltip>
+                      ) : (
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium select-none ${
                           invite.status === 'USED'
                             ? 'bg-green-700 text-green-100'
                             : invite.status === 'EXPIRED' || invite.status === 'CANCELLED'
-                            ? 'bg-red-700 text-red-100'
-                            : 'bg-yellow-700 text-yellow-100'
+                              ? 'bg-red-700 text-red-100'
+                              : 'bg-yellow-700 text-yellow-100'
                         }`}>
                           {invitationStatusLabels[invite.status] || invite.status}
                         </span>
-                        {invitationStatusTooltips[invite.status] && (
-                          <span className="pointer-events-none absolute bottom-full right-0 mb-2 w-max max-w-[200px] rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50 text-center whitespace-normal">
-                            {invitationStatusTooltips[invite.status]}
-                          </span>
-                        )}
-                      </span>
+                      )}
                     </div>
                   );
                 })}

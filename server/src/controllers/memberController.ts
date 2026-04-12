@@ -129,11 +129,17 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
           newType: 'COLABORADOR',
           changedAt: { gte: monthStart, lt: monthEnd }
         },
-        select: { userId: true }
+        select: { userId: true, changedAt: true },
+        orderBy: { changedAt: 'desc' }
       })
     ]);
 
-    const recentTrialPromotionUserIds = new Set(recentTrialPromotions.map(r => r.userId));
+    const recentTrialPromotionDates = new Map<string, Date>();
+    for (const promotion of recentTrialPromotions) {
+      if (!recentTrialPromotionDates.has(promotion.userId)) {
+        recentTrialPromotionDates.set(promotion.userId, promotion.changedAt);
+      }
+    }
 
     const feeMap = await getMembershipFeeMap();
 
@@ -173,7 +179,8 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
         monthlyFee: user.membership ? (feeMap[user.membership.type] ?? 0) : null,
         phone: user.profile?.phone || null,
         lastPaymentDate: user.membership?.lastPaymentDate?.toISOString() || null,
-        showTrialPromotionWarning: recentTrialPromotionUserIds.has(user.id)
+        showTrialPromotionWarning: recentTrialPromotionDates.has(user.id),
+        trialPromotionWarningDate: recentTrialPromotionDates.get(user.id)?.toISOString() ?? null
       };
     });
 
@@ -294,6 +301,7 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
         })
       : null;
     const showTrialPromotionWarning = !!recentTrialPromoLog;
+    const trialPromotionWarningDate = recentTrialPromoLog?.changedAt?.toISOString() ?? null;
 
     // --- Score de fidelidad ---
     // Tasa de respuesta: eventos organizados pasados donde se preguntó si se disputó
@@ -351,6 +359,7 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
           fechaBaja: user.membership?.fechaBaja?.toISOString() || null,
           paymentStatus,
           showTrialPromotionWarning,
+          trialPromotionWarningDate,
           notes: user.membership?.notes || null,
           profile: {
             id: profile.id,

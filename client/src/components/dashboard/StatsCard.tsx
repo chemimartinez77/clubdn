@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from '../ui/Card';
 import Modal from '../ui/Modal';
+import InfoTooltip from '../ui/InfoTooltip';
 import { api } from '../../api/axios';
 import { GameImage } from '../events/EventCard';
 import type { UserStatsResponse, ClubStatsResponse, EventDetail } from '../../types/stats';
@@ -195,17 +196,14 @@ export default function StatsCard() {
                     <div className="flex items-center gap-1">
                       <p className="text-sm text-[var(--color-textSecondary)]">{stat.label}</p>
                       {stat.tooltip && (
-                        <div className="relative group">
+                        <InfoTooltip
+                          content={stat.tooltip}
+                          ariaLabel={`Más información sobre ${stat.label}`}
+                        >
                           <svg className="w-3.5 h-3.5 text-[var(--color-textSecondary)] cursor-help flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-50 hidden group-hover:block pointer-events-none">
-                            <div className="bg-[var(--color-text)] text-[var(--color-cardBackground)] text-xs rounded px-2 py-1.5 whitespace-pre-line w-44 text-center shadow-lg">
-                              {stat.tooltip}
-                            </div>
-                            <div className="w-2 h-2 bg-[var(--color-text)] rotate-45 mx-auto -mt-1"></div>
-                          </div>
-                        </div>
+                        </InfoTooltip>
                       )}
                     </div>
                   </div>

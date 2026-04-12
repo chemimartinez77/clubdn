@@ -47,9 +47,15 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
         newType: 'COLABORADOR',
         changedAt: { gte: monthStart, lt: monthEnd }
       },
-      select: { userId: true }
+      select: { userId: true, changedAt: true },
+      orderBy: { changedAt: 'desc' }
     });
-    const recentTrialPromotionUserIds = new Set(recentTrialPromotions.map(r => r.userId));
+    const recentTrialPromotionDates = new Map<string, Date>();
+    for (const promotion of recentTrialPromotions) {
+      if (!recentTrialPromotionDates.has(promotion.userId)) {
+        recentTrialPromotionDates.set(promotion.userId, promotion.changedAt);
+      }
+    }
 
     // Calcular información adicional y mapear pagos por mes
     const usersWithPaymentStatus = activeUsers.map(user => {
@@ -102,7 +108,8 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
         paymentsByMonth,
         paidMonths,
         status: paymentStatus,
-        showTrialPromotionWarning: recentTrialPromotionUserIds.has(user.id)
+        showTrialPromotionWarning: recentTrialPromotionDates.has(user.id),
+        trialPromotionWarningDate: recentTrialPromotionDates.get(user.id)?.toISOString() ?? null
       };
     });
 

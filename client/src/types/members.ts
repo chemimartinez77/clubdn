@@ -16,6 +16,7 @@ export interface MemberData {
   phone: string | null;
   lastPaymentDate: string | null;
   showTrialPromotionWarning: boolean;
+  trialPromotionWarningDate: string | null;
 }
 
 export interface MemberProfileInfo {
@@ -52,6 +53,7 @@ export interface MemberProfileDetails {
   fechaBaja: string | null;
   paymentStatus: PaymentStatusType;
   showTrialPromotionWarning: boolean;
+  trialPromotionWarningDate: string | null;
   notes: string | null;
   profile: MemberProfileInfo;
   reliability: MemberReliability;

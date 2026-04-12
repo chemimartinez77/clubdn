@@ -24,6 +24,7 @@ export interface MemberData {
   phone: string | null;
   lastPaymentDate: string | null;
   showTrialPromotionWarning: boolean;
+  trialPromotionWarningDate: string | null;
 }
 
 export interface MembersResponse {

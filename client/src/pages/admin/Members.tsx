@@ -5,6 +5,7 @@ import Layout from '../../components/layout/Layout';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
+import InfoTooltip from '../../components/ui/InfoTooltip';
 import { useMembers } from '../../hooks/useMembers';
 import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,6 +18,18 @@ const EMPTY_PROFILE_FORM = {
   phone: '', address: '', city: '', province: '', postalCode: '', iban: '',
   avatar: '', imageConsentActivities: false, imageConsentSocial: false, membershipType: '',
   notes: '', startDate: ''
+};
+
+const formatTrialPromotionMessage = (date: string | null) => {
+  if (!date) return 'Este miembro pasó de "en pruebas" a "colaborador" este mes.';
+
+  const formattedDate = new Intl.DateTimeFormat('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(new Date(date));
+
+  return `Este miembro pasó de "en pruebas" a "colaborador" el día ${formattedDate}.`;
 };
 
 export default function Members() {
@@ -666,7 +679,12 @@ export default function Members() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="flex items-center gap-1">
                               {member.showTrialPromotionWarning && (
-                                <span title="Acaba de pasar de EN_PRUEBAS a COLABORADOR este mes">⚠️</span>
+                                <InfoTooltip
+                                  content={formatTrialPromotionMessage(member.trialPromotionWarningDate)}
+                                  ariaLabel="Información sobre promoción reciente"
+                                >
+                                  <span className="text-sm leading-none">⚠️</span>
+                                </InfoTooltip>
                               )}
                               {getMembershipBadge(member.membershipType)}
                             </span>
@@ -825,7 +843,12 @@ export default function Members() {
                     <p className="text-sm text-[var(--color-textSecondary)]">{memberProfile.member.email}</p>
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                       {memberProfile.member.showTrialPromotionWarning && (
-                        <span title="Acaba de pasar de EN_PRUEBAS a COLABORADOR este mes">⚠️</span>
+                        <InfoTooltip
+                          content={formatTrialPromotionMessage(memberProfile.member.trialPromotionWarningDate)}
+                          ariaLabel="Información sobre promoción reciente"
+                        >
+                          <span className="text-sm leading-none">⚠️</span>
+                        </InfoTooltip>
                       )}
                       {getMembershipBadge(memberProfile.member.membershipType)}
                       {getPaymentStatusBadge(memberProfile.member.paymentStatus)}

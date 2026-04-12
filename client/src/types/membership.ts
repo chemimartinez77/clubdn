@@ -42,6 +42,7 @@ export interface UserWithMembership {
   paidMonths: number;
   status: PaymentStatus;
   showTrialPromotionWarning: boolean;
+  trialPromotionWarningDate: string | null;
 }
 
 export interface PaymentStatusUser {
