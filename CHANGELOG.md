@@ -47,11 +47,13 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 #### Ajustes de UX en pagos, listado de eventos y compartido de partidas
 
 - La confirmación del botón `Consolidar` en **Gestión de Pagos** deja de usar el diálogo nativo del navegador y pasa a mostrarse en una modal integrada con la estética de la aplicación.
+- El botón `Año completo` en **Gestión de Pagos** deja de usar un ciclo móvil de 12 meses y pasa a significar un prepago del año natural actual (`enero-diciembre`), disponible solo durante enero y solo para el año en curso.
 - Se corrige un `0` suelto que podía aparecer junto al aforo en la vista de lista de eventos cuando una partida no tenía nadie en lista de espera.
 - El compartido por WhatsApp desde el detalle de partida mejora el copy de aforo: en lugar de `Plazas disponibles: 2 de 4`, ahora usa mensajes más claros como `Asistentes: 2 de 4 (2 plazas libres)` o `Asistentes: 4 de 4 (COMPLETO)`.
 
 **Archivos modificados:**
-- `client/src/pages/admin/MembershipManagement.tsx` - modal de confirmación para `Consolidar`
+- `client/src/pages/admin/MembershipManagement.tsx` - modal de confirmación para `Consolidar` y restricción de `Año completo` a enero del año actual
+- `server/src/controllers/membershipController.ts` - nueva semántica de `Año completo` como prepago enero-diciembre del año natural actual
 - `client/src/components/events/EventCard.tsx` - fix del `0` residual al renderizar `waitlistCount`
 - `client/src/pages/EventDetail.tsx` - nuevo copy de aforo en el mensaje compartido por WhatsApp
 

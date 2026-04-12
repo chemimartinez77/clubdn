@@ -35,6 +35,7 @@ export default function MembershipManagement() {
   const { success, error } = useToast();
   const queryClient = useQueryClient();
   const currentYear = new Date().getFullYear();
+  const isJanuary = new Date().getMonth() === 0;
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [searchTerm, setSearchTerm] = useState('');
   const [membershipFilter, setMembershipFilter] = useState<'all' | MembershipType>('all');
@@ -112,7 +113,7 @@ export default function MembershipManagement() {
   };
 
   const handleMarkFullYear = (userId: string) => {
-    if (confirm('¿Marcar todos los meses del ciclo en curso como pagados?')) {
+    if (confirm(`¿Marcar como pagados los 12 meses de ${selectedYear}, de enero a diciembre?`)) {
       markFullYearMutation.mutate({
         userId,
         year: selectedYear,
@@ -236,6 +237,7 @@ export default function MembershipManagement() {
     });
 
   const canConsolidateCurrentMonth = selectedYear === currentYear && !response?.isCurrentMonthConsolidated;
+  const canUseFullYear = isJanuary && selectedYear === currentYear;
 
   return (
     <Layout>
@@ -427,7 +429,7 @@ export default function MembershipManagement() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleMarkFullYear(user.id)}
-                            disabled={markFullYearMutation.isPending || user.paidMonths === 12}
+                            disabled={markFullYearMutation.isPending || user.paidMonths === 12 || !canUseFullYear}
                             className="text-xs"
                           >
                             Año completo
