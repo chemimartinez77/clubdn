@@ -2,7 +2,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toPng } from 'html-to-image';
 import Layout from '../../components/layout/Layout';
+import Button from '../../components/ui/Button';
+import InfoTooltip from '../../components/ui/InfoTooltip';
+import MarketplaceListingShareCard from '../../components/marketplace/MarketplaceListingShareCard';
 import { api } from '../../api/axios';
 import { useAuth } from '../../contexts/AuthContext';
 import { CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS } from '../../types/marketplace';
@@ -17,7 +21,11 @@ export default function MarketplaceListingPage() {
 
   const [imageIndex, setImageIndex] = useState(0);
   const [archiveConfirm, setArchiveConfirm] = useState(false);
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [includeExtraImages, setIncludeExtraImages] = useState(false);
+  const [isDownloadingPng, setIsDownloadingPng] = useState(false);
   const recordedViewForIdRef = useRef<string | null>(null);
+  const shareCardRef = useRef<HTMLDivElement | null>(null);
 
   const { data: listing, isLoading, error } = useQuery<MarketplaceListing>({
     queryKey: ['marketplace', 'listing', id],
@@ -88,63 +96,38 @@ export default function MarketplaceListingPage() {
     }
   }, [id, listing, user?.id]);
 
-  const buildWhatsAppMessage = (currentListing: MarketplaceListing) => {
-    const lines = [
-      '*Anuncio del Mercadillo Club Dreadnought*',
-      currentListing.title,
-      `${CATEGORY_LABELS[currentListing.category]} · ${STATUS_LABELS[currentListing.status]}`,
-      `Precio: ${Number(currentListing.price).toFixed(2)} €`,
-    ];
-
-    if (currentListing.description?.trim()) {
-      lines.push('', currentListing.description.trim());
-    }
-
-    if (currentListing.contactExtra?.trim()) {
-      lines.push('', `Contacto adicional: ${currentListing.contactExtra.trim()}`);
-    }
-
-    return lines.join('\n');
-  };
-
-  const shareViaWhatsAppText = (currentListing: MarketplaceListing) => {
-    const message = buildWhatsAppMessage(currentListing);
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
-  const handleShare = async () => {
+  const handleOpenDownloadModal = () => {
     if (!listing) return;
+    setIncludeExtraImages(false);
+    setIsDownloadModalOpen(true);
+  };
 
-    const message = buildWhatsAppMessage(listing);
-    const primaryImage = listing.images[0];
+  const handleDownloadPng = async () => {
+    if (!listing) return;
+    if (!shareCardRef.current) return;
 
-    if (primaryImage && typeof navigator !== 'undefined' && 'share' in navigator) {
-      try {
-        const response = await fetch(primaryImage);
-        const blob = await response.blob();
-        const extension = blob.type.split('/')[1] || 'jpg';
-        const safeBaseName = listing.title
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '') || 'anuncio';
-        const file = new File([blob], `${safeBaseName}.${extension}`, { type: blob.type || 'image/jpeg' });
-        const shareData: ShareData = {
-          title: listing.title,
-          text: message,
-          files: [file],
-        };
+    try {
+      setIsDownloadingPng(true);
+      const safeBaseName = listing.title
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'anuncio';
 
-        if (!('canShare' in navigator) || (navigator.canShare && navigator.canShare({ files: [file] }))) {
-          await navigator.share(shareData);
-          return;
-        }
-      } catch {
-        // Si falla el share nativo con archivo, cae al flujo de texto por WhatsApp.
-      }
+      const dataUrl = await toPng(shareCardRef.current, {
+        pixelRatio: 2,
+        cacheBust: true,
+        backgroundColor: '#173129',
+      });
+
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `mercadillo-clubdn-${safeBaseName}.png`;
+      link.click();
+    } finally {
+      setIsDownloadingPng(false);
     }
-
-    shareViaWhatsAppText(listing);
   };
 
   if (isLoading) {
@@ -172,6 +155,11 @@ export default function MarketplaceListingPage() {
   const canArchive = isOwner && !listing.isArchived && listing.status !== 'VENDIDO';
 
   const thumb = listing.images[imageIndex];
+  const downloadPngHelpText = `Comparte tu anuncio bajándote la imagen y subiéndola a las redes que quieras.
+
+Se generará una ficha visual con la imagen principal del anuncio, el precio, el estado, la descripción completa y el contacto adicional si lo has añadido.
+
+Si tu anuncio tiene más fotos, podrás decidir en la siguiente ventana si quieres incluirlas también debajo de la imagen principal antes de descargar el PNG.`;
 
   return (
     <Layout>
@@ -262,12 +250,24 @@ export default function MarketplaceListingPage() {
 
             {/* Acciones */}
             <div className="flex flex-col gap-2 mt-auto pt-2">
-              <button
-                onClick={handleShare}
-                className="w-full px-4 py-2.5 border border-[var(--color-inputBorder)] rounded-lg text-sm text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] transition-colors flex items-center justify-center gap-2"
-              >
-                Compartir por WhatsApp
-              </button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleOpenDownloadModal}
+                  className="flex-1"
+                >
+                  Descargar PNG
+                </Button>
+                <InfoTooltip
+                  ariaLabel="Información sobre Descargar PNG"
+                  content={downloadPngHelpText}
+                  tooltipClassName="max-w-[280px] text-left"
+                >
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-inputBorder)] bg-[var(--color-cardBackground)] text-sm font-bold text-[var(--color-textSecondary)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)] transition-colors">
+                    ?
+                  </span>
+                </InfoTooltip>
+              </div>
               {canContact && (
                 <button
                   onClick={() => openConversationMutation.mutate()}
@@ -335,6 +335,73 @@ export default function MarketplaceListingPage() {
           </div>
         </div>
       </div>
+
+      {isDownloadModalOpen && listing && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-4xl max-h-[92vh] overflow-hidden rounded-2xl border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] shadow-2xl">
+            <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--color-cardBorder)]">
+              <div>
+                <h2 className="text-xl font-semibold text-[var(--color-text)]">Descargar PNG</h2>
+                <p className="text-sm text-[var(--color-textSecondary)]">
+                  Genera una ficha visual del anuncio lista para compartir manualmente.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsDownloadModalOpen(false)}
+                className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)] text-2xl leading-none"
+                aria-label="Cerrar modal de descarga PNG"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="px-6 py-5 border-b border-[var(--color-cardBorder)]">
+              {listing.images.length > 1 ? (
+                <label className="inline-flex items-center gap-3 text-sm text-[var(--color-text)] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={includeExtraImages}
+                    onChange={(e) => setIncludeExtraImages(e.target.checked)}
+                    className="w-4 h-4 rounded border-[var(--color-inputBorder)]"
+                  />
+                  Incluir imágenes adicionales debajo de la principal
+                </label>
+              ) : (
+                <p className="text-sm text-[var(--color-textSecondary)]">
+                  Este anuncio solo tiene una imagen, así que el PNG incluirá únicamente la principal.
+                </p>
+              )}
+            </div>
+
+            <div className="max-h-[60vh] overflow-auto px-6 py-6 bg-[var(--color-background)]">
+              <div className="flex justify-center">
+                <div ref={shareCardRef}>
+                  <MarketplaceListingShareCard
+                    listing={listing}
+                    includeExtraImages={includeExtraImages}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--color-cardBorder)]">
+              <Button
+                variant="ghost"
+                onClick={() => setIsDownloadModalOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleDownloadPng}
+                isLoading={isDownloadingPng}
+              >
+                Descargar PNG
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

@@ -7,6 +7,24 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 ## 2026-04-12 (sesión 1)
 
 ### Nuevas funcionalidades
+#### Gestión de pagos: botón `Consolidar` para promociones de EN_PRUEBAS a COLABORADOR
+
+- Se añade un botón `Consolidar` en la pantalla de Gestión de Pagos, junto al selector de año.
+- Al pulsarlo, el sistema revisa qué miembros han pasado de `EN_PRUEBAS` a `COLABORADOR` durante el mes actual antes del momento exacto de la consolidación.
+- A esos miembros se les ajusta `billingStartDate` a la fecha y hora reales del cambio a `COLABORADOR`, haciendo exigible el mes actual.
+- La operación requiere confirmación previa y no se puede repetir: tras ejecutarse, el botón pasa a mostrarse como `Consolidado` y queda deshabilitado.
+- Si no hay miembros afectados, el mes igualmente queda marcado como consolidado para evitar una segunda ejecución.
+- La regla general del cron y de los cambios normales no cambia: solo esta consolidación manual corrige los cambios ya ocurridos antes del clic.
+
+**Archivos modificados:**
+- `client/src/pages/admin/MembershipManagement.tsx` - botón `Consolidar`, confirmación, estado `Consolidado` y resumen en UI
+- `client/src/types/membership.ts` - tipos para estado y respuesta de consolidación
+- `server/src/controllers/membershipController.ts` - estado de consolidación mensual y nuevo endpoint de consolidación
+- `server/src/routes/membershipRoutes.ts` - `POST /api/membership/consolidate-current-month`
+- `server/src/utils/paymentStatus.ts` - ajuste para exigir el mes actual cuando `billingStartDate` cae dentro de ese mismo mes
+- `server/prisma/schema.prisma` - nuevo modelo `PaymentMonthConsolidation`
+- `server/prisma/migrations/20260412120000_add_payment_month_consolidation/migration.sql` - migración SQL
+
 #### Mercadillo: compartir por WhatsApp y contador de visitas
 
 - Se añade un botón para compartir anuncios del Mercadillo por WhatsApp desde la ficha de detalle.

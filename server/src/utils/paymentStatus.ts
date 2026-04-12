@@ -45,15 +45,12 @@ export const getPaymentStatus = ({
   billingStartDate?: Date | null;
   now?: Date;
 }): PaymentStatusKey => {
-  if (payments.length === 0) {
-    return 'NUEVO';
-  }
-
   // La fecha de referencia para exigibilidad: billingStartDate si existe, si no startDate
   const billingRef = billingStartDate ?? startDate ?? null;
 
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const prevMonth = prevDate.getMonth() + 1;
   const prevYear = prevDate.getFullYear();
@@ -83,6 +80,14 @@ export const getPaymentStatus = ({
 
   if (hasCurrent) {
     return 'PAGADO';
+  }
+
+  if (billingRef && billingRef <= now && billingRef >= currentMonthStart) {
+    return 'PENDIENTE';
+  }
+
+  if (payments.length === 0) {
+    return 'NUEVO';
   }
 
   return 'PENDIENTE';

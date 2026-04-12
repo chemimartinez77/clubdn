@@ -7,7 +7,8 @@ import {
   registerPayment,
   getPaymentStatus,
   togglePayment,
-  markFullYear
+  markFullYear,
+  consolidateCurrentMonth
 } from '../controllers/membershipController';
 import { authenticate, requireAdmin } from '../middleware/auth';
 
@@ -21,5 +22,6 @@ router.put('/:userId/upgrade-to-socio', authenticate, requireAdmin, upgradeToSoc
 router.post('/payment', authenticate, requireAdmin, registerPayment);
 router.post('/payment/toggle', authenticate, requireAdmin, togglePayment);
 router.post('/payment/year', authenticate, requireAdmin, markFullYear);
+router.post('/consolidate-current-month', authenticate, requireAdmin, consolidateCurrentMonth);
 
 export default router;

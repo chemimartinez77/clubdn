@@ -45,6 +45,14 @@ export interface UserWithMembership {
   trialPromotionWarningDate: string | null;
 }
 
+export interface UsersMembershipResponse {
+  year: number;
+  users: UserWithMembership[];
+  isCurrentMonthConsolidated: boolean;
+  consolidatedAt: string | null;
+  consolidatedBy: string | null;
+}
+
 export interface PaymentStatusUser {
   id: string;
   name: string;
@@ -85,4 +93,12 @@ export interface TogglePaymentData {
 export interface MarkFullYearData {
   userId: string;
   year: number;
+}
+
+export interface ConsolidateCurrentMonthResponse {
+  consolidatedAt: string;
+  consolidatedBy: string;
+  count: number;
+  memberNames: string[];
+  isCurrentMonthConsolidated: boolean;
 }

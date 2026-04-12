@@ -11,6 +11,19 @@ import { getMembershipFee, getMembershipFeeMap } from '../services/membershipFee
 export const getUsersWithMembership = async (req: Request, res: Response): Promise<void> => {
   try {
     const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
+    const nowForConsolidation = new Date();
+    const currentMonth = nowForConsolidation.getMonth() + 1;
+    const currentYear = nowForConsolidation.getFullYear();
+    const currentMonthConsolidation = year === currentYear
+      ? await prisma.paymentMonthConsolidation.findUnique({
+          where: {
+            year_month: {
+              year: currentYear,
+              month: currentMonth,
+            },
+          },
+        })
+      : null;
 
     const users = await prisma.user.findMany({
       where: {
@@ -123,7 +136,10 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
       success: true,
       data: {
         year,
-        users: usersWithPaymentStatus
+        users: usersWithPaymentStatus,
+        isCurrentMonthConsolidated: !!currentMonthConsolidation,
+        consolidatedAt: currentMonthConsolidation?.consolidatedAt.toISOString() ?? null,
+        consolidatedBy: currentMonthConsolidation?.consolidatedBy ?? null
       }
     });
   } catch (error) {
@@ -131,6 +147,124 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
     res.status(500).json({
       success: false,
       message: 'Error al obtener usuarios con membresía'
+    });
+  }
+};
+
+/**
+ * POST /api/membership/consolidate-current-month
+ * Consolida manualmente promociones EN_PRUEBAS -> COLABORADOR ocurridas este mes antes del clic.
+ */
+export const consolidateCurrentMonth = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const adminId = req.user!.userId;
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const monthStart = new Date(year, now.getMonth(), 1);
+
+    const existingConsolidation = await prisma.paymentMonthConsolidation.findUnique({
+      where: {
+        year_month: { year, month }
+      }
+    });
+
+    if (existingConsolidation) {
+      res.status(409).json({
+        success: false,
+        message: 'El mes actual ya está consolidado'
+      });
+      return;
+    }
+
+    const promotions = await prisma.membershipChangeLog.findMany({
+      where: {
+        previousType: 'EN_PRUEBAS',
+        newType: 'COLABORADOR',
+        changedAt: {
+          gte: monthStart,
+          lt: now,
+        },
+      },
+      orderBy: { changedAt: 'asc' },
+    });
+
+    const latestPromotionByUser = new Map<string, Date>();
+    for (const promotion of promotions) {
+      latestPromotionByUser.set(promotion.userId, promotion.changedAt);
+    }
+
+    const userIds = [...latestPromotionByUser.keys()];
+    const memberships = userIds.length > 0
+      ? await prisma.membership.findMany({
+          where: {
+            userId: { in: userIds },
+            type: 'COLABORADOR',
+          },
+          select: {
+            userId: true,
+            billingStartDate: true,
+            user: { select: { name: true } },
+          },
+        })
+      : [];
+
+    const affectedMemberships = memberships
+      .map((membership) => {
+        const changedAt = latestPromotionByUser.get(membership.userId);
+        if (!changedAt) return null;
+        return {
+          userId: membership.userId,
+          name: membership.user.name,
+          changedAt,
+        };
+      })
+      .filter((item): item is { userId: string; name: string; changedAt: Date } => item !== null);
+
+    await prisma.$transaction(async (tx) => {
+      for (const membership of affectedMemberships) {
+        await tx.membership.update({
+          where: { userId: membership.userId },
+          data: { billingStartDate: membership.changedAt },
+        });
+      }
+
+      await tx.paymentMonthConsolidation.create({
+        data: {
+          year,
+          month,
+          consolidatedBy: adminId,
+          consolidatedAt: now,
+        },
+      });
+    });
+
+    res.status(200).json({
+      success: true,
+      message: affectedMemberships.length > 0
+        ? `Mes consolidado. ${affectedMemberships.length} miembro(s) actualizados.`
+        : 'Mes consolidado. No había cambios pendientes de consolidar.',
+      data: {
+        consolidatedAt: now.toISOString(),
+        consolidatedBy: adminId,
+        count: affectedMemberships.length,
+        memberNames: affectedMemberships.map(member => member.name),
+        isCurrentMonthConsolidated: true,
+      }
+    });
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      res.status(409).json({
+        success: false,
+        message: 'El mes actual ya está consolidado'
+      });
+      return;
+    }
+
+    console.error('Error consolidating current month:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al consolidar el mes actual'
     });
   }
 };

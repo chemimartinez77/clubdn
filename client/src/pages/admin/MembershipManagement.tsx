@@ -1,13 +1,20 @@
 // client/src/pages/admin/MembershipManagement.tsx
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Layout from '../../components/layout/Layout';
-import { Card, CardHeader, CardContent } from '../../components/ui/Card';
+import { Card, CardContent, CardHeader } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import { useToast } from '../../hooks/useToast';
 import { api } from '../../api/axios';
-import type { UserWithMembership, TogglePaymentData, MarkFullYearData, MembershipType, PaymentStatus } from '../../types/membership';
+import type {
+  ConsolidateCurrentMonthResponse,
+  MarkFullYearData,
+  MembershipType,
+  PaymentStatus,
+  TogglePaymentData,
+  UsersMembershipResponse,
+} from '../../types/membership';
 import type { ApiResponse } from '../../types/auth';
 
 const MONTHS = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
@@ -18,7 +25,7 @@ const formatTrialPromotionMessage = (date: string | null) => {
   const formattedDate = new Intl.DateTimeFormat('es-ES', {
     day: 'numeric',
     month: 'long',
-    year: 'numeric'
+    year: 'numeric',
   }).format(new Date(date));
 
   return `Este miembro pasó de "en pruebas" a "colaborador" el día ${formattedDate}.`;
@@ -27,7 +34,8 @@ const formatTrialPromotionMessage = (date: string | null) => {
 export default function MembershipManagement() {
   const { success, error } = useToast();
   const queryClient = useQueryClient();
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
   const [searchTerm, setSearchTerm] = useState('');
   const [membershipFilter, setMembershipFilter] = useState<'all' | MembershipType>('all');
   const [sortCol, setSortCol] = useState<'firstName' | 'lastName' | 'status'>('lastName');
@@ -37,15 +45,15 @@ export default function MembershipManagement() {
     pendiente: true,
     impagado: true,
     pagado: true,
-    anoCompleto: true
+    anoCompleto: true,
   });
 
-  const { data: response, isLoading } = useQuery({
+  const { data: response, isLoading } = useQuery<UsersMembershipResponse>({
     queryKey: ['users-membership', selectedYear],
     queryFn: async () => {
-      const res = await api.get<ApiResponse<{ year: number; users: UserWithMembership[] }>>(`/api/membership/users?year=${selectedYear}`);
-      return res.data.data;
-    }
+      const res = await api.get<ApiResponse<UsersMembershipResponse>>(`/api/membership/users?year=${selectedYear}`);
+      return res.data.data!;
+    },
   });
 
   const togglePaymentMutation = useMutation({
@@ -58,7 +66,7 @@ export default function MembershipManagement() {
     },
     onError: (err: any) => {
       error(err.response?.data?.message || 'Error al marcar/desmarcar pago');
-    }
+    },
   });
 
   const markFullYearMutation = useMutation({
@@ -68,28 +76,58 @@ export default function MembershipManagement() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['users-membership'] });
-      success(data.message || 'A\u00f1o completo marcado');
+      success(data.message || 'Año completo marcado');
     },
     onError: (err: any) => {
       error(err.response?.data?.message || 'Error al marcar año completo');
-    }
+    },
+  });
+
+  const consolidateCurrentMonthMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post<ApiResponse<ConsolidateCurrentMonthResponse>>('/api/membership/consolidate-current-month');
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['users-membership'] });
+      const consolidatedMembers = data.data?.memberNames || [];
+      if (consolidatedMembers.length > 0) {
+        success(`${data.message || 'Mes consolidado correctamente'}\n${consolidatedMembers.join(', ')}`);
+      } else {
+        success(data.message || 'Mes consolidado correctamente');
+      }
+    },
+    onError: (err: any) => {
+      error(err.response?.data?.message || 'Error al consolidar el mes actual');
+    },
   });
 
   const handleTogglePayment = (userId: string, month: number) => {
     togglePaymentMutation.mutate({
       userId,
       month,
-      year: selectedYear
+      year: selectedYear,
     });
   };
 
   const handleMarkFullYear = (userId: string) => {
-    if (confirm('\u00bfMarcar todos los meses del ciclo en curso como pagados?')) {
+    if (confirm('¿Marcar todos los meses del ciclo en curso como pagados?')) {
       markFullYearMutation.mutate({
         userId,
-        year: selectedYear
+        year: selectedYear,
       });
     }
+  };
+
+  const handleConsolidateCurrentMonth = () => {
+    const confirmed = confirm(
+      'Esta acción consolidará las promociones de EN_PRUEBAS a COLABORADOR ocurridas este mes antes de este momento.\n\n' +
+      'Se ajustará la fecha de inicio de obligación de pago a la fecha y hora exactas del cambio.\n\n' +
+      'Esta operación no se puede deshacer desde la interfaz. ¿Deseas continuar?'
+    );
+
+    if (!confirmed) return;
+    consolidateCurrentMonthMutation.mutate();
   };
 
   const getStatusBadge = (status: PaymentStatus) => {
@@ -98,15 +136,17 @@ export default function MembershipManagement() {
       PENDIENTE: 'bg-yellow-100 text-yellow-800',
       IMPAGADO: 'bg-red-100 text-red-800',
       PAGADO: 'bg-green-100 text-green-800',
-      ANO_COMPLETO: 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]'
+      ANO_COMPLETO: 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]',
     };
+
     const labels = {
       NUEVO: 'Nuevo',
       PENDIENTE: 'Pendiente',
       IMPAGADO: 'Impagado',
       PAGADO: 'Pagado',
-      ANO_COMPLETO: 'Año completo'
+      ANO_COMPLETO: 'Año completo',
     };
+
     return (
       <span className={`px-2 py-1 text-xs font-semibold rounded ${styles[status] || 'bg-[var(--color-tableRowHover)] text-[var(--color-text)]'}`}>
         {labels[status] || status}
@@ -120,7 +160,7 @@ export default function MembershipManagement() {
       COLABORADOR: 'bg-blue-100 text-blue-800',
       FAMILIAR: 'bg-purple-100 text-purple-800',
       EN_PRUEBAS: 'bg-yellow-100 text-yellow-800',
-      BAJA: 'bg-[var(--color-cardBorder)] text-[var(--color-textSecondary)]'
+      BAJA: 'bg-[var(--color-cardBorder)] text-[var(--color-textSecondary)]',
     };
 
     return (
@@ -131,7 +171,7 @@ export default function MembershipManagement() {
   };
 
   const toggleStatusFilter = (status: keyof typeof statusFilters) => {
-    setStatusFilters(prev => ({ ...prev, [status]: !prev[status] }));
+    setStatusFilters((prev) => ({ ...prev, [status]: !prev[status] }));
   };
 
   const normalize = (str: string) =>
@@ -139,7 +179,7 @@ export default function MembershipManagement() {
 
   const handleSort = (col: 'firstName' | 'lastName' | 'status') => {
     if (sortCol === col) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+      setSortDir((direction) => (direction === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortCol(col);
       setSortDir('asc');
@@ -152,44 +192,51 @@ export default function MembershipManagement() {
   };
 
   const statusOrder: Record<string, number> = {
-    NUEVO: 0, PENDIENTE: 1, IMPAGADO: 2, PAGADO: 3, ANO_COMPLETO: 4
+    NUEVO: 0,
+    PENDIENTE: 1,
+    IMPAGADO: 2,
+    PAGADO: 3,
+    ANO_COMPLETO: 4,
   };
 
-  // Filtrar usuarios
-  const filteredUsers = (response?.users || []).filter(user => {
-    // Filtro de búsqueda (case e accent insensitive)
-    if (searchTerm && !normalize(user.name).includes(normalize(searchTerm))) {
-      return false;
-    }
+  const filteredUsers = (response?.users || [])
+    .filter((user) => {
+      if (searchTerm && !normalize(user.name).includes(normalize(searchTerm))) {
+        return false;
+      }
 
-    // Filtro de tipo de membresía
-    if (membershipFilter !== 'all' && user.membership?.type !== membershipFilter) {
-      return false;
-    }
+      if (membershipFilter !== 'all' && user.membership?.type !== membershipFilter) {
+        return false;
+      }
 
-    // Filtro de estado
-    const statusMap = {
-      NUEVO: statusFilters.nuevo,
-      PENDIENTE: statusFilters.pendiente,
-      IMPAGADO: statusFilters.impagado,
-      PAGADO: statusFilters.pagado,
-      ANO_COMPLETO: statusFilters.anoCompleto
-    };
+      const statusMap = {
+        NUEVO: statusFilters.nuevo,
+        PENDIENTE: statusFilters.pendiente,
+        IMPAGADO: statusFilters.impagado,
+        PAGADO: statusFilters.pagado,
+        ANO_COMPLETO: statusFilters.anoCompleto,
+      };
 
-    return statusMap[user.status] !== false;
-  }).sort((a, b) => {
-    let cmp = 0;
-    if (sortCol === 'firstName') {
-      cmp = normalize(a.firstName || a.name.trim().split(/\s+/)[0] || '').localeCompare(normalize(b.firstName || b.name.trim().split(/\s+/)[0] || ''));
-    } else if (sortCol === 'lastName') {
-      const lastA = a.lastName || a.name.trim().split(/\s+/).slice(1).join(' ') || '';
-      const lastB = b.lastName || b.name.trim().split(/\s+/).slice(1).join(' ') || '';
-      cmp = normalize(lastA).localeCompare(normalize(lastB));
-    } else if (sortCol === 'status') {
-      cmp = (statusOrder[a.status] ?? 0) - (statusOrder[b.status] ?? 0);
-    }
-    return sortDir === 'asc' ? cmp : -cmp;
-  });
+      return statusMap[user.status] !== false;
+    })
+    .sort((a, b) => {
+      let cmp = 0;
+
+      if (sortCol === 'firstName') {
+        cmp = normalize(a.firstName || a.name.trim().split(/\s+/)[0] || '')
+          .localeCompare(normalize(b.firstName || b.name.trim().split(/\s+/)[0] || ''));
+      } else if (sortCol === 'lastName') {
+        const lastA = a.lastName || a.name.trim().split(/\s+/).slice(1).join(' ') || '';
+        const lastB = b.lastName || b.name.trim().split(/\s+/).slice(1).join(' ') || '';
+        cmp = normalize(lastA).localeCompare(normalize(lastB));
+      } else if (sortCol === 'status') {
+        cmp = (statusOrder[a.status] ?? 0) - (statusOrder[b.status] ?? 0);
+      }
+
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+
+  const canConsolidateCurrentMonth = selectedYear === currentYear && !response?.isCurrentMonthConsolidated;
 
   return (
     <Layout>
@@ -204,21 +251,29 @@ export default function MembershipManagement() {
         <Card>
           <CardHeader>
             <div className="flex flex-col gap-4">
-              {/* Selector de año */}
-              <div className="flex items-center gap-4">
-                <label className="text-sm font-medium text-[var(--color-textSecondary)]">Año:</label>
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)]"
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-4">
+                  <label className="text-sm font-medium text-[var(--color-textSecondary)]">Año:</label>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
+                    className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)]"
+                  >
+                    {[selectedYear - 1, selectedYear, selectedYear + 1].map((year) => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <Button
+                  variant={canConsolidateCurrentMonth ? 'outline' : 'secondary'}
+                  onClick={handleConsolidateCurrentMonth}
+                  disabled={!canConsolidateCurrentMonth || consolidateCurrentMonthMutation.isPending}
                 >
-                  {[selectedYear - 1, selectedYear, selectedYear + 1].map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
+                  {response?.isCurrentMonthConsolidated ? 'Consolidado' : 'Consolidar'}
+                </Button>
               </div>
 
-              {/* Búsqueda y filtros */}
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex-1 min-w-[200px]">
                   <input
@@ -243,7 +298,6 @@ export default function MembershipManagement() {
                   <option value="BAJA">BAJA</option>
                 </select>
 
-                {/* Checkboxes de estado */}
                 <div className="flex flex-wrap gap-4 items-center">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -344,10 +398,14 @@ export default function MembershipManagement() {
                     {filteredUsers.map((user) => (
                       <tr key={user.id} className="hover:bg-[var(--color-tableRowHover)]">
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm font-medium text-[var(--color-text)]">{user.firstName || user.name.split(' ')[0]}</div>
+                          <div className="text-sm font-medium text-[var(--color-text)]">
+                            {user.firstName || user.name.split(' ')[0]}
+                          </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm font-medium text-[var(--color-text)]">{user.lastName || user.name.split(' ').slice(1).join(' ')}</div>
+                          <div className="text-sm font-medium text-[var(--color-text)]">
+                            {user.lastName || user.name.split(' ').slice(1).join(' ')}
+                          </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className="flex items-center gap-1">
@@ -410,4 +468,3 @@ export default function MembershipManagement() {
     </Layout>
   );
 }
-

@@ -497,6 +497,17 @@ model MembershipChangeLog {
   @@index([changedBy])
 }
 
+model PaymentMonthConsolidation {
+  id             String   @id @default(cuid())
+  year           Int
+  month          Int
+  consolidatedAt DateTime @default(now())
+  consolidatedBy String
+
+  @@unique([year, month])
+  @@index([consolidatedAt])
+}
+
 // Registro de pagos
 model Payment {
   id              String   @id @default(cuid())
