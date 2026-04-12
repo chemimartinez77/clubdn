@@ -594,7 +594,9 @@ export default function EventDetail() {
   };
   const membershipLabels: Record<string, string> = {
     SOCIO: 'Socio',
-    COLABORADOR: 'Colaborador'
+    COLABORADOR: 'Colaborador',
+    FAMILIAR: 'Familiar',
+    EN_PRUEBAS: 'En pruebas'
   };
 
   const isPartida = event.type === 'PARTIDA';
