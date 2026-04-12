@@ -56,6 +56,67 @@ Se implementa el sistema de lectura de conversaciones del mercadillo mediante la
 
 ---
 
+#### Importes financieros siempre positivos (dirección por tipo de categoría)
+
+Se refactoriza la lógica de importes en movimientos financieros: en lugar de depender del signo del campo `amount` para distinguir ingresos de gastos, los importes se guardan siempre como positivos y el tipo de categoría (`GASTO` / `INGRESO`) determina la dirección del balance. Esto elimina la necesidad de que el usuario recuerde introducir negativos.
+
+**Backend:**
+
+- `createMovement` y `updateMovement` — aplican `Math.abs()` al amount recibido para garantizar que siempre se almacena positivo.
+- `getStatistics` — ya no filtra por `amount > 0` / `amount < 0`; ahora obtiene todos los movimientos con su categoría incluida y agrupa por `category.type`.
+- `getAnnualBalance` — el cálculo de totales mensuales globales aplica `+1 / -1` según `category.type` (INGRESO / GASTO) para reflejar el balance real (ingresos − gastos).
+- Migración `20260412020000_normalize_financial_amounts`: actualiza los amounts negativos existentes en BD con `ABS(amount)`.
+
+**Frontend:**
+
+- Lista de movimientos: los importes se muestran sin signo, solo en verde (INGRESO) o rojo (GASTO) según `category.type`.
+- Estadísticas y tabla de balance anual: el total muestra `+` cuando es positivo y `-` cuando es negativo; los totales mensuales de la fila TOTAL se colorean en verde/rojo.
+- Formulario: `min="0"`, placeholder simplificado, sin la nota sobre valores negativos.
+
+**Archivos modificados:**
+- `server/src/controllers/financialController.ts` — `createMovement`, `updateMovement`, `getStatistics`, `getAnnualBalance`
+- `server/prisma/migrations/20260412020000_normalize_financial_amounts/migration.sql` — backfill de datos existentes
+- `client/src/pages/Financiero.tsx` — visualización y formulario de movimientos
+
+---
+
+#### Corrección de pagos al pasar de EN_PRUEBAS a COLABORADOR y aviso visual en la UI
+
+Se corrige un bug por el que los miembros promovidos de `EN_PRUEBAS` a `COLABORADOR` (manual o automáticamente) quedaban con deuda retroactiva en el mes del cambio. La regla fijada es: el primer mes exigible es siempre el mes siguiente al cambio. Se añade además un indicador visual `⚠️` en las vistas de administración durante el mes en que ocurre la promoción.
+
+**Schema y migración:**
+
+- Nuevo campo `billingStartDate DateTime?` en el modelo `Membership`: primer día del mes desde el que se exige pago.
+- Migración `20260412030000_add_billing_start_date`: añade el campo y ejecuta backfill en dos pasos: primero desde `MembershipChangeLog` (cambios ya registrados), luego desde `trialStartDate + 60 días` (casos del cron sin log previo).
+
+**Backend:**
+
+- `paymentStatus.ts` — `getPaymentStatus` acepta `billingStartDate` opcional; cuando existe, lo usa como referencia del ciclo en lugar de `startDate`. Compatibilidad total con datos anteriores (si es null, usa `startDate` como fallback).
+- `memberController.ts` — al cambiar `EN_PRUEBAS → COLABORADOR` manualmente, establece `billingStartDate` al día 1 del mes siguiente. Todas las llamadas a `getPaymentStatus` ya pasan `billingStartDate`. Los endpoints `getMembers` y `getMemberProfile` incluyen ahora `showTrialPromotionWarning` (true si el cambio ocurrió en el mes natural actual).
+- `memberPromotionJob.ts` — al promover automáticamente, establece `billingStartDate` y crea un registro en `MembershipChangeLog` con `changedBy: 'SYSTEM'` (antes el cron no dejaba traza).
+- `membershipController.ts` (`getUsersWithMembership`) — pasa `billingStartDate` a `getPaymentStatus` e incluye `showTrialPromotionWarning`.
+
+**Frontend:**
+
+- `Members.tsx` — muestra `⚠️` a la izquierda del badge de tipo en la tabla y en el panel lateral del perfil cuando `showTrialPromotionWarning` es true.
+- `MembershipManagement.tsx` — muestra `⚠️` a la izquierda del badge de tipo en la tabla de pagos.
+- `client/src/types/members.ts` y `client/src/types/membership.ts` — añadido `showTrialPromotionWarning: boolean`.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — campo `billingStartDate` en `Membership`
+- `server/prisma/migrations/20260412030000_add_billing_start_date/migration.sql`
+- `server/src/utils/paymentStatus.ts`
+- `server/src/controllers/memberController.ts`
+- `server/src/controllers/membershipController.ts`
+- `server/src/jobs/memberPromotionJob.ts`
+- `server/src/types/members.ts`
+- `client/src/types/members.ts`
+- `client/src/types/membership.ts`
+- `client/src/pages/admin/Members.tsx`
+- `client/src/pages/admin/MembershipManagement.tsx`
+
+---
+
 ## 2026-04-11 (sesión 1)
 
 ### Correcciones

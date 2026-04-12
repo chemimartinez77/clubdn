@@ -337,7 +337,12 @@ export default function MembershipManagement() {
                           <div className="text-sm font-medium text-[var(--color-text)]">{user.lastName || user.name.split(' ').slice(1).join(' ')}</div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          {user.membership ? getMembershipBadge(user.membership.type) : '-'}
+                          <span className="flex items-center gap-1">
+                            {user.showTrialPromotionWarning && (
+                              <span title="Acaba de pasar de EN_PRUEBAS a COLABORADOR este mes">⚠️</span>
+                            )}
+                            {user.membership ? getMembershipBadge(user.membership.type) : '-'}
+                          </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           {getStatusBadge(user.status)}

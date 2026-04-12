@@ -37,6 +37,20 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
     // Excluir EN_PRUEBAS y BAJA — no pagan cuota mensual
     const activeUsers = users.filter(u => u.membership && !['EN_PRUEBAS', 'BAJA'].includes(u.membership.type));
 
+    // userIds que pasaron de EN_PRUEBAS a COLABORADOR este mes (para warning)
+    const nowForWarning = new Date();
+    const monthStart = new Date(nowForWarning.getFullYear(), nowForWarning.getMonth(), 1);
+    const monthEnd = new Date(nowForWarning.getFullYear(), nowForWarning.getMonth() + 1, 1);
+    const recentTrialPromotions = await prisma.membershipChangeLog.findMany({
+      where: {
+        previousType: 'EN_PRUEBAS',
+        newType: 'COLABORADOR',
+        changedAt: { gte: monthStart, lt: monthEnd }
+      },
+      select: { userId: true }
+    });
+    const recentTrialPromotionUserIds = new Set(recentTrialPromotions.map(r => r.userId));
+
     // Calcular información adicional y mapear pagos por mes
     const usersWithPaymentStatus = activeUsers.map(user => {
       const now = new Date();
@@ -68,6 +82,7 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
       const paymentStatus = calculatePaymentStatus({
         payments: user.payments,
         startDate: user.membership?.startDate || null,
+        billingStartDate: user.membership?.billingStartDate || null,
         now
       });
 
@@ -86,7 +101,8 @@ export const getUsersWithMembership = async (req: Request, res: Response): Promi
         canBecomeSocio,
         paymentsByMonth,
         paidMonths,
-        status: paymentStatus
+        status: paymentStatus,
+        showTrialPromotionWarning: recentTrialPromotionUserIds.has(user.id)
       };
     });
 

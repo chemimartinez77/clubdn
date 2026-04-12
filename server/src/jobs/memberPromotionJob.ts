@@ -48,11 +48,28 @@ export async function promoteTrialMembers(): Promise<void> {
     const { user } = membership;
 
     try {
-      // Promover a COLABORADOR
+      // Calcular primer día del mes siguiente como inicio de cobro
+      const now = new Date();
+      const billingStartDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+      // Promover a COLABORADOR y fijar billingStartDate
       await prisma.membership.update({
         where: { id: membership.id },
         data: {
           type: 'COLABORADOR',
+          billingStartDate,
+          trialStartDate: null,
+        },
+      });
+
+      // Registrar en MembershipChangeLog (el cron no lo hacía antes)
+      await prisma.membershipChangeLog.create({
+        data: {
+          userId: membership.userId,
+          previousType: 'EN_PRUEBAS',
+          newType: 'COLABORADOR',
+          reason: 'Promoción automática tras período de prueba',
+          changedBy: 'SYSTEM',
         },
       });
 

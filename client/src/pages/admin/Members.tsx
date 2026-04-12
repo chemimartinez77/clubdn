@@ -664,7 +664,12 @@ export default function Members() {
                             </button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {getMembershipBadge(member.membershipType)}
+                            <span className="flex items-center gap-1">
+                              {member.showTrialPromotionWarning && (
+                                <span title="Acaba de pasar de EN_PRUEBAS a COLABORADOR este mes">⚠️</span>
+                              )}
+                              {getMembershipBadge(member.membershipType)}
+                            </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--color-textSecondary)]">
                             {formatDate(member.startDate)}
@@ -819,6 +824,9 @@ export default function Members() {
                     <p className="text-lg font-semibold text-[var(--color-text)]">{memberProfile.member.name}</p>
                     <p className="text-sm text-[var(--color-textSecondary)]">{memberProfile.member.email}</p>
                     <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {memberProfile.member.showTrialPromotionWarning && (
+                        <span title="Acaba de pasar de EN_PRUEBAS a COLABORADOR este mes">⚠️</span>
+                      )}
                       {getMembershipBadge(memberProfile.member.membershipType)}
                       {getPaymentStatusBadge(memberProfile.member.paymentStatus)}
                     </div>

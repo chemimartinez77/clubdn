@@ -96,8 +96,13 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
       orderBy = { name: 'asc' }; // fallback stable sort; real sort done in-memory
     }
 
+    // Ventana del mes actual para el warning de promoción desde pruebas
+    const nowForWarning = new Date();
+    const monthStart = new Date(nowForWarning.getFullYear(), nowForWarning.getMonth(), 1);
+    const monthEnd = new Date(nowForWarning.getFullYear(), nowForWarning.getMonth() + 1, 1);
+
     // Get users with pagination
-    const [users, totalCount] = await Promise.all([
+    const [users, totalCount, recentTrialPromotions] = await Promise.all([
       prisma.user.findMany({
         where,
         include: {
@@ -116,8 +121,19 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
         take: inMemorySort ? undefined : pageSizeNum,
         orderBy
       }),
-      prisma.user.count({ where })
+      prisma.user.count({ where }),
+      // userIds que pasaron de EN_PRUEBAS a COLABORADOR este mes
+      prisma.membershipChangeLog.findMany({
+        where: {
+          previousType: 'EN_PRUEBAS',
+          newType: 'COLABORADOR',
+          changedAt: { gte: monthStart, lt: monthEnd }
+        },
+        select: { userId: true }
+      })
     ]);
+
+    const recentTrialPromotionUserIds = new Set(recentTrialPromotions.map(r => r.userId));
 
     const feeMap = await getMembershipFeeMap();
 
@@ -125,7 +141,8 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
     const membersData: MemberData[] = users.map(user => {
       const computedPaymentStatus = getPaymentStatus({
         payments: user.payments,
-        startDate: user.membership?.startDate || null
+        startDate: user.membership?.startDate || null,
+        billingStartDate: user.membership?.billingStartDate || null
       });
 
       // Determine membership type
@@ -155,7 +172,8 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
         paymentStatus: computedPaymentStatus,
         monthlyFee: user.membership ? (feeMap[user.membership.type] ?? 0) : null,
         phone: user.profile?.phone || null,
-        lastPaymentDate: user.membership?.lastPaymentDate?.toISOString() || null
+        lastPaymentDate: user.membership?.lastPaymentDate?.toISOString() || null,
+        showTrialPromotionWarning: recentTrialPromotionUserIds.has(user.id)
       };
     });
 
@@ -253,12 +271,29 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
 
     const paymentStatus = getPaymentStatus({
       payments: user.payments,
-      startDate: user.membership?.startDate || null
+      startDate: user.membership?.startDate || null,
+      billingStartDate: user.membership?.billingStartDate || null
     });
 
     const membershipType = user.membership?.fechaBaja
       ? 'BAJA'
       : user.membership?.type || null;
+
+    // Warning de promoción reciente desde EN_PRUEBAS: solo durante el mes del cambio
+    const nowForWarning = new Date();
+    const monthStartForWarning = new Date(nowForWarning.getFullYear(), nowForWarning.getMonth(), 1);
+    const monthEndForWarning = new Date(nowForWarning.getFullYear(), nowForWarning.getMonth() + 1, 1);
+    const recentTrialPromoLog = user.membership?.type === 'COLABORADOR'
+      ? await prisma.membershipChangeLog.findFirst({
+          where: {
+            userId: memberId,
+            previousType: 'EN_PRUEBAS',
+            newType: 'COLABORADOR',
+            changedAt: { gte: monthStartForWarning, lt: monthEndForWarning }
+          }
+        })
+      : null;
+    const showTrialPromotionWarning = !!recentTrialPromoLog;
 
     // --- Score de fidelidad ---
     // Tasa de respuesta: eventos organizados pasados donde se preguntó si se disputó
@@ -315,6 +350,7 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
           startDate: user.membership?.startDate?.toISOString() || null,
           fechaBaja: user.membership?.fechaBaja?.toISOString() || null,
           paymentStatus,
+          showTrialPromotionWarning,
           notes: user.membership?.notes || null,
           profile: {
             id: profile.id,
@@ -525,6 +561,12 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
         );
       } else if (existingMembership.type !== newMembershipType) {
         // Actualizar tipo de membresía existente
+        const isTrialToColaborador = existingMembership.type === 'EN_PRUEBAS' && newMembershipType === 'COLABORADOR';
+        const now = new Date();
+        const nextMonthFirst = isTrialToColaborador
+          ? new Date(now.getFullYear(), now.getMonth() + 1, 1)
+          : undefined;
+
         transactionOperations.push(
           prisma.membership.update({
             where: { userId: existingUser.id },
@@ -539,6 +581,7 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
                 : existingMembership.type === 'EN_PRUEBAS'
                   ? null
                   : existingMembership.trialStartDate,
+              ...(nextMonthFirst && { billingStartDate: nextMonthFirst }),
               notes: notes !== undefined ? (notes?.trim() || null) : existingMembership.notes
             }
           })
@@ -590,7 +633,8 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
 
     const paymentStatus = getPaymentStatus({
       payments: updatedUser.payments,
-      startDate: updatedUser.membership?.startDate || null
+      startDate: updatedUser.membership?.startDate || null,
+      billingStartDate: updatedUser.membership?.billingStartDate || null
     });
 
     const membershipType = updatedUser.membership?.fechaBaja
@@ -826,7 +870,8 @@ export const exportMembersCSV = async (req: Request, res: Response): Promise<voi
         : '';
       const computedPaymentStatus = getPaymentStatus({
         payments: user.payments,
-        startDate: user.membership?.startDate || null
+        startDate: user.membership?.startDate || null,
+        billingStartDate: user.membership?.billingStartDate || null
       });
       const paymentStatusText = computedPaymentStatus === 'PAGADO'
         ? 'Pagado'

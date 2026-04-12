@@ -41,6 +41,7 @@ export interface UserWithMembership {
   paymentsByMonth: { [key: number]: boolean };
   paidMonths: number;
   status: PaymentStatus;
+  showTrialPromotionWarning: boolean;
 }
 
 export interface PaymentStatusUser {

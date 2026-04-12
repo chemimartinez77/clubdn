@@ -263,7 +263,7 @@ export const createMovement = async (req: Request, res: Response) => {
     const movement = await prisma.financialMovement.create({
       data: {
         categoryId,
-        amount: parseFloat(amount),
+        amount: Math.abs(parseFloat(amount)),
         description: description || null,
         date: movementDate,
         year,
@@ -328,7 +328,7 @@ export const updateMovement = async (req: Request, res: Response) => {
       where: { id },
       data: {
         ...(categoryId && { categoryId }),
-        ...(amount && { amount: parseFloat(amount) }),
+        ...(amount && { amount: Math.abs(parseFloat(amount)) }),
         ...(description !== undefined && { description }),
         ...(date && { date: movementDate, year, month })
       },
@@ -454,11 +454,12 @@ export const getAnnualBalance = async (req: Request, res: Response) => {
       };
     });
 
-    // Totales por mes (suma de todas las categorías)
+    // Totales por mes (ingresos - gastos, para reflejar el balance real)
     const monthlyTotals = Array(12).fill(0);
     balanceByCategory.forEach(catBalance => {
+      const sign = catBalance.category.type === 'INGRESO' ? 1 : -1;
       catBalance.monthlyTotals.forEach((amount, index) => {
-        monthlyTotals[index] += amount;
+        monthlyTotals[index] += sign * amount;
       });
     });
 
@@ -501,30 +502,18 @@ export const getStatistics = async (req: Request, res: Response) => {
       where: { year: selectedYear }
     });
 
-    // Suma de ingresos (movimientos positivos)
-    const incomesResult = await prisma.financialMovement.aggregate({
-      where: {
-        year: selectedYear,
-        amount: { gt: 0 }
-      },
-      _sum: {
-        amount: true
-      }
+    // Obtener todos los movimientos del año con su tipo de categoría
+    const allMovements = await prisma.financialMovement.findMany({
+      where: { year: selectedYear },
+      include: { category: { select: { type: true } } }
     });
 
-    // Suma de gastos (movimientos negativos)
-    const expensesResult = await prisma.financialMovement.aggregate({
-      where: {
-        year: selectedYear,
-        amount: { lt: 0 }
-      },
-      _sum: {
-        amount: true
-      }
-    });
-
-    const totalIncomes = incomesResult._sum.amount || 0;
-    const totalExpenses = Math.abs(expensesResult._sum.amount || 0);
+    const totalIncomes = allMovements
+      .filter(m => m.category.type === 'INGRESO')
+      .reduce((sum, m) => sum + m.amount, 0);
+    const totalExpenses = allMovements
+      .filter(m => m.category.type === 'GASTO')
+      .reduce((sum, m) => sum + m.amount, 0);
     const balance = totalIncomes - totalExpenses;
 
     return res.json({

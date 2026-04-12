@@ -460,6 +460,7 @@ model Membership {
   becameSocioAt     DateTime?      // Fecha en que pasó a SOCIO (si aplica)
   fechaBaja         DateTime?      // Fecha de baja del miembro
   trialStartDate    DateTime?      // Fecha de inicio del período de prueba actual (se rellena al marcar EN_PRUEBAS manualmente)
+  billingStartDate  DateTime?      // Primer día del mes desde el que se exige pago (mes siguiente al paso a COLABORADOR)
 
   // Estado de pagos
   isActive          Boolean        @default(true)   // Si está al día con los pagos

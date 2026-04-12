@@ -37,15 +37,20 @@ export const getCycleMonths = (startDate: Date, now: Date) => {
 export const getPaymentStatus = ({
   payments,
   startDate,
+  billingStartDate,
   now = new Date()
 }: {
   payments: PaymentMonth[];
   startDate?: Date | null;
+  billingStartDate?: Date | null;
   now?: Date;
 }): PaymentStatusKey => {
   if (payments.length === 0) {
     return 'NUEVO';
   }
+
+  // La fecha de referencia para exigibilidad: billingStartDate si existe, si no startDate
+  const billingRef = billingStartDate ?? startDate ?? null;
 
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
@@ -56,8 +61,8 @@ export const getPaymentStatus = ({
   const hasCurrent = payments.some(p => p.month === currentMonth && p.year === currentYear);
   const hasPrev = payments.some(p => p.month === prevMonth && p.year === prevYear);
 
-  if (startDate) {
-    const cycleMonths = getCycleMonths(startDate, now);
+  if (billingRef) {
+    const cycleMonths = getCycleMonths(billingRef, now);
     const paidSet = new Set(payments.map(p => getMonthKey(p.month, p.year)));
     const hasFullCycle = cycleMonths.every(month => paidSet.has(getMonthKey(month.month, month.year)));
     if (hasFullCycle) {
@@ -66,10 +71,10 @@ export const getPaymentStatus = ({
   }
 
   let shouldCheckPrev = true;
-  if (startDate) {
-    const startKey = startDate.getFullYear() * 12 + (startDate.getMonth() + 1);
+  if (billingRef) {
+    const billingKey = billingRef.getFullYear() * 12 + (billingRef.getMonth() + 1);
     const prevKey = prevYear * 12 + prevMonth;
-    shouldCheckPrev = prevKey >= startKey;
+    shouldCheckPrev = prevKey >= billingKey;
   }
 
   if (shouldCheckPrev && !hasPrev) {

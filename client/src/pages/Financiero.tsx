@@ -357,7 +357,7 @@ export default function Financiero() {
                 <div>
                   <p className="text-sm text-[var(--color-textSecondary)]">Balance</p>
                   <p className={`text-2xl font-bold ${statistics.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {statistics.balance.toFixed(2)} €
+                    {statistics.balance >= 0 ? '+' : ''}{statistics.balance.toFixed(2)} €
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -458,12 +458,12 @@ export default function Financiero() {
                     <tr className="border-t-2 border-[var(--color-inputBorder)] bg-[var(--color-tableRowHover)]">
                       <td className="py-3 px-4 font-bold text-[var(--color-text)]">TOTAL</td>
                       {balanceData?.monthlyTotals.map((amount, idx) => (
-                        <td key={idx} className="text-center py-3 px-2 font-bold text-[var(--color-text)] text-sm">
-                          {amount !== 0 ? `${amount.toFixed(0)}€` : '-'}
+                        <td key={idx} className={`text-center py-3 px-2 font-bold text-sm ${amount > 0 ? 'text-green-600' : amount < 0 ? 'text-red-600' : 'text-[var(--color-text)]'}`}>
+                          {amount !== 0 ? `${amount > 0 ? '+' : ''}${amount.toFixed(0)}€` : '-'}
                         </td>
                       ))}
-                      <td className="text-right py-3 px-4 font-bold text-[var(--color-text)]">
-                        {balanceData?.totalYear.toFixed(2) || '0.00'} €
+                      <td className={`text-right py-3 px-4 font-bold ${(balanceData?.totalYear ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {(balanceData?.totalYear ?? 0) >= 0 ? '+' : ''}{balanceData?.totalYear.toFixed(2) || '0.00'} €
                       </td>
                     </tr>
                   </tfoot>
@@ -515,8 +515,8 @@ export default function Financiero() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                          <p className={`text-lg font-bold ${movement.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {movement.amount >= 0 ? '+' : ''}{movement.amount.toFixed(2)} €
+                          <p className={`text-lg font-bold ${movement.category.type === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
+                            {movement.amount.toFixed(2)} €
                           </p>
                           <button
                             onClick={() => handleEditMovement(movement)}
@@ -681,15 +681,13 @@ export default function Financiero() {
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     required
                     value={movementForm.amount}
                     onChange={(e) => setMovementForm({ ...movementForm, amount: e.target.value })}
-                    placeholder="Ej: 100.00 (positivo) o -50.00 (negativo)"
+                    placeholder="Ej: 90.00"
                     className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   />
-                  <p className="text-xs text-[var(--color-textSecondary)] mt-1">
-                    Usa valores positivos para ingresos y negativos para gastos
-                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[var(--color-text)] mb-2">

@@ -23,6 +23,7 @@ export interface MemberData {
   paymentStatus: 'NUEVO' | 'PENDIENTE' | 'IMPAGADO' | 'PAGADO' | 'ANO_COMPLETO';
   phone: string | null;
   lastPaymentDate: string | null;
+  showTrialPromotionWarning: boolean;
 }
 
 export interface MembersResponse {
