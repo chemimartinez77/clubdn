@@ -272,6 +272,19 @@ export default function Events() {
       return timeFormat.format(new Date(eventDate.getTime() + totalMinutes * 60 * 1000));
     };
 
+    const formatCapacityText = (registeredCount: number | undefined, maxAttendees: number | undefined) => {
+      if (!maxAttendees || maxAttendees <= 0) return null;
+
+      const currentRegistered = registeredCount ?? 0;
+      const spotsLeft = maxAttendees - currentRegistered;
+
+      if (spotsLeft <= 0) {
+        return `${currentRegistered}/${maxAttendees} (COMPLETO)`;
+      }
+
+      return `${currentRegistered}/${maxAttendees} (${spotsLeft} ${spotsLeft === 1 ? 'plaza libre' : 'plazas libres'})`;
+    };
+
     days.forEach(day => {
       lines.push(`*${day.label}*`);
       day.events
@@ -284,7 +297,9 @@ export default function Events() {
           const timeRange = estimatedEndTime ? `${time}-${estimatedEndTime}` : time;
           const durationText = estimatedDuration ? ` (${estimatedDuration})` : '';
           const socioMark = event.hasSocioRegistered ? ' ✓' : '';
-          lines.push(`${emojiClock} ${timeRange}${durationText} - ${event.title}${socioMark}`);
+          const capacityText = formatCapacityText(event.registeredCount, event.maxAttendees);
+          const capacitySuffix = capacityText ? ` - ${capacityText}` : '';
+          lines.push(`${emojiClock} ${timeRange}${durationText} - ${event.title}${socioMark}${capacitySuffix}`);
         });
       lines.push('');
     });
