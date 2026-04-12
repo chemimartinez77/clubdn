@@ -177,7 +177,7 @@ export default function EventCard({ event }: EventCardProps) {
                 Lleno
               </span>
             )}
-            {event.waitlistCount && event.waitlistCount > 0 && (
+            {(event.waitlistCount ?? 0) > 0 && (
               <span className="ml-2 text-xs text-[var(--color-textSecondary)]">
                 +{event.waitlistCount} en espera
               </span>

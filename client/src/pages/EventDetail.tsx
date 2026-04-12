@@ -766,8 +766,8 @@ export default function EventDetail() {
     const registeredCount = event.registeredCount || 0;
     const spotsLeft = event.maxAttendees - registeredCount;
     const spotsText = spotsLeft > 0
-      ? `Plazas disponibles: ${spotsLeft} de ${event.maxAttendees}`
-      : `COMPLETO (${registeredCount}/${event.maxAttendees})`;
+      ? `Asistentes: ${registeredCount} de ${event.maxAttendees} (${spotsLeft} ${spotsLeft === 1 ? 'plaza libre' : 'plazas libres'})`
+      : `Asistentes: ${registeredCount} de ${event.maxAttendees} (COMPLETO)`;
     const scheduleText = formatEventSchedule(
       event.date,
       event.startHour,

@@ -40,6 +40,7 @@ export default function MembershipManagement() {
   const [membershipFilter, setMembershipFilter] = useState<'all' | MembershipType>('all');
   const [sortCol, setSortCol] = useState<'firstName' | 'lastName' | 'status'>('lastName');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [isConsolidateModalOpen, setIsConsolidateModalOpen] = useState(false);
   const [statusFilters, setStatusFilters] = useState({
     nuevo: true,
     pendiente: true,
@@ -120,13 +121,11 @@ export default function MembershipManagement() {
   };
 
   const handleConsolidateCurrentMonth = () => {
-    const confirmed = confirm(
-      'Esta acción consolidará las promociones de EN_PRUEBAS a COLABORADOR ocurridas este mes antes de este momento.\n\n' +
-      'Se ajustará la fecha de inicio de obligación de pago a la fecha y hora exactas del cambio.\n\n' +
-      'Esta operación no se puede deshacer desde la interfaz. ¿Deseas continuar?'
-    );
+    setIsConsolidateModalOpen(true);
+  };
 
-    if (!confirmed) return;
+  const handleConfirmConsolidateCurrentMonth = () => {
+    setIsConsolidateModalOpen(false);
     consolidateCurrentMonthMutation.mutate();
   };
 
@@ -465,6 +464,66 @@ export default function MembershipManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {isConsolidateModalOpen && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setIsConsolidateModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Confirmar consolidación del mes actual"
+        >
+          <div
+            className="w-full max-w-xl rounded-2xl border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-4 border-b border-[var(--color-cardBorder)] px-6 py-4">
+              <div>
+                <h2 className="text-xl font-semibold text-[var(--color-text)]">Confirmar consolidación</h2>
+                <p className="text-sm text-[var(--color-textSecondary)]">
+                  Esta acción regulariza las promociones del mes actual ocurridas antes de este momento.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsConsolidateModalOpen(false)}
+                className="text-2xl leading-none text-[var(--color-textSecondary)] transition-colors hover:text-[var(--color-text)]"
+                aria-label="Cerrar modal de consolidación"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4 px-6 py-5 text-sm leading-relaxed text-[var(--color-text)]">
+              <p>
+                Esta acción consolidará las promociones de <strong>EN_PRUEBAS</strong> a <strong>COLABORADOR</strong> ocurridas este mes antes de este momento.
+              </p>
+              <p>
+                Se ajustará la fecha de inicio de obligación de pago a la fecha y hora exactas del cambio.
+              </p>
+              <p className="font-medium text-amber-300">
+                Esta operación no se puede deshacer desde la interfaz.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-[var(--color-cardBorder)] px-6 py-4">
+              <Button
+                variant="ghost"
+                onClick={() => setIsConsolidateModalOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleConfirmConsolidateCurrentMonth}
+                isLoading={consolidateCurrentMonthMutation.isPending}
+              >
+                Aceptar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
