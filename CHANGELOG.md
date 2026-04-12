@@ -172,6 +172,32 @@ Se corrige un bug por el que los miembros promovidos de `EN_PRUEBAS` a `COLABORA
 
 ---
 
+#### Visibilidad "Solo socios" en documentos
+
+Se añade un nuevo nivel de visibilidad `SOCIOS` para documentos del club. Hasta ahora los únicos niveles eran `PUBLIC` (todos los miembros), `ADMIN` y `SUPER_ADMIN`. Con este cambio, los administradores pueden marcar documentos como visibles solo para miembros con membresía de tipo `SOCIO` (además de los propios admins).
+
+**Backend:**
+
+- Nuevo valor `SOCIOS` en el enum `DocumentVisibility` del schema de Prisma.
+- Migración `20260412040000_add_document_visibility_socios`: `ALTER TYPE "DocumentVisibility" ADD VALUE 'SOCIOS'`.
+- `getDocuments`: si el usuario no es admin, consulta su membresía y añade `SOCIOS` al filtro de visibilidad solo si es `SOCIO`. Los admins ven siempre `SOCIOS`.
+- `uploadDocument` y `updateDocument`: `SOCIOS` incluido en el array de valores válidos.
+
+**Frontend:**
+
+- Tipo `DocumentVisibility` actualizado con el nuevo valor.
+- Label "Solo socios" y color morado (`bg-purple-100 text-purple-800`) para el badge.
+- Opción "Solo socios" añadida en el filtro de visibilidad (admins), el modal de subida y el modal de edición.
+- Texto descriptivo en los modales cuando se selecciona esta visibilidad.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma`
+- `server/prisma/migrations/20260412040000_add_document_visibility_socios/migration.sql`
+- `server/src/controllers/documentController.ts`
+- `client/src/pages/Documentos.tsx`
+
+---
+
 ## 2026-04-11 (sesión 1)
 
 ### Correcciones

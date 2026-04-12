@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { api } from '../api/axios';
 
-type DocumentVisibility = 'PUBLIC' | 'ADMIN' | 'SUPER_ADMIN';
+type DocumentVisibility = 'PUBLIC' | 'SOCIOS' | 'ADMIN' | 'SUPER_ADMIN';
 
 interface Document {
   id: string;
@@ -39,12 +39,14 @@ interface DocumentStats {
 
 const visibilityLabels: Record<DocumentVisibility, string> = {
   PUBLIC: 'Todos los miembros',
+  SOCIOS: 'Solo socios',
   ADMIN: 'Solo administradores',
   SUPER_ADMIN: 'Solo super admins'
 };
 
 const visibilityColors: Record<DocumentVisibility, string> = {
   PUBLIC: 'bg-green-100 text-green-800',
+  SOCIOS: 'bg-purple-100 text-purple-800',
   ADMIN: 'bg-yellow-100 text-yellow-800',
   SUPER_ADMIN: 'bg-red-100 text-red-800'
 };
@@ -412,6 +414,7 @@ export default function Documentos() {
                 >
                   <option value="all">Todas las visibilidades</option>
                   <option value="PUBLIC">Todos los miembros</option>
+                  <option value="SOCIOS">Solo socios</option>
                   <option value="ADMIN">Solo administradores</option>
                   <option value="SUPER_ADMIN">Solo super admins</option>
                 </select>
@@ -585,11 +588,13 @@ export default function Documentos() {
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
                   <option value="PUBLIC">Todos los miembros</option>
+                  <option value="SOCIOS">Solo socios</option>
                   <option value="ADMIN">Solo administradores</option>
                   <option value="SUPER_ADMIN">Solo super admins</option>
                 </select>
                 <p className="text-sm text-[var(--color-textSecondary)] mt-1">
                   {editVisibility === 'PUBLIC' && 'Visible para todos los miembros del club'}
+                  {editVisibility === 'SOCIOS' && 'Solo visible para miembros con membresía de socio'}
                   {editVisibility === 'ADMIN' && 'Solo visible para administradores'}
                   {editVisibility === 'SUPER_ADMIN' && 'Solo visible para super administradores'}
                 </p>
@@ -697,11 +702,13 @@ export default function Documentos() {
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 >
                   <option value="PUBLIC">Todos los miembros</option>
+                  <option value="SOCIOS">Solo socios</option>
                   <option value="ADMIN">Solo administradores</option>
                   <option value="SUPER_ADMIN">Solo super admins</option>
                 </select>
                 <p className="text-sm text-[var(--color-textSecondary)] mt-1">
                   {uploadVisibility === 'PUBLIC' && 'Visible para todos los miembros del club'}
+                  {uploadVisibility === 'SOCIOS' && 'Solo visible para miembros con membresía de socio'}
                   {uploadVisibility === 'ADMIN' && 'Solo visible para administradores'}
                   {uploadVisibility === 'SUPER_ADMIN' && 'Solo visible para super administradores'}
                 </p>

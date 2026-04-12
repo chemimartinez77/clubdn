@@ -696,6 +696,7 @@ model LibraryItem {
 // Visibilidad de documentos
 enum DocumentVisibility {
   PUBLIC      // Todos los miembros autenticados
+  SOCIOS      // Solo miembros con tipo SOCIO (+ admins)
   ADMIN       // Solo ADMIN y SUPER_ADMIN
   SUPER_ADMIN // Solo SUPER_ADMIN
 }

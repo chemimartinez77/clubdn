@@ -41,12 +41,22 @@ export const getDocuments = async (req: Request, res: Response): Promise<void> =
     const { search, visibility } = req.query;
 
     // Construir filtro base según rol
+    const userId = req.user?.userId;
     let visibilityFilter: DocumentVisibility[] = ['PUBLIC'];
 
     if (userRole === 'ADMIN') {
-      visibilityFilter = ['PUBLIC', 'ADMIN'];
+      visibilityFilter = ['PUBLIC', 'SOCIOS', 'ADMIN'];
     } else if (userRole === 'SUPER_ADMIN') {
-      visibilityFilter = ['PUBLIC', 'ADMIN', 'SUPER_ADMIN'];
+      visibilityFilter = ['PUBLIC', 'SOCIOS', 'ADMIN', 'SUPER_ADMIN'];
+    } else if (userId) {
+      // Usuario normal: comprobar si tiene membresía SOCIO
+      const membership = await prisma.membership.findUnique({
+        where: { userId },
+        select: { type: true }
+      });
+      if (membership?.type === 'SOCIO') {
+        visibilityFilter = ['PUBLIC', 'SOCIOS'];
+      }
     }
 
     // Si el admin filtra por visibilidad específica
@@ -157,7 +167,7 @@ export const uploadDocument = async (req: Request, res: Response): Promise<void>
     }
 
     // Validar visibilidad
-    const validVisibilities: DocumentVisibility[] = ['PUBLIC', 'ADMIN', 'SUPER_ADMIN'];
+    const validVisibilities: DocumentVisibility[] = ['PUBLIC', 'SOCIOS', 'ADMIN', 'SUPER_ADMIN'];
     const docVisibility = (visibility as DocumentVisibility) || 'PUBLIC';
 
     if (!validVisibilities.includes(docVisibility)) {
@@ -274,7 +284,7 @@ export const updateDocument = async (req: Request, res: Response): Promise<void>
     }
 
     if (visibility !== undefined) {
-      const validVisibilities: DocumentVisibility[] = ['PUBLIC', 'ADMIN', 'SUPER_ADMIN'];
+      const validVisibilities: DocumentVisibility[] = ['PUBLIC', 'SOCIOS', 'ADMIN', 'SUPER_ADMIN'];
       if (!validVisibilities.includes(visibility as DocumentVisibility)) {
         res.status(400).json({ success: false, message: 'Visibilidad no válida' });
         return;
