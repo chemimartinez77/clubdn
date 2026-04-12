@@ -241,7 +241,7 @@ Si tu anuncio tiene más fotos, podrás decidir en la siguiente ventana si quier
                   />
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/70 via-black/20 to-transparent px-4 py-3 text-sm text-white">
                     <span className="font-medium">Ver grande</span>
-                    <span aria-hidden="true">🔍</span>
+                    <span aria-hidden="true" className="text-base font-semibold opacity-90">⤢</span>
                   </div>
                 </button>
                 {listing.images.length > 1 && (
