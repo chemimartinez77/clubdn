@@ -540,11 +540,32 @@ export const getMyConversations = async (req: Request, res: Response): Promise<v
         buyer: { select: { id: true, name: true } },
         messages: { orderBy: { createdAt: 'desc' }, take: 1, include: { sender: { select: { id: true, name: true } } } },
         offers: { orderBy: { createdAt: 'desc' }, take: 1, include: { proposedBy: { select: { id: true, name: true } } } },
+        reads: { where: { userId }, select: { lastReadAt: true } },
       },
       orderBy: { updatedAt: 'desc' },
     });
 
-    res.status(200).json({ success: true, data: { conversations } });
+    // Calcular unreadCount: mensajes de la contraparte posteriores a lastReadAt
+    const unreadCounts = await Promise.all(
+      conversations.map(conv => {
+        const lastReadAt = conv.reads[0]?.lastReadAt ?? new Date(0);
+        return prisma.marketplaceMessage.count({
+          where: {
+            conversationId: conv.id,
+            senderId: { not: userId },
+            createdAt: { gt: lastReadAt },
+          },
+        });
+      })
+    );
+
+    const result = conversations.map((conv, i) => ({
+      ...conv,
+      reads: undefined,
+      unreadCount: unreadCounts[i],
+    }));
+
+    res.status(200).json({ success: true, data: { conversations: result } });
   } catch (error) {
     console.error('Error obteniendo conversaciones:', error);
     res.status(500).json({ success: false, message: 'Error al obtener conversaciones' });
@@ -589,6 +610,45 @@ export const getConversation = async (req: Request, res: Response): Promise<void
   }
 };
 
+/**
+ * POST /api/marketplace/conversations/:id/read
+ * Marcar conversación como leída (upsert lastReadAt)
+ */
+export const markConversationRead = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id: conversationId } = req.params;
+    const userId = req.user!.userId;
+
+    const conversation = await prisma.marketplaceConversation.findUnique({
+      where: { id: conversationId },
+      select: { buyerId: true, listing: { select: { authorId: true } } },
+    });
+
+    if (!conversation) {
+      res.status(404).json({ success: false, message: 'Conversación no encontrada' });
+      return;
+    }
+
+    const isSeller = conversation.listing.authorId === userId;
+    const isBuyer = conversation.buyerId === userId;
+    if (!isSeller && !isBuyer) {
+      res.status(403).json({ success: false, message: 'No tienes acceso a esta conversación' });
+      return;
+    }
+
+    await prisma.marketplaceConversationRead.upsert({
+      where: { conversationId_userId: { conversationId: conversationId!, userId } },
+      create: { conversationId: conversationId!, userId, lastReadAt: new Date() },
+      update: { lastReadAt: new Date() },
+    });
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Error marcando conversación como leída:', error);
+    res.status(500).json({ success: false, message: 'Error al marcar como leída' });
+  }
+};
+
 // ─── MENSAJES ────────────────────────────────────────────────────────────────
 
 /**
@@ -628,11 +688,18 @@ export const sendMessage = async (req: Request, res: Response): Promise<void> =>
       include: { sender: { select: { id: true, name: true } } },
     });
 
-    // Actualizar updatedAt de la conversación
-    await prisma.marketplaceConversation.update({
-      where: { id: conversationId! },
-      data: { updatedAt: new Date() },
-    });
+    // Actualizar updatedAt de la conversación y marcar como leído para el emisor
+    await Promise.all([
+      prisma.marketplaceConversation.update({
+        where: { id: conversationId! },
+        data: { updatedAt: new Date() },
+      }),
+      prisma.marketplaceConversationRead.upsert({
+        where: { conversationId_userId: { conversationId: conversationId!, userId: senderId } },
+        create: { conversationId: conversationId!, userId: senderId, lastReadAt: new Date() },
+        update: { lastReadAt: new Date() },
+      }),
+    ]);
 
     // Notificar a la contraparte
     const recipientId = isSeller ? conversation.buyer.id : conversation.listing.authorId;

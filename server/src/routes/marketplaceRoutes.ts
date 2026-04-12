@@ -18,6 +18,7 @@ import {
   createOffer,
   respondOffer,
   cancelReservation,
+  markConversationRead,
   adminGetListings,
   adminHideListing,
   adminCloseListing,
@@ -48,6 +49,7 @@ router.post('/conversations/:id/messages', requireMarketplaceAccess, sendMessage
 router.post('/conversations/:id/offers', requireMarketplaceAccess, createOffer);
 router.patch('/conversations/:id/offers/:offerId', requireMarketplaceAccess, respondOffer);
 router.post('/conversations/:id/cancel', requireMarketplaceAccess, cancelReservation);
+router.post('/conversations/:id/read', requireMarketplaceAccess, markConversationRead);
 
 // ─── Rutas de admin ──────────────────────────────────────────────────────────
 

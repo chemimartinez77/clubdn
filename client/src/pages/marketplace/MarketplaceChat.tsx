@@ -43,6 +43,14 @@ export default function MarketplaceChat() {
     refetchInterval: 15000,
   });
 
+  // Marcar como leído al entrar y cuando llegan mensajes nuevos
+  useEffect(() => {
+    if (!id) return;
+    api.post(`/api/marketplace/conversations/${id}/read`).catch(() => {});
+    // Invalidar la lista de conversaciones para actualizar el globo
+    queryClient.invalidateQueries({ queryKey: ['marketplace', 'conversations'] });
+  }, [id, data?.conversation.messages.length]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [data?.conversation.messages.length]);

@@ -52,25 +52,35 @@ function ConversationRow({ conv, userId }: { conv: MarketplaceConversationSummar
   const lastMsg = conv.messages[conv.messages.length - 1];
   const lastOffer = conv.offers[conv.offers.length - 1];
   const thumb = conv.listing.images[0];
+  const hasUnread = conv.unreadCount > 0;
 
   return (
     <Link
       to={`/mercadillo/conversaciones/${conv.id}`}
-      className="flex gap-4 bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-xl p-4 hover:shadow-md transition-shadow"
+      className={`flex gap-4 bg-[var(--color-cardBackground)] border rounded-xl p-4 hover:shadow-md transition-shadow ${hasUnread ? 'border-[var(--color-primary)]' : 'border-[var(--color-cardBorder)]'}`}
     >
       {/* Thumb del anuncio */}
-      {thumb ? (
-        <img src={thumb} alt={conv.listing.title} className="w-14 h-14 object-cover rounded-lg shrink-0" />
-      ) : (
-        <div className="w-14 h-14 bg-[var(--color-tableRowHover)] rounded-lg shrink-0 flex items-center justify-center text-[var(--color-textSecondary)] text-xs">
-          Sin foto
-        </div>
-      )}
+      <div className="relative shrink-0">
+        {thumb ? (
+          <img src={thumb} alt={conv.listing.title} className="w-14 h-14 object-cover rounded-lg" />
+        ) : (
+          <div className="w-14 h-14 bg-[var(--color-tableRowHover)] rounded-lg flex items-center justify-center text-[var(--color-textSecondary)] text-xs">
+            Sin foto
+          </div>
+        )}
+        {hasUnread && (
+          <span className="absolute -top-1.5 -right-1.5 min-w-[1.25rem] h-5 px-1 bg-[var(--color-primary)] text-white text-xs font-bold rounded-full flex items-center justify-center">
+            {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+          </span>
+        )}
+      </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <p className="font-semibold text-[var(--color-text)] text-sm line-clamp-1">{conv.listing.title}</p>
+          <p className={`text-sm line-clamp-1 ${hasUnread ? 'font-bold text-[var(--color-text)]' : 'font-semibold text-[var(--color-text)]'}`}>
+            {conv.listing.title}
+          </p>
           <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[conv.listing.status]}`}>
             {STATUS_LABELS[conv.listing.status]}
           </span>
@@ -86,7 +96,7 @@ function ConversationRow({ conv, userId }: { conv: MarketplaceConversationSummar
           </p>
         )}
         {lastMsg && (
-          <p className="text-xs text-[var(--color-textSecondary)] mt-1 line-clamp-1">
+          <p className={`text-xs mt-1 line-clamp-1 ${hasUnread ? 'font-semibold text-[var(--color-text)]' : 'text-[var(--color-textSecondary)]'}`}>
             {lastMsg.sender.id === userId ? 'Tú: ' : `${lastMsg.sender.name}: `}
             {lastMsg.body}
           </p>

@@ -100,6 +100,7 @@ export interface MarketplaceConversationSummary {
   buyer: { id: string; name: string };
   messages: MarketplaceMessage[];
   offers: MarketplaceOffer[];
+  unreadCount: number;
 }
 
 export interface MarketplaceConversationDetail extends MarketplaceConversationSummary {

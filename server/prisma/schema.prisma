@@ -131,11 +131,12 @@ model User {
   gameValidationsAsScanned GameValidation[]    @relation("GameValidationScanned")
   gameCategoryVotes        GameCategoryVote[]
   genreConsensusHistory    GenreConsensusHistory[]
-  marketplaceListings      MarketplaceListing[]         @relation("MarketplaceListingAuthor")
-  marketplaceConversations MarketplaceConversation[]    @relation("MarketplaceConversationBuyer")
-  marketplaceMessages      MarketplaceMessage[]         @relation("MarketplaceMessageSender")
-  marketplaceOffers        MarketplaceOffer[]           @relation("MarketplaceOfferProposer")
-  marketplaceCancellations MarketplaceCancellation[]    @relation("MarketplaceCancellationUser")
+  marketplaceListings      MarketplaceListing[]           @relation("MarketplaceListingAuthor")
+  marketplaceConversations MarketplaceConversation[]      @relation("MarketplaceConversationBuyer")
+  marketplaceMessages      MarketplaceMessage[]           @relation("MarketplaceMessageSender")
+  marketplaceOffers        MarketplaceOffer[]             @relation("MarketplaceOfferProposer")
+  marketplaceCancellations MarketplaceCancellation[]      @relation("MarketplaceCancellationUser")
+  marketplaceReads         MarketplaceConversationRead[]  @relation("MarketplaceConversationReadUser")
 
   @@index([email])
   @@index([status])
@@ -1236,6 +1237,7 @@ model MarketplaceConversation {
   messages      MarketplaceMessage[]
   offers        MarketplaceOffer[]
   cancellations MarketplaceCancellation[]
+  reads         MarketplaceConversationRead[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1243,6 +1245,19 @@ model MarketplaceConversation {
   @@unique([listingId, buyerId])
   @@index([listingId])
   @@index([buyerId])
+}
+
+model MarketplaceConversationRead {
+  id             String                  @id @default(cuid())
+  conversationId String
+  conversation   MarketplaceConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User                    @relation("MarketplaceConversationReadUser", fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime                @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
 }
 
 model MarketplaceMessage {

@@ -6,7 +6,7 @@ import Layout from '../../components/layout/Layout';
 import { api } from '../../api/axios';
 import { useAuth } from '../../contexts/AuthContext';
 import { CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS } from '../../types/marketplace';
-import type { MarketplaceListing } from '../../types/marketplace';
+import type { MarketplaceListing, MarketplaceConversationSummary } from '../../types/marketplace';
 import type { ApiResponse } from '../../types/auth';
 
 export default function MarketplaceListingPage() {
@@ -25,6 +25,21 @@ export default function MarketplaceListingPage() {
       return res.data.data!.listing;
     },
   });
+
+  // Solo para el vendedor: obtener conversaciones de este anuncio para mostrar globo de no leídos
+  const isOwnerCheck = !!user?.id && listing?.author.id === user.id;
+  const { data: convData } = useQuery<{ conversations: MarketplaceConversationSummary[] }>({
+    queryKey: ['marketplace', 'conversations'],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<{ conversations: MarketplaceConversationSummary[] }>>('/api/marketplace/conversations');
+      return res.data.data!;
+    },
+    enabled: isOwnerCheck,
+    staleTime: 30000,
+  });
+  const totalUnread = isOwnerCheck
+    ? (convData?.conversations ?? []).filter(c => c.listingId === id).reduce((sum, c) => sum + c.unreadCount, 0)
+    : 0;
 
   const archiveMutation = useMutation({
     mutationFn: async () => {
@@ -169,9 +184,14 @@ export default function MarketplaceListingPage() {
               {isOwner && (
                 <Link
                   to={`/mercadillo/conversaciones`}
-                  className="w-full px-4 py-2.5 border border-[var(--color-inputBorder)] rounded-lg text-sm text-center text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                  className="w-full px-4 py-2.5 border border-[var(--color-inputBorder)] rounded-lg text-sm text-center text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] transition-colors relative flex items-center justify-center gap-2"
                 >
                   Ver conversaciones de este anuncio
+                  {totalUnread > 0 && (
+                    <span className="min-w-[1.25rem] h-5 px-1 bg-[var(--color-primary)] text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {totalUnread > 99 ? '99+' : totalUnread}
+                    </span>
+                  )}
                 </Link>
               )}
               {canEdit && (

@@ -4,6 +4,36 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-12 (sesión 1)
+
+### Nuevas funcionalidades
+
+#### Mensajes no leídos en el Mercadillo (globo de notificación por conversación)
+
+Se implementa el sistema de lectura de conversaciones del mercadillo mediante la Opción A (campo `lastReadAt` por participante), de forma que cada usuario ve cuántos mensajes nuevos tiene pendientes de leer, independientemente de si es comprador o vendedor.
+
+**Backend:**
+
+- Nuevo modelo `MarketplaceConversationRead` en Prisma: un registro por par `(conversationId, userId)` con `lastReadAt`. Tiene restricción `@@unique([conversationId, userId])` y cascada de borrado.
+- Migración SQL: `server/prisma/migrations/20260412010000_add_marketplace_read/migration.sql`
+- Nuevo endpoint `POST /api/marketplace/conversations/:id/read` — hace upsert de `lastReadAt = now()` para el usuario autenticado.
+- `getMyConversations` — ahora incluye `reads` del usuario en el select y calcula `unreadCount` en paralelo para cada conversación (mensajes de la contraparte con `createdAt > lastReadAt`). El campo `reads` se elimina de la respuesta y se sustituye por `unreadCount`.
+- `sendMessage` — al enviar un mensaje, el emisor se marca automáticamente como leído (upsert de `lastReadAt`) en la misma operación `Promise.all` que actualiza `updatedAt`.
+
+**Archivos modificados (servidor):**
+- `server/prisma/schema.prisma` — nuevo modelo `MarketplaceConversationRead`, relación `reads` en `MarketplaceConversation`, relación `marketplaceReads` en `User`
+- `server/src/controllers/marketplaceController.ts` — `markConversationRead`, `getMyConversations` con `unreadCount`, `sendMessage` con auto-read del emisor
+- `server/src/routes/marketplaceRoutes.ts` — `POST /conversations/:id/read`
+
+**Frontend:**
+
+- `MarketplaceConversations.tsx` — globo rojo sobre la miniatura del anuncio con el conteo de no leídos; borde con color primario y título en negrita para hilos con mensajes pendientes.
+- `MarketplaceChat.tsx` — llama a `/read` al montar el componente y cada vez que cambia el número de mensajes (refetch cada 15s); invalida la query `conversations` para que el globo se actualice en tiempo real.
+- `MarketplaceListing.tsx` — el vendedor ve un globo numérico en el botón "Ver conversaciones de este anuncio" sumando los no leídos de todos los hilos activos del anuncio.
+- `client/src/types/marketplace.ts` — campo `unreadCount: number` en `MarketplaceConversationSummary`
+
+---
+
 ## 2026-04-11 (sesión 1)
 
 ### Correcciones
