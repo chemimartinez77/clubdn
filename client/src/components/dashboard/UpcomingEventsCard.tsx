@@ -109,7 +109,7 @@ export default function UpcomingEventsCard() {
           </div>
         ) : upcomingEvents && upcomingEvents.length > 0 ? (
           <div className="space-y-2">
-            {upcomingEvents.slice(0, 4).map((event) => {
+            {upcomingEvents.slice(0, 16).map((event) => {
               const scheduleText = formatTimeWithDuration(event);
               const effectiveStatus = getEffectiveStatus(event);
 
