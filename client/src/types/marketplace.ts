@@ -59,6 +59,7 @@ export interface MarketplaceListing {
   contactExtra: string | null;
   isArchived: boolean;
   isHidden: boolean;
+  viewsCount: number;
   createdAt: string;
   updatedAt: string;
   author: MarketplaceAuthor;

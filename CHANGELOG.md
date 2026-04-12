@@ -7,6 +7,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 ## 2026-04-12 (sesión 1)
 
 ### Nuevas funcionalidades
+#### Mercadillo: compartir por WhatsApp y contador de visitas
+
+- Se añade un botón para compartir anuncios del Mercadillo por WhatsApp desde la ficha de detalle.
+- Para mantener la privacidad del club, en esta primera versión el compartido no incluye enlace al anuncio ni a la web.
+- El mensaje compartido incluye título, categoría, precio, estado, descripción y contacto adicional si existe.
+- En móvil, si el navegador lo permite, se intenta usar el share nativo con la imagen principal del anuncio; si no, se hace fallback a WhatsApp con texto solo.
+- Se añade un contador visible `👁️` en la ficha del anuncio para mostrar cuántas veces se ha abierto.
+- El contador suma aperturas del detalle de usuarios distintos del autor del anuncio.
+
+**Archivos modificados:**
+- `client/src/pages/marketplace/MarketplaceListing.tsx` - botón de compartir, share nativo/fallback y contador `👁️`
+- `client/src/types/marketplace.ts` - añadido `viewsCount`
+- `server/src/controllers/marketplaceController.ts` - `viewsCount` en selects y nuevo registro explícito de visitas
+- `server/src/routes/marketplaceRoutes.ts` - nuevo endpoint `POST /api/marketplace/listings/:id/view`
+- `server/prisma/schema.prisma` - añadido `viewsCount` en `MarketplaceListing`
+- `server/prisma/migrations/20260412110000_add_marketplace_views_count/migration.sql` - migración SQL para el contador de visitas
+
 #### Tooltips unificados en desktop y móvil para iconos de información y warning temporal
 
 - Se crea un componente compartido `InfoTooltip` que unifica la ayuda contextual: en desktop muestra tooltip visual al hover/focus y en móvil abre un overlay flotante al tocar, por encima de todas las capas.

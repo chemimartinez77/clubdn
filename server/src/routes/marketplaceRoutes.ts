@@ -7,6 +7,7 @@ import {
   getListings,
   getMyListings,
   getListing,
+  recordListingView,
   createListing,
   updateListing,
   updateListingStatus,
@@ -37,6 +38,7 @@ router.use(authenticate);
 router.get('/listings', requireMarketplaceAccess, getListings);
 router.get('/listings/mine', requireMarketplaceAccess, getMyListings);
 router.get('/listings/:id', requireMarketplaceAccess, getListing);
+router.post('/listings/:id/view', requireMarketplaceAccess, recordListingView);
 router.post('/listings', requireMarketplaceAccess, upload.array('images', 4), createListing);
 router.put('/listings/:id', requireMarketplaceAccess, upload.array('images', 4), updateListing);
 router.patch('/listings/:id/status', requireMarketplaceAccess, updateListingStatus);

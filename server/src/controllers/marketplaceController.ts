@@ -47,6 +47,7 @@ const listingPublicSelect = {
   contactExtra: true,
   isArchived: true,
   isHidden: true,
+  viewsCount: true,
   createdAt: true,
   updatedAt: true,
   author: {
@@ -181,6 +182,54 @@ export const getListing = async (req: Request, res: Response): Promise<void> => 
   } catch (error) {
     console.error('Error obteniendo anuncio:', error);
     res.status(500).json({ success: false, message: 'Error al obtener el anuncio' });
+  }
+};
+
+/**
+ * POST /api/marketplace/listings/:id/view
+ * Registra una apertura del detalle para cualquier usuario distinto del autor
+ */
+export const recordListingView = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = req.user!.userId;
+
+    const listing = await prisma.marketplaceListing.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        authorId: true,
+        isArchived: true,
+        isHidden: true,
+        viewsCount: true,
+      },
+    });
+
+    if (!listing) {
+      res.status(404).json({ success: false, message: 'Anuncio no encontrado' });
+      return;
+    }
+
+    if ((listing.isArchived || listing.isHidden) && listing.authorId !== userId) {
+      res.status(404).json({ success: false, message: 'Anuncio no disponible' });
+      return;
+    }
+
+    if (listing.authorId === userId) {
+      res.status(200).json({ success: true, data: { viewsCount: listing.viewsCount, counted: false } });
+      return;
+    }
+
+    const updated = await prisma.marketplaceListing.update({
+      where: { id },
+      data: { viewsCount: { increment: 1 } },
+      select: { viewsCount: true },
+    });
+
+    res.status(200).json({ success: true, data: { viewsCount: updated.viewsCount, counted: true } });
+  } catch (error) {
+    console.error('Error registrando visita de anuncio:', error);
+    res.status(500).json({ success: false, message: 'Error al registrar la visita' });
   }
 };
 

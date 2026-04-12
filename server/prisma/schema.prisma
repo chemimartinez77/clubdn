@@ -1215,6 +1215,7 @@ model MarketplaceListing {
   contactExtra String?
   isArchived   Boolean                  @default(false)
   isHidden     Boolean                  @default(false)
+  viewsCount   Int                      @default(0)
 
   conversations MarketplaceConversation[]
 

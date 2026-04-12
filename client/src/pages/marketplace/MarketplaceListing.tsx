@@ -1,5 +1,5 @@
 // client/src/pages/marketplace/MarketplaceListing.tsx
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../../components/layout/Layout';
@@ -17,6 +17,7 @@ export default function MarketplaceListingPage() {
 
   const [imageIndex, setImageIndex] = useState(0);
   const [archiveConfirm, setArchiveConfirm] = useState(false);
+  const recordedViewForIdRef = useRef<string | null>(null);
 
   const { data: listing, isLoading, error } = useQuery<MarketplaceListing>({
     queryKey: ['marketplace', 'listing', id],
@@ -63,6 +64,88 @@ export default function MarketplaceListingPage() {
       navigate(`/mercadillo/conversaciones/${conv.id}`);
     },
   });
+
+  const recordViewMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post<ApiResponse<{ viewsCount: number; counted: boolean }>>(`/api/marketplace/listings/${id}/view`);
+      return res.data.data!;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData<MarketplaceListing>(['marketplace', 'listing', id], (prev) => (
+        prev ? { ...prev, viewsCount: data.viewsCount } : prev
+      ));
+    },
+  });
+
+  useEffect(() => {
+    if (!id || !listing) return;
+    if (recordedViewForIdRef.current === id) return;
+
+    recordedViewForIdRef.current = id;
+
+    if (user?.id && listing.author.id !== user.id) {
+      recordViewMutation.mutate();
+    }
+  }, [id, listing, user?.id]);
+
+  const buildWhatsAppMessage = (currentListing: MarketplaceListing) => {
+    const lines = [
+      '*Anuncio del Mercadillo Club Dreadnought*',
+      currentListing.title,
+      `${CATEGORY_LABELS[currentListing.category]} · ${STATUS_LABELS[currentListing.status]}`,
+      `Precio: ${Number(currentListing.price).toFixed(2)} €`,
+    ];
+
+    if (currentListing.description?.trim()) {
+      lines.push('', currentListing.description.trim());
+    }
+
+    if (currentListing.contactExtra?.trim()) {
+      lines.push('', `Contacto adicional: ${currentListing.contactExtra.trim()}`);
+    }
+
+    return lines.join('\n');
+  };
+
+  const shareViaWhatsAppText = (currentListing: MarketplaceListing) => {
+    const message = buildWhatsAppMessage(currentListing);
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleShare = async () => {
+    if (!listing) return;
+
+    const message = buildWhatsAppMessage(listing);
+    const primaryImage = listing.images[0];
+
+    if (primaryImage && typeof navigator !== 'undefined' && 'share' in navigator) {
+      try {
+        const response = await fetch(primaryImage);
+        const blob = await response.blob();
+        const extension = blob.type.split('/')[1] || 'jpg';
+        const safeBaseName = listing.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '') || 'anuncio';
+        const file = new File([blob], `${safeBaseName}.${extension}`, { type: blob.type || 'image/jpeg' });
+        const shareData: ShareData = {
+          title: listing.title,
+          text: message,
+          files: [file],
+        };
+
+        if (!('canShare' in navigator) || (navigator.canShare && navigator.canShare({ files: [file] }))) {
+          await navigator.share(shareData);
+          return;
+        }
+      } catch {
+        // Si falla el share nativo con archivo, cae al flujo de texto por WhatsApp.
+      }
+    }
+
+    shareViaWhatsAppText(listing);
+  };
 
   if (isLoading) {
     return (
@@ -167,6 +250,10 @@ export default function MarketplaceListingPage() {
               {new Date(listing.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
 
+            <div className="text-sm text-[var(--color-textSecondary)]">
+              👁️ {listing.viewsCount}
+            </div>
+
             {listing.isArchived && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-800">
                 Este anuncio está retirado por el vendedor.
@@ -175,6 +262,12 @@ export default function MarketplaceListingPage() {
 
             {/* Acciones */}
             <div className="flex flex-col gap-2 mt-auto pt-2">
+              <button
+                onClick={handleShare}
+                className="w-full px-4 py-2.5 border border-[var(--color-inputBorder)] rounded-lg text-sm text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] transition-colors flex items-center justify-center gap-2"
+              >
+                Compartir por WhatsApp
+              </button>
               {canContact && (
                 <button
                   onClick={() => openConversationMutation.mutate()}
