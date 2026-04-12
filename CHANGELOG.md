@@ -25,17 +25,18 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 - `server/prisma/schema.prisma` - nuevo modelo `PaymentMonthConsolidation`
 - `server/prisma/migrations/20260412120000_add_payment_month_consolidation/migration.sql` - migración SQL
 
-#### Mercadillo: compartir por WhatsApp y contador de visitas
+#### Mercadillo: descarga PNG del anuncio, visor ampliado de imágenes y contador de visitas
 
-- Se añade un botón para compartir anuncios del Mercadillo por WhatsApp desde la ficha de detalle.
-- Para mantener la privacidad del club, en esta primera versión el compartido no incluye enlace al anuncio ni a la web.
-- El mensaje compartido incluye título, categoría, precio, estado, descripción y contacto adicional si existe.
-- En móvil, si el navegador lo permite, se intenta usar el share nativo con la imagen principal del anuncio; si no, se hace fallback a WhatsApp con texto solo.
-- Se añade un contador visible `👁️` en la ficha del anuncio para mostrar cuántas veces se ha abierto.
-- El contador suma aperturas del detalle de usuarios distintos del autor del anuncio.
+- Se sustituye el compartido por WhatsApp por un botón `Descargar PNG` que genera una ficha visual del anuncio lista para compartir manualmente donde se quiera, sin exponer enlaces del club ni URLs internas.
+- La descarga abre una modal previa con previsualización y opción para incluir o no las imágenes adicionales del anuncio.
+- El PNG mantiene la imagen principal como bloque dominante e incluye título, categoría, estado, precio, descripción y contacto adicional si existe.
+- Las imágenes adicionales del PNG dejan de recortarse en cuadrado y pasan a mostrarse respetando su proporción real, priorizando fidelidad visual frente a compacidad.
+- La galería del detalle del anuncio añade visor ampliado: la imagen principal y las miniaturas pueden abrirse en un lightbox con navegación entre fotos, cierre por `X`, click fuera o tecla `Escape`.
+- Se mantiene el contador visible `👁️` en la ficha del anuncio para mostrar cuántas veces se ha abierto por usuarios distintos del autor.
 
 **Archivos modificados:**
-- `client/src/pages/marketplace/MarketplaceListing.tsx` - botón de compartir, share nativo/fallback y contador `👁️`
+- `client/src/pages/marketplace/MarketplaceListing.tsx` - botón `Descargar PNG`, ayuda contextual, modal de descarga, lightbox de imágenes y contador `👁️`
+- `client/src/components/marketplace/MarketplaceListingShareCard.tsx` - composición del PNG con imágenes adicionales a tamaño completo
 - `client/src/types/marketplace.ts` - añadido `viewsCount`
 - `server/src/controllers/marketplaceController.ts` - `viewsCount` en selects y nuevo registro explícito de visitas
 - `server/src/routes/marketplaceRoutes.ts` - nuevo endpoint `POST /api/marketplace/listings/:id/view`
@@ -2611,4 +2612,3 @@ Incluye:
 ---
 
 **Última actualización:** 10 de Marzo de 2026
-

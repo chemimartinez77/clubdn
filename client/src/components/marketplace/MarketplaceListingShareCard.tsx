@@ -90,16 +90,16 @@ export default function MarketplaceListingShareCard({
             <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-textSecondary)]">
               Imágenes adicionales
             </h2>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-4">
               {extraImages.map((imageSrc, index) => (
                 <div
                   key={`${imageSrc}-${index}`}
-                  className="rounded-2xl overflow-hidden border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] aspect-square"
+                  className="rounded-2xl overflow-hidden border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] p-3"
                 >
                   <img
                     src={imageSrc}
                     alt=""
-                    className="w-full h-full object-cover"
+                    className="w-full max-h-[520px] object-contain"
                     crossOrigin="anonymous"
                   />
                 </div>

@@ -24,6 +24,7 @@ export default function MarketplaceListingPage() {
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const [includeExtraImages, setIncludeExtraImages] = useState(false);
   const [isDownloadingPng, setIsDownloadingPng] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const recordedViewForIdRef = useRef<string | null>(null);
   const shareCardRef = useRef<HTMLDivElement | null>(null);
 
@@ -96,6 +97,34 @@ export default function MarketplaceListingPage() {
     }
   }, [id, listing, user?.id]);
 
+  useEffect(() => {
+    if (!listing || lightboxIndex === null) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setLightboxIndex(null);
+        return;
+      }
+
+      if (listing.images.length <= 1) return;
+
+      if (event.key === 'ArrowRight') {
+        setLightboxIndex((current) => (
+          current === null ? 0 : (current + 1) % listing.images.length
+        ));
+      }
+
+      if (event.key === 'ArrowLeft') {
+        setLightboxIndex((current) => (
+          current === null ? 0 : (current - 1 + listing.images.length) % listing.images.length
+        ));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex, listing]);
+
   const handleOpenDownloadModal = () => {
     if (!listing) return;
     setIncludeExtraImages(false);
@@ -130,6 +159,28 @@ export default function MarketplaceListingPage() {
     }
   };
 
+  const handleOpenLightbox = (index: number) => {
+    setLightboxIndex(index);
+  };
+
+  const handlePrevLightboxImage = () => {
+    if (!listing || listing.images.length <= 1) return;
+
+    setLightboxIndex((current) => {
+      if (current === null) return 0;
+      return (current - 1 + listing.images.length) % listing.images.length;
+    });
+  };
+
+  const handleNextLightboxImage = () => {
+    if (!listing || listing.images.length <= 1) return;
+
+    setLightboxIndex((current) => {
+      if (current === null) return 0;
+      return (current + 1) % listing.images.length;
+    });
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -155,6 +206,7 @@ export default function MarketplaceListingPage() {
   const canArchive = isOwner && !listing.isArchived && listing.status !== 'VENDIDO';
 
   const thumb = listing.images[imageIndex];
+  const lightboxImage = lightboxIndex !== null ? listing.images[lightboxIndex] : null;
   const downloadPngHelpText = `Comparte tu anuncio bajándote la imagen y subiéndola a las redes que quieras.
 
 Se generará una ficha visual con la imagen principal del anuncio, el precio, el estado, la descripción completa y el contacto adicional si lo has añadido.
@@ -176,20 +228,34 @@ Si tu anuncio tiene más fotos, podrás decidir en la siguiente ventana si quier
           <div>
             {listing.images.length > 0 ? (
               <>
-                <div className="w-full aspect-square bg-[var(--color-tableRowHover)] rounded-xl overflow-hidden mb-2">
+                <button
+                  type="button"
+                  onClick={() => handleOpenLightbox(imageIndex)}
+                  className="group relative block w-full aspect-square bg-[var(--color-tableRowHover)] rounded-xl overflow-hidden mb-2 cursor-zoom-in"
+                  aria-label="Ver imagen del anuncio a tamaño completo"
+                >
                   <img
                     src={thumb}
                     alt={listing.title}
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-[1.02]"
                   />
-                </div>
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/70 via-black/20 to-transparent px-4 py-3 text-sm text-white">
+                    <span className="font-medium">Ver grande</span>
+                    <span aria-hidden="true">🔍</span>
+                  </div>
+                </button>
                 {listing.images.length > 1 && (
                   <div className="flex gap-2">
                     {listing.images.map((src, i) => (
                       <button
                         key={i}
-                        onClick={() => setImageIndex(i)}
-                        className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${i === imageIndex ? 'border-[var(--color-primary)]' : 'border-transparent'}`}
+                        type="button"
+                        onClick={() => {
+                          setImageIndex(i);
+                          handleOpenLightbox(i);
+                        }}
+                        className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${i === imageIndex ? 'border-[var(--color-primary)]' : 'border-transparent'}`}
+                        aria-label={`Ver imagen ${i + 1} a tamaño completo`}
                       >
                         <img src={src} alt="" className="w-full h-full object-cover" />
                       </button>
@@ -250,24 +316,6 @@ Si tu anuncio tiene más fotos, podrás decidir en la siguiente ventana si quier
 
             {/* Acciones */}
             <div className="flex flex-col gap-2 mt-auto pt-2">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleOpenDownloadModal}
-                  className="flex-1"
-                >
-                  Descargar PNG
-                </Button>
-                <InfoTooltip
-                  ariaLabel="Información sobre Descargar PNG"
-                  content={downloadPngHelpText}
-                  tooltipClassName="max-w-[280px] text-left"
-                >
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-inputBorder)] bg-[var(--color-cardBackground)] text-sm font-bold text-[var(--color-textSecondary)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)] transition-colors">
-                    ?
-                  </span>
-                </InfoTooltip>
-              </div>
               {canContact && (
                 <button
                   onClick={() => openConversationMutation.mutate()}
@@ -331,10 +379,87 @@ Si tu anuncio tiene más fotos, podrás decidir en la siguiente ventana si quier
                   </div>
                 </div>
               )}
+              <div className="flex items-center gap-2 pt-1">
+                <Button
+                  variant="outline"
+                  onClick={handleOpenDownloadModal}
+                  className="flex-1"
+                >
+                  Descargar PNG
+                </Button>
+                <InfoTooltip
+                  ariaLabel="Información sobre Descargar PNG"
+                  content={downloadPngHelpText}
+                  tooltipClassName="max-w-[280px] text-left"
+                >
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-inputBorder)] bg-[var(--color-cardBackground)] text-sm font-bold text-[var(--color-textSecondary)] hover:text-[var(--color-text)] hover:border-[var(--color-primary)] transition-colors">
+                    ?
+                  </span>
+                </InfoTooltip>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-[130] flex items-center justify-center bg-black/85 p-4"
+          onClick={() => setLightboxIndex(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Visor ampliado de imágenes del anuncio"
+        >
+          <div
+            className="relative flex max-h-[92vh] w-full max-w-6xl items-center justify-center"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setLightboxIndex(null)}
+              className="absolute right-0 top-0 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-2xl text-white transition-colors hover:bg-black/75"
+              aria-label="Cerrar visor de imágenes"
+            >
+              ×
+            </button>
+
+            {listing.images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={handlePrevLightboxImage}
+                  className="absolute left-2 top-1/2 z-10 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-2xl text-white transition-colors hover:bg-black/75"
+                  aria-label="Ver imagen anterior"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextLightboxImage}
+                  className="absolute right-2 top-1/2 z-10 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-2xl text-white transition-colors hover:bg-black/75"
+                  aria-label="Ver imagen siguiente"
+                >
+                  ›
+                </button>
+              </>
+            )}
+
+            <div className="w-full overflow-hidden rounded-2xl border border-white/10 bg-black/30 p-3 shadow-2xl">
+              <img
+                src={lightboxImage}
+                alt={`${listing.title} - imagen ${lightboxIndex! + 1}`}
+                className="max-h-[80vh] w-full object-contain"
+              />
+            </div>
+
+            {listing.images.length > 1 && lightboxIndex !== null && (
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white">
+                {lightboxIndex + 1} / {listing.images.length}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {isDownloadModalOpen && listing && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">
