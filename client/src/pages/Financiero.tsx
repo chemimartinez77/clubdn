@@ -84,6 +84,8 @@ export default function Financiero() {
   // State para modales
   const [showMovementModal, setShowMovementModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [editingMovement, setEditingMovement] = useState<FinancialMovement | null>(null);
+  const [deletingMovementId, setDeletingMovementId] = useState<string | null>(null);
 
   // State para formularios
   const [movementForm, setMovementForm] = useState({
@@ -153,25 +155,55 @@ export default function Financiero() {
     }
   };
 
-  // Crear movimiento
+  // Crear o editar movimiento
   const handleCreateMovement = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await api.post('/api/financial/movements', movementForm);
-      if (response.data.success) {
-        setShowMovementModal(false);
-        setMovementForm({
-          categoryId: '',
-          amount: '',
-          description: '',
-          date: new Date().toISOString().split('T')[0]
-        });
-        await Promise.all([loadMovements(), loadBalance(), loadStatistics()]);
+      if (editingMovement) {
+        await api.put(`/api/financial/movements/${editingMovement.id}`, movementForm);
+      } else {
+        await api.post('/api/financial/movements', movementForm);
       }
+      setShowMovementModal(false);
+      setEditingMovement(null);
+      setMovementForm({
+        categoryId: '',
+        amount: '',
+        description: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+      await Promise.all([loadMovements(), loadBalance(), loadStatistics()]);
     } catch (error) {
-      console.error('Error creating movement:', error);
-      alert('Error al crear el movimiento');
+      console.error('Error saving movement:', error);
+      alert('Error al guardar el movimiento');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Abrir modal de edición
+  const handleEditMovement = (movement: FinancialMovement) => {
+    setEditingMovement(movement);
+    setMovementForm({
+      categoryId: movement.categoryId,
+      amount: String(movement.amount),
+      description: movement.description || '',
+      date: movement.date.split('T')[0],
+    });
+    setShowMovementModal(true);
+  };
+
+  // Eliminar movimiento
+  const handleDeleteMovement = async (id: string) => {
+    setLoading(true);
+    try {
+      await api.delete(`/api/financial/movements/${id}`);
+      setDeletingMovementId(null);
+      await Promise.all([loadMovements(), loadBalance(), loadStatistics()]);
+    } catch (error) {
+      console.error('Error deleting movement:', error);
+      alert('Error al eliminar el movimiento');
     } finally {
       setLoading(false);
     }
@@ -467,14 +499,14 @@ export default function Financiero() {
                 <div className="space-y-3">
                   {movements.map((movement) => (
                     <div key={movement.id} className="border border-[var(--color-cardBorder)] rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 flex-1">
-                          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${movement.category.color}`}>
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <span className={`shrink-0 inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${movement.category.color}`}>
                             <span>{movement.category.icon}</span>
                             {movement.category.name}
                           </span>
-                          <div className="flex-1">
-                            <p className="text-[var(--color-text)] font-medium">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[var(--color-text)] font-medium truncate">
                               {movement.description || 'Sin descripción'}
                             </p>
                             <p className="text-sm text-[var(--color-textSecondary)]">
@@ -482,10 +514,47 @@ export default function Financiero() {
                             </p>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="flex items-center gap-3 shrink-0">
                           <p className={`text-lg font-bold ${movement.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {movement.amount >= 0 ? '+' : ''}{movement.amount.toFixed(2)} €
                           </p>
+                          <button
+                            onClick={() => handleEditMovement(movement)}
+                            className="p-1.5 text-[var(--color-textSecondary)] hover:text-[var(--color-primary)] transition-colors"
+                            title="Editar"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          {deletingMovementId === movement.id ? (
+                            <div className="flex items-center gap-1 text-xs">
+                              <span className="text-[var(--color-textSecondary)]">¿Eliminar?</span>
+                              <button
+                                onClick={() => setDeletingMovementId(null)}
+                                className="px-1.5 py-0.5 border border-[var(--color-inputBorder)] rounded text-[var(--color-textSecondary)]"
+                              >
+                                No
+                              </button>
+                              <button
+                                onClick={() => handleDeleteMovement(movement.id)}
+                                disabled={loading}
+                                className="px-1.5 py-0.5 bg-red-500 text-white rounded disabled:opacity-50"
+                              >
+                                Sí
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setDeletingMovementId(movement.id)}
+                              className="p-1.5 text-[var(--color-textSecondary)] hover:text-red-500 transition-colors"
+                              title="Eliminar"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -562,9 +631,11 @@ export default function Financiero() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-[var(--color-cardBackground)] rounded-lg shadow-xl max-w-md w-full p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-[var(--color-text)]">Añadir Movimiento</h2>
+                <h2 className="text-xl font-bold text-[var(--color-text)]">
+                  {editingMovement ? 'Editar Movimiento' : 'Añadir Movimiento'}
+                </h2>
                 <button
-                  onClick={() => setShowMovementModal(false)}
+                  onClick={() => { setShowMovementModal(false); setEditingMovement(null); setMovementForm({ categoryId: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] }); }}
                   className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)]"
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -635,7 +706,7 @@ export default function Financiero() {
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
-                    onClick={() => setShowMovementModal(false)}
+                    onClick={() => { setShowMovementModal(false); setEditingMovement(null); setMovementForm({ categoryId: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] }); }}
                     className="flex-1 px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors"
                   >
                     Cancelar
@@ -645,7 +716,7 @@ export default function Financiero() {
                     disabled={loading}
                     className="flex-1 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primaryDark)] transition-colors disabled:opacity-50"
                   >
-                    {loading ? 'Guardando...' : 'Guardar'}
+                    {loading ? 'Guardando...' : editingMovement ? 'Guardar cambios' : 'Guardar'}
                   </button>
                 </div>
               </form>

@@ -26,20 +26,23 @@ export default function MarketplaceListingPage() {
     },
   });
 
-  // Solo para el vendedor: obtener conversaciones de este anuncio para mostrar globo de no leídos
+  // Obtener conversaciones para mostrar globo de no leídos (vendedor: suma de todos los hilos; comprador: su hilo)
   const isOwnerCheck = !!user?.id && listing?.author.id === user.id;
+  const isBuyerCheck = !!user?.id && !isOwnerCheck;
   const { data: convData } = useQuery<{ conversations: MarketplaceConversationSummary[] }>({
     queryKey: ['marketplace', 'conversations'],
     queryFn: async () => {
       const res = await api.get<ApiResponse<{ conversations: MarketplaceConversationSummary[] }>>('/api/marketplace/conversations');
       return res.data.data!;
     },
-    enabled: isOwnerCheck,
+    enabled: isOwnerCheck || isBuyerCheck,
     staleTime: 30000,
   });
-  const totalUnread = isOwnerCheck
-    ? (convData?.conversations ?? []).filter(c => c.listingId === id).reduce((sum, c) => sum + c.unreadCount, 0)
-    : 0;
+  const convForThisListing = (convData?.conversations ?? []).filter(c => c.listingId === id);
+  const totalUnread = convForThisListing.reduce((sum, c) => sum + c.unreadCount, 0);
+  // Para el comprador: la conversación propia (si existe)
+  const buyerConv = isBuyerCheck ? convForThisListing.find(c => c.buyerId === user?.id) : undefined;
+  const buyerUnread = buyerConv?.unreadCount ?? 0;
 
   const archiveMutation = useMutation({
     mutationFn: async () => {
@@ -176,9 +179,14 @@ export default function MarketplaceListingPage() {
                 <button
                   onClick={() => openConversationMutation.mutate()}
                   disabled={openConversationMutation.isPending}
-                  className="w-full px-4 py-2.5 bg-[var(--color-primary)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="w-full px-4 py-2.5 bg-[var(--color-primary)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {openConversationMutation.isPending ? 'Abriendo chat...' : 'Contactar con el vendedor'}
+                  {buyerUnread > 0 && (
+                    <span className="min-w-[1.25rem] h-5 px-1 bg-white text-[var(--color-primary)] text-xs font-bold rounded-full flex items-center justify-center">
+                      {buyerUnread > 99 ? '99+' : buyerUnread}
+                    </span>
+                  )}
                 </button>
               )}
               {isOwner && (

@@ -8,6 +8,28 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ### Nuevas funcionalidades
 
+#### Globo de no leídos en ficha de anuncio para el comprador
+
+- Hasta ahora el globo de mensajes sin leer solo aparecía para el vendedor en el botón "Ver conversaciones". El comprador no veía ningún indicador visual si el vendedor le había respondido.
+- La query de conversaciones ahora se activa también cuando el usuario es comprador (no solo vendedor), filtrando su conversación concreta para ese anuncio.
+- El botón "Contactar con el vendedor" muestra un globo blanco con el número en color primario cuando hay mensajes sin leer del comprador en esa conversación.
+
+**Archivos modificados:**
+- `client/src/pages/marketplace/MarketplaceListing.tsx` — `isBuyerCheck`, `buyerUnread`, globo en botón "Contactar"
+
+#### Edición y borrado de movimientos financieros
+
+- Los movimientos de la sección de Gestión Financiera no eran editables desde el frontend, aunque el backend ya tenía `PUT /movements/:id` y `DELETE /movements/:id` implementados.
+- Cada movimiento en la lista muestra ahora dos iconos: lápiz (editar) y papelera (eliminar).
+- Al pulsar el lápiz, el modal existente se precarga con los datos del movimiento y el submit llama a `PUT` en lugar de `POST`. El título del modal cambia a "Editar Movimiento".
+- El borrado usa confirmación inline (botones "Sí / No" directamente en la fila) sin necesidad de un modal adicional.
+- Al cerrar el modal o cancelar, el estado de edición se resetea correctamente.
+
+**Archivos modificados:**
+- `client/src/pages/Financiero.tsx` — estado `editingMovement` y `deletingMovementId`, `handleEditMovement`, `handleDeleteMovement`, `handleCreateMovement` adaptado para PUT/POST, botones de acción en ficha de movimiento, título y botón submit del modal dinámicos
+
+---
+
 #### Mensajes no leídos en el Mercadillo (globo de notificación por conversación)
 
 Se implementa el sistema de lectura de conversaciones del mercadillo mediante la Opción A (campo `lastReadAt` por participante), de forma que cada usuario ve cuántos mensajes nuevos tiene pendientes de leer, independientemente de si es comprador o vendedor.
