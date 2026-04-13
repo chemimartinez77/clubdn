@@ -53,12 +53,20 @@ export default function MarketplaceMine() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-[var(--color-text)]">Mis anuncios</h1>
-          <Link
-            to="/mercadillo/nuevo"
-            className="px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
-          >
-            + Publicar anuncio
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              to="/mercadillo"
+              className="px-4 py-2 text-sm border border-[var(--color-inputBorder)] rounded-lg text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+            >
+              Volver al mercadillo
+            </Link>
+            <Link
+              to="/mercadillo/nuevo"
+              className="px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+            >
+              + Publicar anuncio
+            </Link>
+          </div>
         </div>
 
         {isLoading ? (

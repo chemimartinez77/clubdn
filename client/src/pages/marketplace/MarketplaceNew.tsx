@@ -34,7 +34,7 @@ export default function MarketplaceNew() {
       const res = await api.post('/api/marketplace/listings', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      return res.data.data;
+      return res.data.data.listing;
     },
     onSuccess: (listing) => {
       navigate(`/mercadillo/${listing.id}`);

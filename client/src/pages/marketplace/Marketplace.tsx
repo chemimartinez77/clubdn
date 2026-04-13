@@ -1,5 +1,5 @@
 // client/src/pages/marketplace/Marketplace.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
@@ -28,7 +28,16 @@ const SORT_OPTIONS: { label: string; sortBy: MarketplaceFilters['sortBy']; sortD
 
 export default function Marketplace() {
   const [filters, setFilters] = useState<MarketplaceFilters>(EMPTY_FILTERS);
+  const [inputQ, setInputQ] = useState('');
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilters(f => ({ ...f, q: inputQ }));
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [inputQ]);
 
   const params = new URLSearchParams();
   if (filters.q) params.set('q', filters.q);
@@ -99,8 +108,8 @@ export default function Marketplace() {
           <input
             type="text"
             placeholder="Buscar anuncios..."
-            value={filters.q}
-            onChange={e => { setFilters(f => ({ ...f, q: e.target.value })); setPage(1); }}
+            value={inputQ}
+            onChange={e => setInputQ(e.target.value)}
             className="flex-1 px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-cardBackground)] text-[var(--color-text)] text-sm"
           />
           <select
