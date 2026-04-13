@@ -25,7 +25,15 @@ export default function MarketplaceConversations() {
   return (
     <Layout>
       <div className="max-w-3xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-[var(--color-text)] mb-6">Conversaciones</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-[var(--color-text)]">Conversaciones</h1>
+          <Link
+            to="/mercadillo"
+            className="px-4 py-2 text-sm border border-[var(--color-inputBorder)] rounded-lg text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+          >
+            Volver al mercadillo
+          </Link>
+        </div>
 
         {isLoading ? (
           <div className="text-center py-16 text-[var(--color-textSecondary)]">Cargando...</div>

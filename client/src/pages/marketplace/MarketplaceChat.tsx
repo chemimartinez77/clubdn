@@ -138,6 +138,14 @@ export default function MarketplaceChat() {
     <Layout>
       <div className="max-w-3xl mx-auto px-4 py-6 flex flex-col h-[calc(100vh-8rem)]">
         {/* Cabecera */}
+        <div className="flex items-center justify-between mb-2 shrink-0">
+          <Link
+            to="/mercadillo/conversaciones"
+            className="px-3 py-1.5 text-sm border border-[var(--color-inputBorder)] rounded-lg text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+          >
+            ← Conversaciones
+          </Link>
+        </div>
         <div className="bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-xl p-4 mb-4 flex gap-3 items-center shrink-0">
           {listing.images[0] && (
             <img src={listing.images[0]} alt={listing.title} className="w-14 h-14 object-cover rounded-lg shrink-0" />
