@@ -4,6 +4,39 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-13 (sesión 2)
+
+### Nuevas funcionalidades
+#### Finanzas: edición de categorías, color automático por tipo y adjuntos en movimientos
+
+- Las categorías financieras son ahora editables desde la vista `Gestión de Categorías`, reutilizando el mismo modal para crear y editar. Campos editables: nombre, icono y tipo.
+- El color de la categoría ya no se elige manualmente: se deriva automáticamente del tipo (`GASTO` → rojo, `INGRESO` → verde), tanto al crear como al editar. El selector de color ha sido eliminado del formulario.
+- Si se cambia el tipo de una categoría que ya tiene movimientos registrados, aparece un modal de confirmación que explica el impacto antes de guardar.
+- Se introduce el modelo `FinancialMovementAttachment` en Prisma para almacenar hasta 3 adjuntos por movimiento (imágenes o PDFs), con `id`, `url`, `fileType`, `fileName`, `cloudinaryId` y `createdAt`. El borrado en cascada garantiza que los adjuntos se eliminan con el movimiento.
+- Los endpoints `POST /api/financial/movements` y `PUT /api/financial/movements/:id` pasan a aceptar `multipart/form-data` con soporte de hasta 3 archivos vía `multer`. La subida se delega en Cloudinary (imágenes como `resource_type: image`, PDFs como `resource_type: raw`). En edición, se pueden conservar adjuntos existentes mediante `keepAttachmentIds` y añadir archivos nuevos.
+- Al borrar un movimiento o al quitar un adjunto en edición, el recurso se elimina también de Cloudinary.
+- En el formulario de movimiento se añade un selector de archivos con contador visible `(N/3)`, previews locales de imágenes antes de guardar y tarjeta con icono PDF para documentos.
+- En el listado de movimientos los adjuntos se muestran como miniaturas clicables (imágenes) o como chip con nombre y enlace a nueva pestaña (PDFs).
+- Las tarjetas de categorías muestran el recuento histórico total de movimientos (en lugar del recuento filtrado por año), que es el dato relevante para la lógica de confirmación de cambio de tipo.
+- `loadCategories` se invoca también tras crear, editar o borrar un movimiento para mantener el recuento `_count` actualizado.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — nuevo enum `FinancialAttachmentType` y modelo `FinancialMovementAttachment` con relación `onDelete: Cascade`
+- `server/prisma/migrations/20260413010000_add_financial_movement_attachments/migration.sql` — migración para el nuevo modelo
+- `server/src/controllers/financialController.ts` — `createCategory` y `updateCategory` derivan `color` del tipo; `updateCategory` acepta cambios de tipo; `createMovement` y `updateMovement` manejan `multipart/form-data`, suben a Cloudinary y gestionan adjuntos; `deleteMovement` borra adjuntos de Cloudinary; `getCategories` incluye `_count`
+- `server/src/routes/financial.ts` — `multer.memoryStorage()` con límite 20 MB aplicado a las rutas de creación y edición de movimientos
+- `client/src/pages/Financiero.tsx` — nuevas interfaces `FinancialMovementAttachment` y `AttachmentDraft`; lógica de adjuntos con `URL.createObjectURL`/`revokeObjectURL`; formulario de movimiento con `FormData`; modal de categoría unificado para crear/editar; modal de confirmación de cambio de tipo
+
+### Correcciones
+#### Textos de la UI de Finanzas: acentos y ñ eliminados por error de encoding de Codex
+
+- Se restauran todos los acentos y la ñ que Codex había eliminado de los textos visibles en `Financiero.tsx` debido a un problema de encoding al procesar el archivo (p. ej. "Añadir", "Categoría", "Gestión", "Descripción", "imágenes", "automáticamente", etc.).
+
+**Archivos modificados:**
+- `client/src/pages/Financiero.tsx`
+
+---
+
 ## 2026-04-13 (sesión 1)
 
 ### Nuevas funcionalidades

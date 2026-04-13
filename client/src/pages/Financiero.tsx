@@ -1,20 +1,32 @@
-// client/src/pages/Financiero.tsx
-import { useState, useEffect } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import Layout from '../components/layout/Layout';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { api } from '../api/axios';
 
 type ViewMode = 'balance' | 'movements' | 'categories';
+type FinancialCategoryType = 'GASTO' | 'INGRESO';
+type FinancialAttachmentType = 'IMAGE' | 'PDF';
 
 interface FinancialCategory {
   id: string;
   name: string;
-  type: 'GASTO' | 'INGRESO';
+  type: FinancialCategoryType;
   icon: string;
   color: string;
   showInBalance: boolean;
   createdAt: string;
   updatedAt: string;
+  _count?: {
+    movements: number;
+  };
+}
+
+interface FinancialMovementAttachment {
+  id: string;
+  url: string;
+  fileType: FinancialAttachmentType;
+  fileName: string;
+  createdAt: string;
 }
 
 interface FinancialMovement {
@@ -34,13 +46,14 @@ interface FinancialMovement {
   };
   createdAt: string;
   updatedAt: string;
+  attachments: FinancialMovementAttachment[];
 }
 
 interface BalanceCategoryData {
   category: {
     id: string;
     name: string;
-    type: 'GASTO' | 'INGRESO';
+    type: FinancialCategoryType;
     icon: string;
     color: string;
   };
@@ -64,12 +77,92 @@ interface Statistics {
   balance: number;
 }
 
+interface CategoryFormState {
+  name: string;
+  type: FinancialCategoryType;
+  icon: string;
+}
+
+interface MovementFormState {
+  categoryId: string;
+  amount: string;
+  description: string;
+  date: string;
+}
+
+interface AttachmentDraft {
+  id: string;
+  name: string;
+  fileType: FinancialAttachmentType;
+  url: string;
+  existing: boolean;
+  file?: File;
+}
+
+const MAX_ATTACHMENTS = 3;
+
+const createEmptyMovementForm = (): MovementFormState => ({
+  categoryId: '',
+  amount: '',
+  description: '',
+  date: new Date().toISOString().split('T')[0]
+});
+
+const createEmptyCategoryForm = (): CategoryFormState => ({
+  name: '',
+  type: 'GASTO',
+  icon: '💰'
+});
+
+const fileToAttachmentDraft = (file: File): AttachmentDraft | null => {
+  if (file.type.startsWith('image/')) {
+    return {
+      id: `new-${file.name}-${file.size}-${file.lastModified}`,
+      name: file.name,
+      fileType: 'IMAGE',
+      url: URL.createObjectURL(file),
+      existing: false,
+      file
+    };
+  }
+
+  if (file.type === 'application/pdf') {
+    return {
+      id: `new-${file.name}-${file.size}-${file.lastModified}`,
+      name: file.name,
+      fileType: 'PDF',
+      url: '',
+      existing: false,
+      file
+    };
+  }
+
+  return null;
+};
+
+const attachmentFromApi = (attachment: FinancialMovementAttachment): AttachmentDraft => ({
+  id: attachment.id,
+  name: attachment.fileName,
+  fileType: attachment.fileType,
+  url: attachment.url,
+  existing: true
+});
+
+const revokeDraftUrl = (attachment: AttachmentDraft) => {
+  if (!attachment.existing && attachment.fileType === 'IMAGE' && attachment.url) {
+    URL.revokeObjectURL(attachment.url);
+  }
+};
+
+const formatCurrency = (amount: number) => `${amount.toFixed(2)} €`;
+
 export default function Financiero() {
   const currentYear = new Date().getFullYear();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const attachmentsRef = useRef<AttachmentDraft[]>([]);
+
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [viewMode, setViewMode] = useState<ViewMode>('balance');
-
-  // State para datos
   const [categories, setCategories] = useState<FinancialCategory[]>([]);
   const [movements, setMovements] = useState<FinancialMovement[]>([]);
   const [balanceData, setBalanceData] = useState<BalanceResponse | null>(null);
@@ -81,33 +174,45 @@ export default function Financiero() {
     balance: 0
   });
 
-  // State para modales
   const [showMovementModal, setShowMovementModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showCategoryTypeConfirm, setShowCategoryTypeConfirm] = useState(false);
   const [editingMovement, setEditingMovement] = useState<FinancialMovement | null>(null);
+  const [editingCategory, setEditingCategory] = useState<FinancialCategory | null>(null);
+  const [pendingCategorySubmit, setPendingCategorySubmit] = useState<CategoryFormState | null>(null);
   const [deletingMovementId, setDeletingMovementId] = useState<string | null>(null);
 
-  // State para formularios
-  const [movementForm, setMovementForm] = useState({
-    categoryId: '',
-    amount: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0]
-  });
-
-  const [categoryForm, setCategoryForm] = useState({
-    name: '',
-    type: 'GASTO' as 'GASTO' | 'INGRESO',
-    icon: '💰',
-    color: 'bg-red-100 text-red-800'
-  });
-
+  const [movementForm, setMovementForm] = useState<MovementFormState>(createEmptyMovementForm());
+  const [categoryForm, setCategoryForm] = useState<CategoryFormState>(createEmptyCategoryForm());
+  const [movementAttachments, setMovementAttachments] = useState<AttachmentDraft[]>([]);
   const [loading, setLoading] = useState(false);
 
   const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
   const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
-  // Cargar categorías
+  const cleanupDrafts = (attachments: AttachmentDraft[]) => {
+    attachments.forEach(revokeDraftUrl);
+  };
+
+  const resetMovementEditor = () => {
+    cleanupDrafts(movementAttachments);
+    setMovementAttachments([]);
+    setMovementForm(createEmptyMovementForm());
+    setEditingMovement(null);
+    setShowMovementModal(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const resetCategoryEditor = () => {
+    setCategoryForm(createEmptyCategoryForm());
+    setEditingCategory(null);
+    setPendingCategorySubmit(null);
+    setShowCategoryModal(false);
+    setShowCategoryTypeConfirm(false);
+  };
+
   const loadCategories = async () => {
     try {
       const response = await api.get('/api/financial/categories');
@@ -119,7 +224,6 @@ export default function Financiero() {
     }
   };
 
-  // Cargar movimientos
   const loadMovements = async () => {
     try {
       const response = await api.get(`/api/financial/movements?year=${selectedYear}`);
@@ -131,7 +235,6 @@ export default function Financiero() {
     }
   };
 
-  // Cargar balance anual
   const loadBalance = async () => {
     try {
       const response = await api.get(`/api/financial/balance?year=${selectedYear}`);
@@ -143,7 +246,6 @@ export default function Financiero() {
     }
   };
 
-  // Cargar estadísticas
   const loadStatistics = async () => {
     try {
       const response = await api.get(`/api/financial/statistics?year=${selectedYear}`);
@@ -155,100 +257,6 @@ export default function Financiero() {
     }
   };
 
-  // Crear o editar movimiento
-  const handleCreateMovement = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      if (editingMovement) {
-        await api.put(`/api/financial/movements/${editingMovement.id}`, movementForm);
-      } else {
-        await api.post('/api/financial/movements', movementForm);
-      }
-      setShowMovementModal(false);
-      setEditingMovement(null);
-      setMovementForm({
-        categoryId: '',
-        amount: '',
-        description: '',
-        date: new Date().toISOString().split('T')[0]
-      });
-      await Promise.all([loadMovements(), loadBalance(), loadStatistics()]);
-    } catch (error) {
-      console.error('Error saving movement:', error);
-      alert('Error al guardar el movimiento');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Abrir modal de edición
-  const handleEditMovement = (movement: FinancialMovement) => {
-    setEditingMovement(movement);
-    setMovementForm({
-      categoryId: movement.categoryId,
-      amount: String(movement.amount),
-      description: movement.description || '',
-      date: movement.date.split('T')[0],
-    });
-    setShowMovementModal(true);
-  };
-
-  // Eliminar movimiento
-  const handleDeleteMovement = async (id: string) => {
-    setLoading(true);
-    try {
-      await api.delete(`/api/financial/movements/${id}`);
-      setDeletingMovementId(null);
-      await Promise.all([loadMovements(), loadBalance(), loadStatistics()]);
-    } catch (error) {
-      console.error('Error deleting movement:', error);
-      alert('Error al eliminar el movimiento');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Crear categoría
-  const handleCreateCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const response = await api.post('/api/financial/categories', categoryForm);
-      if (response.data.success) {
-        setShowCategoryModal(false);
-        setCategoryForm({
-          name: '',
-          type: 'GASTO',
-          icon: '💰',
-          color: 'bg-red-100 text-red-800'
-        });
-        await loadCategories();
-      }
-    } catch (error) {
-      console.error('Error creating category:', error);
-      alert('Error al crear la categoría');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Toggle showInBalance
-  const handleToggleShowInBalance = async (categoryId: string, currentValue: boolean) => {
-    try {
-      const response = await api.put(`/api/financial/categories/${categoryId}`, {
-        showInBalance: !currentValue
-      });
-      if (response.data.success) {
-        await Promise.all([loadCategories(), loadBalance()]);
-      }
-    } catch (error) {
-      console.error('Error updating category:', error);
-      alert('Error al actualizar la categoría');
-    }
-  };
-
-  // Efectos
   useEffect(() => {
     loadCategories();
   }, []);
@@ -259,72 +267,249 @@ export default function Financiero() {
     loadStatistics();
   }, [selectedYear]);
 
+  useEffect(() => {
+    attachmentsRef.current = movementAttachments;
+  }, [movementAttachments]);
+
+  useEffect(() => () => {
+    cleanupDrafts(attachmentsRef.current);
+  }, []);
+
+  const addAttachments = (files: FileList | File[]) => {
+    const drafts = Array.from(files)
+      .map(fileToAttachmentDraft)
+      .filter((draft): draft is AttachmentDraft => Boolean(draft));
+
+    if (drafts.length === 0) {
+      alert('Solo puedes adjuntar imágenes o archivos PDF');
+      return;
+    }
+
+    const availableSlots = MAX_ATTACHMENTS - movementAttachments.length;
+    if (availableSlots <= 0) {
+      drafts.forEach(revokeDraftUrl);
+      alert(`Solo se permiten hasta ${MAX_ATTACHMENTS} adjuntos por movimiento`);
+      return;
+    }
+
+    const accepted = drafts.slice(0, availableSlots);
+    const rejected = drafts.slice(availableSlots);
+    rejected.forEach(revokeDraftUrl);
+
+    setMovementAttachments((prev) => [...prev, ...accepted]);
+
+    if (drafts.length > availableSlots) {
+      alert(`Solo se han añadido ${availableSlots} adjuntos para mantener el límite de ${MAX_ATTACHMENTS}`);
+    }
+  };
+
+  const removeAttachment = (attachmentId: string) => {
+    setMovementAttachments((prev) => {
+      const target = prev.find((item) => item.id === attachmentId);
+      if (target) {
+        revokeDraftUrl(target);
+      }
+      return prev.filter((item) => item.id !== attachmentId);
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const openCreateMovementModal = () => {
+    resetMovementEditor();
+    setShowMovementModal(true);
+  };
+
+  const handleEditMovement = (movement: FinancialMovement) => {
+    cleanupDrafts(movementAttachments);
+    setEditingMovement(movement);
+    setMovementForm({
+      categoryId: movement.categoryId,
+      amount: String(movement.amount),
+      description: movement.description || '',
+      date: movement.date.split('T')[0]
+    });
+    setMovementAttachments(movement.attachments.map(attachmentFromApi));
+    setShowMovementModal(true);
+  };
+
+  const submitMovement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('categoryId', movementForm.categoryId);
+      formData.append('amount', movementForm.amount);
+      formData.append('description', movementForm.description);
+      formData.append('date', movementForm.date);
+
+      movementAttachments.forEach((attachment) => {
+        if (attachment.existing) {
+          formData.append('keepAttachmentIds', attachment.id);
+        } else if (attachment.file) {
+          formData.append('attachments', attachment.file);
+        }
+      });
+
+      if (editingMovement) {
+        await api.put(`/api/financial/movements/${editingMovement.id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } else {
+        await api.post('/api/financial/movements', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+
+      resetMovementEditor();
+      await Promise.all([loadMovements(), loadBalance(), loadStatistics(), loadCategories()]);
+    } catch (error) {
+      console.error('Error saving movement:', error);
+      alert('Error al guardar el movimiento');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteMovement = async (id: string) => {
+    setLoading(true);
+    try {
+      await api.delete(`/api/financial/movements/${id}`);
+      setDeletingMovementId(null);
+      await Promise.all([loadMovements(), loadBalance(), loadStatistics(), loadCategories()]);
+    } catch (error) {
+      console.error('Error deleting movement:', error);
+      alert('Error al eliminar el movimiento');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openCreateCategoryModal = () => {
+    resetCategoryEditor();
+    setShowCategoryModal(true);
+  };
+
+  const openEditCategoryModal = (category: FinancialCategory) => {
+    resetCategoryEditor();
+    setEditingCategory(category);
+    setCategoryForm({
+      name: category.name,
+      type: category.type,
+      icon: category.icon
+    });
+    setShowCategoryModal(true);
+  };
+
+  const saveCategory = async (formState: CategoryFormState) => {
+    setLoading(true);
+    try {
+      if (editingCategory) {
+        await api.put(`/api/financial/categories/${editingCategory.id}`, formState);
+      } else {
+        await api.post('/api/financial/categories', formState);
+      }
+
+      resetCategoryEditor();
+      await Promise.all([loadCategories(), loadMovements(), loadBalance(), loadStatistics()]);
+    } catch (error) {
+      console.error('Error saving category:', error);
+      alert(editingCategory ? 'Error al actualizar la categoría' : 'Error al crear la categoría');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCategorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (
+      editingCategory &&
+      editingCategory.type !== categoryForm.type &&
+      (editingCategory._count?.movements ?? 0) > 0
+    ) {
+      setPendingCategorySubmit(categoryForm);
+      setShowCategoryTypeConfirm(true);
+      return;
+    }
+
+    await saveCategory(categoryForm);
+  };
+
+  const confirmCategoryTypeChange = async () => {
+    if (!pendingCategorySubmit) {
+      setShowCategoryTypeConfirm(false);
+      return;
+    }
+
+    setShowCategoryTypeConfirm(false);
+    await saveCategory(pendingCategorySubmit);
+  };
+
+  const handleToggleShowInBalance = async (categoryId: string, currentValue: boolean) => {
+    try {
+      await api.put(`/api/financial/categories/${categoryId}`, {
+        showInBalance: !currentValue
+      });
+      await Promise.all([loadCategories(), loadBalance()]);
+    } catch (error) {
+      console.error('Error updating category:', error);
+      alert('Error al actualizar la categoría');
+    }
+  };
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-[var(--color-text)]">Gestión Financiera</h1>
             <p className="text-[var(--color-textSecondary)] mt-1">Control de ingresos y gastos del club</p>
           </div>
 
-          {/* Selector de año */}
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
             className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
           >
-            {years.map(year => (
+            {years.map((year) => (
               <option key={year} value={year}>{year}</option>
             ))}
           </select>
         </div>
 
-        {/* Tabs de navegación */}
         <div className="border-b border-[var(--color-cardBorder)]">
           <nav className="flex space-x-8">
-            <button
-              onClick={() => setViewMode('balance')}
-              className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                viewMode === 'balance'
-                  ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-                  : 'border-transparent text-[var(--color-textSecondary)] hover:text-[var(--color-textSecondary)] hover:border-[var(--color-inputBorder)]'
-              }`}
-            >
-              Balance Anual
-            </button>
-            <button
-              onClick={() => setViewMode('movements')}
-              className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                viewMode === 'movements'
-                  ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-                  : 'border-transparent text-[var(--color-textSecondary)] hover:text-[var(--color-textSecondary)] hover:border-[var(--color-inputBorder)]'
-              }`}
-            >
-              Movimientos
-            </button>
-            <button
-              onClick={() => setViewMode('categories')}
-              className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                viewMode === 'categories'
-                  ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-                  : 'border-transparent text-[var(--color-textSecondary)] hover:text-[var(--color-textSecondary)] hover:border-[var(--color-inputBorder)]'
-              }`}
-            >
-              Categorías
-            </button>
+            {[
+              ['balance', 'Balance Anual'],
+              ['movements', 'Movimientos'],
+              ['categories', 'Categorías']
+            ].map(([mode, label]) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode as ViewMode)}
+                className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  viewMode === mode
+                    ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
+                    : 'border-transparent text-[var(--color-textSecondary)] hover:text-[var(--color-textSecondary)] hover:border-[var(--color-inputBorder)]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </nav>
         </div>
 
-        {/* Resumen de estadísticas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-[var(--color-textSecondary)]">Ingresos Totales</p>
-                  <p className="text-2xl font-bold text-green-600">{statistics.totalIncomes.toFixed(2)} €</p>
+                  <p className="text-2xl font-bold text-green-600">{formatCurrency(statistics.totalIncomes)}</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                   <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -340,7 +525,7 @@ export default function Financiero() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-[var(--color-textSecondary)]">Gastos Totales</p>
-                  <p className="text-2xl font-bold text-red-600">{statistics.totalExpenses.toFixed(2)} €</p>
+                  <p className="text-2xl font-bold text-red-600">{formatCurrency(statistics.totalExpenses)}</p>
                 </div>
                 <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                   <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -357,7 +542,8 @@ export default function Financiero() {
                 <div>
                   <p className="text-sm text-[var(--color-textSecondary)]">Balance</p>
                   <p className={`text-2xl font-bold ${statistics.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {statistics.balance >= 0 ? '+' : ''}{statistics.balance.toFixed(2)} €
+                    {statistics.balance >= 0 ? '+' : ''}
+                    {formatCurrency(statistics.balance)}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -386,7 +572,6 @@ export default function Financiero() {
           </Card>
         </div>
 
-        {/* Contenido según la vista seleccionada */}
         {viewMode === 'balance' && (
           <Card>
             <CardHeader>
@@ -398,7 +583,7 @@ export default function Financiero() {
                   <thead>
                     <tr className="border-b border-[var(--color-cardBorder)]">
                       <th className="text-left py-3 px-4 font-semibold text-[var(--color-textSecondary)]">Categoría</th>
-                      {months.map(month => (
+                      {months.map((month) => (
                         <th key={month} className="text-center py-3 px-2 font-semibold text-[var(--color-textSecondary)] text-sm">{month}</th>
                       ))}
                       <th className="text-right py-3 px-4 font-semibold text-[var(--color-textSecondary)]">Total</th>
@@ -406,64 +591,67 @@ export default function Financiero() {
                   </thead>
                   <tbody>
                     {(['INGRESO', 'GASTO'] as const).map((tipo) => {
-                      const grupo = balanceData?.categories.filter(c => c.category.type === tipo) ?? [];
-                      if (grupo.length === 0) return null;
-                      const grupoTotal = grupo.reduce((sum, c) => sum + c.totalYear, 0);
-                      const grupoMonthly = Array(12).fill(0).map((_, i) =>
-                        grupo.reduce((sum, c) => sum + c.monthlyTotals[i], 0)
+                      const group = balanceData?.categories.filter((item) => item.category.type === tipo) ?? [];
+                      if (group.length === 0) return null;
+
+                      const groupTotal = group.reduce((sum, item) => sum + item.totalYear, 0);
+                      const groupMonthly = Array(12).fill(0).map((_, index) =>
+                        group.reduce((sum, item) => sum + item.monthlyTotals[index], 0)
                       );
+
                       return (
-                        <>
-                          <tr key={`header-${tipo}`}>
+                        <Fragment key={tipo}>
+                          <tr>
                             <td colSpan={14} className={`py-2 px-4 text-xs font-semibold uppercase tracking-wide ${tipo === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
                               {tipo === 'INGRESO' ? 'Ingresos' : 'Gastos'}
                             </td>
                           </tr>
-                          {grupo.map((categoryData, idx) => (
-                            <tr key={categoryData.category.id} className={idx % 2 === 0 ? 'bg-[var(--color-tableRowHover)]' : 'bg-[var(--color-cardBackground)]'}>
+                          {group.map((categoryData, index) => (
+                            <tr key={categoryData.category.id} className={index % 2 === 0 ? 'bg-[var(--color-tableRowHover)]' : 'bg-[var(--color-cardBackground)]'}>
                               <td className="py-3 px-4">
                                 <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${categoryData.category.color}`}>
                                   <span>{categoryData.category.icon}</span>
                                   {categoryData.category.name}
                                 </span>
                               </td>
-                              {categoryData.monthlyTotals.map((amount, monthIdx) => (
-                                <td key={monthIdx} className="text-center py-3 px-2 text-[var(--color-textSecondary)] text-sm">
+                              {categoryData.monthlyTotals.map((amount, monthIndex) => (
+                                <td key={monthIndex} className="text-center py-3 px-2 text-[var(--color-textSecondary)] text-sm">
                                   {amount !== 0 ? `${amount.toFixed(0)}€` : '-'}
                                 </td>
                               ))}
                               <td className="text-right py-3 px-4 font-medium text-[var(--color-text)]">
-                                {categoryData.totalYear.toFixed(2)} €
+                                {formatCurrency(categoryData.totalYear)}
                               </td>
                             </tr>
                           ))}
-                          <tr key={`subtotal-${tipo}`} className="border-t border-[var(--color-cardBorder)]">
+                          <tr className="border-t border-[var(--color-cardBorder)]">
                             <td className={`py-2 px-4 text-sm font-semibold ${tipo === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
                               Subtotal {tipo === 'INGRESO' ? 'ingresos' : 'gastos'}
                             </td>
-                            {grupoMonthly.map((amount, idx) => (
-                              <td key={idx} className={`text-center py-2 px-2 text-sm font-semibold ${tipo === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
+                            {groupMonthly.map((amount, index) => (
+                              <td key={index} className={`text-center py-2 px-2 text-sm font-semibold ${tipo === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
                                 {amount !== 0 ? `${amount.toFixed(0)}€` : '-'}
                               </td>
                             ))}
                             <td className={`text-right py-2 px-4 text-sm font-semibold ${tipo === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
-                              {grupoTotal.toFixed(2)} €
+                              {formatCurrency(groupTotal)}
                             </td>
                           </tr>
-                        </>
+                        </Fragment>
                       );
                     })}
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-[var(--color-inputBorder)] bg-[var(--color-tableRowHover)]">
                       <td className="py-3 px-4 font-bold text-[var(--color-text)]">TOTAL</td>
-                      {balanceData?.monthlyTotals.map((amount, idx) => (
-                        <td key={idx} className={`text-center py-3 px-2 font-bold text-sm ${amount > 0 ? 'text-green-600' : amount < 0 ? 'text-red-600' : 'text-[var(--color-text)]'}`}>
+                      {balanceData?.monthlyTotals.map((amount, index) => (
+                        <td key={index} className={`text-center py-3 px-2 font-bold text-sm ${amount > 0 ? 'text-green-600' : amount < 0 ? 'text-red-600' : 'text-[var(--color-text)]'}`}>
                           {amount !== 0 ? `${amount > 0 ? '+' : ''}${amount.toFixed(0)}€` : '-'}
                         </td>
                       ))}
                       <td className={`text-right py-3 px-4 font-bold ${(balanceData?.totalYear ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {(balanceData?.totalYear ?? 0) >= 0 ? '+' : ''}{balanceData?.totalYear.toFixed(2) || '0.00'} €
+                        {(balanceData?.totalYear ?? 0) >= 0 ? '+' : ''}
+                        {formatCurrency(balanceData?.totalYear ?? 0)}
                       </td>
                     </tr>
                   </tfoot>
@@ -479,7 +667,7 @@ export default function Financiero() {
               <div className="flex items-center justify-between">
                 <CardTitle>Movimientos - {selectedYear}</CardTitle>
                 <button
-                  onClick={() => setShowMovementModal(true)}
+                  onClick={openCreateMovementModal}
                   className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primaryDark)] transition-colors"
                 >
                   Añadir Movimiento
@@ -499,63 +687,98 @@ export default function Financiero() {
                 <div className="space-y-3">
                   {movements.map((movement) => (
                     <div key={movement.id} className="border border-[var(--color-cardBorder)] rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-4 flex-1 min-w-0">
-                          <span className={`shrink-0 inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${movement.category.color}`}>
-                            <span>{movement.category.icon}</span>
-                            {movement.category.name}
-                          </span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[var(--color-text)] font-medium truncate">
-                              {movement.description || 'Sin descripción'}
-                            </p>
-                            <p className="text-sm text-[var(--color-textSecondary)]">
-                              {new Date(movement.date).toLocaleDateString('es-ES')} • {movement.user.name}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <p className={`text-lg font-bold ${movement.category.type === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
-                            {movement.amount.toFixed(2)} €
-                          </p>
-                          <button
-                            onClick={() => handleEditMovement(movement)}
-                            className="p-1.5 text-[var(--color-textSecondary)] hover:text-[var(--color-primary)] transition-colors"
-                            title="Editar"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                          {deletingMovementId === movement.id ? (
-                            <div className="flex items-center gap-1 text-xs">
-                              <span className="text-[var(--color-textSecondary)]">¿Eliminar?</span>
-                              <button
-                                onClick={() => setDeletingMovementId(null)}
-                                className="px-1.5 py-0.5 border border-[var(--color-inputBorder)] rounded text-[var(--color-textSecondary)]"
-                              >
-                                No
-                              </button>
-                              <button
-                                onClick={() => handleDeleteMovement(movement.id)}
-                                disabled={loading}
-                                className="px-1.5 py-0.5 bg-red-500 text-white rounded disabled:opacity-50"
-                              >
-                                Sí
-                              </button>
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-4 flex-1 min-w-0">
+                            <span className={`shrink-0 inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${movement.category.color}`}>
+                              <span>{movement.category.icon}</span>
+                              {movement.category.name}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[var(--color-text)] font-medium">
+                                {movement.description || 'Sin descripción'}
+                              </p>
+                              <p className="text-sm text-[var(--color-textSecondary)]">
+                                {new Date(movement.date).toLocaleDateString('es-ES')} • {movement.user.name}
+                              </p>
                             </div>
-                          ) : (
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <p className={`text-lg font-bold ${movement.category.type === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(movement.amount)}
+                            </p>
                             <button
-                              onClick={() => setDeletingMovementId(movement.id)}
-                              className="p-1.5 text-[var(--color-textSecondary)] hover:text-red-500 transition-colors"
-                              title="Eliminar"
+                              onClick={() => handleEditMovement(movement)}
+                              className="p-1.5 text-[var(--color-textSecondary)] hover:text-[var(--color-primary)] transition-colors"
+                              title="Editar"
                             >
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                             </button>
-                          )}
+                            {deletingMovementId === movement.id ? (
+                              <div className="flex items-center gap-1 text-xs">
+                                <span className="text-[var(--color-textSecondary)]">¿Eliminar?</span>
+                                <button
+                                  onClick={() => setDeletingMovementId(null)}
+                                  className="px-1.5 py-0.5 border border-[var(--color-inputBorder)] rounded text-[var(--color-textSecondary)]"
+                                >
+                                  No
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteMovement(movement.id)}
+                                  disabled={loading}
+                                  className="px-1.5 py-0.5 bg-red-500 text-white rounded disabled:opacity-50"
+                                >
+                                  Sí
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setDeletingMovementId(movement.id)}
+                                className="p-1.5 text-[var(--color-textSecondary)] hover:text-red-500 transition-colors"
+                                title="Eliminar"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
                         </div>
+
+                        {movement.attachments.length > 0 && (
+                          <div className="pl-0 md:pl-16 flex flex-wrap gap-3">
+                            {movement.attachments.map((attachment) => (
+                              attachment.fileType === 'IMAGE' ? (
+                                <a
+                                  key={attachment.id}
+                                  href={attachment.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block"
+                                >
+                                  <img
+                                    src={attachment.url}
+                                    alt={attachment.fileName}
+                                    className="h-24 w-24 rounded-lg object-cover border border-[var(--color-cardBorder)] hover:opacity-90 transition-opacity"
+                                  />
+                                </a>
+                              ) : (
+                                <a
+                                  key={attachment.id}
+                                  href={attachment.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-3 px-4 py-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] hover:border-[var(--color-primary)] transition-colors max-w-sm"
+                                >
+                                  <span className="text-red-600 font-bold text-sm">PDF</span>
+                                  <span className="text-sm text-[var(--color-text)] truncate">{attachment.fileName}</span>
+                                </a>
+                              )
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -571,7 +794,7 @@ export default function Financiero() {
               <div className="flex items-center justify-between">
                 <CardTitle>Gestión de Categorías</CardTitle>
                 <button
-                  onClick={() => setShowCategoryModal(true)}
+                  onClick={openCreateCategoryModal}
                   className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primaryDark)] transition-colors"
                 >
                   Nueva Categoría
@@ -580,8 +803,9 @@ export default function Financiero() {
             </CardHeader>
             <CardContent className="space-y-8">
               {(['INGRESO', 'GASTO'] as const).map((tipo) => {
-                const filtered = categories.filter(c => c.type === tipo);
+                const filtered = categories.filter((category) => category.type === tipo);
                 if (filtered.length === 0) return null;
+
                 return (
                   <div key={tipo}>
                     <h3 className={`text-sm font-semibold uppercase tracking-wide mb-4 ${tipo === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
@@ -589,19 +813,30 @@ export default function Financiero() {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {filtered.map((category) => {
-                        const categoryMovements = movements.filter(m => m.categoryId === category.id);
-                        const categoryTotal = categoryMovements.reduce((sum, m) => sum + m.amount, 0);
+                        const categoryTotal = movements
+                          .filter((movement) => movement.categoryId === category.id)
+                          .reduce((sum, movement) => sum + movement.amount, 0);
+
                         return (
                           <div key={category.id} className="border border-[var(--color-cardBorder)] rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center justify-between gap-3 mb-3">
                               <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${category.color}`}>
                                 <span className="text-lg">{category.icon}</span>
                                 {category.name}
                               </span>
+                              <button
+                                onClick={() => openEditCategoryModal(category)}
+                                className="p-1.5 text-[var(--color-textSecondary)] hover:text-[var(--color-primary)] transition-colors"
+                                title="Editar categoría"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
                             </div>
                             <div className="text-sm text-[var(--color-textSecondary)] mb-3">
-                              <p>Total {selectedYear}: <span className="font-semibold text-[var(--color-text)]">{categoryTotal.toFixed(2)} €</span></p>
-                              <p className="mt-1">{categoryMovements.length} transacciones</p>
+                              <p>Total {selectedYear}: <span className="font-semibold text-[var(--color-text)]">{formatCurrency(categoryTotal)}</span></p>
+                              <p className="mt-1">{category._count?.movements ?? 0} transacciones totales</p>
                             </div>
                             <div className="flex items-center gap-2 pt-3 border-t border-[var(--color-cardBorder)]">
                               <input
@@ -626,28 +861,23 @@ export default function Financiero() {
           </Card>
         )}
 
-        {/* Modal Añadir Movimiento */}
         {showMovementModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-[var(--color-cardBackground)] rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="bg-[var(--color-cardBackground)] rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-[var(--color-text)]">
                   {editingMovement ? 'Editar Movimiento' : 'Añadir Movimiento'}
                 </h2>
-                <button
-                  onClick={() => { setShowMovementModal(false); setEditingMovement(null); setMovementForm({ categoryId: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] }); }}
-                  className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)]"
-                >
+                <button onClick={resetMovementEditor} className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)]">
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
-              <form onSubmit={handleCreateMovement} className="space-y-4">
+
+              <form onSubmit={submitMovement} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                    Categoría *
-                  </label>
+                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">Categoría *</label>
                   <select
                     required
                     value={movementForm.categoryId}
@@ -655,44 +885,42 @@ export default function Financiero() {
                     className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   >
                     <option value="">Seleccionar categoría</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.icon} {cat.name}
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.icon} {category.name}
                       </option>
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                    Fecha *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={movementForm.date}
-                    onChange={(e) => setMovementForm({ ...movementForm, date: e.target.value })}
-                    className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-                  />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-text)] mb-2">Fecha *</label>
+                    <input
+                      type="date"
+                      required
+                      value={movementForm.date}
+                      onChange={(e) => setMovementForm({ ...movementForm, date: e.target.value })}
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-text)] mb-2">Cantidad * (€)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      value={movementForm.amount}
+                      onChange={(e) => setMovementForm({ ...movementForm, amount: e.target.value })}
+                      placeholder="Ej: 90.00"
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                    />
+                  </div>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                    Cantidad * (€)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    value={movementForm.amount}
-                    onChange={(e) => setMovementForm({ ...movementForm, amount: e.target.value })}
-                    placeholder="Ej: 90.00"
-                    className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                    Descripción
-                  </label>
+                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">Descripción</label>
                   <textarea
                     value={movementForm.description}
                     onChange={(e) => setMovementForm({ ...movementForm, description: e.target.value })}
@@ -701,10 +929,81 @@ export default function Financiero() {
                     className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   />
                 </div>
+
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <label className="block text-sm font-medium text-[var(--color-text)]">
+                      Adjuntos ({movementAttachments.length}/{MAX_ATTACHMENTS})
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={movementAttachments.length >= MAX_ATTACHMENTS}
+                      className="px-3 py-1.5 text-sm rounded-lg border border-[var(--color-inputBorder)] hover:bg-[var(--color-tableRowHover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Añadir archivos
+                    </button>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,application/pdf"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        addAttachments(e.target.files);
+                      }
+                      e.target.value = '';
+                    }}
+                  />
+                  <p className="text-xs text-[var(--color-textSecondary)] mb-3">
+                    Puedes adjuntar hasta 3 imágenes o PDFs.
+                  </p>
+
+                  {movementAttachments.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {movementAttachments.map((attachment) => (
+                        <div key={attachment.id} className="relative border border-[var(--color-cardBorder)] rounded-lg overflow-hidden bg-[var(--color-tableRowHover)]">
+                          {attachment.fileType === 'IMAGE' ? (
+                            <div className="relative">
+                              <img src={attachment.url} alt={attachment.name} className="h-28 w-full object-cover" />
+                              <a
+                                href={attachment.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="absolute inset-0"
+                                aria-label={`Abrir ${attachment.name}`}
+                              />
+                            </div>
+                          ) : (
+                            <div className="h-28 flex flex-col items-center justify-center px-4 text-center">
+                              <span className="text-red-600 font-bold text-lg">PDF</span>
+                              <span className="text-sm text-[var(--color-text)] break-words">{attachment.name}</span>
+                            </div>
+                          )}
+                          <div className="p-3 border-t border-[var(--color-cardBorder)] flex items-center justify-between gap-2">
+                            <span className="text-xs text-[var(--color-textSecondary)] truncate">
+                              {attachment.existing ? 'Adjunto guardado' : 'Nuevo adjunto'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeAttachment(attachment.id)}
+                              className="text-xs text-red-600 hover:text-red-700"
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
-                    onClick={() => { setShowMovementModal(false); setEditingMovement(null); setMovementForm({ categoryId: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] }); }}
+                    onClick={resetMovementEditor}
                     className="flex-1 px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors"
                   >
                     Cancelar
@@ -722,43 +1021,39 @@ export default function Financiero() {
           </div>
         )}
 
-        {/* Modal Nueva Categoría */}
         {showCategoryModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-[var(--color-cardBackground)] rounded-lg shadow-xl max-w-md w-full p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-[var(--color-text)]">Nueva Categoría</h2>
-                <button
-                  onClick={() => setShowCategoryModal(false)}
-                  className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)]"
-                >
+                <h2 className="text-xl font-bold text-[var(--color-text)]">
+                  {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
+                </h2>
+                <button onClick={resetCategoryEditor} className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)]">
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
-              <form onSubmit={handleCreateCategory} className="space-y-4">
+
+              <form onSubmit={handleCategorySubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                    Tipo *
-                  </label>
+                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">Tipo *</label>
                   <select
                     required
                     value={categoryForm.type}
-                    onChange={(e) => {
-                      const type = e.target.value as 'GASTO' | 'INGRESO';
-                      setCategoryForm({ ...categoryForm, type, color: type === 'GASTO' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' });
-                    }}
+                    onChange={(e) => setCategoryForm({ ...categoryForm, type: e.target.value as FinancialCategoryType })}
                     className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   >
                     <option value="GASTO">Gasto</option>
                     <option value="INGRESO">Ingreso</option>
                   </select>
+                  <p className="text-xs text-[var(--color-textSecondary)] mt-1">
+                    El color se asigna automáticamente: rojo para gastos y verde para ingresos.
+                  </p>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                    Nombre *
-                  </label>
+                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">Nombre *</label>
                   <input
                     type="text"
                     required
@@ -768,10 +1063,9 @@ export default function Financiero() {
                     className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                    Icono *
-                  </label>
+                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">Icono *</label>
                   <input
                     type="text"
                     required
@@ -780,42 +1074,13 @@ export default function Financiero() {
                     placeholder="Ej: 🔧"
                     className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   />
-                  <p className="text-xs text-[var(--color-textSecondary)] mt-1">
-                    Usa un emoji representativo
-                  </p>
+                  <p className="text-xs text-[var(--color-textSecondary)] mt-1">Usa un emoji representativo.</p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                    Color *
-                  </label>
-                  <select
-                    required
-                    value={categoryForm.color}
-                    onChange={(e) => setCategoryForm({ ...categoryForm, color: e.target.value })}
-                    className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-                  >
-                    <option value="bg-blue-100 text-blue-800">Azul</option>
-                    <option value="bg-green-100 text-green-800">Verde</option>
-                    <option value="bg-yellow-100 text-yellow-800">Amarillo</option>
-                    <option value="bg-red-100 text-red-800">Rojo</option>
-                    <option value="bg-purple-100 text-purple-800">Púrpura</option>
-                    <option value="bg-pink-100 text-pink-800">Rosa</option>
-                    <option value="bg-indigo-100 text-indigo-800">Índigo</option>
-                    <option value="bg-orange-100 text-orange-800">Naranja</option>
-                    <option value="bg-cyan-100 text-cyan-800">Cian</option>
-                    <option value="bg-teal-100 text-teal-800">Verde azulado</option>
-                    <option value="bg-lime-100 text-lime-800">Lima</option>
-                    <option value="bg-amber-100 text-amber-800">Ámbar</option>
-                    <option value="bg-emerald-100 text-emerald-800">Esmeralda</option>
-                    <option value="bg-violet-100 text-violet-800">Violeta</option>
-                    <option value="bg-rose-100 text-rose-800">Rosa oscuro</option>
-                    <option value="bg-slate-100 text-slate-800">Pizarra</option>
-                  </select>
-                </div>
+
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
-                    onClick={() => setShowCategoryModal(false)}
+                    onClick={resetCategoryEditor}
                     className="flex-1 px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors"
                   >
                     Cancelar
@@ -825,10 +1090,43 @@ export default function Financiero() {
                     disabled={loading}
                     className="flex-1 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primaryDark)] transition-colors disabled:opacity-50"
                   >
-                    {loading ? 'Guardando...' : 'Crear'}
+                    {loading ? 'Guardando...' : editingCategory ? 'Guardar cambios' : 'Crear'}
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {showCategoryTypeConfirm && editingCategory && pendingCategorySubmit && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--color-cardBackground)] rounded-lg shadow-xl max-w-lg w-full p-6">
+              <h2 className="text-xl font-bold text-[var(--color-text)] mb-3">Cambiar tipo de categoría</h2>
+              <p className="text-sm text-[var(--color-textSecondary)] leading-relaxed">
+                Esta categoría ya tiene {editingCategory._count?.movements ?? 0} movimientos registrados.
+                Si cambias su tipo de {editingCategory.type === 'GASTO' ? 'gasto' : 'ingreso'} a {pendingCategorySubmit.type === 'GASTO' ? 'gasto' : 'ingreso'},
+                sus movimientos pasarán a verse con el nuevo tipo en listados, balance y estadísticas.
+              </p>
+
+              <div className="flex gap-3 pt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCategoryTypeConfirm(false);
+                    setPendingCategorySubmit(null);
+                  }}
+                  className="flex-1 px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmCategoryTypeChange}
+                  className="flex-1 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primaryDark)] transition-colors"
+                >
+                  Confirmar cambio
+                </button>
+              </div>
             </div>
           </div>
         )}
