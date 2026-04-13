@@ -144,6 +144,7 @@ export const approveUser = async (req: Request, res: Response) => {
           userId,
           type: membershipType,
           startDate: new Date(),
+          trialStartDate: membershipType === 'EN_PRUEBAS' ? new Date() : null,
         },
       });
     });

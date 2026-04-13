@@ -30,8 +30,8 @@ export async function promoteTrialMembers(): Promise<void> {
   });
 
   const memberships = candidates.filter(m => {
-    const referenceDate = m.trialStartDate ?? m.startDate;
-    return referenceDate <= cutoff;
+    if (!m.trialStartDate) return false;
+    return m.trialStartDate <= cutoff;
   });
 
   if (memberships.length === 0) return;
