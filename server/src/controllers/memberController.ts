@@ -145,11 +145,13 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
 
     // Calculate payment status for each member
     const membersData: MemberData[] = users.map(user => {
-      const computedPaymentStatus = getPaymentStatus({
-        payments: user.payments,
-        startDate: user.membership?.startDate || null,
-        billingStartDate: user.membership?.billingStartDate || null
-      });
+      const computedPaymentStatus = user.membership?.type === 'EN_PRUEBAS'
+        ? null
+        : getPaymentStatus({
+            payments: user.payments,
+            startDate: user.membership?.startDate || null,
+            billingStartDate: user.membership?.billingStartDate || null
+          });
 
       // Determine membership type
       let membershipType: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA' | null = null;
@@ -203,7 +205,7 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
         } else if (sortBy === 'lastName') {
           cmp = normalizeSort(a.lastName).localeCompare(normalizeSort(b.lastName));
         } else {
-          cmp = (paymentStatusOrder[a.paymentStatus] ?? 0) - (paymentStatusOrder[b.paymentStatus] ?? 0);
+          cmp = (paymentStatusOrder[a.paymentStatus ?? ''] ?? 0) - (paymentStatusOrder[b.paymentStatus ?? ''] ?? 0);
         }
         return dir === 'asc' ? cmp : -cmp;
       });

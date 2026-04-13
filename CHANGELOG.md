@@ -4,6 +4,25 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-13 (sesión 3)
+
+### Correcciones
+#### Membresías: estado de pago incorrecto en miembros EN_PRUEBAS y bug en promoción automática
+
+- Los miembros con membresía `EN_PRUEBAS` mostraban "Impagado" en la lista de Gestión de Socios, cuando no tienen obligación de pagar cuota. Se corrige devolviendo `paymentStatus: null` para ese tipo y ocultando el badge en la UI. Los miembros con `BAJA` sí conservan su estado de pago, ya que pueden haber sido dados de baja precisamente por impago.
+- Se corrigen dos bugs encadenados que provocaban que degradar un miembro a `EN_PRUEBAS` manualmente fuera revertido al día siguiente por el cron de promoción automática:
+  1. `adminController.ts`: al aprobar un nuevo miembro con tipo `EN_PRUEBAS`, no se seteaba `trialStartDate`, dejándola `null`. El cron entonces usaba `startDate` como fallback, y si era suficientemente antigua (≥60 días), lo promocionaba automáticamente.
+  2. `memberPromotionJob.ts`: el cron usaba `trialStartDate ?? startDate` como fecha de referencia. Ahora ignora directamente cualquier membresía `EN_PRUEBAS` que no tenga `trialStartDate` definida, evitando promociones incorrectas.
+
+**Archivos modificados:**
+- `server/src/controllers/adminController.ts` — setea `trialStartDate` al aprobar un miembro con tipo `EN_PRUEBAS`
+- `server/src/jobs/memberPromotionJob.ts` — el cron solo considera `trialStartDate`; si es `null`, descarta el candidato
+- `server/src/controllers/memberController.ts` — `paymentStatus` es `null` para `EN_PRUEBAS`; orden por estado de pago tolera `null`
+- `server/src/types/members.ts` — `paymentStatus` en `MemberData` acepta `null`
+- `client/src/pages/admin/Members.tsx` — `getPaymentStatusBadge` acepta `null` y no renderiza nada en ese caso
+
+---
+
 ## 2026-04-13 (sesión 2)
 
 ### Nuevas funcionalidades

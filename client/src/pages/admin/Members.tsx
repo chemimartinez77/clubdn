@@ -381,7 +381,9 @@ export default function Members() {
   };
 
   // Payment status badge helper
-  const getPaymentStatusBadge = (status: 'NUEVO' | 'PENDIENTE' | 'IMPAGADO' | 'PAGADO' | 'ANO_COMPLETO') => {
+  const getPaymentStatusBadge = (status: 'NUEVO' | 'PENDIENTE' | 'IMPAGADO' | 'PAGADO' | 'ANO_COMPLETO' | null) => {
+    if (!status) return null;
+
     const styles = {
       NUEVO: 'bg-blue-100 text-blue-800',
       PENDIENTE: 'bg-yellow-100 text-yellow-800',

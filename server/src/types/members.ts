@@ -20,7 +20,7 @@ export interface MemberData {
   membershipType: 'SOCIO' | 'COLABORADOR' | 'FAMILIAR' | 'EN_PRUEBAS' | 'BAJA' | null;
   startDate: string | null;
   fechaBaja: string | null;
-  paymentStatus: 'NUEVO' | 'PENDIENTE' | 'IMPAGADO' | 'PAGADO' | 'ANO_COMPLETO';
+  paymentStatus: 'NUEVO' | 'PENDIENTE' | 'IMPAGADO' | 'PAGADO' | 'ANO_COMPLETO' | null;
   phone: string | null;
   lastPaymentDate: string | null;
   showTrialPromotionWarning: boolean;
