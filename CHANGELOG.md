@@ -4,6 +4,25 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-13 (sesión 4)
+
+### Mejoras
+#### Dashboard: métrica más útil en estadísticas y aforo visible en próximas partidas
+
+- En la tarjeta `Tus estadísticas`, la métrica `Eventos asistidos` se sustituye por `Juegos distintos`, que refleja mejor el uso real del dashboard ahora que prácticamente todos los eventos son partidas.
+- El backend de estadísticas del usuario expone `uniqueGamesPlayed`, calculado a partir de los títulos distintos jugados en partidas completadas.
+- La nueva tarjeta mantiene el bloque compacto de estadísticas sin duplicar el significado de `Partidas jugadas`, aportando una señal de variedad en lugar de volumen bruto.
+- En `Tus próximas partidas y eventos`, cada tarjeta muestra ahora también el aforo con un texto más útil para aprovechar el espacio vertical libre: `Asistentes: 2/4 (2 plazas libres)` o `Asistentes: 4/4 (COMPLETO)`.
+- El endpoint de próximos eventos se amplía para incluir `maxAttendees` y `registeredCount`, contando tanto inscripciones confirmadas como invitaciones activas para que el dato visible en dashboard coincida con el mostrado en otras pantallas del sistema.
+
+**Archivos modificados:**
+- `client/src/components/dashboard/StatsCard.tsx` - sustituida la tarjeta `Eventos asistidos` por `Juegos distintos`
+- `client/src/components/dashboard/UpcomingEventsCard.tsx` - añadido texto de aforo y plazas libres en cada próxima partida/evento
+- `client/src/types/stats.ts` - añadidos `uniqueGamesPlayed`, `maxAttendees` y `registeredCount`
+- `server/src/controllers/statsController.ts` - cálculo de `uniqueGamesPlayed` y enriquecimiento del endpoint de próximos eventos con capacidad ocupada
+
+---
+
 ## 2026-04-13 (sesión 3)
 
 ### Correcciones

@@ -84,6 +84,19 @@ export default function UpcomingEventsCard() {
     return `${startText}-${endText}${formatDuration(event.durationHours, event.durationMinutes)}`;
   };
 
+  const formatCapacityText = (registeredCount?: number, maxAttendees?: number) => {
+    if (!maxAttendees || maxAttendees <= 0) return null;
+
+    const currentRegistered = registeredCount ?? 0;
+    const spotsLeft = maxAttendees - currentRegistered;
+
+    if (spotsLeft <= 0) {
+      return `Asistentes: ${currentRegistered}/${maxAttendees} (COMPLETO)`;
+    }
+
+    return `Asistentes: ${currentRegistered}/${maxAttendees} (${spotsLeft} ${spotsLeft === 1 ? 'plaza libre' : 'plazas libres'})`;
+  };
+
   const getEffectiveStatus = (event: EventDetail) => {
     if (event.status !== 'SCHEDULED') return event.status;
     const start = getStartTime(event);
@@ -112,6 +125,7 @@ export default function UpcomingEventsCard() {
             {upcomingEvents.slice(0, 16).map((event) => {
               const scheduleText = formatTimeWithDuration(event);
               const effectiveStatus = getEffectiveStatus(event);
+              const capacityText = formatCapacityText(event.registeredCount, event.maxAttendees);
 
               return (
                 <div
@@ -134,6 +148,11 @@ export default function UpcomingEventsCard() {
                         {scheduleText && (
                           <p className="text-sm text-[var(--color-textSecondary)]">
                             {scheduleText}
+                          </p>
+                        )}
+                        {capacityText && (
+                          <p className="text-sm text-[var(--color-textSecondary)]">
+                            {capacityText}
                           </p>
                         )}
                       </div>

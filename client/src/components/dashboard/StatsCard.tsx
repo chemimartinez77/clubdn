@@ -104,12 +104,13 @@ export default function StatsCard() {
   // Estadísticas básicas en tarjetas
   const basicStats: StatItem[] = [
     {
-      label: 'Eventos asistidos',
-      value: userStats?.eventsAttended ?? '-',
+      label: 'Juegos distintos',
+      value: userStats?.uniqueGamesPlayed ?? '-',
       color: 'purple',
+      tooltip: 'Numero de juegos diferentes que ya has jugado en partidas completadas.',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V7z" />
         </svg>
       ),
     },
@@ -172,10 +173,9 @@ export default function StatsCard() {
           <div className="grid grid-cols-2 gap-4">
             {basicStats.map((stat, index) => {
               // Determinar si esta tarjeta debe ser clicable
-              const isClickable = index === 0 || index === 1 || index === 2 || index === 3; // Todos clicables
+              const isClickable = index === 1 || index === 2 || index === 3;
               const onClick = isClickable ? () => {
-                if (index === 0) setOpenModal('eventsAttended');
-                else if (index === 1) setOpenModal('gamesPlayed');
+                if (index === 1) setOpenModal('gamesPlayed');
                 else if (index === 2) setOpenModal('timeRange');
                 else if (index === 3) setOpenModal('upcomingEvents');
               } : undefined;

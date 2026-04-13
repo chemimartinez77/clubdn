@@ -310,6 +310,7 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
       .sort(([, a], [, b]) => b.count - a.count)
       .slice(0, 3)
       .map(([name, data]) => ({ name, count: data.count, image: data.image }));
+    const uniqueGamesPlayed = Object.keys(gameCounts).length;
 
     // 4. Próximos eventos (confirmados y programados o en curso)
     const upcomingEvents = await prisma.eventRegistration.count({
@@ -460,6 +461,7 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
       data: {
         eventsAttended,
         gamesPlayed,
+        uniqueGamesPlayed,
         topGames,
         upcomingEvents,
         topPlayers,
@@ -512,8 +514,27 @@ export const getUserEventsAttended = async (req: Request, res: Response): Promis
             startMinute: true,
             durationHours: true,
             durationMinutes: true,
+            maxAttendees: true,
             location: true,
             status: true,
+            registrations: {
+              where: {
+                status: RegistrationStatus.CONFIRMED
+              },
+              select: {
+                id: true
+              }
+            },
+            invitations: {
+              where: {
+                status: {
+                  in: ['PENDING', 'PENDING_APPROVAL', 'USED']
+                }
+              },
+              select: {
+                id: true
+              }
+            },
             game: {
               select: {
                 thumbnail: true,
@@ -580,8 +601,27 @@ export const getUserGamesPlayed = async (req: Request, res: Response): Promise<v
             startMinute: true,
             durationHours: true,
             durationMinutes: true,
+            maxAttendees: true,
             location: true,
             status: true,
+            registrations: {
+              where: {
+                status: RegistrationStatus.CONFIRMED
+              },
+              select: {
+                id: true
+              }
+            },
+            invitations: {
+              where: {
+                status: {
+                  in: ['PENDING', 'PENDING_APPROVAL', 'USED']
+                }
+              },
+              select: {
+                id: true
+              }
+            },
             game: {
               select: {
                 thumbnail: true,
@@ -655,8 +695,27 @@ export const getUserUpcomingEvents = async (req: Request, res: Response): Promis
             startMinute: true,
             durationHours: true,
             durationMinutes: true,
+            maxAttendees: true,
             location: true,
             status: true,
+            registrations: {
+              where: {
+                status: RegistrationStatus.CONFIRMED
+              },
+              select: {
+                id: true
+              }
+            },
+            invitations: {
+              where: {
+                status: {
+                  in: ['PENDING', 'PENDING_APPROVAL', 'USED']
+                }
+              },
+              select: {
+                id: true
+              }
+            },
             game: {
               select: {
                 thumbnail: true,
@@ -675,7 +734,10 @@ export const getUserUpcomingEvents = async (req: Request, res: Response): Promis
 
     // Filtrar: solo mostrar si la hora de fin aún no ha pasado
     const events = registrations
-      .map(r => r.event)
+      .map(r => ({
+        ...r.event,
+        registeredCount: r.event.registrations.length + r.event.invitations.length
+      }))
       .filter(event => {
         const durationMins = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
         const endDate = new Date(event.date.getTime() + durationMins * 60 * 1000);

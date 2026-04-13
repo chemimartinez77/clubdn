@@ -19,6 +19,7 @@ export interface TopDay {
 export interface UserStats {
   eventsAttended: number;
   gamesPlayed: number;
+  uniqueGamesPlayed: number;
   topGames: TopGame[];
   upcomingEvents: number;
   topPlayers: TopPlayer[];
@@ -54,6 +55,8 @@ export interface EventDetail {
   startMinute: number | null;
   durationHours?: number | null;
   durationMinutes?: number | null;
+  maxAttendees?: number;
+  registeredCount?: number;
   location: string;
   status: string;
   // Relación con la tabla Game (URLs actualizadas)
