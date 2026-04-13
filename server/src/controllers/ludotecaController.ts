@@ -24,11 +24,7 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
     const where: any = {};
 
     if (search && typeof search === 'string') {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { internalId: { contains: search, mode: 'insensitive' } }
-      ];
+      where.name = { contains: search, mode: 'insensitive' };
     }
 
     if (gameType && typeof gameType === 'string') {

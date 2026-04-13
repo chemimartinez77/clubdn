@@ -21,6 +21,15 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 - `client/src/types/game.ts` - añadido `latestEvent` y alineados `image` / `thumbnail` como nullable
 - `client/src/components/layout/Header.tsx` - `Buscados` renombrado a `Jugados` en desktop y móvil
 
+### Correcciones
+#### Ludoteca: búsqueda solo por nombre
+
+- La búsqueda de la ludoteca deja de usar coincidencias parciales sobre identificadores internos y descripción, que provocaban resultados confusos al escribir números cortos como `18`.
+- A partir de ahora, el buscador filtra únicamente por nombre del juego, haciendo el comportamiento más predecible para localizar títulos concretos como `1809`.
+
+**Archivos modificados:**
+- `server/src/controllers/ludotecaController.ts` - la búsqueda libre se limita al campo `name`
+
 ## 2026-04-12 (sesión 1)
 
 ### Nuevas funcionalidades
