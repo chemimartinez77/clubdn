@@ -6,8 +6,8 @@ export interface Game {
   alternateNames: string[];
   description: string;
   yearPublished: number | null;
-  image: string;
-  thumbnail: string;
+  image: string | null;
+  thumbnail: string | null;
   minPlayers: number | null;
   maxPlayers: number | null;
   playingTime: number | null;
@@ -39,14 +39,19 @@ export interface GameListItem {
   id: string;
   name: string;
   yearPublished: number | null;
-  image: string;
-  thumbnail: string;
+  image: string | null;
+  thumbnail: string | null;
   minPlayers: number | null;
   maxPlayers: number | null;
   playingTime: number | null;
   averageRating: number | null;
   rank: number | null;
   complexityRating: number | null;
+  latestEvent: {
+    id: string;
+    title: string;
+    date: string;
+  } | null;
 }
 
 export interface GamesResponse {

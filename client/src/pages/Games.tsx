@@ -1,6 +1,7 @@
 // client/src/pages/Games.tsx
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
 import GameDetailModal from '../components/games/GameDetailModal';
@@ -43,9 +44,9 @@ export default function Games() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-[var(--color-text)]">Juegos Jugados</h1>
+          <h1 className="text-3xl font-bold text-[var(--color-text)]">Juegos jugados</h1>
           <p className="text-[var(--color-textSecondary)] mt-1">
-            Explora todos los juegos que se han buscado en el club
+            Explora los juegos que ya se han disputado o están en curso en el club
           </p>
         </div>
 
@@ -89,7 +90,7 @@ export default function Games() {
         <div className="flex items-center justify-between">
           {pagination && (
             <div className="text-sm text-[var(--color-textSecondary)]">
-              Mostrando {games.length} de {pagination.totalGames} juegos
+              Mostrando {games.length} de {pagination.totalGames} juegos jugados
             </div>
           )}
           <a
@@ -133,113 +134,129 @@ export default function Games() {
               <p className="text-[var(--color-textSecondary)] text-lg">
                 {searchQuery
                   ? 'No se encontraron juegos con ese nombre'
-                  : 'Aún no hay juegos en la base de datos'}
+                  : 'Aún no hay juegos disputados en el catálogo'}
               </p>
               <p className="text-[var(--color-textSecondary)] text-sm mt-2">
-                {!searchQuery && 'Los juegos se añaden automáticamente cuando se crean partidas'}
+                {!searchQuery && 'Aquí solo aparecen juegos de partidas en curso, completadas o ya pasadas'}
               </p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {games.map((game) => (
-              <button
+              <div
                 key={game.id}
-                onClick={() => setSelectedGameId(game.id)}
-                className="group relative bg-[var(--color-cardBackground)] rounded-lg shadow hover:shadow-xl transition-all duration-200 overflow-hidden border border-[var(--color-cardBorder)] hover:border-[var(--color-primary)] cursor-pointer"
+                className="group relative flex flex-col bg-[var(--color-cardBackground)] rounded-lg shadow hover:shadow-xl transition-all duration-200 overflow-hidden border border-[var(--color-cardBorder)] hover:border-[var(--color-primary)]"
               >
-                {/* Game Image */}
-                <div className="relative aspect-square">
-                  {game.image ? (
-                    <img
-                      src={game.image}
-                      alt={game.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-[var(--color-cardBorder)] flex items-center justify-center">
-                      <svg className="w-12 h-12 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                        />
-                      </svg>
-                    </div>
-                  )}
-
-                  {/* Ranking badge */}
-                  {game.rank && (
-                    <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
-                      #{game.rank}
-                    </div>
-                  )}
-                </div>
-
-                {/* Info */}
-                <div className="p-3">
-                  <h3 className="font-semibold text-sm text-[var(--color-text)] line-clamp-2 mb-2 text-left">
-                    {game.name}
-                  </h3>
-
-                  <div className="flex items-center justify-between text-xs text-[var(--color-textSecondary)]">
-                    {game.yearPublished && (
-                      <span>{game.yearPublished}</span>
-                    )}
-                    {game.averageRating && (
-                      <div className="flex items-center gap-1">
-                        <svg className="w-3 h-3 text-yellow-500 fill-current" viewBox="0 0 20 20">
-                          <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                        </svg>
-                        <span>{game.averageRating.toFixed(1)}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Players and Time */}
-                  <div className="flex items-center justify-between text-xs text-[var(--color-textSecondary)] mt-2">
-                    {(game.minPlayers || game.maxPlayers) && (
-                      <div className="flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                        <span>
-                          {game.minPlayers === game.maxPlayers
-                            ? game.minPlayers
-                            : `${game.minPlayers}-${game.maxPlayers}`}
-                        </span>
-                      </div>
-                    )}
-                    {game.playingTime && (
-                      <div className="flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>{game.playingTime}'</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Complexity */}
-                  {game.complexityRating && (
-                    <div className="mt-2">
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((level) => (
-                          <div
-                            key={level}
-                            className={`h-1 flex-1 rounded ${
-                              level <= Math.round(game.complexityRating!)
-                                ? 'bg-[var(--color-primary)]'
-                                : 'bg-[var(--color-cardBorder)]'
-                            }`}
+                <button
+                  type="button"
+                  onClick={() => setSelectedGameId(game.id)}
+                  className="block cursor-pointer text-left"
+                >
+                  {/* Game Image */}
+                  <div className="relative aspect-square">
+                    {game.image ? (
+                      <img
+                        src={game.image}
+                        alt={game.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-[var(--color-cardBorder)] flex items-center justify-center">
+                        <svg className="w-12 h-12 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
                           />
-                        ))}
+                        </svg>
                       </div>
+                    )}
+
+                    {game.rank && (
+                      <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
+                        #{game.rank}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-3">
+                    <h3 className="font-semibold text-sm text-[var(--color-text)] line-clamp-2 mb-2 text-left">
+                      {game.name}
+                    </h3>
+
+                    <div className="flex items-center justify-between text-xs text-[var(--color-textSecondary)]">
+                      {game.yearPublished && (
+                        <span>{game.yearPublished}</span>
+                      )}
+                      {game.averageRating && (
+                        <div className="flex items-center gap-1">
+                          <svg className="w-3 h-3 text-yellow-500 fill-current" viewBox="0 0 20 20">
+                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                          </svg>
+                          <span>{game.averageRating.toFixed(1)}</span>
+                        </div>
+                      )}
                     </div>
+
+                    <div className="flex items-center justify-between text-xs text-[var(--color-textSecondary)] mt-2">
+                      {(game.minPlayers || game.maxPlayers) && (
+                        <div className="flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                          </svg>
+                          <span>
+                            {game.minPlayers === game.maxPlayers
+                              ? game.minPlayers
+                              : `${game.minPlayers}-${game.maxPlayers}`}
+                          </span>
+                        </div>
+                      )}
+                      {game.playingTime && (
+                        <div className="flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span>{game.playingTime}'</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {game.complexityRating && (
+                      <div className="mt-2">
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((level) => (
+                            <div
+                              key={level}
+                              className={`h-1 flex-1 rounded ${
+                                level <= Math.round(game.complexityRating!)
+                                  ? 'bg-[var(--color-primary)]'
+                                  : 'bg-[var(--color-cardBorder)]'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </button>
+
+                <div className="mt-auto px-3 pb-3">
+                  {game.latestEvent ? (
+                    <Link
+                      to={`/events/${game.latestEvent.id}`}
+                      className="inline-flex text-xs font-medium text-[var(--color-primary)] hover:underline"
+                    >
+                      Partida más reciente
+                    </Link>
+                  ) : (
+                    <span className="text-xs text-[var(--color-textSecondary)]">
+                      Sin partida enlazada
+                    </span>
                   )}
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}

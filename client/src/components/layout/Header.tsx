@@ -151,7 +151,7 @@ export default function Header() {
                       className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                       onClick={() => setIsGamesMenuOpen(false)}
                     >
-                      Buscados
+                      Jugados
                     </Link>
                     {isCombatZoneEnabledForUser ? (
                       <Link
@@ -529,7 +529,7 @@ export default function Header() {
                       className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                       onClick={closeAllMenus}
                     >
-                      Buscados
+                      Jugados
                     </Link>
                     {isCombatZoneEnabledForUser ? (
                       <Link

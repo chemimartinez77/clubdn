@@ -4,6 +4,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-13 (sesión 1)
+
+### Nuevas funcionalidades
+#### Juegos: catálogo de partidas disputadas con enlace a la partida más reciente
+
+- La pantalla de `Juegos` deja de listar todos los juegos cacheados desde BGG/RPGGeek y pasa a mostrar solo juegos que hayan aparecido en partidas ya disputadas.
+- Un juego entra en este catálogo si pertenece a una `PARTIDA` en curso, completada o ya pasada en fecha aunque todavía no haya sido validada por QR ni confirmada expresamente por el organizador.
+- Cada juego aparece una sola vez y enlaza a la `Partida más reciente` en la que se jugó, para facilitar que otros miembros lleguen al detalle de la partida y localicen al organizador.
+- El menú principal deja de usar la etiqueta confusa `Buscados` y pasa a mostrar `Jugados`, alineado con el comportamiento real de la pantalla.
+- La pantalla mantiene el modal de detalle del juego, pero ahora el copy, el estado vacío y el contador resumen describen correctamente un catálogo de juegos disputados en el club.
+
+**Archivos modificados:**
+- `server/src/controllers/gameController.ts` - `GET /api/games` reconstruido desde partidas disputadas y enriquecido con `latestEvent`
+- `client/src/pages/Games.tsx` - cards adaptadas al nuevo catálogo y enlace `Partida más reciente`
+- `client/src/types/game.ts` - añadido `latestEvent` y alineados `image` / `thumbnail` como nullable
+- `client/src/components/layout/Header.tsx` - `Buscados` renombrado a `Jugados` en desktop y móvil
+
 ## 2026-04-12 (sesión 1)
 
 ### Nuevas funcionalidades

@@ -221,68 +221,157 @@ export const refreshGame = async (req: Request, res: Response) => {
 export const listGames = async (req: Request, res: Response) => {
   try {
     const { page = 1, pageSize = 50, search } = req.query;
+    const currentPage = Number(page);
+    const currentPageSize = Number(pageSize);
+    const normalizedSearch = typeof search === 'string'
+      ? search.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      : '';
+    const now = new Date();
 
-    const where: any = {};
-
-    if (search && typeof search === 'string') {
-      // Buscar tanto en el nombre principal como en los nombres alternativos
-      // Usamos alternateNames con array_to_string para búsqueda parcial
-      where.OR = [
-        {
-          name: {
-            contains: search,
-            mode: 'insensitive'
+    const candidateEvents = await prisma.event.findMany({
+      where: {
+        type: 'PARTIDA',
+        status: { not: 'CANCELLED' },
+        AND: [
+          {
+            OR: [
+              { status: { in: ['ONGOING', 'COMPLETED'] } },
+              { status: 'SCHEDULED', date: { lte: now } }
+            ]
+          },
+          {
+            OR: [
+              { bggId: { not: null } },
+              { gameName: { not: null } }
+            ]
+          }
+        ]
+      },
+      orderBy: [
+        { date: 'desc' },
+        { createdAt: 'desc' }
+      ],
+      select: {
+        id: true,
+        title: true,
+        date: true,
+        gameName: true,
+        game: {
+          select: {
+            id: true,
+            name: true,
+            alternateNames: true,
+            yearPublished: true,
+            image: true,
+            thumbnail: true,
+            minPlayers: true,
+            maxPlayers: true,
+            playingTime: true,
+            averageRating: true,
+            rank: true,
+            complexityRating: true
           }
         }
-      ];
-
-      // También buscar en los juegos donde algún nombre alternativo contiene el término
-      const gamesWithAltNames = await prisma.$queryRaw`
-        SELECT id FROM "Game"
-        WHERE array_to_string("alternateNames", '|') ILIKE ${'%' + search + '%'}
-      `;
-
-      if (Array.isArray(gamesWithAltNames) && gamesWithAltNames.length > 0) {
-        where.OR.push({
-          id: {
-            in: gamesWithAltNames.map((g: any) => g.id)
-          }
-        });
       }
+    });
+
+    const normalize = (value: string) =>
+      value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    const unresolvedGameNames = [...new Set(
+      candidateEvents
+        .filter((event) => !event.game && event.gameName)
+        .map((event) => event.gameName!.trim())
+        .filter(Boolean)
+    )];
+
+    const fallbackGames = unresolvedGameNames.length > 0
+      ? await prisma.game.findMany({
+          where: {
+            name: {
+              in: unresolvedGameNames
+            }
+          },
+          select: {
+            id: true,
+            name: true,
+            alternateNames: true,
+            yearPublished: true,
+            image: true,
+            thumbnail: true,
+            minPlayers: true,
+            maxPlayers: true,
+            playingTime: true,
+            averageRating: true,
+            rank: true,
+            complexityRating: true
+          }
+        })
+      : [];
+
+    const fallbackGamesByName = new Map(
+      fallbackGames.map((game) => [normalize(game.name), game])
+    );
+
+    const uniqueGames = new Map<string, {
+      id: string;
+      name: string;
+      alternateNames: string[];
+      yearPublished: number | null;
+      image: string | null;
+      thumbnail: string | null;
+      minPlayers: number | null;
+      maxPlayers: number | null;
+      playingTime: number | null;
+      averageRating: number | null;
+      rank: number | null;
+      complexityRating: number | null;
+      latestEvent: {
+        id: string;
+        title: string;
+        date: string;
+      } | null;
+    }>();
+
+    for (const event of candidateEvents) {
+      const resolvedGame = event.game ?? (event.gameName ? fallbackGamesByName.get(normalize(event.gameName)) : null);
+      if (!resolvedGame) continue;
+      if (uniqueGames.has(resolvedGame.id)) continue;
+
+      uniqueGames.set(resolvedGame.id, {
+        ...resolvedGame,
+        latestEvent: {
+          id: event.id,
+          title: event.title,
+          date: event.date.toISOString()
+        }
+      });
     }
 
-    const [games, totalGames] = await Promise.all([
-      prisma.game.findMany({
-        where,
-        orderBy: { name: 'asc' },
-        skip: (Number(page) - 1) * Number(pageSize),
-        take: Number(pageSize),
-        select: {
-          id: true,
-          name: true,
-          yearPublished: true,
-          image: true,
-          thumbnail: true,
-          minPlayers: true,
-          maxPlayers: true,
-          playingTime: true,
-          averageRating: true,
-          rank: true,
-          complexityRating: true
-        }
-      }),
-      prisma.game.count({ where })
-    ]);
+    const filteredGames = Array.from(uniqueGames.values())
+      .filter((game) => {
+        if (!normalizedSearch) return true;
+
+        const searchableFields = [game.name, ...game.alternateNames];
+        return searchableFields.some((field) => normalize(field).includes(normalizedSearch));
+      })
+      .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+
+    const totalGames = filteredGames.length;
+    const games = filteredGames.slice(
+      (currentPage - 1) * currentPageSize,
+      currentPage * currentPageSize
+    );
 
     return res.json({
       success: true,
       data: {
         games,
         pagination: {
-          currentPage: Number(page),
-          pageSize: Number(pageSize),
+          currentPage,
+          pageSize: currentPageSize,
           totalGames,
-          totalPages: Math.ceil(totalGames / Number(pageSize))
+          totalPages: Math.ceil(totalGames / currentPageSize)
         }
       }
     });
