@@ -24,7 +24,7 @@ const colorClasses = {
   yellow: 'bg-yellow-100 text-yellow-600',
 };
 
-type ModalType = 'eventsAttended' | 'gamesPlayed' | 'upcomingEvents' | 'timeRange' | null;
+type ModalType = 'eventsAttended' | 'uniqueGames' | 'gamesPlayed' | 'upcomingEvents' | 'timeRange' | null;
 
 export default function StatsCard() {
   const [openModal, setOpenModal] = useState<ModalType>(null);
@@ -66,6 +66,33 @@ export default function StatsCard() {
       return response.data.data;
     },
     enabled: openModal === 'gamesPlayed'
+  });
+
+  const { data: uniqueGamesPlayed } = useQuery({
+    queryKey: ['uniqueGamesPlayed'],
+    queryFn: async () => {
+      const response = await api.get<{ success: boolean; data: EventDetail[] }>('/api/stats/user/games-played');
+      const events = response.data.data;
+      const uniqueGames = new Map<string, { name: string; image: string | null; latestEventId: string; latestDate: string }>();
+
+      events.forEach((event) => {
+        const name = event.gameName || event.title;
+        if (!name) return;
+
+        const current = uniqueGames.get(name);
+        if (!current || new Date(event.date).getTime() > new Date(current.latestDate).getTime()) {
+          uniqueGames.set(name, {
+            name,
+            image: event.game?.image || event.game?.thumbnail || event.gameImage || null,
+            latestEventId: event.id,
+            latestDate: event.date
+          });
+        }
+      });
+
+      return Array.from(uniqueGames.values()).sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    },
+    enabled: openModal === 'uniqueGames'
   });
 
   // Obtener próximos eventos (solo cuando se abre el modal)
@@ -173,9 +200,10 @@ export default function StatsCard() {
           <div className="grid grid-cols-2 gap-4">
             {basicStats.map((stat, index) => {
               // Determinar si esta tarjeta debe ser clicable
-              const isClickable = index === 1 || index === 2 || index === 3;
+              const isClickable = index === 0 || index === 1 || index === 2 || index === 3;
               const onClick = isClickable ? () => {
-                if (index === 1) setOpenModal('gamesPlayed');
+                if (index === 0) setOpenModal('uniqueGames');
+                else if (index === 1) setOpenModal('gamesPlayed');
                 else if (index === 2) setOpenModal('timeRange');
                 else if (index === 3) setOpenModal('upcomingEvents');
               } : undefined;
@@ -333,6 +361,46 @@ export default function StatsCard() {
             ))
           ) : (
             <p className="text-center text-[var(--color-textSecondary)] py-8">No hay eventos asistidos</p>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={openModal === 'uniqueGames'}
+        onClose={() => setOpenModal(null)}
+        title="Juegos Distintos"
+        size="lg"
+      >
+        <div className="space-y-3">
+          {uniqueGamesPlayed && uniqueGamesPlayed.length > 0 ? (
+            uniqueGamesPlayed.map((game, index) => (
+              <div
+                key={`${game.name}-${game.latestEventId}`}
+                className="p-4 border border-[var(--color-cardBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer hover:shadow-md"
+                onClick={() => {
+                  setOpenModal(null);
+                  navigate(`/events/${game.latestEventId}`);
+                }}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-[var(--color-text)]">{game.name}</h4>
+                    <p className="text-sm text-[var(--color-textSecondary)] mt-1">
+                      Última partida jugada: {formatDate(game.latestDate)}
+                    </p>
+                    <p className="text-xs text-[var(--color-textSecondary)] mt-2">
+                      Pulsa para abrir la partida más reciente de este juego.
+                    </p>
+                  </div>
+                  <div className="ml-4 flex items-center gap-3">
+                    <span className="text-sm font-semibold text-[var(--color-textSecondary)]">#{index + 1}</span>
+                    <GameImage src={game.image} alt={game.name} size="sm" />
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-center text-[var(--color-textSecondary)] py-8">No hay juegos distintos todavía</p>
           )}
         </div>
       </Modal>
