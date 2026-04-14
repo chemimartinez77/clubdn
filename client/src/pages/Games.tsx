@@ -7,6 +7,7 @@ import { Card, CardContent } from '../components/ui/Card';
 import GameDetailModal from '../components/games/GameDetailModal';
 import { api } from '../api/axios';
 import type { GamesResponse } from '../types/game';
+import type { ApiResponse } from '../types/auth';
 
 export default function Games() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -142,7 +143,7 @@ export default function Games() {
           </Card>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {games.map((game) => (
+            {games.map((game: GamesResponse['games'][number]) => (
               <div
                 key={game.id}
                 className="group relative flex flex-col bg-[var(--color-cardBackground)] rounded-lg shadow hover:shadow-xl transition-all duration-200 overflow-hidden border border-[var(--color-cardBorder)] hover:border-[var(--color-primary)]"

@@ -135,7 +135,6 @@ export default function EventDetail() {
 
   // Estado QR de validación de partida
   const [showValidationQr, setShowValidationQr] = useState(false);
-  const [showResultsModal, setShowResultsModal] = useState(false);
   const [resultEditing, setResultEditing] = useState(false);
   const [resultRows, setResultRows] = useState<ResultRow[]>([
     { userId: '', userName: '', score: '', isWinner: false, guestName: '', isGuest: false },
