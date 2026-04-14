@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
@@ -150,7 +150,10 @@ export default function MiLudoteca() {
   const [showNewLocationModal, setShowNewLocationModal] = useState(false);
   const [newLocationName, setNewLocationName] = useState('');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
-  const [dismissedJobId, setDismissedJobId] = useState<string | null>(null);
+  const [dismissedJobId, setDismissedJobId] = useState<string | null>(
+    () => localStorage.getItem('bggSyncDismissedJobId')
+  );
+  const prevSyncStatusRef = useRef<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['myGames', tab, search, page],
@@ -229,6 +232,26 @@ export default function MiLudoteca() {
   const pagination = data?.pagination;
   const displayedSyncJob = activeSyncJob ?? latestSyncJob ?? null;
   const syncRunning = displayedSyncJob?.status === 'PENDING' || displayedSyncJob?.status === 'PROCESSING';
+
+  // Auto-cierre a los 8s cuando el job pasa a COMPLETED/FAILED en esta sesión
+  useEffect(() => {
+    const currentStatus = displayedSyncJob?.status ?? null;
+    const prevStatus = prevSyncStatusRef.current;
+    prevSyncStatusRef.current = currentStatus;
+
+    if (
+      displayedSyncJob &&
+      (currentStatus === 'COMPLETED' || currentStatus === 'FAILED') &&
+      prevStatus !== null &&
+      prevStatus !== currentStatus
+    ) {
+      const timer = setTimeout(() => {
+        setDismissedJobId(displayedSyncJob.id);
+        localStorage.setItem('bggSyncDismissedJobId', displayedSyncJob.id);
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [displayedSyncJob]);
 
   const addMutation = useMutation({
     mutationFn: async ({ bggId, own, wishlist, wantToPlay }: { bggId: string; own?: boolean; wishlist?: boolean; wantToPlay?: boolean }) => {
@@ -422,7 +445,10 @@ export default function MiLudoteca() {
                     </span>
                     {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED') && (
                       <button
-                        onClick={() => setDismissedJobId(displayedSyncJob.id)}
+                        onClick={() => {
+                          setDismissedJobId(displayedSyncJob.id);
+                          localStorage.setItem('bggSyncDismissedJobId', displayedSyncJob.id);
+                        }}
                         className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors"
                         title="Cerrar"
                       >
