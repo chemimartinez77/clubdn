@@ -105,6 +105,17 @@ function getEffectiveStatus(event: { status: string; date: string; startHour?: n
   return 'SCHEDULED';
 }
 
+function calcLinkedStartTime(prev: NonNullable<Event['linkedPreviousEvent']>): string | null {
+  if (prev.startHour == null) return null;
+  const startMs = (prev.startHour * 60 + (prev.startMinute ?? 0)) * 60 * 1000;
+  const durationMs = ((prev.durationHours ?? 0) * 60 + (prev.durationMinutes ?? 0)) * 60 * 1000;
+  if (durationMs === 0) return null;
+  const totalMs = startMs + durationMs;
+  const h = Math.floor(totalMs / 3600000) % 24;
+  const m = Math.floor((totalMs % 3600000) / 60000);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
 export default function EventCard({ event }: EventCardProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -119,6 +130,10 @@ export default function EventCard({ event }: EventCardProps) {
   };
 
   const effectiveStatus = getEffectiveStatus(event);
+
+  const estimatedStartTime = event.linkedPreviousEvent
+    ? calcLinkedStartTime(event.linkedPreviousEvent)
+    : null;
   const availableSpots = event.maxAttendees - (event.registeredCount || 0);
   const isFull = availableSpots <= 0;
 
@@ -157,7 +172,11 @@ export default function EventCard({ event }: EventCardProps) {
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span className="text-sm">{formatDate(event.date)}</span>
+                <span className="text-sm">
+                  {estimatedStartTime
+                    ? `${new Intl.DateTimeFormat('es-ES', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(event.date))} · ~${estimatedStartTime} (estimado)`
+                    : formatDate(event.date)}
+                </span>
               </div>
               <div className="flex items-center gap-2 text-[var(--color-textSecondary)]">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -135,6 +135,8 @@ const eventDetailInclude = {
       gameName: true,
       gameImage: true,
       bggId: true,
+      startHour: true,
+      startMinute: true,
       durationHours: true,
       durationMinutes: true,
       status: true,

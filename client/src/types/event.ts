@@ -41,6 +41,8 @@ export interface Event {
     gameName?: string | null;
     gameImage?: string | null;
     bggId?: string | null;
+    startHour?: number | null;
+    startMinute?: number | null;
     durationHours?: number | null;
     durationMinutes?: number | null;
     status: EventStatus;
