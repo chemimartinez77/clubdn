@@ -12,6 +12,9 @@ type SyncImportItem = {
   yearPublished: number | null;
   minPlayers: number | null;
   maxPlayers: number | null;
+  own: boolean;
+  wishlist: boolean;
+  wishlistPriority: number | null;
 };
 
 type SyncDeleteItem = {
@@ -222,6 +225,21 @@ export const removeGame = async (req: Request, res: Response) => {
 };
 
 /**
+ * GET /api/my-ludoteca/bgg-username
+ * Devuelve el bggUsername guardado del usuario sin llamar a la API de BGG.
+ */
+export const getBggUsername = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const profile = await prisma.userProfile.findUnique({ where: { userId }, select: { bggUsername: true } });
+    return res.json({ success: true, data: { bggUsername: profile?.bggUsername ?? null } });
+  } catch (error) {
+    console.error('[MY_LUDOTECA] Error en getBggUsername:', error);
+    return res.status(500).json({ success: false, message: 'Error al obtener el usuario de BGG' });
+  }
+};
+
+/**
  * PATCH /api/my-ludoteca/bgg-username
  * Actualiza el bggUsername en el perfil del usuario.
  */
@@ -268,6 +286,7 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
         select: {
           own: true,
           wishlist: true,
+          wishlistPriority: true,
           wantToPlay: true,
           gameId: true,
           game: {
@@ -280,10 +299,22 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
       }),
     ]);
 
-    const ownedGameIds = new Set(dbGames.filter((game) => game.own).map((game) => game.gameId));
+    // Juegos que el usuario ya tiene en su ludoteca (own o wishlist activos)
+    const dbGameMap = new Map(dbGames.map((g) => [g.gameId, g] as const));
+
     const bggIds = new Set(bggCollection.map((game) => game.bggId));
 
-    const toImport = bggCollection.filter((game) => !ownedGameIds.has(game.bggId));
+    // Importar si no existe en DB, o si existe pero los flags difieren
+    const toImport = bggCollection.filter((bggGame) => {
+      const existing = dbGameMap.get(bggGame.bggId);
+      if (!existing) return true;
+      // Ya existe: importar solo si los flags cambiaron
+      if (bggGame.own && !existing.own) return true;
+      if (bggGame.wishlist && !existing.wishlist) return true;
+      if (bggGame.wishlist && bggGame.wishlistPriority !== existing.wishlistPriority) return true;
+      return false;
+    });
+
     const toDelete = dbGames
       .filter((game) => game.own && !bggIds.has(game.gameId))
       .map((game) => ({

@@ -12,6 +12,9 @@ type ImportPayloadItem = {
   yearPublished: number | null;
   minPlayers: number | null;
   maxPlayers: number | null;
+  own: boolean;
+  wishlist: boolean;
+  wishlistPriority: number | null;
 };
 
 type DeletePayloadItem = {
@@ -93,14 +96,18 @@ async function processJob(jobId: string) {
           },
           update: {
             status: 'active',
-            own: true,
-            locationId: job.locationId ?? undefined,
+            own: item.own ?? true,
+            wishlist: item.wishlist ?? false,
+            wishlistPriority: item.wishlistPriority ?? null,
+            locationId: item.own ? (job.locationId ?? undefined) : undefined,
           },
           create: {
             userId: job.userId,
             gameId: item.bggId,
-            own: true,
-            locationId: job.locationId ?? null,
+            own: item.own ?? true,
+            wishlist: item.wishlist ?? false,
+            wishlistPriority: item.wishlistPriority ?? null,
+            locationId: item.own ? (job.locationId ?? null) : null,
           },
         });
       } catch (error) {

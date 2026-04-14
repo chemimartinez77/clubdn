@@ -570,29 +570,47 @@ export interface BGGCollectionItem {
   yearPublished: number | null;
   minPlayers: number | null;
   maxPlayers: number | null;
+  own: boolean;
+  wishlist: boolean;
+  wishlistPriority: number | null;
 }
 
-/**
- * Obtener la colección propia de un usuario en BGG (juegos marcados como "own").
- * Maneja el 202 (BGG procesando) con reintentos.
- */
-export async function getBGGCollection(username: string): Promise<BGGCollectionItem[]> {
-  const raw = await requestWithRetry('/collection', {
-    username,
-    own: 1,
-    excludesubtype: 'boardgameexpansion',
-    stats: 0,
-  });
-
-  const result = await parseStringPromise(raw);
-  const items = normalizeItems(result?.items?.item);
-
-  return items.map((item: any) => ({
+function mapCollectionItem(item: any, own: boolean, wishlist: boolean): BGGCollectionItem {
+  const wishlistPriority = wishlist
+    ? (item?.wishlistpriority?.[0] ? parseInt(item.wishlistpriority[0]) : null)
+    : null;
+  return {
     bggId: String(item?.$?.objectid ?? ''),
     title: item?.name?.[0]?._ || item?.name?.[0] || 'Unknown',
     thumbnail: item?.thumbnail?.[0] || null,
     yearPublished: item?.yearpublished?.[0] ? parseInt(item.yearpublished[0]) : null,
     minPlayers: item?.stats?.[0]?.$?.minplayers ? parseInt(item.stats[0].$.minplayers) : null,
     maxPlayers: item?.stats?.[0]?.$?.maxplayers ? parseInt(item.stats[0].$.maxplayers) : null,
-  })).filter((g: BGGCollectionItem) => g.bggId);
+    own,
+    wishlist,
+    wishlistPriority,
+  };
+}
+
+/**
+ * Obtener la colección de un usuario en BGG: juegos propios + wishlist.
+ * Maneja el 202 (BGG procesando) con reintentos.
+ */
+export async function getBGGCollection(username: string): Promise<BGGCollectionItem[]> {
+  const [ownedRaw, wishlistRaw] = await Promise.all([
+    requestWithRetry('/collection', { username, own: 1, excludesubtype: 'boardgameexpansion', stats: 0 }),
+    requestWithRetry('/collection', { username, wishlist: 1, excludesubtype: 'boardgameexpansion', stats: 0 }),
+  ]);
+
+  const ownedItems: BGGCollectionItem[] = normalizeItems((await parseStringPromise(ownedRaw))?.items?.item)
+    .map((item: any) => mapCollectionItem(item, true, false))
+    .filter((g: BGGCollectionItem) => g.bggId);
+
+  const ownedIds = new Set(ownedItems.map((g) => g.bggId));
+
+  const wishlistItems: BGGCollectionItem[] = normalizeItems((await parseStringPromise(wishlistRaw))?.items?.item)
+    .map((item: any) => mapCollectionItem(item, false, true))
+    .filter((g: BGGCollectionItem) => g.bggId && !ownedIds.has(g.bggId)); // owned takes precedence
+
+  return [...ownedItems, ...wishlistItems];
 }

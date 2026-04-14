@@ -4,6 +4,46 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-14 (sesión 5)
+
+### Mejoras en Mi ludoteca
+
+#### Importación de wishlist desde BGG
+
+La sincronización con BGG ahora importa también los juegos marcados como wishlist en BGG, no solo los juegos propios. Se hacen dos llamadas en paralelo (`own=1` y `wishlist=1`) y se fusionan los resultados — si un juego aparece en ambas listas, "owned" tiene precedencia. La prioridad de wishlist (`wishlistpriority`, valores 1-5) se importa directamente desde BGG y se almacena en `UserGame.wishlistPriority`. La `locationId` solo se aplica a juegos propios durante la importación.
+
+**Archivos modificados:**
+- `server/src/services/bggService.ts` — `getBGGCollection` hace dos llamadas en paralelo y devuelve `own`, `wishlist`, `wishlistPriority` en cada item; nueva función `mapCollectionItem`
+- `server/src/controllers/myLudotecaController.ts` — `SyncImportItem` incluye los nuevos campos; `getBggSyncCheck` compara flags (no solo owned) para calcular `toImport`; query de DB incluye `wishlistPriority`
+- `server/src/jobs/bggSyncJob.ts` — el upsert guarda `own`, `wishlist` y `wishlistPriority`; `locationId` solo para owned
+
+#### Prioridad de wishlist con desplegable traducido
+
+Las prioridades de wishlist (1-5) se muestran ahora como un desplegable en la tarjeta del juego cuando "Wishlist" está activo, con etiquetas en español: 1·Imprescindible, 2·Me encantaría tenerlo, 3·Me gustaría tenerlo, 4·Lo estoy pensando, 5·Mejor no comprarlo.
+
+#### Lógica de flags corregida
+
+Los chips "Tengo / Wishlist / Jugar" seguían una lógica incorrecta: ahora activar "Wishlist" o "Jugar" desactiva automáticamente "Tengo"; no se puede dejar ninguno sin marcar; "Wishlist" y "Jugar" pueden coexistir.
+
+#### Paginación en el grid de juegos
+
+El grid mostraba solo 48 juegos aunque hubiera más. Se añaden controles de paginación (Anterior / Siguiente) con contador `X juegos · Página Y de Z`. La página se resetea al cambiar de pestaña o al filtrar por nombre.
+
+#### Usuario BGG precargado y botón "Guardar" eliminado
+
+El campo de usuario de BGG se rellena automáticamente al cargar la página con el valor guardado en BD (nuevo endpoint `GET /api/my-ludoteca/bgg-username`). Al pulsar "Actualizar desde BGG" el username se guarda automáticamente si ha cambiado, por lo que el botón "Guardar" independiente se elimina.
+
+#### Etiqueta del resumen de sync corregida
+
+El resumen del job completado mostraba "Catálogo nuevo: 71" sin distinguir entre juegos nuevos y reutilizados. Ahora muestra `Añadidos: 105. Nuevos en catálogo: 71. Eliminados: 0.` para mayor claridad.
+
+**Archivos modificados:**
+- `client/src/pages/MiLudoteca.tsx` — paginación, lógica de flags, desplegable de prioridad, precarga de username, eliminación del botón Guardar, etiqueta de resumen de sync
+- `server/src/routes/myLudotecaRoutes.ts` — nueva ruta `GET /bgg-username`
+- `server/src/controllers/myLudotecaController.ts` — nuevo controlador `getBggUsername`
+
+---
+
 ## 2026-04-14 (sesión 4)
 
 ### Nuevas funcionalidades

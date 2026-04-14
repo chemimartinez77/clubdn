@@ -5,6 +5,7 @@ import {
   addGame,
   updateGame,
   removeGame,
+  getBggUsername,
   updateBggUsername,
   getBggSyncCheck,
   confirmBggSync,
@@ -19,6 +20,7 @@ import { authenticate } from '../middleware/auth';
 const router = Router();
 
 // Todas las rutas requieren autenticación
+router.get('/bgg-username', authenticate, getBggUsername);
 router.patch('/bgg-username', authenticate, updateBggUsername);
 router.get('/bgg-sync-check', authenticate, getBggSyncCheck);
 router.post('/bgg-sync-confirm', authenticate, confirmBggSync);
