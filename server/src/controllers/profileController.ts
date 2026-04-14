@@ -121,21 +121,28 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
   try {
     const { userId } = req.params;
 
-    const profile = await prisma.userProfile.findUnique({
-      where: { userId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            status: true,
-            createdAt: true
+    const [profile, badges] = await Promise.all([
+      prisma.userProfile.findUnique({
+        where: { userId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              status: true,
+              createdAt: true
+            }
           }
         }
-      }
-    });
+      }),
+      prisma.userBadge.findMany({
+        where: { userId },
+        include: { badgeDefinition: true },
+        orderBy: { unlockedAt: 'desc' }
+      })
+    ]);
 
     if (!profile) {
       res.status(404).json({
@@ -154,6 +161,7 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
       lastName: isOwnProfile ? profile.lastName : null,
       dni: isOwnProfile ? profile.dni : null,
       dniNormalized: isOwnProfile ? profile.dniNormalized : null,
+      iban: isOwnProfile ? profile.iban : null,
       imageConsentActivities: isOwnProfile ? profile.imageConsentActivities : undefined,
       imageConsentSocial: isOwnProfile ? profile.imageConsentSocial : undefined,
       notifications: isOwnProfile ? profile.notifications : undefined,
@@ -162,7 +170,7 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
 
     res.status(200).json({
       success: true,
-      data: { profile: sanitizedProfile }
+      data: { profile: sanitizedProfile, badges }
     });
   } catch (error) {
     console.error('Error al obtener perfil de usuario:', error);

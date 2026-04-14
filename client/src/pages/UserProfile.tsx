@@ -7,19 +7,23 @@ import { api } from '../api/axios';
 import { displayName } from '../utils/displayName';
 import type { ApiResponse } from '../types/auth';
 import type { UserProfile } from '../types/profile';
+import type { UserBadge } from '../types/badge';
 
 export default function UserProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
 
-  const { data: profile, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['userProfile', userId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{ profile: UserProfile }>>(`/api/profile/${userId}`);
-      return response.data.data?.profile;
+      const response = await api.get<ApiResponse<{ profile: UserProfile; badges: UserBadge[] }>>(`/api/profile/${userId}`);
+      return response.data.data;
     },
     enabled: !!userId,
   });
+
+  const profile = data?.profile;
+  const badges = data?.badges ?? [];
 
   if (isLoading) {
     return (
@@ -130,6 +134,38 @@ export default function UserProfile() {
             </div>
           </CardContent>
         </Card>
+
+        {badges.length > 0 && (
+          <Card>
+            <CardContent>
+              <p className="text-sm text-[var(--color-textSecondary)] mb-3">Logros</p>
+              <div className="flex flex-wrap gap-3">
+                {badges.map((badge) => (
+                  <div
+                    key={badge.id}
+                    title={badge.badgeDefinition.description ?? badge.badgeDefinition.name}
+                    className="flex flex-col items-center gap-1 w-16"
+                  >
+                    {badge.badgeDefinition.iconUrl ? (
+                      <img
+                        src={badge.badgeDefinition.iconUrl}
+                        alt={badge.badgeDefinition.name}
+                        className="w-12 h-12 object-contain"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-[var(--color-primary-100)] flex items-center justify-center text-xl">
+                        🏅
+                      </div>
+                    )}
+                    <span className="text-xs text-center text-[var(--color-textSecondary)] leading-tight line-clamp-2">
+                      {badge.badgeDefinition.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
   );
