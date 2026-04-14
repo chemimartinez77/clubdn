@@ -80,7 +80,23 @@ async function processJob(jobId: string) {
         });
 
         if (!existingGame) {
-          await ensureGameFromBgg(item.bggId);
+          try {
+            await ensureGameFromBgg(item.bggId);
+          } catch {
+            // Si BGG no devuelve datos completos, crear una entrada mínima con los datos del payload
+            await prisma.game.upsert({
+              where: { id: item.bggId },
+              create: {
+                id: item.bggId,
+                name: item.title,
+                thumbnail: item.thumbnail,
+                yearPublished: item.yearPublished,
+                minPlayers: item.minPlayers,
+                maxPlayers: item.maxPlayers,
+              },
+              update: {},
+            });
+          }
           imported += 1;
           await sleep(BGG_SYNC_DELAY_MS);
         } else {

@@ -408,7 +408,7 @@ export default function MiLudoteca() {
                       {getSyncStatusLabel(displayedSyncJob)}
                     </p>
                     <p className="text-xs text-[var(--color-textSecondary)]">
-                      {displayedSyncJob.status === 'COMPLETED' && `Añadidos: ${displayedSyncJob.imported + displayedSyncJob.linkedExisting}. Nuevos en catálogo: ${displayedSyncJob.imported}. Eliminados: ${displayedSyncJob.deleted}.`}
+                      {displayedSyncJob.status === 'COMPLETED' && `Añadidos: ${displayedSyncJob.imported + displayedSyncJob.linkedExisting}. Nuevos en catálogo: ${displayedSyncJob.imported}. Eliminados: ${displayedSyncJob.deleted}.${displayedSyncJob.failed > 0 ? ` Fallidos: ${displayedSyncJob.failed}.` : ''}`}
                       {displayedSyncJob.status === 'FAILED' && (displayedSyncJob.error || 'La sincronización terminó con incidencias.')}
                       {(displayedSyncJob.status === 'PENDING' || displayedSyncJob.status === 'PROCESSING') &&
                         `Se están procesando ${displayedSyncJob.totalToImport + displayedSyncJob.totalToDelete} cambios. Refresca la página en unos ${formatEta(displayedSyncJob.estimatedSeconds)} si te vas antes.`}
