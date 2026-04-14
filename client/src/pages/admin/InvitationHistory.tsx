@@ -67,7 +67,15 @@ export default function InvitationHistory() {
       const params = new URLSearchParams({ page: String(page), limit: '50' });
       if (debouncedSearch) params.set('search', debouncedSearch);
       const response = await api.get<ApiResponse<HistoryResponse>>(`/api/invitations/admin/history?${params}`);
-      return response.data.data;
+      const payload = response.data.data as any;
+      if (payload?.data && payload?.pagination) {
+        return payload as HistoryResponse;
+      }
+
+      return {
+        data: Array.isArray(payload) ? payload : [],
+        pagination: (response.data as any).pagination ?? null,
+      } as HistoryResponse;
     },
   });
 

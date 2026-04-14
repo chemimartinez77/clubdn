@@ -489,7 +489,6 @@ export const validateInvitation = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    const inviteConfig = await getInviteConfig();
     const now = new Date();
 
     const result = await prisma.$transaction(async (tx) => {
@@ -521,10 +520,6 @@ export const validateInvitation = async (req: Request, res: Response): Promise<v
 
       if (dayCompare < 0) {
         return { error: { status: 400, message: 'Invitacion no valida hoy' }, invitation };
-      }
-
-      if (!inviteConfig.inviteAllowSelfValidation && invitation.memberId === validatorId) {
-        return { error: { status: 403, message: 'No se permite auto validacion' }, invitation };
       }
 
       const updateResult = await tx.invitation.updateMany({
@@ -840,16 +835,18 @@ export const getInvitationHistory = async (req: Request, res: Response): Promise
 
     res.json({
       success: true,
-      data: invitations.map(inv => ({
-        ...inv,
-        guestDniMasked: maskDni(inv.guestPhone),
-        guestPhone: undefined,
-      })),
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        totalPages: Math.ceil(total / limitNum),
+      data: {
+        data: invitations.map(inv => ({
+          ...inv,
+          guestDniMasked: maskDni(inv.guestPhone),
+          guestPhone: undefined,
+        })),
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum),
+        },
       },
     });
   } catch (error) {

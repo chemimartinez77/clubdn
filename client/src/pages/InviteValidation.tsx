@@ -176,4 +176,3 @@ export default function InviteValidation() {
     </Layout>
   );
 }
-

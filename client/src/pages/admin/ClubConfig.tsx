@@ -87,7 +87,6 @@ export default function ClubConfigPage() {
         inviteMaxActive: config.inviteMaxActive,
         inviteMaxMonthly: config.inviteMaxMonthly,
         inviteMaxGuestYear: config.inviteMaxGuestYear,
-        inviteAllowSelfValidation: config.inviteAllowSelfValidation,
       });
       setMembershipTypes(Array.isArray(config.membershipTypes) ? config.membershipTypes : []);
     }
@@ -367,25 +366,6 @@ export default function ClubConfigPage() {
                 )}
               </div>
 
-              <div>
-                <label className="flex items-center text-sm font-medium text-[var(--color-textSecondary)] mb-1">
-                  Permitir autovalidación
-                  <Tooltip text="Si está activado, el propio socio que creó la invitación puede escanear el QR y validar la entrada de su invitado. Si está desactivado, solo otro socio distinto puede validarla." />
-                </label>
-                {isEditing ? (
-                  <label className="flex items-center py-2 gap-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.inviteAllowSelfValidation ?? false}
-                      onChange={(e) => setFormData({ ...formData, inviteAllowSelfValidation: e.target.checked })}
-                      className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)]"
-                    />
-                    <span className="text-[var(--color-text)]">Activado</span>
-                  </label>
-                ) : (
-                  <p className="text-[var(--color-text)] py-2">{config?.inviteAllowSelfValidation ? 'Sí' : 'No'}</p>
-                )}
-              </div>
             </div>
           </CardContent>
         </Card>

@@ -4,6 +4,26 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-14 (sesión 1)
+
+### Correcciones
+#### Invitaciones: historial visible y validación permitida para el socio que creó el QR
+
+- Se corrige la pantalla `Historial de Invitaciones`, que podía mostrar `No hay invitaciones registradas` aunque sí existieran invitaciones en base de datos. La causa era una discrepancia entre la forma de la respuesta del backend y lo que esperaba el frontend para `data` y `pagination`.
+- El backend devuelve ahora el historial en una estructura consistente dentro de `data`, y el frontend se vuelve además tolerante con ambos formatos para evitar regresiones por este tipo de desajuste.
+- Se elimina la restricción que impedía al propio socio o colaborador que creó la invitación validar a su invitado al escanear el QR. El flujo queda alineado con el uso actual: el responsable último del invitado puede confirmar la entrada, aunque otro miembro del club también puede hacerlo.
+- Se mantiene el campo `validatedBy`, por lo que el historial de invitaciones sigue reflejando claramente quién validó finalmente al invitado.
+- La página pública de validación por QR deja de tener lógica específica para bloquear la autovalidación, ya que ese veto ya no forma parte del flujo real.
+- La opción de configuración `Permitir autovalidación` se retira de la pantalla de `Configuración del club`, porque había quedado obsoleta y entraba en contradicción con el comportamiento deseado del sistema.
+
+**Archivos modificados:**
+- `server/src/controllers/invitationController.ts` - corregida la respuesta del historial y eliminada la restricción de autovalidación del creador de la invitación
+- `client/src/pages/admin/InvitationHistory.tsx` - lectura robusta de `data` + `pagination` para que el historial renderice correctamente
+- `client/src/pages/InviteValidation.tsx` - simplificación del flujo de validación al desaparecer el bloqueo por autovalidación
+- `client/src/pages/admin/ClubConfig.tsx` - retirada de la opción `Permitir autovalidación` de la UI de configuración
+
+---
+
 ## 2026-04-13 (sesión 4)
 
 ### Mejoras
