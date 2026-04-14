@@ -199,6 +199,117 @@ async function replaceEventExpansions(
   });
 }
 
+async function syncPrimaryRegistrationsToLinkedEvent(
+  tx: Prisma.TransactionClient,
+  primaryEventId: string,
+  linkedEventId: string
+) {
+  const primaryRegistrations = await tx.eventRegistration.findMany({
+    where: { eventId: primaryEventId },
+    select: {
+      userId: true,
+      status: true,
+      cancelledAt: true,
+      createdAt: true,
+      updatedAt: true,
+    }
+  });
+
+  const linkedRegistrations = await tx.eventRegistration.findMany({
+    where: { eventId: linkedEventId },
+    select: {
+      id: true,
+      userId: true,
+      status: true,
+      cancelledAt: true,
+    }
+  });
+
+  const primaryByUserId = new Map(primaryRegistrations.map((registration) => [registration.userId, registration]));
+
+  for (const registration of linkedRegistrations) {
+    if (!primaryByUserId.has(registration.userId) && registration.status !== 'CANCELLED') {
+      await tx.eventRegistration.update({
+        where: { id: registration.id },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt: new Date(),
+        }
+      });
+    }
+  }
+
+  for (const registration of primaryRegistrations) {
+    const existingLinked = linkedRegistrations.find((item) => item.userId === registration.userId);
+
+    if (existingLinked) {
+      await tx.eventRegistration.update({
+        where: { id: existingLinked.id },
+        data: {
+          status: registration.status,
+          cancelledAt: registration.status === 'CANCELLED' ? (registration.cancelledAt ?? new Date()) : null,
+        }
+      });
+      continue;
+    }
+
+    await tx.eventRegistration.create({
+      data: {
+        eventId: linkedEventId,
+        userId: registration.userId,
+        status: registration.status,
+        cancelledAt: registration.status === 'CANCELLED' ? (registration.cancelledAt ?? new Date()) : null,
+      }
+    });
+  }
+}
+
+async function syncRegistrationToLinkedEvent(
+  tx: Prisma.TransactionClient,
+  primaryEventId: string,
+  userId: string,
+  status: RegistrationStatus,
+  cancelledAt: Date | null = null
+) {
+  const primaryEvent = await tx.event.findUnique({
+    where: { id: primaryEventId },
+    select: { linkedNextEventId: true }
+  });
+
+  if (!primaryEvent?.linkedNextEventId) {
+    return;
+  }
+
+  const linkedRegistration = await tx.eventRegistration.findUnique({
+    where: {
+      eventId_userId: {
+        eventId: primaryEvent.linkedNextEventId,
+        userId
+      }
+    }
+  });
+
+  if (linkedRegistration) {
+    await tx.eventRegistration.update({
+      where: { id: linkedRegistration.id },
+      data: {
+        status,
+        cancelledAt: status === 'CANCELLED' ? (cancelledAt ?? new Date()) : null,
+      }
+    });
+    return;
+  }
+
+  await tx.eventRegistration.create({
+    data: {
+      eventId: primaryEvent.linkedNextEventId,
+      userId,
+      status,
+      cancelledAt: status === 'CANCELLED' ? (cancelledAt ?? new Date()) : null,
+    }
+  });
+}
+
 /**
  * Comprueba si el usuario ya tiene una partida confirmada que solapa con el intervalo dado.
  * Devuelve el título del evento conflictivo o null si no hay conflicto.
@@ -675,15 +786,17 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
         if (willAttend) {
           await tx.eventRegistration.create({
             data: {
-              eventId: linkedEvent.id,
+              eventId: createdEvent.id,
               userId,
               status: 'CONFIRMED'
             }
           });
         }
+
+        await syncPrimaryRegistrationsToLinkedEvent(tx, createdEvent.id, linkedEvent.id);
       }
 
-      if (willAttend) {
+      if (willAttend && !normalizedLinkedNext) {
         await tx.eventRegistration.create({
           data: {
             eventId: createdEvent.id,
@@ -881,6 +994,8 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
                 requiresApproval: requiresApproval !== undefined ? (requiresApproval === true || requiresApproval === 'true') : updatedEvent.requiresApproval,
               },
             });
+
+            await syncPrimaryRegistrationsToLinkedEvent(tx, eventId, existingEvent.linkedNextEventId);
           } else {
             const createdLinkedEvent = await tx.event.create({
               data: {
@@ -905,6 +1020,8 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
               where: { id: eventId },
               data: { linkedNextEventId: createdLinkedEvent.id },
             });
+
+            await syncPrimaryRegistrationsToLinkedEvent(tx, eventId, createdLinkedEvent.id);
           }
         } else {
           await tx.event.update({
@@ -1098,21 +1215,32 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
 
     const event = await prisma.event.findUnique({
       where: { id },
-        include: {
-          registrations: {
-            where: { status: 'CONFIRMED' }
-          },
-          invitations: {
-            where: { status: { in: ['PENDING', 'USED'] } },
-            select: { id: true }
-          }
+      include: {
+        registrations: {
+          where: { status: 'CONFIRMED' }
+        },
+        invitations: {
+          where: { status: { in: ['PENDING', 'USED'] } },
+          select: { id: true }
+        },
+        linkedPreviousEvent: {
+          select: { id: true, title: true }
         }
-      });
+      }
+    });
 
     if (!event) {
       res.status(404).json({
         success: false,
         message: 'Evento no encontrado'
+      });
+      return;
+    }
+
+    if (event.linkedPreviousEvent) {
+      res.status(400).json({
+        success: false,
+        message: 'No puedes apuntarte directamente a esta partida enlazada. Debes apuntarte a la partida principal.'
       });
       return;
     }
@@ -1188,18 +1316,24 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
 
           const reRegStatus = event.requiresApproval ? 'PENDING_APPROVAL' : 'CONFIRMED';
 
-          const registration = await prisma.eventRegistration.update({
-            where: { id: existingRegistration.id },
-            data: { status: reRegStatus, cancelledAt: null }
-          });
+          const registration = await prisma.$transaction(async (tx) => {
+            const updatedRegistration = await tx.eventRegistration.update({
+              where: { id: existingRegistration.id },
+              data: { status: reRegStatus, cancelledAt: null }
+            });
 
-          await prisma.eventAuditLog.create({
-            data: {
-              eventId: id,
-              actorId: userId,
-              action: 'REGISTER',
-              targetUserId: userId
-            }
+            await syncRegistrationToLinkedEvent(tx, id, userId, reRegStatus, null);
+
+            await tx.eventAuditLog.create({
+              data: {
+                eventId: id,
+                actorId: userId,
+                action: 'REGISTER',
+                targetUserId: userId
+              }
+            });
+
+            return updatedRegistration;
           });
 
           if (event.requiresApproval) {
@@ -1232,21 +1366,27 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
       // Determinar status: PENDING_APPROVAL si requiere aprobación, sino CONFIRMED
       const registrationStatus = event.requiresApproval ? 'PENDING_APPROVAL' : 'CONFIRMED';
 
-      const registration = await prisma.eventRegistration.create({
-        data: {
-          eventId: id,
-          userId,
-          status: registrationStatus
-        }
-      });
+      const registration = await prisma.$transaction(async (tx) => {
+        const createdRegistration = await tx.eventRegistration.create({
+          data: {
+            eventId: id,
+            userId,
+            status: registrationStatus
+          }
+        });
 
-      await prisma.eventAuditLog.create({
-        data: {
-          eventId: id,
-          actorId: userId,
-          action: 'REGISTER',
-          targetUserId: userId
-        }
+        await syncRegistrationToLinkedEvent(tx, id, userId, registrationStatus, null);
+
+        await tx.eventAuditLog.create({
+          data: {
+            eventId: id,
+            actorId: userId,
+            action: 'REGISTER',
+            targetUserId: userId
+          }
+        });
+
+        return createdRegistration;
       });
 
       // Si requiere aprobación, notificar al organizador
@@ -1333,7 +1473,10 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
           select: {
             date: true,
             title: true,
-            createdBy: true
+            createdBy: true,
+            linkedPreviousEvent: {
+              select: { id: true, title: true }
+            }
           }
         },
         user: {
@@ -1346,6 +1489,14 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
       res.status(404).json({
         success: false,
         message: 'No estás registrado a este evento'
+      });
+      return;
+    }
+
+    if (registration.event.linkedPreviousEvent) {
+      res.status(400).json({
+        success: false,
+        message: 'No puedes abandonar esta partida enlazada por separado. Debes hacerlo desde la partida principal.'
       });
       return;
     }
@@ -1372,18 +1523,24 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
     const wasConfirmed = registration.status === 'CONFIRMED';
 
     // Marcar como cancelado
-    await prisma.eventRegistration.update({
-      where: { id: registration.id },
-      data: { status: 'CANCELLED', cancelledAt: new Date() }
-    });
+    const cancellationDate = new Date();
 
-    await prisma.eventAuditLog.create({
-      data: {
-        eventId: id,
-        actorId: userId,
-        action: 'UNREGISTER',
-        targetUserId: userId
-      }
+    await prisma.$transaction(async (tx) => {
+      await tx.eventRegistration.update({
+        where: { id: registration.id },
+        data: { status: 'CANCELLED', cancelledAt: cancellationDate }
+      });
+
+      await syncRegistrationToLinkedEvent(tx, id, userId, 'CANCELLED', cancellationDate);
+
+      await tx.eventAuditLog.create({
+        data: {
+          eventId: id,
+          actorId: userId,
+          action: 'UNREGISTER',
+          targetUserId: userId
+        }
+      });
     });
 
     // Si era CONFIRMED, promover el primero de la waitlist
@@ -1422,6 +1579,10 @@ export const unregisterFromEvent = async (req: Request, res: Response): Promise<
             await prisma.eventRegistration.update({
               where: { id: firstWaitlisted.id },
               data: { status: 'CONFIRMED' }
+            });
+
+            await prisma.$transaction(async (tx) => {
+              await syncRegistrationToLinkedEvent(tx, id, firstWaitlisted.userId, 'CONFIRMED', null);
             });
           }
         }
@@ -1494,7 +1655,10 @@ export const removeParticipant = async (req: Request, res: Response): Promise<vo
             date: true,
             createdBy: true,
             maxAttendees: true,
-            eventGuests: { select: { id: true } }
+            eventGuests: { select: { id: true } },
+            linkedPreviousEvent: {
+              select: { id: true, title: true }
+            }
           }
         }
       }
@@ -1504,6 +1668,14 @@ export const removeParticipant = async (req: Request, res: Response): Promise<vo
       res.status(404).json({
         success: false,
         message: 'Registro no encontrado'
+      });
+      return;
+    }
+
+    if (registration.event.linkedPreviousEvent) {
+      res.status(400).json({
+        success: false,
+        message: 'No puedes modificar asistentes directamente en esta partida enlazada. Debes hacerlo desde la partida principal.'
       });
       return;
     }
@@ -1541,18 +1713,24 @@ export const removeParticipant = async (req: Request, res: Response): Promise<vo
 
     const wasConfirmed = registration.status === 'CONFIRMED';
 
-    await prisma.eventRegistration.update({
-      where: { id: registration.id },
-      data: { status: 'CANCELLED', cancelledAt: new Date(), removalReason }
-    });
+    const cancellationDate = new Date();
 
-    await prisma.eventAuditLog.create({
-      data: {
-        eventId: id,
-        actorId: userId,
-        action: 'REMOVE_PARTICIPANT',
-        targetUserId: registration.userId
-      }
+    await prisma.$transaction(async (tx) => {
+      await tx.eventRegistration.update({
+        where: { id: registration.id },
+        data: { status: 'CANCELLED', cancelledAt: cancellationDate, removalReason }
+      });
+
+      await syncRegistrationToLinkedEvent(tx, id, registration.userId, 'CANCELLED', cancellationDate);
+
+      await tx.eventAuditLog.create({
+        data: {
+          eventId: id,
+          actorId: userId,
+          action: 'REMOVE_PARTICIPANT',
+          targetUserId: registration.userId
+        }
+      });
     });
 
     if (wasConfirmed) {
@@ -1590,6 +1768,10 @@ export const removeParticipant = async (req: Request, res: Response): Promise<vo
             await prisma.eventRegistration.update({
               where: { id: firstWaitlisted.id },
               data: { status: 'CONFIRMED' }
+            });
+
+            await prisma.$transaction(async (tx) => {
+              await syncRegistrationToLinkedEvent(tx, id, firstWaitlisted.userId, 'CONFIRMED', null);
             });
           }
         }
@@ -2021,7 +2203,10 @@ export const approveRegistration = async (req: Request, res: Response): Promise<
             createdBy: true,
             maxAttendees: true,
             gameName: true,
-            gameCategory: true
+            gameCategory: true,
+            linkedPreviousEvent: {
+              select: { id: true, title: true }
+            }
           }
         },
         user: {
@@ -2038,6 +2223,14 @@ export const approveRegistration = async (req: Request, res: Response): Promise<
       res.status(404).json({
         success: false,
         message: 'Registro no encontrado'
+      });
+      return;
+    }
+
+    if (registration.event.linkedPreviousEvent) {
+      res.status(400).json({
+        success: false,
+        message: 'No puedes aprobar registros directamente en esta partida enlazada. Debes hacerlo desde la partida principal.'
       });
       return;
     }
@@ -2086,9 +2279,13 @@ export const approveRegistration = async (req: Request, res: Response): Promise<
     }
 
     // Aprobar registro
-    await prisma.eventRegistration.update({
-      where: { id: registrationId },
-      data: { status: 'CONFIRMED' }
+    await prisma.$transaction(async (tx) => {
+      await tx.eventRegistration.update({
+        where: { id: registrationId },
+        data: { status: 'CONFIRMED' }
+      });
+
+      await syncRegistrationToLinkedEvent(tx, id, registration.userId, 'CONFIRMED', null);
     });
 
     // Notificar usuario
@@ -2125,7 +2322,10 @@ export const rejectRegistration = async (req: Request, res: Response): Promise<v
           select: {
             id: true,
             title: true,
-            createdBy: true
+            createdBy: true,
+            linkedPreviousEvent: {
+              select: { id: true, title: true }
+            }
           }
         },
         user: {
@@ -2141,6 +2341,14 @@ export const rejectRegistration = async (req: Request, res: Response): Promise<v
       res.status(404).json({
         success: false,
         message: 'Registro no encontrado'
+      });
+      return;
+    }
+
+    if (registration.event.linkedPreviousEvent) {
+      res.status(400).json({
+        success: false,
+        message: 'No puedes rechazar registros directamente en esta partida enlazada. Debes hacerlo desde la partida principal.'
       });
       return;
     }
@@ -2164,12 +2372,18 @@ export const rejectRegistration = async (req: Request, res: Response): Promise<v
     }
 
     // Rechazar registro (marcar como CANCELLED)
-    await prisma.eventRegistration.update({
-      where: { id: registrationId },
-      data: {
-        status: 'CANCELLED',
-        cancelledAt: new Date()
-      }
+    const cancellationDate = new Date();
+
+    await prisma.$transaction(async (tx) => {
+      await tx.eventRegistration.update({
+        where: { id: registrationId },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt: cancellationDate
+        }
+      });
+
+      await syncRegistrationToLinkedEvent(tx, id, registration.userId, 'CANCELLED', cancellationDate);
     });
 
     // Notificar usuario

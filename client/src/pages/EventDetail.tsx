@@ -773,12 +773,13 @@ export default function EventDetail() {
   })();
   const isFull = (event.registeredCount || 0) >= event.maxAttendees;
   const isPendingApproval = event.userRegistrationStatus === 'PENDING_APPROVAL';
-  const canRegister = event.status === 'SCHEDULED' && !isPast && !event.isUserRegistered && !isFull;
-  const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && !isPast;
-  const canInvite = event.status !== 'CANCELLED' && !isPast && !isFull;
+  const inheritsRegistrationsFromPrevious = Boolean(event.linkedPreviousEvent);
+  const canRegister = event.status === 'SCHEDULED' && !isPast && !event.isUserRegistered && !isFull && !inheritsRegistrationsFromPrevious;
+  const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && !isPast && !inheritsRegistrationsFromPrevious;
+  const canInvite = event.status !== 'CANCELLED' && !isPast && !isFull && !inheritsRegistrationsFromPrevious;
   const canDelete = isPartida && !isPast && event.status !== 'CANCELLED' && (isAdmin || user?.id === event.createdBy);
   const canEdit = isOrganizerOrAdmin && event.status !== 'CANCELLED' && !isPast;
-  const canAddMember = isOrganizerOrAdmin && event.status !== 'CANCELLED' && !isPast && !isFull;
+  const canAddMember = isOrganizerOrAdmin && event.status !== 'CANCELLED' && !isPast && !isFull && !inheritsRegistrationsFromPrevious;
   const canClone = isPartida && isOrganizerOrAdmin && ['SCHEDULED', 'ONGOING', 'COMPLETED', 'CANCELLED'].includes(event.status);
   const canCloseCapacity = isPartida
     && !isPast
@@ -1113,13 +1114,18 @@ export default function EventDetail() {
                   >
                     {event.title}
                   </h1>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[effectiveStatus as keyof typeof statusColors]}`}>
-                      {statusLabels[effectiveStatus as keyof typeof statusLabels]}
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[effectiveStatus as keyof typeof statusColors]}`}>
+                    {statusLabels[effectiveStatus as keyof typeof statusLabels]}
+                  </span>
+                  {inheritsRegistrationsFromPrevious && (
+                    <span className="px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                      Asistencia heredada de la partida principal
                     </span>
-                    {event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && (
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        event.userRegistrationStatus === 'CONFIRMED'
+                  )}
+                  {event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && (
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      event.userRegistrationStatus === 'CONFIRMED'
                           ? 'bg-green-100 text-green-800'
                           : event.userRegistrationStatus === 'PENDING_APPROVAL'
                           ? 'bg-amber-100 text-amber-800'
@@ -1514,6 +1520,12 @@ export default function EventDetail() {
                     </div>
                   ))}
                 </div>
+
+                {inheritsRegistrationsFromPrevious && (
+                  <p className="mt-3 text-sm text-[var(--color-textSecondary)]">
+                    Los asistentes de esta partida enlazada se gestionan automáticamente desde la partida principal. No puedes apuntarte ni borrarte aquí por separado.
+                  </p>
+                )}
               </div>
             )}
 
@@ -1651,7 +1663,8 @@ export default function EventDetail() {
                             </span>
                           )}
                       </div>
-                      {(isAdmin || user?.id === event.createdBy) &&
+                      {!inheritsRegistrationsFromPrevious &&
+                        (isAdmin || user?.id === event.createdBy) &&
                         registration.id &&
                         registration.user?.id !== event.createdBy && (
                         <button
@@ -1772,7 +1785,8 @@ export default function EventDetail() {
                             </span>
                           )}
                       </div>
-                      {(isAdmin || user?.id === event.createdBy) &&
+                      {!inheritsRegistrationsFromPrevious &&
+                        (isAdmin || user?.id === event.createdBy) &&
                         registration.id &&
                         registration.user?.id !== event.createdBy && (
                         <button
@@ -1794,7 +1808,7 @@ export default function EventDetail() {
         </div>
 
         {/* Pending Approvals Section - Solo visible para organizador/admin */}
-        {isOrganizerOrAdmin && event.requiresApproval && pendingRegistrations.length > 0 && (
+        {isOrganizerOrAdmin && event.requiresApproval && !inheritsRegistrationsFromPrevious && pendingRegistrations.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">

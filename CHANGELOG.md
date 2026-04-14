@@ -14,18 +14,20 @@ Se amplía el flujo de creación y edición de partidas para soportar un juego p
 
 La segunda partida enlazada se modela como un `Event` propio, conectado al primero mediante una relación simple en cadena. Hereda el contexto logístico básico de la partida principal, pero conserva su propio ciclo de vida para estado, validación y resultados. En el detalle del evento se muestra la navegación entre ambas partidas y, al compartir la principal, el texto indica también qué juego se jugará después.
 
+Además, la segunda partida ya no se gestiona como un evento independiente a nivel de asistencia: hereda automáticamente los jugadores de la partida principal. Si un usuario se apunta, cancela, es aprobado o es expulsado de la primera, ese cambio se replica también en la enlazada. La UI y el backend bloquean el alta, baja y gestión manual de asistentes directamente sobre la segunda partida para evitar desincronizaciones.
+
 **Archivos nuevos:**
 - `server/prisma/migrations/20260414130000_add_event_expansions_and_linked_events/` - migración para `EventExpansion` y enlace `linkedNextEventId` entre eventos
 
 **Archivos modificados:**
 - `server/prisma/schema.prisma` - nuevos campos y relaciones para expansiones y partida enlazada
-- `server/src/controllers/eventController.ts` - creación, edición y lectura de expansiones y segunda partida enlazada
+- `server/src/controllers/eventController.ts` - creación, edición, sincronización de asistentes y bloqueo de registro independiente en partidas enlazadas
 - `server/src/controllers/previewController.ts` - texto OG con expansiones y siguiente partida
 - `server/src/services/bggService.ts` - tipado del tipo de item BGG para distinguir expansiones
 - `client/src/types/event.ts` - nuevos tipos para `expansions`, `linkedNextEvent` y `linkedPreviousEvent`
 - `client/src/components/events/GameSearchModal.tsx` - modal reutilizable con filtro para expansiones
 - `client/src/pages/CreatePartida.tsx` - UI para añadir expansiones y una segunda partida enlazada
-- `client/src/pages/EventDetail.tsx` - visualización, edición y share de expansiones y partidas enlazadas
+- `client/src/pages/EventDetail.tsx` - visualización, edición, aviso de asistencia heredada y bloqueo de acciones directas en la segunda partida
 
 **Verificación:**
 - `cmd /c npx prisma generate`
