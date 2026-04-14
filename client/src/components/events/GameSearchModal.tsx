@@ -59,6 +59,8 @@ export default function GameSearchModal({
     queryFn: async () => {
       if (!searchTrigger || searchTrigger.length < 2) return emptyResult;
       const endpoint = isRPGG ? '/api/bgg/rpgg/search' : '/api/bgg/search';
+      const params = new URLSearchParams({ query: searchTrigger, page: String(page), pageSize: String(pageSize) });
+      if (filterExpansionOnly && !isRPGG) params.set('expansionOnly', 'true');
       const response = await api.get<ApiResponse<{
         games: BGGGame[];
         total: number;
@@ -66,7 +68,7 @@ export default function GameSearchModal({
         pageSize: number;
         totalPages: number;
       }>>(
-        `${endpoint}?query=${encodeURIComponent(searchTrigger)}&page=${page}&pageSize=${pageSize}`
+        `${endpoint}?${params.toString()}`
       );
       return response.data.data || emptyResult;
     },
@@ -94,9 +96,7 @@ export default function GameSearchModal({
     }
   };
 
-  const visibleGames = filterExpansionOnly
-    ? searchResult.games.filter((game) => game.itemType === 'boardgameexpansion')
-    : searchResult.games;
+  const visibleGames = searchResult.games;
 
   const handleSelectGame = (game: BGGGame) => {
     onSelect(game);

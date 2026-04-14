@@ -7,7 +7,7 @@ import { searchBGGGames, getBGGGame, searchRPGGeekGames } from '../services/bggS
  */
 export const searchGames = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { query, page, pageSize } = req.query;
+    const { query, page, pageSize, expansionOnly } = req.query;
     console.log('[BGG SEARCH] Query recibida:', query);
 
     if (!query || typeof query !== 'string') {
@@ -21,9 +21,10 @@ export const searchGames = async (req: Request, res: Response): Promise<void> =>
 
     const pageNumber = typeof page === 'string' ? Number.parseInt(page, 10) : undefined;
     const pageSizeNumber = typeof pageSize === 'string' ? Number.parseInt(pageSize, 10) : undefined;
+    const expansionOnlyBool = expansionOnly === 'true';
 
     console.log('[BGG SEARCH] Buscando en BGG:', query);
-    const searchResult = await searchBGGGames(query, pageNumber, pageSizeNumber);
+    const searchResult = await searchBGGGames(query, pageNumber, pageSizeNumber, expansionOnlyBool);
     console.log('[BGG SEARCH] Resultados:', searchResult.games.length, 'juegos encontrados');
 
     res.status(200).json({

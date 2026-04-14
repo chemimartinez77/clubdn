@@ -167,7 +167,8 @@ export interface BGGSearchResult {
 export async function searchBGGGames(
   query: string,
   page = 1,
-  pageSize = DEFAULT_PAGE_SIZE
+  pageSize = DEFAULT_PAGE_SIZE,
+  expansionOnly = false
 ): Promise<BGGSearchResult> {
   try {
     console.log('[BGG SERVICE] Iniciando búsqueda para:', query);
@@ -195,9 +196,12 @@ export async function searchBGGGames(
       return { games: [], total: 0, page: safePage, pageSize: safePageSize };
     }
 
-    const items = normalizeItems(searchResult.items.item);
+    const allItems = normalizeItems(searchResult.items.item);
+    const items = expansionOnly
+      ? allItems.filter((item: any) => item?.$?.type === 'boardgameexpansion')
+      : allItems;
     const totalFromApi = Number.parseInt(searchResult.items?.$?.total ?? '', 10);
-    const total = Number.isFinite(totalFromApi) && totalFromApi > 0 ? totalFromApi : items.length;
+    const total = Number.isFinite(totalFromApi) && totalFromApi > 0 && !expansionOnly ? totalFromApi : items.length;
     const startIndex = (safePage - 1) * safePageSize;
     const pagedItems = items.slice(startIndex, startIndex + safePageSize);
 
