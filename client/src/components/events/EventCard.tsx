@@ -121,7 +121,6 @@ export default function EventCard({ event }: EventCardProps) {
   const effectiveStatus = getEffectiveStatus(event);
   const availableSpots = event.maxAttendees - (event.registeredCount || 0);
   const isFull = availableSpots <= 0;
-  const isPast = new Date(event.date) < new Date();
 
   // Obtener miniatura del juego: primero de BD (game.thumbnail), luego de gameImage (BGG)
   const gameThumbnail = event.game?.thumbnail || event.gameImage || null;
