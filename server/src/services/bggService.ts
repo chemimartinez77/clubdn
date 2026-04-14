@@ -119,6 +119,7 @@ export interface BGGGame {
   yearPublished: string;
   image: string;
   thumbnail: string;
+  itemType?: 'boardgame' | 'boardgameexpansion' | 'rpgitem';
 }
 
 export interface BGGGameFull {
@@ -223,12 +224,14 @@ export async function searchBGGGames(
 
     // Mapear resultados
     const games: BGGGame[] = detailItems.map((item: any) => {
+      const sourceItem = items.find((searchItem: any) => String(searchItem?.$?.id) === String(item?.$?.id));
       return {
         id: item.$.id,
         name: extractPrimaryName(item),
         yearPublished: item.yearpublished?.[0]?.$.value || '',
         image: item.image?.[0] || '',
-        thumbnail: item.thumbnail?.[0] || ''
+        thumbnail: item.thumbnail?.[0] || '',
+        itemType: sourceItem?.$?.type === 'boardgameexpansion' ? 'boardgameexpansion' : 'boardgame',
       };
     });
 
@@ -263,7 +266,8 @@ export async function getBGGGame(gameId: string): Promise<BGGGame | null> {
       name: extractPrimaryName(item),
       yearPublished: item.yearpublished?.[0]?.$.value || '',
       image: item.image?.[0] || '',
-      thumbnail: item.thumbnail?.[0] || ''
+      thumbnail: item.thumbnail?.[0] || '',
+      itemType: item?.$?.type === 'boardgameexpansion' ? 'boardgameexpansion' : 'boardgame',
     };
   } catch (error) {
     console.error('Error al obtener juego de BGG:', error);

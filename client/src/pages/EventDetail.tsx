@@ -118,7 +118,13 @@ export default function EventDetail() {
   // Estado modal edición
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isEditGameModalOpen, setIsEditGameModalOpen] = useState(false);
+  const [isEditExpansionModalOpen, setIsEditExpansionModalOpen] = useState(false);
+  const [isEditLinkedGameModalOpen, setIsEditLinkedGameModalOpen] = useState(false);
   const [editSelectedGame, setEditSelectedGame] = useState<BGGGame | null>(null);
+  const [editSelectedExpansions, setEditSelectedExpansions] = useState<BGGGame[]>([]);
+  const [editLinkedNextGame, setEditLinkedNextGame] = useState<BGGGame | null>(null);
+  const [editLinkedDurationHours, setEditLinkedDurationHours] = useState('1');
+  const [editLinkedDurationMinutes, setEditLinkedDurationMinutes] = useState('0');
   const [editSelectedCategory, setEditSelectedCategory] = useState('');
   const [editConfirmedCategory, setEditConfirmedCategory] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState({
@@ -243,6 +249,12 @@ export default function EventDetail() {
     }
     const response = (err as { response?: { data?: { message?: string } } }).response;
     return response?.data?.message || fallback;
+  };
+
+  const ensureGameInCatalog = async (game: BGGGame) => {
+    const isRpg = game.id.startsWith('rpgg-');
+    const endpoint = isRpg ? `/api/games/rpgg/${game.id.slice(5)}` : `/api/games/${game.id}`;
+    return api.get(endpoint);
   };
 
   // Register mutation
@@ -410,6 +422,29 @@ export default function EventDetail() {
       requiresApproval: event.requiresApproval ?? true,
     });
     setEditSelectedGame(event.bggId ? { id: event.bggId, name: event.gameName ?? '', image: event.gameImage ?? '', thumbnail: '', yearPublished: '' } : null);
+    setEditSelectedExpansions(
+      (event.expansions ?? []).map((expansion) => ({
+        id: expansion.gameId,
+        name: expansion.name,
+        image: expansion.image ?? '',
+        thumbnail: expansion.thumbnail ?? '',
+        yearPublished: '',
+        itemType: 'boardgameexpansion',
+      }))
+    );
+    setEditLinkedNextGame(
+      event.linkedNextEvent?.bggId && event.linkedNextEvent.gameName
+        ? {
+            id: event.linkedNextEvent.bggId,
+            name: event.linkedNextEvent.gameName ?? event.linkedNextEvent.title,
+            image: event.linkedNextEvent.gameImage ?? '',
+            thumbnail: '',
+            yearPublished: '',
+          }
+        : null
+    );
+    setEditLinkedDurationHours(event.linkedNextEvent?.durationHours?.toString() ?? '1');
+    setEditLinkedDurationMinutes(event.linkedNextEvent?.durationMinutes?.toString() ?? '0');
     setEditSelectedCategory(event.gameCategory ?? '');
     setEditConfirmedCategory(event.confirmedCategory ?? null);
     setIsEditModalOpen(true);
@@ -435,8 +470,34 @@ export default function EventDetail() {
       gameName: editSelectedGame?.name ?? null,
       gameImage: editSelectedGame?.image ?? null,
       bggId: editSelectedGame?.id ?? null,
+      expansions: editSelectedExpansions.map((expansion) => ({ gameId: expansion.id })),
       gameCategory: editSelectedCategory || null,
+      linkedNext: editLinkedNextGame
+        ? {
+            gameId: editLinkedNextGame.id,
+            durationHours: editLinkedDurationHours !== '' ? parseInt(editLinkedDurationHours) : undefined,
+            durationMinutes: editLinkedDurationMinutes !== '' ? parseInt(editLinkedDurationMinutes) : undefined,
+          }
+        : null,
     });
+  };
+
+  const handleEditExpansionSelect = async (game: BGGGame) => {
+    await ensureGameInCatalog(game);
+    setEditSelectedExpansions((current) => (
+      current.some((expansion) => expansion.id === game.id)
+        ? current
+        : [...current, { ...game, itemType: 'boardgameexpansion' }]
+    ));
+  };
+
+  const handleRemoveEditExpansion = (gameId: string) => {
+    setEditSelectedExpansions((current) => current.filter((expansion) => expansion.id !== gameId));
+  };
+
+  const handleEditLinkedGameSelect = async (game: BGGGame) => {
+    await ensureGameInCatalog(game);
+    setEditLinkedNextGame(game);
   };
 
   const { data: invitations = [], isLoading: isInvitesLoading, isError: isInvitesError } = useQuery({
@@ -763,6 +824,7 @@ export default function EventDetail() {
   const gameImageUrl = event.game?.image || event.game?.thumbnail || event.gameImage || null;
   const canShowGameDetails = isPartida && !!event.game;
   const gameTitle = event.gameName || event.title;
+  const expansionsLabel = (event.expansions ?? []).map((expansion) => expansion.name).join(', ');
   const gameDescription = event.game?.description
     ? event.game.description.replace(/<[^>]*>/g, '').trim()
     : null;
@@ -900,7 +962,7 @@ export default function EventDetail() {
     const buildMessage = (shareUrl: string) => {
       // Título: solo si no hay imagen (si hay imagen ya sale en la previsualización)
       let message = '';
-      if (!event.gameImage) {
+      if (!gameImageUrl) {
         message += `*${event.title}*\n\n`;
       }
 
@@ -914,6 +976,14 @@ export default function EventDetail() {
 
       if (event.description) {
         message += `\n${event.description}\n`;
+      }
+
+      if (expansionsLabel) {
+        message += `\nExpansiones: ${expansionsLabel}\n`;
+      }
+
+      if (event.linkedNextEvent?.gameName) {
+        message += `\nDespués se jugará: ${event.linkedNextEvent.gameName}\n`;
       }
 
       message += `\n${spotsText}\n`;
@@ -963,6 +1033,12 @@ export default function EventDetail() {
         gameName: event.gameName ?? null,
         gameImage: event.gameImage ?? null,
         bggId: event.bggId ?? null,
+        expansions: (event.expansions ?? []).map((expansion) => ({
+          gameId: expansion.gameId,
+          name: expansion.name,
+          image: expansion.image ?? null,
+          thumbnail: expansion.thumbnail ?? null,
+        })),
         gameCategory: event.gameCategory ?? null,
         location: event.location || 'Club Dreadnought',
         address: event.address ?? null,
@@ -1419,6 +1495,75 @@ export default function EventDetail() {
                 </p>
               )}
             </div>
+
+            {!!event.expansions?.length && (
+              <div>
+                <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Expansiones</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {event.expansions.map((expansion) => (
+                    <div key={expansion.id} className="flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] p-3">
+                      <GameImage
+                        src={expansion.image || expansion.thumbnail}
+                        alt={expansion.name}
+                        size="sm"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-[var(--color-text)]">{expansion.name}</p>
+                        <p className="text-xs text-amber-600">Expansión</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {event.linkedNextEvent && (
+              <div>
+                <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Después se jugará</h3>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/events/${event.linkedNextEvent!.id}`)}
+                  className="w-full flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] p-3 text-left hover:border-[var(--color-primary)] transition-colors"
+                >
+                  <GameImage
+                    src={event.linkedNextEvent.gameImage || null}
+                    alt={event.linkedNextEvent.gameName || event.linkedNextEvent.title}
+                    size="sm"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-[var(--color-text)]">{event.linkedNextEvent.gameName || event.linkedNextEvent.title}</p>
+                    <p className="text-xs text-[var(--color-textSecondary)]">Partida enlazada</p>
+                  </div>
+                  <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            {event.linkedPreviousEvent && (
+              <div>
+                <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Partida anterior enlazada</h3>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/events/${event.linkedPreviousEvent!.id}`)}
+                  className="w-full flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] p-3 text-left hover:border-[var(--color-primary)] transition-colors"
+                >
+                  <GameImage
+                    src={event.linkedPreviousEvent.gameImage || null}
+                    alt={event.linkedPreviousEvent.gameName || event.linkedPreviousEvent.title}
+                    size="sm"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-[var(--color-text)]">{event.linkedPreviousEvent.gameName || event.linkedPreviousEvent.title}</p>
+                    <p className="text-xs text-[var(--color-textSecondary)]">Evento principal</p>
+                  </div>
+                  <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -2445,7 +2590,7 @@ export default function EventDetail() {
                 <div className="flex-1">
                   <p className="font-medium text-sm text-[var(--color-text)]">{editSelectedGame.name}</p>
                 </div>
-                <button type="button" onClick={() => { setEditSelectedGame(null); setEditSelectedCategory(''); setEditConfirmedCategory(null); }} className="text-red-500 hover:text-red-600">
+                <button type="button" onClick={() => { setEditSelectedGame(null); setEditSelectedExpansions([]); setEditLinkedNextGame(null); setEditSelectedCategory(''); setEditConfirmedCategory(null); }} className="text-red-500 hover:text-red-600">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
@@ -2455,6 +2600,85 @@ export default function EventDetail() {
               </button>
             )}
           </div>
+
+          {editSelectedGame && (
+            <div className="space-y-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-medium text-[var(--color-text)]">Expansiones</h3>
+                  <p className="text-xs text-[var(--color-textSecondary)]">Se mostrarán junto al juego principal.</p>
+                </div>
+                <Button type="button" variant="outline" onClick={() => setIsEditExpansionModalOpen(true)}>
+                  Añadir expansión desde la BGG
+                </Button>
+              </div>
+              {editSelectedExpansions.length > 0 ? (
+                <div className="space-y-2">
+                  {editSelectedExpansions.map((expansion) => (
+                    <div key={expansion.id} className="flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] px-3 py-2">
+                      <GameImage src={expansion.image || expansion.thumbnail} alt={expansion.name} size="sm" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-[var(--color-text)]">{expansion.name}</p>
+                        <p className="text-xs text-amber-600">Expansión</p>
+                      </div>
+                      <button type="button" onClick={() => handleRemoveEditExpansion(expansion.id)} className="text-red-500 hover:text-red-600">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-[var(--color-textSecondary)]">No hay expansiones añadidas.</p>
+              )}
+            </div>
+          )}
+
+          {editSelectedGame && (
+            <div className="space-y-4 rounded-lg border border-dashed border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-medium text-[var(--color-text)]">Segunda partida enlazada</h3>
+                  <p className="text-xs text-[var(--color-textSecondary)]">Se mantendrá como evento separado enlazado a esta partida.</p>
+                </div>
+                {!editLinkedNextGame && (
+                  <Button type="button" variant="outline" onClick={() => setIsEditLinkedGameModalOpen(true)}>
+                    Añadir segunda partida enlazada
+                  </Button>
+                )}
+              </div>
+              {editLinkedNextGame ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 rounded-lg border border-[var(--color-cardBorder)] p-3">
+                    <GameImage src={editLinkedNextGame.image || editLinkedNextGame.thumbnail} alt={editLinkedNextGame.name} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-[var(--color-text)]">{editLinkedNextGame.name}</p>
+                      <p className="text-xs text-[var(--color-textSecondary)]">Se jugará al terminar la partida principal</p>
+                    </div>
+                    <button type="button" onClick={() => setEditLinkedNextGame(null)} className="text-red-500 hover:text-red-600">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Horas</label>
+                      <select value={editLinkedDurationHours} onChange={(e) => setEditLinkedDurationHours(e.target.value)} className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]">
+                        <option value="">--</option>
+                        {Array.from({ length: 13 }, (_, i) => i).map(h => <option key={h} value={h}>{h}h</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Minutos</label>
+                      <select value={editLinkedDurationMinutes} onChange={(e) => setEditLinkedDurationMinutes(e.target.value)} className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]">
+                        {[0, 15, 30, 45].map(m => <option key={m} value={m}>{m}min</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-[var(--color-textSecondary)]">No hay segunda partida enlazada.</p>
+              )}
+            </div>
+          )}
 
           {/* Categoría */}
           <div>
@@ -2572,7 +2796,7 @@ export default function EventDetail() {
           setEditConfirmedCategory(null);
           setIsEditGameModalOpen(false);
           try {
-            const response = await api.get(`/api/games/${game.id}`);
+            const response = await ensureGameInCatalog(game);
             if (response.data?.data?.confirmedCategory) {
               setEditSelectedCategory(response.data.data.confirmedCategory);
               setEditConfirmedCategory(response.data.data.confirmedCategory);
@@ -2583,6 +2807,29 @@ export default function EventDetail() {
             // ignorar error al guardar juego en BD
           }
         }}
+      />
+
+      <GameSearchModal
+        isOpen={isEditExpansionModalOpen}
+        onClose={() => setIsEditExpansionModalOpen(false)}
+        onSelect={async (game) => {
+          await handleEditExpansionSelect(game);
+          setIsEditExpansionModalOpen(false);
+        }}
+        title="Añadir expansión desde la BGG"
+        searchPlaceholder="Busca una expansión..."
+        allowRPGG={false}
+        filterExpansionOnly
+      />
+
+      <GameSearchModal
+        isOpen={isEditLinkedGameModalOpen}
+        onClose={() => setIsEditLinkedGameModalOpen(false)}
+        onSelect={async (game) => {
+          await handleEditLinkedGameSelect(game);
+          setIsEditLinkedGameModalOpen(false);
+        }}
+        title="Seleccionar segunda partida enlazada"
       />
 
       {/* Modal de confirmación de cerrar plazas */}

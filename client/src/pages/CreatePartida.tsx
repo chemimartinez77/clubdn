@@ -43,6 +43,8 @@ export default function CreatePartida() {
   const currentUserWasConfirmed = !!user && cloneAttendees.some((attendee) => attendee.id === user.id);
 
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
+  const [isExpansionModalOpen, setIsExpansionModalOpen] = useState(false);
+  const [isLinkedGameModalOpen, setIsLinkedGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<BGGGame | null>(() => (
     clonePrefill?.bggId
       ? {
@@ -54,6 +56,19 @@ export default function CreatePartida() {
         }
       : null
   ));
+  const [selectedExpansions, setSelectedExpansions] = useState<BGGGame[]>(() =>
+    (clonePrefill?.expansions ?? []).map((expansion) => ({
+      id: expansion.gameId,
+      name: expansion.name,
+      image: expansion.image ?? '',
+      thumbnail: expansion.thumbnail ?? '',
+      yearPublished: '',
+      itemType: 'boardgameexpansion',
+    }))
+  );
+  const [linkedNextGame, setLinkedNextGame] = useState<BGGGame | null>(null);
+  const [linkedNextDurationHours, setLinkedNextDurationHours] = useState('1');
+  const [linkedNextDurationMinutes, setLinkedNextDurationMinutes] = useState('0');
   const [selectedCategory, setSelectedCategory] = useState<string>(clonePrefill?.gameCategory ?? '');
   const [confirmedCategory, setConfirmedCategory] = useState<string | null>(null);
   const [selectedClonedAttendeeIds, setSelectedClonedAttendeeIds] = useState<string[]>(() => cloneAttendees.map((attendee) => attendee.id));
@@ -68,6 +83,14 @@ export default function CreatePartida() {
       return response.data;
     }
   });
+
+  const ensureGameInCatalog = async (game: BGGGame) => {
+    const isRpg = game.id.startsWith('rpgg-');
+    const endpoint = isRpg
+      ? `/api/games/rpgg/${game.id.slice(5)}`
+      : `/api/games/${game.id}`;
+    return api.get(endpoint);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -103,6 +126,14 @@ export default function CreatePartida() {
       gameName: selectedGame?.name,
       gameImage: selectedGame?.image,
       bggId: selectedGame?.id,
+      expansions: selectedExpansions.map((expansion) => ({ gameId: expansion.id })),
+      linkedNext: linkedNextGame
+        ? {
+            gameId: linkedNextGame.id,
+            durationHours: linkedNextDurationHours !== '' ? parseInt(linkedNextDurationHours, 10) : undefined,
+            durationMinutes: linkedNextDurationMinutes !== '' ? parseInt(linkedNextDurationMinutes, 10) : undefined,
+          }
+        : null,
       gameCategory: gameCategory || undefined
     };
 
@@ -152,11 +183,7 @@ export default function CreatePartida() {
     setConfirmedCategory(null);
 
     try {
-      const isRpg = game.id.startsWith('rpgg-');
-      const endpoint = isRpg
-        ? `/api/games/rpgg/${game.id.slice(5)}`
-        : `/api/games/${game.id}`;
-      const response = await api.get(endpoint);
+      const response = await ensureGameInCatalog(game);
 
       if (response.data?.data?.confirmedCategory) {
         setSelectedCategory(response.data.data.confirmedCategory);
@@ -171,8 +198,28 @@ export default function CreatePartida() {
 
   const handleRemoveGame = () => {
     setSelectedGame(null);
+    setSelectedExpansions([]);
+    setLinkedNextGame(null);
     setSelectedCategory('');
     setConfirmedCategory(null);
+  };
+
+  const handleExpansionSelect = async (game: BGGGame) => {
+    await ensureGameInCatalog(game);
+    setSelectedExpansions((current) => (
+      current.some((expansion) => expansion.id === game.id)
+        ? current
+        : [...current, { ...game, itemType: 'boardgameexpansion' }]
+    ));
+  };
+
+  const handleRemoveExpansion = (gameId: string) => {
+    setSelectedExpansions((current) => current.filter((expansion) => expansion.id !== gameId));
+  };
+
+  const handleLinkedNextSelect = async (game: BGGGame) => {
+    await ensureGameInCatalog(game);
+    setLinkedNextGame(game);
   };
 
   const handleToggleClonedAttendee = (attendeeId: string) => {
@@ -279,6 +326,56 @@ export default function CreatePartida() {
                   </button>
                 )}
               </div>
+
+              {selectedGame && (
+                <div className="space-y-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-medium text-[var(--color-text)]">Expansiones</h3>
+                      <p className="text-xs text-[var(--color-textSecondary)]">
+                        Añade una o varias expansiones que se jugarán junto al juego base.
+                      </p>
+                    </div>
+                    <Button type="button" variant="outline" onClick={() => setIsExpansionModalOpen(true)}>
+                      Añadir expansión desde la BGG
+                    </Button>
+                  </div>
+
+                  {selectedExpansions.length > 0 ? (
+                    <div className="space-y-2">
+                      {selectedExpansions.map((expansion) => (
+                        <div key={expansion.id} className="flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] px-3 py-2">
+                          {expansion.image ? (
+                            <img
+                              src={expansion.image}
+                              alt={expansion.name}
+                              className="h-12 w-12 rounded object-cover border border-[var(--color-cardBorder)]"
+                            />
+                          ) : (
+                            <div className="h-12 w-12 rounded bg-[var(--color-tableRowHover)]" />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-[var(--color-text)]">{expansion.name}</p>
+                            <p className="text-xs text-amber-600">Expansión</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveExpansion(expansion.id)}
+                            className="text-red-500 hover:text-red-600 transition-colors"
+                            aria-label={`Eliminar expansión ${expansion.name}`}
+                          >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[var(--color-textSecondary)]">No has añadido expansiones todavía.</p>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
@@ -446,6 +543,84 @@ export default function CreatePartida() {
                 </div>
               </div>
 
+              {selectedGame && (
+                <div className="space-y-4 rounded-lg border border-dashed border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-medium text-[var(--color-text)]">Segunda partida enlazada</h3>
+                      <p className="text-xs text-[var(--color-textSecondary)]">
+                        Se mostrará como continuación de esta partida y tendrá resultados propios.
+                      </p>
+                    </div>
+                    {!linkedNextGame && (
+                      <Button type="button" variant="outline" onClick={() => setIsLinkedGameModalOpen(true)}>
+                        Añadir segunda partida enlazada
+                      </Button>
+                    )}
+                  </div>
+
+                  {linkedNextGame ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4 rounded-lg border border-[var(--color-cardBorder)] p-3">
+                        {linkedNextGame.image ? (
+                          <img
+                            src={linkedNextGame.image}
+                            alt={linkedNextGame.name}
+                            className="w-16 h-16 object-cover rounded border border-[var(--color-cardBorder)]"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded bg-[var(--color-tableRowHover)]" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="truncate font-medium text-[var(--color-text)]">{linkedNextGame.name}</h4>
+                          <p className="text-xs text-[var(--color-textSecondary)]">Se jugará al terminar la partida principal</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setLinkedNextGame(null)}
+                          className="text-red-500 hover:text-red-600 transition-colors"
+                          aria-label="Eliminar segunda partida enlazada"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Horas</label>
+                          <select
+                            value={linkedNextDurationHours}
+                            onChange={(e) => setLinkedNextDurationHours(e.target.value)}
+                            className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
+                          >
+                            <option value="">--</option>
+                            {Array.from({ length: 13 }, (_, i) => i).map(hour => (
+                              <option key={hour} value={hour}>{hour}h</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Minutos</label>
+                          <select
+                            value={linkedNextDurationMinutes}
+                            onChange={(e) => setLinkedNextDurationMinutes(e.target.value)}
+                            className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
+                          >
+                            {minutes.map(minute => (
+                              <option key={minute} value={minute}>{minute}min</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[var(--color-textSecondary)]">No has configurado una segunda partida enlazada.</p>
+                  )}
+                </div>
+              )}
+
               <div id="create-partida-attendees">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   ¿Cuántos jugadores o jugadoras seréis en la partida? *
@@ -570,6 +745,23 @@ export default function CreatePartida() {
         isOpen={isGameModalOpen}
         onClose={() => setIsGameModalOpen(false)}
         onSelect={handleGameSelect}
+      />
+
+      <GameSearchModal
+        isOpen={isExpansionModalOpen}
+        onClose={() => setIsExpansionModalOpen(false)}
+        onSelect={handleExpansionSelect}
+        title="Añadir expansión desde la BGG"
+        searchPlaceholder="Busca una expansión..."
+        allowRPGG={false}
+        filterExpansionOnly
+      />
+
+      <GameSearchModal
+        isOpen={isLinkedGameModalOpen}
+        onClose={() => setIsLinkedGameModalOpen(false)}
+        onSelect={handleLinkedNextSelect}
+        title="Seleccionar segunda partida enlazada"
       />
 
       {showTour && <CreatePartidaTour onDismiss={dismissTour} />}

@@ -10,9 +10,21 @@ interface GameSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (game: BGGGame) => void;
+  title?: string;
+  searchPlaceholder?: string;
+  allowRPGG?: boolean;
+  filterExpansionOnly?: boolean;
 }
 
-export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearchModalProps) {
+export default function GameSearchModal({
+  isOpen,
+  onClose,
+  onSelect,
+  title = 'Buscar Juego',
+  searchPlaceholder = 'Escribe el nombre del juego...',
+  allowRPGG = true,
+  filterExpansionOnly = false,
+}: GameSearchModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchTrigger, setSearchTrigger] = useState('');
   const [page, setPage] = useState(1);
@@ -27,6 +39,12 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
       setPage(1);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!allowRPGG && isRPGG) {
+      setIsRPGG(false);
+    }
+  }, [allowRPGG, isRPGG]);
 
   const emptyResult = {
     games: [],
@@ -57,6 +75,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
   });
 
   const handleToggleSource = () => {
+    if (!allowRPGG) return;
     setIsRPGG((prev) => !prev);
     setSearchTrigger('');
     setPage(1);
@@ -75,6 +94,10 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
     }
   };
 
+  const visibleGames = filterExpansionOnly
+    ? searchResult.games.filter((game) => game.itemType === 'boardgameexpansion')
+    : searchResult.games;
+
   const handleSelectGame = (game: BGGGame) => {
     onSelect(game);
     setSearchQuery('');
@@ -91,7 +114,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
         {/* Header */}
         <div className="p-6 border-b border-[var(--color-cardBorder)]">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-[var(--color-text)]">Buscar Juego</h2>
+            <h2 className="text-2xl font-bold text-[var(--color-text)]">{title}</h2>
             <button
               onClick={onClose}
               className="text-[var(--color-textSecondary)] hover:text-[var(--color-textSecondary)]"
@@ -103,23 +126,25 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
           </div>
 
           {/* Toggle BGG / RPGGeek */}
-          <div className="flex items-center gap-3 mb-4">
-            <span className={`text-sm ${!isRPGG ? 'text-[var(--color-text)] font-medium' : 'text-[var(--color-textSecondary)]'}`}>
-              Juego de mesa
-            </span>
-            <button
-              type="button"
-              onClick={handleToggleSource}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isRPGG ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-cardBorder)]'}`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isRPGG ? 'translate-x-6' : 'translate-x-1'}`}
-              />
-            </button>
-            <span className={`text-sm ${isRPGG ? 'text-[var(--color-text)] font-medium' : 'text-[var(--color-textSecondary)]'}`}>
-              Juego de rol
-            </span>
-          </div>
+          {allowRPGG && !filterExpansionOnly && (
+            <div className="flex items-center gap-3 mb-4">
+              <span className={`text-sm ${!isRPGG ? 'text-[var(--color-text)] font-medium' : 'text-[var(--color-textSecondary)]'}`}>
+                Juego de mesa
+              </span>
+              <button
+                type="button"
+                onClick={handleToggleSource}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isRPGG ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-cardBorder)]'}`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isRPGG ? 'translate-x-6' : 'translate-x-1'}`}
+                />
+              </button>
+              <span className={`text-sm ${isRPGG ? 'text-[var(--color-text)] font-medium' : 'text-[var(--color-textSecondary)]'}`}>
+                Juego de rol
+              </span>
+            </div>
+          )}
 
           {/* Search Input */}
           <div className="flex gap-2">
@@ -129,7 +154,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Escribe el nombre del juego..."
+                placeholder={searchPlaceholder}
                 className="w-full px-4 py-3 pl-10 bg-[var(--color-inputBackground)] text-[var(--color-inputText)] border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent placeholder:text-[var(--color-textSecondary)]"
                 autoFocus
               />
@@ -184,7 +209,7 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
               <p className="text-[var(--color-textSecondary)]">Escribe el nombre del juego y haz click en Buscar</p>
               <p className="text-[var(--color-textSecondary)] text-sm mt-2">O presiona Enter para buscar</p>
             </div>
-          ) : searchResult.games.length === 0 ? (
+          ) : visibleGames.length === 0 ? (
             <div className="text-center py-12">
               <svg
                 className="w-16 h-16 mx-auto text-[var(--color-textSecondary)] mb-4"
@@ -199,11 +224,13 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                   d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <p className="text-[var(--color-textSecondary)]">No se encontraron juegos</p>
+              <p className="text-[var(--color-textSecondary)]">
+                {filterExpansionOnly ? 'No se encontraron expansiones para esa búsqueda' : 'No se encontraron juegos'}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3">
-              {searchResult.games.map((game) => (
+              {visibleGames.map((game) => (
                 <button
                   key={game.id}
                   onClick={() => handleSelectGame(game)}
@@ -231,6 +258,9 @@ export default function GameSearchModal({ isOpen, onClose, onSelect }: GameSearc
                     <h3 className="font-medium text-[var(--color-text)]">{game.name}</h3>
                     {game.yearPublished && (
                       <p className="text-sm text-[var(--color-textSecondary)]">{game.yearPublished}</p>
+                    )}
+                    {game.itemType === 'boardgameexpansion' && (
+                      <p className="text-xs text-amber-600 mt-1">Expansión</p>
                     )}
                   </div>
                   <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">

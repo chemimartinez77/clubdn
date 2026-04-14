@@ -15,8 +15,37 @@ export interface Event {
   gameName?: string | null;
   gameImage?: string | null;
   bggId?: string | null;
+  expansions?: Array<{
+    id: string;
+    gameId: string;
+    name: string;
+    image: string | null;
+    thumbnail: string | null;
+  }>;
   gameCategory?: BadgeCategory | null;
   confirmedCategory?: BadgeCategory | null;
+  linkedNextEvent?: {
+    id: string;
+    title: string;
+    gameName?: string | null;
+    gameImage?: string | null;
+    bggId?: string | null;
+    durationHours?: number | null;
+    durationMinutes?: number | null;
+    status: EventStatus;
+    date: string;
+  } | null;
+  linkedPreviousEvent?: {
+    id: string;
+    title: string;
+    gameName?: string | null;
+    gameImage?: string | null;
+    bggId?: string | null;
+    durationHours?: number | null;
+    durationMinutes?: number | null;
+    status: EventStatus;
+    date: string;
+  } | null;
   game?: {
     thumbnail: string | null;
     image: string | null;
@@ -100,6 +129,7 @@ export interface CreatePartidaClonePrefill {
   gameName?: string | null;
   gameImage?: string | null;
   bggId?: string | null;
+  expansions?: Array<{ gameId: string; name: string; image?: string | null; thumbnail?: string | null }>;
   gameCategory?: BadgeCategory | null;
   location: string;
   address?: string | null;
@@ -175,7 +205,13 @@ export interface CreateEventData {
   gameName?: string;
   gameImage?: string;
   bggId?: string;
+  expansions?: Array<{ gameId: string }>;
   gameCategory?: string;
+  linkedNext?: {
+    gameId: string;
+    durationHours?: number;
+    durationMinutes?: number;
+  } | null;
 
   // Fecha y hora
   date: string;
@@ -201,6 +237,7 @@ export interface UpdateEventData {
   gameName?: string | null;
   gameImage?: string | null;
   bggId?: string | null;
+  expansions?: Array<{ gameId: string }>;
   date?: string;
   startHour?: number;
   startMinute?: number;
@@ -212,6 +249,11 @@ export interface UpdateEventData {
   status?: EventStatus;
   gameCategory?: string | null;
   requiresApproval?: boolean;
+  linkedNext?: {
+    gameId: string;
+    durationHours?: number;
+    durationMinutes?: number;
+  } | null;
 }
 
 // BGG Types
@@ -221,6 +263,7 @@ export interface BGGGame {
   yearPublished: string;
   image: string;
   thumbnail: string;
+  itemType?: 'boardgame' | 'boardgameexpansion' | 'rpgitem';
   badgeCategory?: BadgeCategory | null;
 }
 

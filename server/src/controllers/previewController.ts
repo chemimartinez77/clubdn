@@ -59,6 +59,22 @@ export const previewEvent = async (req: Request, res: Response) => {
         title: true,
         gameName: true,
         gameImage: true,
+        expansions: {
+          include: {
+            game: {
+              select: {
+                name: true,
+              }
+            }
+          },
+          orderBy: { position: 'asc' }
+        },
+        linkedNextEvent: {
+          select: {
+            gameName: true,
+            title: true,
+          }
+        },
         date: true,
         startHour: true,
         startMinute: true,
@@ -79,7 +95,13 @@ export const previewEvent = async (req: Request, res: Response) => {
       ? `${event.title} · ${event.gameName}`
       : event.title;
 
-    const ogDescription = '';
+    const expansionsText = event.expansions.map((expansion) => expansion.game.name).join(', ');
+    const linkedNextText = event.linkedNextEvent?.gameName || event.linkedNextEvent?.title || '';
+    const ogDescriptionParts = [
+      expansionsText ? `Expansiones: ${expansionsText}` : '',
+      linkedNextText ? `Después se jugará: ${linkedNextText}` : '',
+    ].filter(Boolean);
+    const ogDescription = ogDescriptionParts.join(' · ');
 
     // Usar proxy para la imagen (BGG bloquea hotlinking directo)
     // Preferir imagen de alta res de Game, con fallback al gameImage del evento

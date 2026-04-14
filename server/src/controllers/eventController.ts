@@ -1,7 +1,7 @@
 // server/src/controllers/eventController.ts
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
-import { BadgeCategory, RegistrationStatus } from '@prisma/client';
+import { BadgeCategory, Prisma, RegistrationStatus } from '@prisma/client';
 import { checkAndUnlockBadges, processGameCategoryVote } from './badgeController';
 import { processEventPlayHistory } from './statsController';
 import {
@@ -14,6 +14,190 @@ import {
 const REMOVAL_REASONS = ['No se presentó', 'Comportamiento inadecuado', 'Solicitud del propio jugador', 'Aforo reducido'] as const;
 
 const REGISTRATION_COOLDOWN_MS = 30000; // 30 segundos
+
+type EventExpansionInput = { gameId: string };
+type LinkedNextInput = {
+  gameId: string;
+  durationHours?: number;
+  durationMinutes?: number;
+};
+
+const eventDetailInclude = {
+  organizer: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      profile: { select: { nick: true, avatar: true } },
+      membership: { select: { type: true } }
+    }
+  },
+  registrations: {
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          membership: {
+            select: {
+              type: true
+            }
+          },
+          profile: {
+            select: {
+              avatar: true,
+              nick: true
+            }
+          }
+        }
+      }
+    },
+    orderBy: { createdAt: 'asc' as const }
+  },
+  eventGuests: {
+    select: {
+      id: true,
+      guestFirstName: true,
+      guestLastName: true,
+      invitationId: true,
+      invitation: {
+        select: {
+          status: true,
+          memberId: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'asc' as const }
+  },
+  invitations: {
+    select: {
+      id: true,
+      status: true,
+      guestFirstName: true,
+      guestLastName: true,
+      memberId: true
+    },
+    orderBy: { createdAt: 'asc' as const }
+  },
+  game: {
+    select: {
+      thumbnail: true,
+      image: true,
+      description: true,
+      averageRating: true,
+      bayesAverage: true,
+      rank: true,
+      complexityRating: true,
+      minPlayers: true,
+      maxPlayers: true,
+      playingTime: true,
+      minPlaytime: true,
+      maxPlaytime: true,
+      minAge: true,
+      yearPublished: true,
+      designers: true,
+      publishers: true,
+      categories: true,
+      mechanics: true
+    }
+  },
+  expansions: {
+    include: {
+      game: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          thumbnail: true,
+        }
+      }
+    },
+    orderBy: { position: 'asc' as const },
+  },
+  linkedNextEvent: {
+    select: {
+      id: true,
+      title: true,
+      gameName: true,
+      gameImage: true,
+      bggId: true,
+      durationHours: true,
+      durationMinutes: true,
+      status: true,
+      date: true,
+    }
+  },
+  linkedPreviousEvent: {
+    select: {
+      id: true,
+      title: true,
+      gameName: true,
+      gameImage: true,
+      bggId: true,
+      durationHours: true,
+      durationMinutes: true,
+      status: true,
+      date: true,
+    }
+  }
+} satisfies Prisma.EventInclude;
+
+async function getGameSnapshot(gameId: string) {
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    select: { id: true, name: true, image: true, thumbnail: true },
+  });
+
+  if (!game) {
+    throw new Error(`Game ${gameId} not found`);
+  }
+
+  return game;
+}
+
+function normalizeExpansionInputs(raw: unknown): EventExpansionInput[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  return raw
+    .map((item) => {
+      const gameId = typeof item === 'object' && item !== null && 'gameId' in item
+        ? String((item as { gameId?: string }).gameId ?? '').trim()
+        : '';
+      return { gameId };
+    })
+    .filter((item) => item.gameId.length > 0 && !seen.has(item.gameId) && seen.add(item.gameId));
+}
+
+function normalizeLinkedNext(raw: unknown): LinkedNextInput | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const gameId = String((raw as { gameId?: string }).gameId ?? '').trim();
+  if (!gameId) return null;
+  const durationHours = (raw as { durationHours?: number }).durationHours;
+  const durationMinutes = (raw as { durationMinutes?: number }).durationMinutes;
+  return {
+    gameId,
+    ...(durationHours !== undefined ? { durationHours } : {}),
+    ...(durationMinutes !== undefined ? { durationMinutes } : {}),
+  };
+}
+
+async function replaceEventExpansions(
+  tx: Prisma.TransactionClient,
+  eventId: string,
+  expansions: EventExpansionInput[]
+) {
+  await tx.eventExpansion.deleteMany({ where: { eventId } });
+  if (expansions.length === 0) return;
+
+  await tx.eventExpansion.createMany({
+    data: expansions.map((item, index) => ({
+      eventId,
+      gameId: item.gameId,
+      position: index,
+    })),
+  });
+}
 
 /**
  * Comprueba si el usuario ya tiene una partida confirmada que solapa con el intervalo dado.
@@ -284,88 +468,8 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
 
     const event = await prisma.event.findUnique({
       where: { id },
-      include: {
-        organizer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            profile: { select: { nick: true, avatar: true } },
-            membership: { select: { type: true } }
-          }
-        },
-        registrations: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                membership: {
-                  select: {
-                    type: true
-                  }
-                },
-                profile: {
-                  select: {
-                    avatar: true,
-                    nick: true
-                  }
-                }
-              }
-            }
-          },
-          orderBy: { createdAt: 'asc' }
-        },
-          eventGuests: {
-            select: {
-              id: true,
-              guestFirstName: true,
-              guestLastName: true,
-              invitationId: true,
-              invitation: {
-                select: {
-                  status: true,
-                  memberId: true
-                }
-              }
-            },
-            orderBy: { createdAt: 'asc' }
-          },
-          invitations: {
-            select: {
-              id: true,
-              status: true,
-              guestFirstName: true,
-              guestLastName: true,
-              memberId: true
-            },
-            orderBy: { createdAt: 'asc' }
-          },
-          game: {
-            select: {
-              thumbnail: true,
-              image: true,
-              description: true,
-              averageRating: true,
-              bayesAverage: true,
-              rank: true,
-              complexityRating: true,
-              minPlayers: true,
-              maxPlayers: true,
-              playingTime: true,
-              minPlaytime: true,
-              maxPlaytime: true,
-              minAge: true,
-              yearPublished: true,
-              designers: true,
-              publishers: true,
-              categories: true,
-              mechanics: true
-            }
-          }
-        }
-      });
+      include: eventDetailInclude,
+    });
 
     if (!event) {
       res.status(404).json({
@@ -389,6 +493,13 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       data: {
           event: {
             ...event,
+            expansions: event.expansions.map((expansion) => ({
+              id: expansion.id,
+              gameId: expansion.gameId,
+              name: expansion.game.name,
+              image: expansion.game.image,
+              thumbnail: expansion.game.thumbnail,
+            })),
             eventGuests: undefined,
             invitations: event.invitations.map(invitation => ({
               id: invitation.id,
@@ -434,6 +545,8 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
       gameName,
       gameImage,
       bggId,
+      expansions,
+      linkedNext,
       gameCategory,
       startHour,
       startMinute,
@@ -505,47 +618,94 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
     const normalizedLocation =
       typeof location === 'string' && location.trim().length > 0 ? location.trim() : 'Club Dreadnought';
 
-    const event = await prisma.event.create({
-      data: {
-        title,
-        description,
-        date: eventDate,
-        location: normalizedLocation,
-        address,
-        maxAttendees: parsedMaxAttendees,
-        type: eventType,
-        gameName,
-        gameImage,
-        bggId,
-        gameCategory: gameCategory || null,
-        startHour: startHour !== undefined ? parseInt(startHour) : null,
-        startMinute: startMinute !== undefined ? parseInt(startMinute) : null,
-        durationHours: durationHours !== undefined ? parseInt(durationHours) : null,
-        durationMinutes: durationMinutes !== undefined ? parseInt(durationMinutes) : null,
-        requiresApproval: req.body.requiresApproval !== undefined ? req.body.requiresApproval === true || req.body.requiresApproval === 'true' : true,
-        createdBy: userId
-      },
-      include: {
-        organizer: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
+    const normalizedExpansions = normalizeExpansionInputs(expansions);
+    const normalizedLinkedNext = normalizeLinkedNext(linkedNext);
+    const linkedNextGame = normalizedLinkedNext ? await getGameSnapshot(normalizedLinkedNext.gameId) : null;
 
-    if (willAttend) {
-      await prisma.eventRegistration.create({
+    const event = await prisma.$transaction(async (tx) => {
+      const createdEvent = await tx.event.create({
         data: {
-          eventId: event.id,
-          userId,
-          status: 'CONFIRMED'
-        }
+          title,
+          description,
+          date: eventDate,
+          location: normalizedLocation,
+          address,
+          maxAttendees: parsedMaxAttendees,
+          type: eventType,
+          gameName,
+          gameImage,
+          bggId,
+          gameCategory: gameCategory || null,
+          startHour: startHour !== undefined ? parseInt(startHour) : null,
+          startMinute: startMinute !== undefined ? parseInt(startMinute) : null,
+          durationHours: durationHours !== undefined ? parseInt(durationHours) : null,
+          durationMinutes: durationMinutes !== undefined ? parseInt(durationMinutes) : null,
+          requiresApproval: req.body.requiresApproval !== undefined ? req.body.requiresApproval === true || req.body.requiresApproval === 'true' : true,
+          createdBy: userId
+        },
       });
 
-    }
+      await replaceEventExpansions(tx, createdEvent.id, normalizedExpansions);
+
+      if (normalizedLinkedNext && linkedNextGame) {
+        const linkedEvent = await tx.event.create({
+          data: {
+            title: linkedNextGame.name,
+            description: `Partida enlazada a ${title}`,
+            date: eventDate,
+            location: normalizedLocation,
+            address,
+            maxAttendees: parsedMaxAttendees,
+            type: 'PARTIDA',
+            gameName: linkedNextGame.name,
+            gameImage: linkedNextGame.image || linkedNextGame.thumbnail || null,
+            bggId: linkedNextGame.id,
+            durationHours: normalizedLinkedNext.durationHours ?? null,
+            durationMinutes: normalizedLinkedNext.durationMinutes ?? null,
+            requiresApproval: req.body.requiresApproval !== undefined ? req.body.requiresApproval === true || req.body.requiresApproval === 'true' : true,
+            createdBy: userId,
+          },
+        });
+
+        await tx.event.update({
+          where: { id: createdEvent.id },
+          data: { linkedNextEventId: linkedEvent.id },
+        });
+
+        if (willAttend) {
+          await tx.eventRegistration.create({
+            data: {
+              eventId: linkedEvent.id,
+              userId,
+              status: 'CONFIRMED'
+            }
+          });
+        }
+      }
+
+      if (willAttend) {
+        await tx.eventRegistration.create({
+          data: {
+            eventId: createdEvent.id,
+            userId,
+            status: 'CONFIRMED'
+          }
+        });
+      }
+
+      return tx.event.findUniqueOrThrow({
+        where: { id: createdEvent.id },
+        include: {
+          organizer: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
+    });
 
     // Procesar voto de categoría si hay bggId y gameCategory
     if (event.bggId && event.gameCategory) {
@@ -575,18 +735,29 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
  */
 export const updateEvent = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const eventId = req.params.id;
     const userId = req.user?.userId;
     const userRole = req.user?.role;
     const {
       title, description, date, location, address, maxAttendees, status,
-      gameName, gameImage, bggId, gameCategory,
+      gameName, gameImage, bggId, expansions, linkedNext, gameCategory,
       startHour, startMinute, durationHours, durationMinutes,
       requiresApproval
     } = req.body;
 
+    if (!eventId) {
+      res.status(400).json({
+        success: false,
+        message: 'ID de evento no proporcionado'
+      });
+      return;
+    }
+
     const existingEvent = await prisma.event.findUnique({
-      where: { id }
+      where: { id: eventId },
+      include: {
+        linkedNextEvent: true,
+      }
     });
 
     if (!existingEvent) {
@@ -632,13 +803,13 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
       const [confirmedCount, activeInvitations] = await Promise.all([
         prisma.eventRegistration.count({
           where: {
-            eventId: id,
+            eventId,
             status: 'CONFIRMED'
           }
         }),
         prisma.invitation.count({
           where: {
-            eventId: id,
+            eventId,
             status: { in: ['PENDING', 'USED'] }
           }
         })
@@ -677,24 +848,90 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
         typeof location === 'string' && location.trim().length > 0 ? location.trim() : 'Club Dreadnought';
     }
 
-    const event = await prisma.event.update({
-      where: { id },
-      data: updateData,
-      include: {
-        organizer: {
-          select: {
-            id: true,
-            name: true,
-            email: true
+    const normalizedExpansions = normalizeExpansionInputs(expansions);
+    const expansionsProvided = expansions !== undefined;
+    const normalizedLinkedNext = linkedNext === undefined ? undefined : normalizeLinkedNext(linkedNext);
+    const linkedNextGame = normalizedLinkedNext ? await getGameSnapshot(normalizedLinkedNext.gameId) : null;
+
+    const event = await prisma.$transaction(async (tx) => {
+      const updatedEvent = await tx.event.update({
+        where: { id: eventId },
+        data: updateData,
+      });
+
+      if (expansionsProvided) {
+        await replaceEventExpansions(tx, eventId, normalizedExpansions);
+      }
+
+      if (linkedNext !== undefined) {
+        if (normalizedLinkedNext && linkedNextGame) {
+          if (existingEvent.linkedNextEventId) {
+            await tx.event.update({
+              where: { id: existingEvent.linkedNextEventId },
+              data: {
+                title: linkedNextGame.name,
+                gameName: linkedNextGame.name,
+                gameImage: linkedNextGame.image || linkedNextGame.thumbnail || null,
+                bggId: linkedNextGame.id,
+                durationHours: normalizedLinkedNext.durationHours ?? null,
+                durationMinutes: normalizedLinkedNext.durationMinutes ?? null,
+                location: typeof location === 'string' && location.trim().length > 0 ? location.trim() : updatedEvent.location,
+                address: address !== undefined ? address : updatedEvent.address,
+                maxAttendees: newMaxAttendees ?? updatedEvent.maxAttendees,
+                requiresApproval: requiresApproval !== undefined ? (requiresApproval === true || requiresApproval === 'true') : updatedEvent.requiresApproval,
+              },
+            });
+          } else {
+            const createdLinkedEvent = await tx.event.create({
+              data: {
+                title: linkedNextGame.name,
+                description: `Partida enlazada a ${updatedEvent.title}`,
+                date: updatedEvent.date,
+                location: typeof location === 'string' && location.trim().length > 0 ? location.trim() : updatedEvent.location,
+                address: address !== undefined ? address : updatedEvent.address,
+                maxAttendees: newMaxAttendees ?? updatedEvent.maxAttendees,
+                type: 'PARTIDA',
+                gameName: linkedNextGame.name,
+                gameImage: linkedNextGame.image || linkedNextGame.thumbnail || null,
+                bggId: linkedNextGame.id,
+                durationHours: normalizedLinkedNext.durationHours ?? null,
+                durationMinutes: normalizedLinkedNext.durationMinutes ?? null,
+                requiresApproval: requiresApproval !== undefined ? (requiresApproval === true || requiresApproval === 'true') : updatedEvent.requiresApproval,
+                createdBy: updatedEvent.createdBy,
+              }
+            });
+
+            await tx.event.update({
+              where: { id: eventId },
+              data: { linkedNextEventId: createdLinkedEvent.id },
+            });
           }
+        } else {
+          await tx.event.update({
+            where: { id: eventId },
+            data: { linkedNextEventId: null },
+          });
         }
       }
+
+      return tx.event.findUniqueOrThrow({
+        where: { id: eventId },
+        include: {
+          organizer: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
     });
 
     if (newMaxAttendees !== null && newMaxAttendees < existingEvent.maxAttendees) {
       await prisma.eventAuditLog.create({
         data: {
-          eventId: id!,
+          eventId,
           actorId: userId!,
           action: 'CLOSE_CAPACITY',
           details: JSON.stringify({

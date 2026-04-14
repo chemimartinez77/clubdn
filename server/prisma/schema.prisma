@@ -322,7 +322,11 @@ model Event {
   gameImage       String?
   bggId           String?
   game            Game?    @relation("GameEvents", fields: [bggId], references: [id])
+  expansions      EventExpansion[]
   gameCategory    BadgeCategory? // Categoría para tracking de badges
+  linkedNextEventId   String? @unique
+  linkedNextEvent     Event?  @relation("LinkedEventChain", fields: [linkedNextEventId], references: [id])
+  linkedPreviousEvent Event?  @relation("LinkedEventChain")
 
   // Fecha y hora
   date            DateTime
@@ -374,6 +378,21 @@ model Event {
   @@index([status])
   @@index([createdBy])
   @@index([type])
+  @@index([linkedNextEventId])
+}
+
+model EventExpansion {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, gameId])
+  @@index([eventId, position])
+  @@index([gameId])
 }
 
 model Invitation {
@@ -615,6 +634,7 @@ model Game {
   // Relación con eventos
   events            Event[]  @relation("GameEvents")
   userGames         UserGame[]
+  eventExpansions   EventExpansion[]
 
   @@index([name])
   @@index([yearPublished])
