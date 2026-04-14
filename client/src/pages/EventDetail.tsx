@@ -21,6 +21,27 @@ import { getCategoryDisplayName, getCategoryIcon } from '../types/badge';
 import { displayName, fullNameTooltip } from '../utils/displayName';
 import UserPopover from '../components/ui/UserPopover';
 
+// ---------- tipos resultados ----------
+interface EventResultEntry {
+  id: string;
+  userId: string | null;
+  guestName: string | null;
+  score: number | null;
+  isWinner: boolean;
+  notes: string | null;
+  user: { id: string; name: string } | null;
+  creator: { id: string; name: string };
+}
+
+interface ResultRow {
+  userId: string;
+  userName: string;
+  score: string;
+  isWinner: boolean;
+  guestName: string;
+  isGuest: boolean;
+}
+
 const DNI_LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE';
 const isValidDniNie = (value: string): boolean => {
   const v = value.trim().toUpperCase();
@@ -114,6 +135,11 @@ export default function EventDetail() {
 
   // Estado QR de validación de partida
   const [showValidationQr, setShowValidationQr] = useState(false);
+  const [showResultsModal, setShowResultsModal] = useState(false);
+  const [resultEditing, setResultEditing] = useState(false);
+  const [resultRows, setResultRows] = useState<ResultRow[]>([
+    { userId: '', userName: '', score: '', isWinner: false, guestName: '', isGuest: false },
+  ]);
 
   // Fetch event details
   const { data: event, isLoading } = useQuery({
@@ -136,6 +162,54 @@ export default function EventDetail() {
   });
 
   const useMulticolorButtons = (profileData?.eventButtonStyle ?? 'dropdown') === 'multicolor';
+
+  // Resultados de partida
+  const { data: existingResults, isLoading: resultsLoading } = useQuery({
+    queryKey: ['eventResults', id],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<EventResultEntry[]>>(`/api/events/${id}/results`);
+      return res.data.data ?? [];
+    },
+    enabled: !!id,
+  });
+
+  const saveResultsMutation = useMutation({
+    mutationFn: async () => {
+      const results = resultRows
+        .filter((r) => r.userName.trim() || r.guestName.trim())
+        .map((r) => ({
+          userId: r.isGuest ? undefined : (r.userId || undefined),
+          guestName: r.isGuest ? r.guestName.trim() : undefined,
+          score: r.score !== '' ? parseInt(r.score) : undefined,
+          isWinner: r.isWinner,
+        }));
+      await api.put(`/api/events/${id}/results`, { results });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['eventResults', id] });
+      setResultEditing(false);
+      success('Resultados guardados');
+    },
+    onError: () => showError('Error al guardar los resultados'),
+  });
+
+  const startResultEditing = () => {
+    if (existingResults && existingResults.length > 0) {
+      setResultRows(
+        existingResults.map((r) => ({
+          userId: r.userId ?? '',
+          userName: r.user?.name ?? '',
+          score: r.score !== null ? String(r.score) : '',
+          isWinner: r.isWinner,
+          guestName: r.guestName ?? '',
+          isGuest: !r.userId,
+        }))
+      );
+    } else {
+      setResultRows([{ userId: '', userName: '', score: '', isWinner: false, guestName: '', isGuest: false }]);
+    }
+    setResultEditing(true);
+  };
 
   const getErrorMessage = (err: unknown, fallback: string) => {
     if (typeof err !== 'object' || err === null) {
@@ -625,6 +699,13 @@ export default function EventDetail() {
   validationWindowClose.setHours(23, 59, 59, 999);
   const now = new Date();
   const isInValidationWindow = now >= validationWindowOpen && now <= validationWindowClose;
+
+  // Ventana de resultados: desde el inicio de la partida hasta el final del día en que se disputa
+  const resultsWindowClose = new Date(eventStart);
+  resultsWindowClose.setHours(23, 59, 59, 999);
+  const isInResultsWindow = isPartida && now >= eventStart && now <= resultsWindowClose;
+  // Pueden añadir/editar resultados: organizador, admin, o participante confirmado; dentro de la ventana temporal
+  const canAddResults = isInResultsWindow && (isAdmin || user?.id === event.createdBy || (event.isUserRegistered && event.userRegistrationStatus === 'CONFIRMED'));
 
   // El usuario puede validar si: es PARTIDA, está inscrito como CONFIRMED, está en la ventana temporal, y la partida no está ya validada
   const canValidateQr = isPartida
@@ -1667,6 +1748,125 @@ export default function EventDetail() {
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Resultados de partida */}
+        {isPartida && (existingResults && existingResults.length > 0 || canAddResults) && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Resultados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {resultsLoading ? (
+                <div className="flex justify-center py-4">
+                  <div className="w-5 h-5 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : !resultEditing && existingResults && existingResults.length > 0 ? (
+                <div className="space-y-2">
+                  {existingResults.map((r) => (
+                    <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg bg-[var(--color-tableRowHover)]">
+                      {r.isWinner && <span title="Ganador">🏆</span>}
+                      <span className="flex-1 text-sm text-[var(--color-text)] font-medium">
+                        {r.user?.name ?? r.guestName ?? 'Invitado'}
+                        {r.guestName && <span className="ml-1 text-xs text-[var(--color-textSecondary)]">(invitado)</span>}
+                      </span>
+                      {r.score !== null && (
+                        <span className="text-sm text-[var(--color-textSecondary)] font-mono">{r.score} pts</span>
+                      )}
+                    </div>
+                  ))}
+                  {canAddResults && (
+                    <button onClick={startResultEditing} className="mt-2 text-sm text-[var(--color-primary)] hover:underline">
+                      Editar resultados
+                    </button>
+                  )}
+                </div>
+              ) : !resultEditing ? (
+                <div className="text-center py-2">
+                  <p className="text-sm text-[var(--color-textSecondary)] mb-3">No hay resultados registrados.</p>
+                  {canAddResults && (
+                    <Button onClick={startResultEditing} className="!bg-[var(--color-primary)] !text-white">
+                      Añadir resultados
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {resultRows.map((row, i) => (
+                    <div key={i} className="flex flex-wrap items-center gap-2 p-2 border border-[var(--color-cardBorder)] rounded-lg">
+                      <label className="flex items-center gap-1 text-xs text-[var(--color-textSecondary)]">
+                        <input
+                          type="checkbox"
+                          checked={row.isGuest}
+                          onChange={(e) => setResultRows((prev) => prev.map((r, idx) => idx === i ? { ...r, isGuest: e.target.checked } : r))}
+                        />
+                        Invitado
+                      </label>
+                      {row.isGuest ? (
+                        <input
+                          type="text"
+                          value={row.guestName}
+                          onChange={(e) => setResultRows((prev) => prev.map((r, idx) => idx === i ? { ...r, guestName: e.target.value } : r))}
+                          placeholder="Nombre del invitado"
+                          className="flex-1 min-w-[120px] px-2 py-1 text-sm border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)]"
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={row.userName}
+                          onChange={(e) => setResultRows((prev) => prev.map((r, idx) => idx === i ? { ...r, userName: e.target.value } : r))}
+                          placeholder="Nombre del jugador"
+                          className="flex-1 min-w-[120px] px-2 py-1 text-sm border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)]"
+                        />
+                      )}
+                      <input
+                        type="number"
+                        value={row.score}
+                        onChange={(e) => setResultRows((prev) => prev.map((r, idx) => idx === i ? { ...r, score: e.target.value } : r))}
+                        placeholder="Puntos"
+                        className="w-20 px-2 py-1 text-sm border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)]"
+                      />
+                      <label className="flex items-center gap-1 text-xs text-[var(--color-textSecondary)]">
+                        <input
+                          type="checkbox"
+                          checked={row.isWinner}
+                          onChange={(e) => setResultRows((prev) => prev.map((r, idx) => idx === i ? { ...r, isWinner: e.target.checked } : r))}
+                        />
+                        Ganador
+                      </label>
+                      <button
+                        onClick={() => setResultRows((prev) => prev.filter((_, idx) => idx !== i))}
+                        className="text-red-400 hover:text-red-600 text-xs"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setResultRows((prev) => [...prev, { userId: '', userName: '', score: '', isWinner: false, guestName: '', isGuest: false }])}
+                    className="text-sm text-[var(--color-primary)] hover:underline"
+                  >
+                    + Añadir jugador
+                  </button>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button
+                      onClick={() => setResultEditing(false)}
+                      className="px-4 py-2 text-sm border border-[var(--color-cardBorder)] rounded-lg text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)]"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => saveResultsMutation.mutate()}
+                      disabled={saveResultsMutation.isPending}
+                      className="px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+                    >
+                      {saveResultsMutation.isPending ? 'Guardando...' : 'Guardar'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
