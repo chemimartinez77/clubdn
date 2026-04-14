@@ -598,8 +598,8 @@ function mapCollectionItem(item: any, own: boolean, wishlist: boolean): BGGColle
  */
 export async function getBGGCollection(username: string): Promise<BGGCollectionItem[]> {
   const [ownedRaw, wishlistRaw] = await Promise.all([
-    requestWithRetry('/collection', { username, own: 1, excludesubtype: 'boardgameexpansion', stats: 0 }),
-    requestWithRetry('/collection', { username, wishlist: 1, excludesubtype: 'boardgameexpansion', stats: 0 }),
+    requestWithRetry('/collection', { username, own: 1, stats: 0 }),
+    requestWithRetry('/collection', { username, wishlist: 1, stats: 0 }),
   ]);
 
   const ownedItems: BGGCollectionItem[] = normalizeItems((await parseStringPromise(ownedRaw))?.items?.item)
