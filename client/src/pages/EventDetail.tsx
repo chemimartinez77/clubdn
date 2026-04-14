@@ -40,6 +40,8 @@ interface ResultRow {
   isWinner: boolean;
   guestName: string;
   isGuest: boolean;
+  notes: string;
+  invitationId?: string;
 }
 
 const DNI_LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE';
@@ -136,9 +138,9 @@ export default function EventDetail() {
   // Estado QR de validación de partida
   const [showValidationQr, setShowValidationQr] = useState(false);
   const [resultEditing, setResultEditing] = useState(false);
-  const [resultRows, setResultRows] = useState<ResultRow[]>([
-    { userId: '', userName: '', score: '', isWinner: false, guestName: '', isGuest: false },
-  ]);
+  const [resultRows, setResultRows] = useState<ResultRow[]>([]);
+  const [tiebreakModal, setTiebreakModal] = useState<{ rowIndex: number } | null>(null);
+  const [tiebreakNotes, setTiebreakNotes] = useState('');
 
   // Fetch event details
   const { data: event, isLoading } = useQuery({
@@ -181,6 +183,7 @@ export default function EventDetail() {
           guestName: r.isGuest ? r.guestName.trim() : undefined,
           score: r.score !== '' ? parseInt(r.score) : undefined,
           isWinner: r.isWinner,
+          notes: r.notes?.trim() || undefined,
         }));
       await api.put(`/api/events/${id}/results`, { results });
     },
@@ -202,10 +205,31 @@ export default function EventDetail() {
           isWinner: r.isWinner,
           guestName: r.guestName ?? '',
           isGuest: !r.userId,
+          notes: r.notes ?? '',
         }))
       );
     } else {
-      setResultRows([{ userId: '', userName: '', score: '', isWinner: false, guestName: '', isGuest: false }]);
+      // Precargar socios confirmados e invitados del evento
+      const confirmedRows: ResultRow[] = (event?.registrations?.filter((r) => r.status === 'CONFIRMED') ?? []).map((r) => ({
+        userId: r.userId,
+        userName: r.user?.name ?? '',
+        score: '',
+        isWinner: false,
+        guestName: '',
+        isGuest: false,
+        notes: '',
+      }));
+      const invitationRows: ResultRow[] = (event?.invitations?.filter((i) => i.status !== 'CANCELLED') ?? []).map((i) => ({
+        userId: '',
+        userName: '',
+        guestName: `${i.guestFirstName} ${i.guestLastName}`.trim(),
+        score: '',
+        isWinner: false,
+        isGuest: true,
+        notes: '',
+        invitationId: i.id,
+      }));
+      setResultRows([...confirmedRows, ...invitationRows]);
     }
     setResultEditing(true);
   };
@@ -1770,6 +1794,9 @@ export default function EventDetail() {
                       <span className="flex-1 text-sm text-[var(--color-text)] font-medium">
                         {r.user?.name ?? r.guestName ?? 'Invitado'}
                         {r.guestName && <span className="ml-1 text-xs text-[var(--color-textSecondary)]">(invitado)</span>}
+                        {r.isWinner && r.notes && (
+                          <span className="ml-1 text-xs text-[var(--color-textSecondary)]">({r.notes})</span>
+                        )}
                       </span>
                       {r.score !== null && (
                         <span className="text-sm text-[var(--color-textSecondary)] font-mono">{r.score} pts</span>
@@ -1815,15 +1842,27 @@ export default function EventDetail() {
                         <input
                           type="text"
                           value={row.userName}
-                          onChange={(e) => setResultRows((prev) => prev.map((r, idx) => idx === i ? { ...r, userName: e.target.value } : r))}
-                          placeholder="Nombre del jugador"
-                          className="flex-1 min-w-[120px] px-2 py-1 text-sm border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)]"
+                          readOnly
+                          className="flex-1 min-w-[120px] px-2 py-1 text-sm border border-[var(--color-cardBorder)] rounded bg-[var(--color-tableRowHover)] text-[var(--color-text)] cursor-default"
                         />
                       )}
                       <input
                         type="number"
                         value={row.score}
-                        onChange={(e) => setResultRows((prev) => prev.map((r, idx) => idx === i ? { ...r, score: e.target.value } : r))}
+                        onChange={(e) => {
+                          const newScore = e.target.value;
+                          setResultRows((prev) => {
+                            const updated = prev.map((r, idx) => idx === i ? { ...r, score: newScore } : r);
+                            // Recalcular ganador automáticamente
+                            const scores = updated.map((r) => r.score !== '' ? parseInt(r.score) : NaN).filter((s) => !isNaN(s));
+                            if (scores.length === 0) return updated;
+                            const maxScore = Math.max(...scores);
+                            return updated.map((r) => ({
+                              ...r,
+                              isWinner: r.score !== '' && !isNaN(parseInt(r.score)) && parseInt(r.score) === maxScore,
+                            }));
+                          });
+                        }}
                         placeholder="Puntos"
                         className="w-20 px-2 py-1 text-sm border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)]"
                       />
@@ -1831,7 +1870,19 @@ export default function EventDetail() {
                         <input
                           type="checkbox"
                           checked={row.isWinner}
-                          onChange={(e) => setResultRows((prev) => prev.map((r, idx) => idx === i ? { ...r, isWinner: e.target.checked } : r))}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            if (checked) {
+                              const currentWinners = resultRows.filter((r, idx) => idx !== i && r.isWinner);
+                              if (currentWinners.length > 0) {
+                                // Ya hay otro ganador → pedir motivo de empate
+                                setTiebreakModal({ rowIndex: i });
+                                setTiebreakNotes('');
+                                return;
+                              }
+                            }
+                            setResultRows((prev) => prev.map((r, idx) => idx === i ? { ...r, isWinner: checked } : r));
+                          }}
                         />
                         Ganador
                       </label>
@@ -1844,7 +1895,7 @@ export default function EventDetail() {
                     </div>
                   ))}
                   <button
-                    onClick={() => setResultRows((prev) => [...prev, { userId: '', userName: '', score: '', isWinner: false, guestName: '', isGuest: false }])}
+                    onClick={() => setResultRows((prev) => [...prev, { userId: '', userName: '', score: '', isWinner: false, guestName: '', isGuest: true, notes: '' }])}
                     className="text-sm text-[var(--color-primary)] hover:underline"
                   >
                     + Añadir jugador
@@ -1863,6 +1914,49 @@ export default function EventDetail() {
                     >
                       {saveResultsMutation.isPending ? 'Guardando...' : 'Guardar'}
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Modal motivo de empate */}
+              {tiebreakModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                  <div className="absolute inset-0 bg-black/50" onClick={() => setTiebreakModal(null)} />
+                  <div className="relative bg-[var(--color-cardBackground)] rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
+                    <h3 className="text-base font-bold text-[var(--color-text)]">Victoria compartida</h3>
+                    <p className="text-sm text-[var(--color-textSecondary)]">
+                      Ya hay otro ganador marcado. Puedes indicar el motivo del empate o la victoria compartida (opcional).
+                    </p>
+                    <input
+                      type="text"
+                      value={tiebreakNotes}
+                      onChange={(e) => setTiebreakNotes(e.target.value)}
+                      placeholder="Ej: Puntuación de criterio de desempate"
+                      className="w-full px-3 py-2 text-sm border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)]"
+                    />
+                    <div className="flex justify-end gap-3">
+                      <button
+                        onClick={() => setTiebreakModal(null)}
+                        className="px-4 py-2 text-sm border border-[var(--color-cardBorder)] rounded-lg text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)]"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={() => {
+                          const notes = tiebreakNotes.trim();
+                          setResultRows((prev) => prev.map((r, idx) => {
+                            if (idx === tiebreakModal.rowIndex) return { ...r, isWinner: true, notes };
+                            if (r.isWinner) return { ...r, notes };
+                            return r;
+                          }));
+                          setTiebreakModal(null);
+                          setTiebreakNotes('');
+                        }}
+                        className="px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90"
+                      >
+                        Confirmar
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
