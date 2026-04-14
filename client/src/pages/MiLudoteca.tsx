@@ -567,8 +567,9 @@ export default function MiLudoteca() {
                 y <span className="text-red-600 font-medium">eliminar {syncData.toDelete.length}</span> de tu ludoteca.
               </p>
               <div className="rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)]/50 p-3 text-xs text-[var(--color-textSecondary)]">
-                Tiempo estimado: {formatEta(syncData.estimatedSeconds)}. Juegos nuevos para el catálogo compartido: {syncData.newCatalogItems}.
-                Cuando lances la sincronización se ejecutará en background; podrás seguir usando la web y refrescar la página más tarde.
+                Tiempo estimado: {formatEta(syncData.estimatedSeconds)}.
+                {syncData.newCatalogItems > 0 && ` ${syncData.newCatalogItems} juego${syncData.newCatalogItems !== 1 ? 's' : ''} se añadirán al catálogo compartido por primera vez.`}
+                {' '}La sincronización se ejecutará en background; podrás seguir usando la web y refrescar la página más tarde.
               </div>
 
               {(syncData.toImport.length > 0 || syncData.toDelete.length > 0) && (
