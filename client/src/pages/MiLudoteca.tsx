@@ -74,6 +74,8 @@ interface SyncCheckResponse {
   bggUsername: string;
   lastBggSync: string | null;
   toImport: BggCollectionItem[];
+  toImportOwned: number;
+  toImportWishlist: number;
   toDelete: { gameId: string; title: string }[];
   estimatedSeconds: number;
   newCatalogItems: number;
@@ -604,8 +606,14 @@ export default function MiLudoteca() {
             <div className="relative bg-[var(--color-cardBackground)] rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
               <h2 className="text-lg font-bold text-[var(--color-text)]">Sincronización con BGG</h2>
               <p className="text-sm text-[var(--color-textSecondary)]">
-                Se van a <span className="text-green-600 font-medium">importar {syncData.toImport.length} juegos</span>{' '}
-                y <span className="text-red-600 font-medium">eliminar {syncData.toDelete.length}</span> de tu ludoteca.
+                Se van a <span className="text-green-600 font-medium">importar {syncData.toImport.length} juegos</span>
+                {syncData.toImportOwned > 0 && syncData.toImportWishlist > 0 && (
+                  <span className="text-[var(--color-textSecondary)]"> ({syncData.toImportOwned} de tu colección, {syncData.toImportWishlist} de wishlist)</span>
+                )}
+                {syncData.toImportWishlist > 0 && syncData.toImportOwned === 0 && (
+                  <span className="text-[var(--color-textSecondary)]"> (todos de wishlist)</span>
+                )}
+                {' '}y <span className="text-red-600 font-medium">eliminar {syncData.toDelete.length}</span> de tu ludoteca.
               </p>
               <div className="rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)]/50 p-3 text-xs text-[var(--color-textSecondary)]">
                 Tiempo estimado: {formatEta(syncData.estimatedSeconds)}.

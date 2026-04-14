@@ -340,6 +340,8 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
         bggUsername,
         lastBggSync: profile?.lastBggSync ?? null,
         toImport,
+        toImportOwned: toImport.filter((item) => item.own).length,
+        toImportWishlist: toImport.filter((item) => item.wishlist).length,
         toDelete,
         estimatedSeconds,
         newCatalogItems,
