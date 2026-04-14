@@ -29,7 +29,7 @@ interface EventResultEntry {
   score: number | null;
   isWinner: boolean;
   notes: string | null;
-  user: { id: string; name: string } | null;
+  user: { id: string; name: string; profile?: { nick?: string | null } | null } | null;
   creator: { id: string; name: string };
 }
 
@@ -200,7 +200,7 @@ export default function EventDetail() {
       setResultRows(
         existingResults.map((r) => ({
           userId: r.userId ?? '',
-          userName: r.user?.name ?? '',
+          userName: displayName(r.user?.name ?? '', r.user?.profile?.nick),
           score: r.score !== null ? String(r.score) : '',
           isWinner: r.isWinner,
           guestName: r.guestName ?? '',
@@ -212,7 +212,7 @@ export default function EventDetail() {
       // Precargar socios confirmados e invitados del evento
       const confirmedRows: ResultRow[] = (event?.registrations?.filter((r) => r.status === 'CONFIRMED') ?? []).map((r) => ({
         userId: r.userId,
-        userName: r.user?.name ?? '',
+        userName: displayName(r.user?.name ?? '', r.user?.profile?.nick),
         score: '',
         isWinner: false,
         guestName: '',
@@ -1803,7 +1803,7 @@ export default function EventDetail() {
                     <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg bg-[var(--color-tableRowHover)]">
                       {r.isWinner && <span title="Ganador">🏆</span>}
                       <span className="flex-1 text-sm text-[var(--color-text)] font-medium">
-                        {r.user?.name ?? r.guestName ?? 'Invitado'}
+                        {r.user ? displayName(r.user.name, r.user.profile?.nick) : (r.guestName ?? 'Invitado')}
                         {r.guestName && <span className="ml-1 text-xs text-[var(--color-textSecondary)]">(invitado)</span>}
                         {r.isWinner && r.notes && (
                           <span className="ml-1 text-xs text-[var(--color-textSecondary)]">({r.notes})</span>
@@ -1905,12 +1905,6 @@ export default function EventDetail() {
                       </button>
                     </div>
                   ))}
-                  <button
-                    onClick={() => setResultRows((prev) => [...prev, { userId: '', userName: '', score: '', isWinner: false, guestName: '', isGuest: true, notes: '' }])}
-                    className="text-sm text-[var(--color-primary)] hover:underline"
-                  >
-                    + Añadir jugador
-                  </button>
                   <div className="flex justify-end gap-3 pt-2">
                     <button
                       onClick={() => setResultEditing(false)}
