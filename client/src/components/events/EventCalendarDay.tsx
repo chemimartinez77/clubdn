@@ -4,6 +4,32 @@ import { Link, useNavigate } from 'react-router-dom';
 import { GameImage } from './EventCard';
 import type { Event } from '../../types/event';
 
+const statusColors = {
+  SCHEDULED: 'bg-blue-100 text-blue-800',
+  ONGOING: 'bg-green-100 text-green-800',
+  COMPLETED: 'bg-[var(--color-tableRowHover)] text-[var(--color-text)]',
+  CANCELLED: 'bg-red-100 text-red-800',
+};
+const statusLabels = {
+  SCHEDULED: 'Programado',
+  ONGOING: 'En curso',
+  COMPLETED: 'Completado',
+  CANCELLED: 'Cancelado',
+};
+
+function getEffectiveStatus(event: { status: string; date: string; startHour?: number | null; startMinute?: number | null; durationHours?: number | null; durationMinutes?: number | null }): string {
+  if (event.status === 'CANCELLED') return 'CANCELLED';
+  if (event.status === 'COMPLETED') return 'COMPLETED';
+  const now = new Date();
+  const base = new Date(event.date);
+  if (event.startHour != null) base.setHours(event.startHour, event.startMinute ?? 0, 0, 0);
+  const durationMs = ((event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0)) * 60 * 1000;
+  const end = new Date(base.getTime() + durationMs);
+  if (now >= end) return 'COMPLETED';
+  if (now >= base) return 'ONGOING';
+  return 'SCHEDULED';
+}
+
 interface EventCalendarDayProps {
   events: Event[];
   currentMonth: Date;
@@ -121,6 +147,8 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
             const isFull = registeredCount >= event.maxAttendees;
             const spotsLeft = event.maxAttendees - registeredCount;
             const gameThumbnail = event.game?.thumbnail || event.game?.image || event.gameImage || null;
+            const effectiveStatus = getEffectiveStatus(event);
+            const isScheduled = effectiveStatus === 'SCHEDULED';
 
             return (
               <Link
@@ -150,30 +178,24 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
                       </p>
                     )}
 
-                    <div className="flex items-center gap-4">
-                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
-                        isFull
-                          ? 'bg-red-100 text-red-800'
-                          : spotsLeft <= 2
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)]">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
                         {registeredCount}/{event.maxAttendees}
-                        {!isFull && spotsLeft > 0 && (
+                        {isScheduled && !isFull && spotsLeft > 0 && (
                           <span className="text-xs">
                             ({spotsLeft} {spotsLeft === 1 ? 'plaza libre' : 'plazas libres'})
                           </span>
                         )}
+                        {isScheduled && isFull && (
+                          <span className="text-xs font-medium text-red-600">· Completo</span>
+                        )}
                       </div>
-
-                      {isFull && (
-                        <span className="text-xs font-medium text-red-600">
-                          COMPLETO
-                        </span>
-                      )}
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[effectiveStatus as keyof typeof statusColors]}`}>
+                        {statusLabels[effectiveStatus as keyof typeof statusLabels]}
+                      </span>
                     </div>
                   </div>
 

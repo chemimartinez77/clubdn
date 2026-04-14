@@ -92,6 +92,19 @@ const statusLabels = {
   CANCELLED: 'Cancelado'
 };
 
+function getEffectiveStatus(event: { status: string; date: string; startHour?: number | null; startMinute?: number | null; durationHours?: number | null; durationMinutes?: number | null }): string {
+  if (event.status === 'CANCELLED') return 'CANCELLED';
+  if (event.status === 'COMPLETED') return 'COMPLETED';
+  const now = new Date();
+  const base = new Date(event.date);
+  if (event.startHour != null) base.setHours(event.startHour, event.startMinute ?? 0, 0, 0);
+  const durationMs = ((event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0)) * 60 * 1000;
+  const end = new Date(base.getTime() + durationMs);
+  if (now >= end) return 'COMPLETED';
+  if (now >= base) return 'ONGOING';
+  return 'SCHEDULED';
+}
+
 export default function EventCard({ event }: EventCardProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -105,6 +118,7 @@ export default function EventCard({ event }: EventCardProps) {
     }).format(date);
   };
 
+  const effectiveStatus = getEffectiveStatus(event);
   const availableSpots = event.maxAttendees - (event.registeredCount || 0);
   const isFull = availableSpots <= 0;
   const isPast = new Date(event.date) < new Date();
@@ -133,8 +147,8 @@ export default function EventCard({ event }: EventCardProps) {
               <h3 className="text-xl font-bold text-[var(--color-text)] flex-1 pr-4">
                 {event.title}
               </h3>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${statusColors[event.status]}`}>
-                {statusLabels[event.status]}
+              <span className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${statusColors[effectiveStatus as keyof typeof statusColors]}`}>
+                {statusLabels[effectiveStatus as keyof typeof statusLabels]}
               </span>
             </div>
 
@@ -172,7 +186,7 @@ export default function EventCard({ event }: EventCardProps) {
             <span className="text-sm text-[var(--color-textSecondary)]">
               {event.registeredCount || 0} / {event.maxAttendees}
             </span>
-            {isFull && !isPast && (
+            {isFull && effectiveStatus === 'SCHEDULED' && (
               <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full">
                 Lleno
               </span>

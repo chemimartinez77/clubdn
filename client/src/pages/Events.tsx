@@ -88,7 +88,10 @@ export default function Events() {
     .filter(event => {
       if (viewMode !== 'list' || statusFilter !== 'RECOMMENDED') return true;
       const eventDate = new Date(event.date);
-      return eventDate >= todayStart && event.status !== 'COMPLETED' && event.status !== 'CANCELLED';
+      if (eventDate < todayStart) return false;
+      if (event.status === 'CANCELLED') return false;
+      // Mostrar aunque el estado efectivo sea COMPLETED (puede ser un evento de hoy ya terminado)
+      return true;
     })
     // Filtro por tipo: "PARTIDA" = solo partidas, "EVENTOS" = torneos y otros, "" = todos
     .filter(event => {

@@ -699,6 +699,17 @@ export default function EventDetail() {
   const isPartida = event.type === 'PARTIDA';
   const eventStart = resolveEventStartDate(event.date, event.startHour, event.startMinute) ?? new Date(event.date);
   const isPast = eventStart < new Date();
+
+  const effectiveStatus = (() => {
+    if (event.status === 'CANCELLED') return 'CANCELLED';
+    if (event.status === 'COMPLETED') return 'COMPLETED';
+    const now = new Date();
+    const durationMs = ((event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0)) * 60 * 1000;
+    const end = new Date(eventStart.getTime() + durationMs);
+    if (now >= end) return 'COMPLETED';
+    if (now >= eventStart) return 'ONGOING';
+    return 'SCHEDULED';
+  })();
   const isFull = (event.registeredCount || 0) >= event.maxAttendees;
   const isPendingApproval = event.userRegistrationStatus === 'PENDING_APPROVAL';
   const canRegister = event.status === 'SCHEDULED' && !isPast && !event.isUserRegistered && !isFull;
@@ -1027,8 +1038,8 @@ export default function EventDetail() {
                     {event.title}
                   </h1>
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[event.status]}`}>
-                      {statusLabels[event.status]}
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[effectiveStatus as keyof typeof statusColors]}`}>
+                      {statusLabels[effectiveStatus as keyof typeof statusLabels]}
                     </span>
                     {event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && (
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${

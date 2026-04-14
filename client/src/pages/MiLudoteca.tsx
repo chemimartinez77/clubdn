@@ -599,7 +599,7 @@ function GameCard({ game, locations, onUpdate, onLocationChange, onRemove }: Gam
       {/* Thumbnail */}
       <div className="aspect-square bg-[var(--color-tableRowHover)] flex items-center justify-center">
         {game.thumbnail ? (
-          <img src={game.thumbnail} alt={game.title} className="w-full h-full object-cover" />
+          <img src={game.thumbnail} alt={game.title} className="w-full h-full object-contain" />
         ) : (
           <span className="text-xs text-[var(--color-textSecondary)] text-center px-2">{game.title}</span>
         )}
