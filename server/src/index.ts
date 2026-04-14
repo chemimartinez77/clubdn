@@ -30,6 +30,7 @@ import pageViewRoutes from './routes/pageViewRoutes';
 import announcementRoutes from './routes/announcementRoutes';
 import marketplaceRoutes from './routes/marketplaceRoutes';
 import previewRoutes from './routes/previewRoutes';
+import myLudotecaRoutes from './routes/myLudotecaRoutes';
 import { startEventCompletionJob } from './jobs/eventCompletionJob';
 import { startMemberPromotionJob } from './jobs/memberPromotionJob';
 
@@ -127,6 +128,7 @@ app.use('/api/membership', membershipRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/ludoteca', ludotecaRoutes);
+app.use('/api/my-ludoteca', myLudotecaRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/share', shareLinkRoutes);

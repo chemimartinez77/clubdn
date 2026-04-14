@@ -1,19 +1,242 @@
 // client/src/pages/Games.tsx
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
 import GameDetailModal from '../components/games/GameDetailModal';
 import { api } from '../api/axios';
+import { useToast } from '../contexts/ToastContext';
 import type { GamesResponse } from '../types/game';
 import type { ApiResponse } from '../types/auth';
+
+// ---------- tipos resultados ----------
+interface EventResultEntry {
+  id: string;
+  userId: string | null;
+  guestName: string | null;
+  score: number | null;
+  isWinner: boolean;
+  notes: string | null;
+  user: { id: string; name: string } | null;
+  creator: { id: string; name: string };
+}
+
+interface ResultRow {
+  userId: string;
+  userName: string;
+  score: string;
+  isWinner: boolean;
+  guestName: string;
+  isGuest: boolean;
+}
+
+// ---------- modal de resultados ----------
+function EventResultModal({
+  eventId,
+  eventTitle,
+  onClose,
+}: {
+  eventId: string;
+  eventTitle: string;
+  onClose: () => void;
+}) {
+  const { success: toastSuccess, error: toastError } = useToast();
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [rows, setRows] = useState<ResultRow[]>([
+    { userId: '', userName: '', score: '', isWinner: false, guestName: '', isGuest: false },
+  ]);
+
+  const { data: existingResults, isLoading } = useQuery({
+    queryKey: ['eventResults', eventId],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<EventResultEntry[]>>(`/api/events/${eventId}/results`);
+      return res.data.data;
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const results = rows
+        .filter((r) => r.userName.trim() || r.guestName.trim())
+        .map((r) => ({
+          userId: r.isGuest ? undefined : (r.userId || undefined),
+          guestName: r.isGuest ? r.guestName.trim() : undefined,
+          score: r.score !== '' ? parseInt(r.score) : undefined,
+          isWinner: r.isWinner,
+        }));
+      await api.put(`/api/events/${eventId}/results`, { results });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['eventResults', eventId] });
+      setEditing(false);
+      toastSuccess('Resultados guardados');
+    },
+    onError: () => toastError('Error al guardar los resultados'),
+  });
+
+  const addRow = () =>
+    setRows((prev) => [...prev, { userId: '', userName: '', score: '', isWinner: false, guestName: '', isGuest: false }]);
+
+  const updateRow = (i: number, field: keyof ResultRow, value: string | boolean) =>
+    setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
+
+  const removeRow = (i: number) => setRows((prev) => prev.filter((_, idx) => idx !== i));
+
+  const startEditing = () => {
+    if (existingResults && existingResults.length > 0) {
+      setRows(
+        existingResults.map((r) => ({
+          userId: r.userId ?? '',
+          userName: r.user?.name ?? '',
+          score: r.score !== null ? String(r.score) : '',
+          isWinner: r.isWinner,
+          guestName: r.guestName ?? '',
+          isGuest: !r.userId,
+        }))
+      );
+    }
+    setEditing(true);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-[var(--color-cardBackground)] rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 space-y-4">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-bold text-[var(--color-text)]">Resultados</h2>
+            <p className="text-sm text-[var(--color-textSecondary)]">{eventTitle}</p>
+          </div>
+          <button onClick={onClose} className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)] mt-1">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center py-6">
+            <div className="w-6 h-6 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : !editing && existingResults && existingResults.length > 0 ? (
+          // Vista lectura
+          <div className="space-y-2">
+            {existingResults.map((r) => (
+              <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg bg-[var(--color-tableRowHover)]">
+                {r.isWinner && <span title="Ganador">🏆</span>}
+                <span className="flex-1 text-sm text-[var(--color-text)] font-medium">
+                  {r.user?.name ?? r.guestName ?? 'Invitado'}
+                  {r.guestName && <span className="ml-1 text-xs text-[var(--color-textSecondary)]">(invitado)</span>}
+                </span>
+                {r.score !== null && (
+                  <span className="text-sm text-[var(--color-textSecondary)] font-mono">{r.score} pts</span>
+                )}
+              </div>
+            ))}
+            <button
+              onClick={startEditing}
+              className="mt-2 text-sm text-[var(--color-primary)] hover:underline"
+            >
+              Editar resultados
+            </button>
+          </div>
+        ) : !editing ? (
+          // Sin resultados
+          <div className="text-center py-4">
+            <p className="text-sm text-[var(--color-textSecondary)] mb-3">No hay resultados registrados para esta partida.</p>
+            <button
+              onClick={startEditing}
+              className="px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90"
+            >
+              Añadir resultados
+            </button>
+          </div>
+        ) : (
+          // Modo edición
+          <div className="space-y-3">
+            {rows.map((row, i) => (
+              <div key={i} className="flex flex-wrap items-center gap-2 p-2 border border-[var(--color-cardBorder)] rounded-lg">
+                <label className="flex items-center gap-1 text-xs text-[var(--color-textSecondary)]">
+                  <input
+                    type="checkbox"
+                    checked={row.isGuest}
+                    onChange={(e) => updateRow(i, 'isGuest', e.target.checked)}
+                  />
+                  Invitado
+                </label>
+                {row.isGuest ? (
+                  <input
+                    type="text"
+                    value={row.guestName}
+                    onChange={(e) => updateRow(i, 'guestName', e.target.value)}
+                    placeholder="Nombre del invitado"
+                    className="flex-1 min-w-[120px] px-2 py-1 text-sm border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)]"
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={row.userName}
+                    onChange={(e) => updateRow(i, 'userName', e.target.value)}
+                    placeholder="Nombre del jugador"
+                    className="flex-1 min-w-[120px] px-2 py-1 text-sm border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)]"
+                  />
+                )}
+                <input
+                  type="number"
+                  value={row.score}
+                  onChange={(e) => updateRow(i, 'score', e.target.value)}
+                  placeholder="Puntos"
+                  className="w-20 px-2 py-1 text-sm border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)]"
+                />
+                <label className="flex items-center gap-1 text-xs text-[var(--color-textSecondary)]">
+                  <input
+                    type="checkbox"
+                    checked={row.isWinner}
+                    onChange={(e) => updateRow(i, 'isWinner', e.target.checked)}
+                  />
+                  Ganador
+                </label>
+                <button onClick={() => removeRow(i)} className="text-red-400 hover:text-red-600 text-xs">
+                  Quitar
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={addRow}
+              className="text-sm text-[var(--color-primary)] hover:underline"
+            >
+              + Añadir jugador
+            </button>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setEditing(false)}
+                className="px-4 py-2 text-sm border border-[var(--color-cardBorder)] rounded-lg text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)]"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => saveMutation.mutate()}
+                disabled={saveMutation.isPending}
+                className="px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+              >
+                {saveMutation.isPending ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function Games() {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize] = useState(24);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<{ id: string; title: string } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['games', page, pageSize, searchQuery],
@@ -242,14 +465,23 @@ export default function Games() {
                   </div>
                 </button>
 
-                <div className="mt-auto px-3 pb-3">
+                <div className="mt-auto px-3 pb-3 flex items-center gap-2 flex-wrap">
                   {game.latestEvent ? (
-                    <Link
-                      to={`/events/${game.latestEvent.id}`}
-                      className="inline-flex text-xs font-medium text-[var(--color-primary)] hover:underline"
-                    >
-                      Partida más reciente
-                    </Link>
+                    <>
+                      <Link
+                        to={`/events/${game.latestEvent.id}`}
+                        className="text-xs font-medium text-[var(--color-primary)] hover:underline"
+                      >
+                        Ver partida
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedEvent({ id: game.latestEvent!.id, title: game.latestEvent!.title })}
+                        className="text-xs text-[var(--color-textSecondary)] hover:text-[var(--color-text)] border border-[var(--color-cardBorder)] rounded px-1.5 py-0.5"
+                      >
+                        Resultados
+                      </button>
+                    </>
                   ) : (
                     <span className="text-xs text-[var(--color-textSecondary)]">
                       Sin partida enlazada
@@ -316,6 +548,15 @@ export default function Games() {
         isOpen={!!selectedGameId}
         onClose={() => setSelectedGameId(null)}
       />
+
+      {/* Event Results Modal */}
+      {selectedEvent && (
+        <EventResultModal
+          eventId={selectedEvent.id}
+          eventTitle={selectedEvent.title}
+          onClose={() => setSelectedEvent(null)}
+        />
+      )}
     </Layout>
   );
 }

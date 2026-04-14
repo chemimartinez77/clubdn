@@ -554,3 +554,37 @@ export async function getRPGGeekItem(rpggId: string): Promise<RPGGeekItem | null
     return null;
   }
 }
+
+export interface BGGCollectionItem {
+  bggId: string;
+  title: string;
+  thumbnail: string | null;
+  yearPublished: number | null;
+  minPlayers: number | null;
+  maxPlayers: number | null;
+}
+
+/**
+ * Obtener la colección propia de un usuario en BGG (juegos marcados como "own").
+ * Maneja el 202 (BGG procesando) con reintentos.
+ */
+export async function getBGGCollection(username: string): Promise<BGGCollectionItem[]> {
+  const raw = await requestWithRetry('/collection', {
+    username,
+    own: 1,
+    excludesubtype: 'boardgameexpansion',
+    stats: 0,
+  });
+
+  const result = await parseStringPromise(raw);
+  const items = normalizeItems(result?.items?.item);
+
+  return items.map((item: any) => ({
+    bggId: String(item?.$?.objectid ?? ''),
+    title: item?.name?.[0]?._ || item?.name?.[0] || 'Unknown',
+    thumbnail: item?.thumbnail?.[0] || null,
+    yearPublished: item?.yearpublished?.[0] ? parseInt(item.yearpublished[0]) : null,
+    minPlayers: item?.stats?.[0]?.$?.minplayers ? parseInt(item.stats[0].$.minplayers) : null,
+    maxPlayers: item?.stats?.[0]?.$?.maxplayers ? parseInt(item.stats[0].$.maxplayers) : null,
+  })).filter((g: BGGCollectionItem) => g.bggId);
+}

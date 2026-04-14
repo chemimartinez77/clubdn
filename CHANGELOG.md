@@ -4,6 +4,46 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-14 (sesión 2)
+
+### Nuevas funcionalidades
+#### Mi ludoteca personal: colección de juegos por usuario con sincronización BGG y registro de resultados de partidas
+
+Se añade la sección "Mi ludoteca" al menú de Juegos (la anterior "Ludoteca" pasa a llamarse "Ludoteca del club"). Cada socio puede gestionar su propia colección personal de juegos de mesa con integración BGG y asignación de ubicaciones físicas.
+
+**Mi ludoteca (`/mi-ludoteca`)**
+- Página completa con tres pestañas: Mi colección / Wishlist / Quiero jugar.
+- Búsqueda manual de juegos en BGG y adición uno a uno con flags configurables (Tengo / Wishlist / Quiero jugar).
+- Sincronización completa de la colección BGG del usuario: el socio introduce su nombre de usuario BGG, se compara con su colección actual en la app y se muestra un modal de confirmación con los juegos a importar y a eliminar.
+- El modal de sincronización permite seleccionar la ubicación donde se asignarán los juegos importados (con aviso de que se puede cambiar juego a juego después).
+- Ubicaciones personalizadas por usuario (tabla `GameLocation`): "Casa" es el valor por defecto (`locationId = null`), y el usuario puede crear ubicaciones propias desde el desplegable de cada juego o desde el modal de sync.
+- Soft delete de juegos (campo `status = 'deleted'`); nunca se borran filas.
+
+**Resultados de partidas**
+- Nuevo botón "Resultados" en cada partida de la página `/games`.
+- Modal que permite registrar puntuaciones y marcar ganador para cada participante. Soporta tanto socios del club como invitados sin cuenta (campo de nombre libre), pensado para partidas con muchos jugadores tipo Blood on the Clocktower.
+- Los resultados se guardan como un conjunto reemplazable (PUT). El ganador puede marcarse manualmente o se detecta automáticamente por puntuación máxima.
+- Solo el organizador de la partida o un participante confirmado puede guardar resultados.
+
+**Archivos nuevos:**
+- `server/prisma/migrations/20260414010000_add_user_games_and_event_results/` - tablas `UserGame` y `EventResult`, campos `bggUsername`/`lastBggSync` en `UserProfile`
+- `server/prisma/migrations/20260414020000_add_game_locations/` - tabla `GameLocation`, columna `locationId` en `UserGame`
+- `server/src/controllers/myLudotecaController.ts` - CRUD de juegos personales, sync BGG, gestión de ubicaciones
+- `server/src/routes/myLudotecaRoutes.ts` - rutas `/api/my-ludoteca`
+- `server/src/controllers/eventResultController.ts` - GET y PUT de resultados por evento
+- `client/src/pages/MiLudoteca.tsx` - página completa de Mi ludoteca
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` - modelos `UserGame`, `GameLocation`, `EventResult`; campos nuevos en `UserProfile` y `User`
+- `server/src/services/bggService.ts` - nueva función `getBGGCollection(username)` con reintentos ante HTTP 202
+- `server/src/routes/eventRoutes.ts` - endpoints `GET/PUT /:eventId/results`
+- `server/src/index.ts` - registro de `myLudotecaRoutes` en `/api/my-ludoteca`
+- `client/src/App.tsx` - ruta `/mi-ludoteca` con `ProtectedRoute`
+- `client/src/components/layout/Header.tsx` - "Ludoteca" → "Ludoteca del club"; nueva entrada "Mi ludoteca" en menú desktop y móvil
+- `client/src/pages/Games.tsx` - componente `EventResultModal` y botón "Resultados" por partida
+
+---
+
 ## 2026-04-14 (sesión 1)
 
 ### Correcciones

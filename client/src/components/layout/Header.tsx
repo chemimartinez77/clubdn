@@ -144,7 +144,14 @@ export default function Header() {
                       className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                       onClick={() => setIsGamesMenuOpen(false)}
                     >
-                      Ludoteca
+                      Ludoteca del club
+                    </Link>
+                    <Link
+                      to="/mi-ludoteca"
+                      className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                      onClick={() => setIsGamesMenuOpen(false)}
+                    >
+                      Mi ludoteca
                     </Link>
                     <Link
                       to="/games"
@@ -522,7 +529,14 @@ export default function Header() {
                       className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                       onClick={closeAllMenus}
                     >
-                      Ludoteca
+                      Ludoteca del club
+                    </Link>
+                    <Link
+                      to="/mi-ludoteca"
+                      className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                      onClick={closeAllMenus}
+                    >
+                      Mi ludoteca
                     </Link>
                     <Link
                       to="/games"

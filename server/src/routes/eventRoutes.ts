@@ -23,6 +23,7 @@ import {
 } from '../controllers/eventController';
 import { authenticate, requireAdmin } from '../middleware/auth';
 import { getPendingInvitations, approveInvitation, rejectInvitation } from '../controllers/invitationController';
+import { getEventResults, upsertEventResults } from '../controllers/eventResultController';
 
 const router = Router();
 
@@ -69,5 +70,9 @@ router.post('/:eventId/validate-qr/:scannedUserId', authenticate, validateGameQr
 
 // Admin: Sincronizar bggIds de eventos existentes con juegos en BD
 router.post('/admin/sync-bgg-ids', authenticate, requireAdmin, syncEventBggIds);
+
+// Resultados de partidas
+router.get('/:eventId/results', authenticate, getEventResults);
+router.put('/:eventId/results', authenticate, upsertEventResults);
 
 export default router;

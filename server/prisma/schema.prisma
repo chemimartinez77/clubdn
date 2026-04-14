@@ -137,6 +137,10 @@ model User {
   marketplaceOffers        MarketplaceOffer[]             @relation("MarketplaceOfferProposer")
   marketplaceCancellations MarketplaceCancellation[]      @relation("MarketplaceCancellationUser")
   marketplaceReads         MarketplaceConversationRead[]  @relation("MarketplaceConversationReadUser")
+  userGames                UserGame[]
+  gameLocations            GameLocation[]
+  eventResultsCreated      EventResult[]                  @relation("EventResultCreator")
+  eventResults             EventResult[]
 
   @@index([email])
   @@index([status])
@@ -201,6 +205,10 @@ model UserProfile {
   calendarTourDismissed      Boolean  @default(false)  // true = no volver a mostrar el tour del calendario
   feedbackTourDismissed      Boolean  @default(false)  // true = no volver a mostrar el tour de feedback
   createPartidaTourDismissed Boolean  @default(false)  // true = no volver a mostrar el tour de crear partida
+
+  // BGG (BoardGameGeek)
+  bggUsername     String?
+  lastBggSync     DateTime?
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -355,6 +363,8 @@ model Event {
   // Organizador
   createdBy       String
   organizer       User     @relation("EventOrganizer", fields: [createdBy], references: [id])
+
+  results         EventResult[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -1336,4 +1346,64 @@ model MarketplaceCancellation {
 
   @@index([conversationId])
   @@index([cancelledById])
+}
+
+// ==================== LUDOTECA PERSONAL ====================
+
+model GameLocation {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime   @default(now())
+  games     UserGame[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model UserGame {
+  id               String        @id @default(cuid())
+  userId           String
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bggId            String
+  title            String
+  thumbnail        String?
+  yearPublished    Int?
+  minPlayers       Int?
+  maxPlayers       Int?
+  own              Boolean       @default(false)
+  wishlist         Boolean       @default(false)
+  wishlistPriority Int?          // 1-5
+  wantToPlay       Boolean       @default(false)
+  locationId       String?       // null = "Casa" (ubicación por defecto)
+  location         GameLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  status           String        @default("active") // "active" | "deleted" (soft delete)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@unique([userId, bggId])
+  @@index([userId])
+  @@index([userId, status])
+  @@index([locationId])
+}
+
+// ==================== RESULTADOS DE PARTIDAS ====================
+
+model EventResult {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String?  // null si el jugador es un invitado sin cuenta
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  guestName String?  // nombre libre para jugadores sin cuenta
+  score     Int?
+  isWinner  Boolean  @default(false)
+  notes     String?
+  createdAt DateTime @default(now())
+  createdBy String
+  creator   User     @relation("EventResultCreator", fields: [createdBy], references: [id])
+
+  @@index([eventId])
+  @@index([userId])
 }

@@ -36,6 +36,7 @@ import Announcements from './pages/Announcements';
 import Games from './pages/Games';
 import Financiero from './pages/Financiero';
 import Ludoteca from './pages/Ludoteca';
+import MiLudoteca from './pages/MiLudoteca';
 import Documentos from './pages/Documentos';
 import Feedback from './pages/Feedback';
 import UserProfile from './pages/UserProfile';
@@ -377,6 +378,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Ludoteca />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mi-ludoteca"
+            element={
+              <ProtectedRoute>
+                <MiLudoteca />
               </ProtectedRoute>
             }
           />
