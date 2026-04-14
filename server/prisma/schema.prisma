@@ -139,6 +139,7 @@ model User {
   marketplaceReads         MarketplaceConversationRead[]  @relation("MarketplaceConversationReadUser")
   userGames                UserGame[]
   gameLocations            GameLocation[]
+  bggSyncJobs              BggSyncJob[]
   eventResultsCreated      EventResult[]                  @relation("EventResultCreator")
   eventResults             EventResult[]
 
@@ -613,11 +614,19 @@ model Game {
 
   // Relación con eventos
   events            Event[]  @relation("GameEvents")
+  userGames         UserGame[]
 
   @@index([name])
   @@index([yearPublished])
   @@index([rank])
   @@index([averageRating])
+}
+
+enum BggSyncJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 // Configuración del club
@@ -1366,12 +1375,8 @@ model UserGame {
   id               String        @id @default(cuid())
   userId           String
   user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bggId            String
-  title            String
-  thumbnail        String?
-  yearPublished    Int?
-  minPlayers       Int?
-  maxPlayers       Int?
+  gameId           String
+  game             Game          @relation(fields: [gameId], references: [id], onDelete: Cascade)
   own              Boolean       @default(false)
   wishlist         Boolean       @default(false)
   wishlistPriority Int?          // 1-5
@@ -1382,10 +1387,39 @@ model UserGame {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
-  @@unique([userId, bggId])
+  @@unique([userId, gameId])
   @@index([userId])
   @@index([userId, status])
   @@index([locationId])
+  @@index([gameId])
+}
+
+model BggSyncJob {
+  id               String           @id @default(cuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bggUsername      String
+  status           BggSyncJobStatus @default(PENDING)
+  locationId       String?
+  requestedAt      DateTime         @default(now())
+  startedAt        DateTime?
+  finishedAt       DateTime?
+  error            String?          @db.Text
+  totalToImport    Int              @default(0)
+  totalToDelete    Int              @default(0)
+  processed        Int              @default(0)
+  imported         Int              @default(0)
+  linkedExisting   Int              @default(0)
+  deleted          Int              @default(0)
+  failed           Int              @default(0)
+  estimatedSeconds Int              @default(0)
+  importPayload    Json
+  deletePayload    Json
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([userId, requestedAt])
+  @@index([status, requestedAt])
 }
 
 // ==================== RESULTADOS DE PARTIDAS ====================

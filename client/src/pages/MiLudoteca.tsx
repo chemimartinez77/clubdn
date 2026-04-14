@@ -1,27 +1,30 @@
-// client/src/pages/MiLudoteca.tsx
-import { useState, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
 import { api } from '../api/axios';
 import { useToast } from '../contexts/ToastContext';
 import type { ApiResponse } from '../types/auth';
 
-// ---------- tipos ----------
-
 interface GameLocation {
   id: string;
   name: string;
 }
 
-interface UserGame {
+interface CatalogGame {
   id: string;
-  bggId: string;
-  title: string;
+  name: string;
+  image: string | null;
   thumbnail: string | null;
   yearPublished: number | null;
   minPlayers: number | null;
   maxPlayers: number | null;
+}
+
+interface UserGame {
+  id: string;
+  gameId: string;
+  game: CatalogGame;
   own: boolean;
   wishlist: boolean;
   wishlistPriority: number | null;
@@ -68,7 +71,34 @@ interface SyncCheckResponse {
   bggUsername: string;
   lastBggSync: string | null;
   toImport: BggCollectionItem[];
-  toDelete: { bggId: string; title: string }[];
+  toDelete: { gameId: string; title: string }[];
+  estimatedSeconds: number;
+  newCatalogItems: number;
+}
+
+interface BggSyncLaunchResponse {
+  jobId: string;
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  totalToImport: number;
+  totalToDelete: number;
+  estimatedSeconds: number;
+}
+
+interface BggSyncJob {
+  id: string;
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  requestedAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  totalToImport: number;
+  totalToDelete: number;
+  processed: number;
+  imported: number;
+  linkedExisting: number;
+  deleted: number;
+  failed: number;
+  estimatedSeconds: number;
+  error: string | null;
 }
 
 type Tab = 'own' | 'wishlist' | 'wantToPlay';
@@ -79,7 +109,21 @@ const TAB_LABELS: Record<Tab, string> = {
   wantToPlay: 'Quiero jugar',
 };
 
-// ---------- componente ----------
+function formatEta(seconds: number) {
+  if (!seconds || seconds < 60) {
+    return 'menos de 1 minuto';
+  }
+
+  const minutes = Math.ceil(seconds / 60);
+  return `${minutes} min`;
+}
+
+function getSyncStatusLabel(job: BggSyncJob) {
+  if (job.status === 'PENDING') return 'En cola';
+  if (job.status === 'PROCESSING') return 'Sincronizando';
+  if (job.status === 'COMPLETED') return 'Completada';
+  return 'Con incidencias';
+}
 
 export default function MiLudoteca() {
   const { success: toastSuccess, error: toastError } = useToast();
@@ -88,28 +132,19 @@ export default function MiLudoteca() {
   const [tab, setTab] = useState<Tab>('own');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
-
-  // BGG search
   const [bggQuery, setBggQuery] = useState('');
   const [bggQueryInput, setBggQueryInput] = useState('');
   const [showBggSearch, setShowBggSearch] = useState(false);
-
-  // BGG sync
   const [bggUsernameInput, setBggUsernameInput] = useState('');
   const [syncData, setSyncData] = useState<SyncCheckResponse | null>(null);
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [showSyncDetails, setShowSyncDetails] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [savingUsername, setSavingUsername] = useState(false);
-
-  // Ubicación para importación de sync BGG
   const [syncImportLocationId, setSyncImportLocationId] = useState('');
-
-  // Nueva ubicación
   const [showNewLocationModal, setShowNewLocationModal] = useState(false);
   const [newLocationName, setNewLocationName] = useState('');
-
-  // ---------- queries ----------
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['myGames', tab, search],
@@ -141,9 +176,38 @@ export default function MiLudoteca() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const locations: GameLocation[] = locationsData ?? [];
+  const { data: latestSyncJob } = useQuery({
+    queryKey: ['myLudotecaSyncLatest'],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<BggSyncJob | null>>('/api/my-ludoteca/bgg-sync-jobs/latest');
+      return res.data.data;
+    },
+    refetchInterval: 10000,
+  });
 
-  // ---------- mutations ----------
+  const { data: activeSyncJob, refetch: refetchActiveSyncJob } = useQuery({
+    queryKey: ['myLudotecaSyncJob', activeJobId],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<BggSyncJob>>(`/api/my-ludoteca/bgg-sync-jobs/${activeJobId}`);
+      return res.data.data;
+    },
+    enabled: !!activeJobId,
+    refetchInterval: (query) => {
+      const job = query.state.data as BggSyncJob | undefined;
+      return job && (job.status === 'PENDING' || job.status === 'PROCESSING') ? 5000 : false;
+    },
+  });
+
+  useEffect(() => {
+    if (!activeJobId && latestSyncJob && (latestSyncJob.status === 'PENDING' || latestSyncJob.status === 'PROCESSING')) {
+      setActiveJobId(latestSyncJob.id);
+    }
+  }, [activeJobId, latestSyncJob]);
+
+  const locations: GameLocation[] = locationsData ?? [];
+  const games = data?.games ?? [];
+  const displayedSyncJob = activeSyncJob ?? latestSyncJob ?? null;
+  const syncRunning = displayedSyncJob?.status === 'PENDING' || displayedSyncJob?.status === 'PROCESSING';
 
   const addMutation = useMutation({
     mutationFn: async ({ bggId, own, wishlist, wantToPlay }: { bggId: string; own?: boolean; wishlist?: boolean; wantToPlay?: boolean }) => {
@@ -157,16 +221,16 @@ export default function MiLudoteca() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ bggId, data }: { bggId: string; data: Partial<Pick<UserGame, 'own' | 'wishlist' | 'wantToPlay' | 'wishlistPriority' | 'locationId'>> }) => {
-      await api.patch(`/api/my-ludoteca/${bggId}`, data);
+    mutationFn: async ({ gameId, data }: { gameId: string; data: Partial<Pick<UserGame, 'own' | 'wishlist' | 'wantToPlay' | 'wishlistPriority' | 'locationId'>> }) => {
+      await api.patch(`/api/my-ludoteca/${gameId}`, data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['myGames'] }),
     onError: () => toastError('Error al actualizar el juego'),
   });
 
   const removeMutation = useMutation({
-    mutationFn: async (bggId: string) => {
-      await api.delete(`/api/my-ludoteca/${bggId}`);
+    mutationFn: async (gameId: string) => {
+      await api.delete(`/api/my-ludoteca/${gameId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myGames'] });
@@ -191,8 +255,6 @@ export default function MiLudoteca() {
       toastError(msg || 'Error al crear la ubicación');
     },
   });
-
-  // ---------- handlers ----------
 
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -235,45 +297,57 @@ export default function MiLudoteca() {
     if (!syncData) return;
     setSyncing(true);
     try {
-      await api.post('/api/my-ludoteca/bgg-sync-confirm', {
+      const res = await api.post<ApiResponse<BggSyncLaunchResponse>>('/api/my-ludoteca/bgg-sync-confirm', {
         toImport: syncData.toImport,
         toDelete: syncData.toDelete,
         locationId: syncImportLocationId || null,
+        estimatedSeconds: syncData.estimatedSeconds,
       });
-      queryClient.invalidateQueries({ queryKey: ['myGames'] });
-      toastSuccess(`Sincronización completada: +${syncData.toImport.length} / -${syncData.toDelete.length}`);
+
+      const launch = res.data.data;
+      if (!launch) {
+        throw new Error('No se pudo iniciar la sincronización');
+      }
+      setActiveJobId(launch.jobId);
+      queryClient.invalidateQueries({ queryKey: ['myLudotecaSyncLatest'] });
+      void refetchActiveSyncJob();
+      toastSuccess(`Sincronización lanzada. Tiempo estimado: ${formatEta(launch.estimatedSeconds)}.`);
       setShowSyncModal(false);
       setSyncData(null);
       setSyncImportLocationId('');
-    } catch {
-      toastError('Error durante la sincronización');
+      setShowSyncDetails(false);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toastError(msg || 'Error durante la sincronización');
     } finally {
       setSyncing(false);
     }
   };
 
-  const handleLocationChange = (bggId: string, value: string) => {
+  const handleLocationChange = (gameId: string, value: string) => {
     if (value === '__new__') {
       setShowNewLocationModal(true);
       return;
     }
-    // value === '' → Casa (null), value === id → ubicación personalizada
-    updateMutation.mutate({ bggId, data: { locationId: value || null } });
+
+    updateMutation.mutate({ gameId, data: { locationId: value || null } });
   };
 
-  // ---------- render ----------
-
-  const games = data?.games ?? [];
-
   const alreadyInLibrary = useCallback(
-    (bggId: string) => games.some((g) => g.bggId === bggId),
+    (bggId: string) => games.some((game) => game.gameId === bggId),
     [games]
   );
+
+  const syncProgress = useMemo(() => {
+    if (!displayedSyncJob) return null;
+    const total = displayedSyncJob.totalToImport + displayedSyncJob.totalToDelete;
+    if (total === 0) return 0;
+    return Math.min(100, Math.round((displayedSyncJob.processed / total) * 100));
+  }, [displayedSyncJob]);
 
   return (
     <Layout>
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-[var(--color-text)]">Mi ludoteca</h1>
           <p className="text-[var(--color-textSecondary)] mt-1">
@@ -281,46 +355,83 @@ export default function MiLudoteca() {
           </p>
         </div>
 
-        {/* Sync BGG */}
         <Card>
-          <CardContent className="p-4">
-            <p className="text-sm font-medium text-[var(--color-text)] mb-3">Sincronizar con BoardGameGeek</p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex gap-2 flex-1">
-                <input
-                  type="text"
-                  value={bggUsernameInput}
-                  onChange={(e) => setBggUsernameInput(e.target.value)}
-                  placeholder="Tu usuario de BGG"
-                  className="flex-1 px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                />
+          <CardContent className="p-4 space-y-4">
+            <div>
+              <p className="text-sm font-medium text-[var(--color-text)] mb-3">Sincronizar con BoardGameGeek</p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex gap-2 flex-1">
+                  <input
+                    type="text"
+                    value={bggUsernameInput}
+                    onChange={(e) => setBggUsernameInput(e.target.value)}
+                    placeholder="Tu usuario de BGG"
+                    className="flex-1 px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  />
+                  <button
+                    onClick={handleSaveUsername}
+                    disabled={savingUsername || !bggUsernameInput.trim()}
+                    className="px-3 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+                  >
+                    Guardar
+                  </button>
+                </div>
                 <button
-                  onClick={handleSaveUsername}
-                  disabled={savingUsername || !bggUsernameInput.trim()}
-                  className="px-3 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+                  onClick={handleSyncCheck}
+                  disabled={syncing || syncRunning}
+                  className="px-4 py-2 text-sm border border-[var(--color-cardBorder)] rounded-lg text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] disabled:opacity-50 flex items-center gap-2"
                 >
-                  Guardar
+                  {syncing ? (
+                    <>
+                      <span className="inline-block w-4 h-4 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+                      Consultando BGG...
+                    </>
+                  ) : syncRunning ? (
+                    'Sincronización en curso'
+                  ) : (
+                    'Actualizar desde BGG'
+                  )}
                 </button>
               </div>
-              <button
-                onClick={handleSyncCheck}
-                disabled={syncing}
-                className="px-4 py-2 text-sm border border-[var(--color-cardBorder)] rounded-lg text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] disabled:opacity-50 flex items-center gap-2"
-              >
-                {syncing ? (
-                  <>
-                    <span className="inline-block w-4 h-4 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
-                    Consultando BGG...
-                  </>
-                ) : (
-                  'Actualizar desde BGG'
-                )}
-              </button>
             </div>
+
+            {displayedSyncJob && (
+              <div className="rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)]/50 p-3 space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-text)]">
+                      {getSyncStatusLabel(displayedSyncJob)}
+                    </p>
+                    <p className="text-xs text-[var(--color-textSecondary)]">
+                      {displayedSyncJob.status === 'COMPLETED' && `Catálogo nuevo: ${displayedSyncJob.imported}. Reutilizados: ${displayedSyncJob.linkedExisting}. Eliminados: ${displayedSyncJob.deleted}.`}
+                      {displayedSyncJob.status === 'FAILED' && (displayedSyncJob.error || 'La sincronización terminó con incidencias.')}
+                      {(displayedSyncJob.status === 'PENDING' || displayedSyncJob.status === 'PROCESSING') &&
+                        `Se están procesando ${displayedSyncJob.totalToImport + displayedSyncJob.totalToDelete} cambios. Refresca la página en unos ${formatEta(displayedSyncJob.estimatedSeconds)} si te vas antes.`}
+                    </p>
+                  </div>
+                  <div className="text-xs text-[var(--color-textSecondary)]">
+                    {displayedSyncJob.estimatedSeconds > 0 && `Estimación: ${formatEta(displayedSyncJob.estimatedSeconds)}`}
+                  </div>
+                </div>
+
+                {syncProgress !== null && (
+                  <div className="space-y-1">
+                    <div className="h-2 rounded-full bg-black/20 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[var(--color-primary)] transition-[width] duration-300"
+                        style={{ width: `${syncProgress}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-[var(--color-textSecondary)]">
+                      {displayedSyncJob.processed} / {displayedSyncJob.totalToImport + displayedSyncJob.totalToDelete} operaciones
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Búsqueda manual BGG */}
         <Card>
           <CardContent className="p-4">
             <button
@@ -364,7 +475,7 @@ export default function MiLudoteca() {
                       return (
                         <div key={game.id} className="flex flex-col items-center gap-1 text-center">
                           {game.thumbnail ? (
-                            <img src={game.thumbnail} alt={game.name} className="w-16 h-16 object-cover rounded" />
+                            <img src={game.thumbnail} alt={game.name} className="w-16 h-16 object-cover rounded" loading="lazy" />
                           ) : (
                             <div className="w-16 h-16 bg-[var(--color-tableRowHover)] rounded flex items-center justify-center text-xs text-[var(--color-textSecondary)]">
                               Sin img
@@ -391,16 +502,15 @@ export default function MiLudoteca() {
           </CardContent>
         </Card>
 
-        {/* Tabs + filtros */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex border border-[var(--color-cardBorder)] rounded-lg overflow-hidden">
-            {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
+            {(Object.keys(TAB_LABELS) as Tab[]).map((currentTab) => (
               <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`px-4 py-2 text-sm transition-colors ${tab === t ? 'bg-[var(--color-primary)] text-white' : 'text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)]'}`}
+                key={currentTab}
+                onClick={() => setTab(currentTab)}
+                className={`px-4 py-2 text-sm transition-colors ${tab === currentTab ? 'bg-[var(--color-primary)] text-white' : 'text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)]'}`}
               >
-                {TAB_LABELS[t]}
+                {TAB_LABELS[currentTab]}
               </button>
             ))}
           </div>
@@ -418,7 +528,6 @@ export default function MiLudoteca() {
           </form>
         </div>
 
-        {/* Grid de juegos */}
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="w-10 h-10 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
@@ -440,15 +549,14 @@ export default function MiLudoteca() {
                 key={game.id}
                 game={game}
                 locations={locations}
-                onUpdate={(data) => updateMutation.mutate({ bggId: game.bggId, data })}
-                onLocationChange={(value) => handleLocationChange(game.bggId, value)}
-                onRemove={() => removeMutation.mutate(game.bggId)}
+                onUpdate={(payload) => updateMutation.mutate({ gameId: game.gameId, data: payload })}
+                onLocationChange={(value) => handleLocationChange(game.gameId, value)}
+                onRemove={() => removeMutation.mutate(game.gameId)}
               />
             ))}
           </div>
         )}
 
-        {/* Modal de sincronización BGG */}
         {showSyncModal && syncData && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50" onClick={() => { setShowSyncModal(false); setSyncImportLocationId(''); }} />
@@ -458,6 +566,10 @@ export default function MiLudoteca() {
                 Se van a <span className="text-green-600 font-medium">importar {syncData.toImport.length} juegos</span>{' '}
                 y <span className="text-red-600 font-medium">eliminar {syncData.toDelete.length}</span> de tu ludoteca.
               </p>
+              <div className="rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)]/50 p-3 text-xs text-[var(--color-textSecondary)]">
+                Tiempo estimado: {formatEta(syncData.estimatedSeconds)}. Juegos nuevos para el catálogo compartido: {syncData.newCatalogItems}.
+                Cuando lances la sincronización se ejecutará en background; podrás seguir usando la web y refrescar la página más tarde.
+              </div>
 
               {(syncData.toImport.length > 0 || syncData.toDelete.length > 0) && (
                 <button
@@ -470,16 +582,16 @@ export default function MiLudoteca() {
 
               {showSyncDetails && (
                 <div className="max-h-56 overflow-y-auto border border-[var(--color-cardBorder)] rounded-lg p-2 space-y-1 text-xs">
-                  {syncData.toImport.map((g) => (
-                    <div key={g.bggId} className="flex items-center gap-1">
+                  {syncData.toImport.map((game) => (
+                    <div key={game.bggId} className="flex items-center gap-1">
                       <span className="text-green-600 font-bold">+</span>
-                      <span className="text-[var(--color-text)]">{g.title}</span>
+                      <span className="text-[var(--color-text)]">{game.title}</span>
                     </div>
                   ))}
-                  {syncData.toDelete.map((g) => (
-                    <div key={g.bggId} className="flex items-center gap-1">
+                  {syncData.toDelete.map((game) => (
+                    <div key={game.gameId} className="flex items-center gap-1">
                       <span className="text-red-600 font-bold">-</span>
-                      <span className="text-[var(--color-textSecondary)]">{g.title}</span>
+                      <span className="text-[var(--color-textSecondary)]">{game.title}</span>
                     </div>
                   ))}
                 </div>
@@ -506,8 +618,8 @@ export default function MiLudoteca() {
                     className="w-full px-3 py-2 text-sm border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                   >
                     <option value="">Casa (por defecto)</option>
-                    {locations.map((loc) => (
-                      <option key={loc.id} value={loc.id}>{loc.name}</option>
+                    {locations.map((location) => (
+                      <option key={location.id} value={location.id}>{location.name}</option>
                     ))}
                     <option value="__new__">Añadir otra ubicación...</option>
                   </select>
@@ -530,7 +642,7 @@ export default function MiLudoteca() {
                     disabled={syncing}
                     className="px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 disabled:opacity-50"
                   >
-                    {syncing ? 'Sincronizando...' : 'Confirmar cambios'}
+                    {syncing ? 'Lanzando...' : 'Lanzar sincronización'}
                   </button>
                 )}
               </div>
@@ -538,7 +650,6 @@ export default function MiLudoteca() {
           </div>
         )}
 
-        {/* Modal nueva ubicación */}
         {showNewLocationModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50" onClick={() => setShowNewLocationModal(false)} />
@@ -583,71 +694,59 @@ export default function MiLudoteca() {
   );
 }
 
-// ---------- GameCard subcomponente ----------
-
 interface GameCardProps {
   game: UserGame;
   locations: GameLocation[];
-  onUpdate: (data: Partial<Pick<UserGame, 'own' | 'wishlist' | 'wantToPlay' | 'wishlistPriority'>>) => void;
+  onUpdate: (data: Partial<Pick<UserGame, 'own' | 'wishlist' | 'wantToPlay' | 'wishlistPriority' | 'locationId'>>) => void;
   onLocationChange: (value: string) => void;
   onRemove: () => void;
 }
 
 function GameCard({ game, locations, onUpdate, onLocationChange, onRemove }: GameCardProps) {
+  const imageUrl = game.game.image ?? game.game.thumbnail;
+
   return (
     <div className="flex flex-col bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-      {/* Thumbnail */}
-      <div className="aspect-square bg-[var(--color-tableRowHover)] flex items-center justify-center">
-        {game.thumbnail ? (
-          <img src={game.thumbnail} alt={game.title} className="w-full h-full object-contain" />
+      <div className="aspect-[3/4] bg-[linear-gradient(180deg,rgba(0,0,0,0.18),rgba(0,0,0,0.28))] flex items-center justify-center p-3">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={game.game.name}
+            loading="lazy"
+            className="w-full h-full object-contain"
+          />
         ) : (
-          <span className="text-xs text-[var(--color-textSecondary)] text-center px-2">{game.title}</span>
+          <span className="text-xs text-[var(--color-textSecondary)] text-center px-2">{game.game.name}</span>
         )}
       </div>
 
-      {/* Info */}
       <div className="p-2 flex flex-col gap-1 flex-1">
-        <p className="text-xs font-medium text-[var(--color-text)] leading-tight line-clamp-2">{game.title}</p>
-        {game.yearPublished && (
-          <p className="text-[10px] text-[var(--color-textSecondary)]">{game.yearPublished}</p>
+        <p className="text-xs font-medium text-[var(--color-text)] leading-tight line-clamp-2">{game.game.name}</p>
+        {game.game.yearPublished && (
+          <p className="text-[10px] text-[var(--color-textSecondary)]">{game.game.yearPublished}</p>
         )}
 
-        {/* Flags */}
         <div className="flex flex-wrap gap-1 mt-1">
-          <FlagChip
-            label="Tengo"
-            active={game.own}
-            onClick={() => onUpdate({ own: !game.own })}
-          />
-          <FlagChip
-            label="Wishlist"
-            active={game.wishlist}
-            onClick={() => onUpdate({ wishlist: !game.wishlist })}
-          />
-          <FlagChip
-            label="Jugar"
-            active={game.wantToPlay}
-            onClick={() => onUpdate({ wantToPlay: !game.wantToPlay })}
-          />
+          <FlagChip label="Tengo" active={game.own} onClick={() => onUpdate({ own: !game.own })} />
+          <FlagChip label="Wishlist" active={game.wishlist} onClick={() => onUpdate({ wishlist: !game.wishlist })} />
+          <FlagChip label="Jugar" active={game.wantToPlay} onClick={() => onUpdate({ wantToPlay: !game.wantToPlay })} />
         </div>
 
-        {/* Ubicación */}
         <select
           value={game.locationId ?? ''}
           onChange={(e) => onLocationChange(e.target.value)}
           className="mt-1 w-full text-[10px] px-1.5 py-1 border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
         >
           <option value="">Casa</option>
-          {locations.map((loc) => (
-            <option key={loc.id} value={loc.id}>{loc.name}</option>
+          {locations.map((location) => (
+            <option key={location.id} value={location.id}>{location.name}</option>
           ))}
           <option value="__new__">Añadir otra ubicación...</option>
         </select>
 
-        {/* Enlace BGG + eliminar */}
         <div className="flex items-center justify-between mt-auto pt-1">
           <a
-            href={`https://boardgamegeek.com/boardgame/${game.bggId}`}
+            href={`https://boardgamegeek.com/boardgame/${game.gameId}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] text-[var(--color-primary)] hover:underline"

@@ -8,6 +8,8 @@ import {
   updateBggUsername,
   getBggSyncCheck,
   confirmBggSync,
+  getLatestBggSyncJob,
+  getBggSyncJobStatus,
   getLocations,
   createLocation,
   deleteLocation,
@@ -20,6 +22,8 @@ const router = Router();
 router.patch('/bgg-username', authenticate, updateBggUsername);
 router.get('/bgg-sync-check', authenticate, getBggSyncCheck);
 router.post('/bgg-sync-confirm', authenticate, confirmBggSync);
+router.get('/bgg-sync-jobs/latest', authenticate, getLatestBggSyncJob);
+router.get('/bgg-sync-jobs/:jobId', authenticate, getBggSyncJobStatus);
 router.get('/locations', authenticate, getLocations);
 router.post('/locations', authenticate, createLocation);
 router.delete('/locations/:locationId', authenticate, deleteLocation);

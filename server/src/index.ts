@@ -33,6 +33,7 @@ import previewRoutes from './routes/previewRoutes';
 import myLudotecaRoutes from './routes/myLudotecaRoutes';
 import { startEventCompletionJob } from './jobs/eventCompletionJob';
 import { startMemberPromotionJob } from './jobs/memberPromotionJob';
+import { startBggSyncJobWorker } from './jobs/bggSyncJob';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -170,6 +171,7 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`📝 Entorno: ${process.env.NODE_ENV || 'development'}`);
     startEventCompletionJob();
     startMemberPromotionJob();
+    void startBggSyncJobWorker();
   });
 
   // Manejo de cierre graceful

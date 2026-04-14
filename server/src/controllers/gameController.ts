@@ -1,7 +1,8 @@
 // server/src/controllers/gameController.ts
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
-import { getBGGGameFull, getRPGGeekItem } from '../services/bggService';
+import { getRPGGeekItem } from '../services/bggService';
+import { ensureGameFromBgg } from '../services/gameCatalogService';
 
 /**
  * Obtener o crear un juego en la base de datos
@@ -18,89 +19,21 @@ export const getOrCreateGame = async (req: Request, res: Response) => {
       });
     }
 
-    // Buscar en BGG siempre para obtener URLs actualizadas
-    console.log(`[GAME] Buscando juego ${gameId} en BGG...`);
-    const bggGame = await getBGGGameFull(gameId);
-
-    if (!bggGame) {
-      return res.status(404).json({
-        success: false,
-        message: 'Game not found in BoardGameGeek'
-      });
-    }
-
-    // Verificar si el juego ya existe en la base de datos
-    let game = await prisma.game.findUnique({
-      where: { id: gameId }
-    });
-
-    if (game) {
-      // Actualizar las URLs de imagen si han cambiado
-      if (game.image !== bggGame.image || game.thumbnail !== bggGame.thumbnail) {
-        console.log(`[GAME] Actualizando URLs de imagen para ${game.name}...`);
-        game = await prisma.game.update({
-          where: { id: gameId },
-          data: {
-            image: bggGame.image,
-            thumbnail: bggGame.thumbnail,
-            lastSyncedAt: new Date()
-          }
-        });
-        console.log(`[GAME] URLs actualizadas para ${game.name}`);
-      }
-
-      return res.json({
-        success: true,
-        data: game,
-        cached: true
-      });
-    }
-
-    // Si no existe, guardar en la base de datos
-    game = await prisma.game.create({
-      data: {
-        id: bggGame.id,
-        name: bggGame.name,
-        alternateNames: bggGame.alternateNames,
-        description: bggGame.description,
-        yearPublished: bggGame.yearPublished,
-        image: bggGame.image,
-        thumbnail: bggGame.thumbnail,
-        minPlayers: bggGame.minPlayers,
-        maxPlayers: bggGame.maxPlayers,
-        playingTime: bggGame.playingTime,
-        minPlaytime: bggGame.minPlaytime,
-        maxPlaytime: bggGame.maxPlaytime,
-        minAge: bggGame.minAge,
-        usersRated: bggGame.usersRated,
-        averageRating: bggGame.averageRating,
-        bayesAverage: bggGame.bayesAverage,
-        rank: bggGame.rank,
-        strategyRank: bggGame.strategyRank,
-        complexityRating: bggGame.complexityRating,
-        numOwned: bggGame.numOwned,
-        numWanting: bggGame.numWanting,
-        numWishing: bggGame.numWishing,
-        numComments: bggGame.numComments,
-        categories: bggGame.categories,
-        mechanics: bggGame.mechanics,
-        families: bggGame.families,
-        designers: bggGame.designers,
-        artists: bggGame.artists,
-        publishers: bggGame.publishers,
-        lastSyncedAt: new Date()
-      }
-    });
-
-    console.log(`[GAME] Juego ${game.name} guardado en BD`);
+    const { game, created } = await ensureGameFromBgg(gameId, { refreshIfExists: true });
 
     return res.json({
       success: true,
       data: game,
-      cached: false
+      cached: !created
     });
   } catch (error) {
     console.error('[GAME] Error al obtener/crear juego:', error);
+    if (error instanceof Error && error.message === 'Game not found in BoardGameGeek') {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+      });
+    }
     return res.status(500).json({
       success: false,
       message: 'Error retrieving or creating game'
@@ -122,83 +55,7 @@ export const refreshGame = async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`[GAME] Actualizando juego ${gameId} desde BGG...`);
-    const bggGame = await getBGGGameFull(gameId);
-
-    if (!bggGame) {
-      return res.status(404).json({
-        success: false,
-        message: 'Game not found in BoardGameGeek'
-      });
-    }
-
-    // Actualizar en la base de datos (upsert)
-    const game = await prisma.game.upsert({
-      where: { id: gameId },
-      create: {
-        id: bggGame.id,
-        name: bggGame.name,
-        alternateNames: bggGame.alternateNames,
-        description: bggGame.description,
-        yearPublished: bggGame.yearPublished,
-        image: bggGame.image,
-        thumbnail: bggGame.thumbnail,
-        minPlayers: bggGame.minPlayers,
-        maxPlayers: bggGame.maxPlayers,
-        playingTime: bggGame.playingTime,
-        minPlaytime: bggGame.minPlaytime,
-        maxPlaytime: bggGame.maxPlaytime,
-        minAge: bggGame.minAge,
-        usersRated: bggGame.usersRated,
-        averageRating: bggGame.averageRating,
-        bayesAverage: bggGame.bayesAverage,
-        rank: bggGame.rank,
-        strategyRank: bggGame.strategyRank,
-        complexityRating: bggGame.complexityRating,
-        numOwned: bggGame.numOwned,
-        numWanting: bggGame.numWanting,
-        numWishing: bggGame.numWishing,
-        numComments: bggGame.numComments,
-        categories: bggGame.categories,
-        mechanics: bggGame.mechanics,
-        families: bggGame.families,
-        designers: bggGame.designers,
-        artists: bggGame.artists,
-        publishers: bggGame.publishers,
-        lastSyncedAt: new Date()
-      },
-      update: {
-        name: bggGame.name,
-        alternateNames: bggGame.alternateNames,
-        description: bggGame.description,
-        yearPublished: bggGame.yearPublished,
-        image: bggGame.image,
-        thumbnail: bggGame.thumbnail,
-        minPlayers: bggGame.minPlayers,
-        maxPlayers: bggGame.maxPlayers,
-        playingTime: bggGame.playingTime,
-        minPlaytime: bggGame.minPlaytime,
-        maxPlaytime: bggGame.maxPlaytime,
-        minAge: bggGame.minAge,
-        usersRated: bggGame.usersRated,
-        averageRating: bggGame.averageRating,
-        bayesAverage: bggGame.bayesAverage,
-        rank: bggGame.rank,
-        strategyRank: bggGame.strategyRank,
-        complexityRating: bggGame.complexityRating,
-        numOwned: bggGame.numOwned,
-        numWanting: bggGame.numWanting,
-        numWishing: bggGame.numWishing,
-        numComments: bggGame.numComments,
-        categories: bggGame.categories,
-        mechanics: bggGame.mechanics,
-        families: bggGame.families,
-        designers: bggGame.designers,
-        artists: bggGame.artists,
-        publishers: bggGame.publishers,
-        lastSyncedAt: new Date()
-      }
-    });
+    const { game } = await ensureGameFromBgg(gameId, { refreshIfExists: true });
 
     console.log(`[GAME] Juego ${game.name} actualizado en BD`);
 
@@ -208,6 +65,12 @@ export const refreshGame = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('[GAME] Error al actualizar juego:', error);
+    if (error instanceof Error && error.message === 'Game not found in BoardGameGeek') {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+      });
+    }
     return res.status(500).json({
       success: false,
       message: 'Error refreshing game'

@@ -4,6 +4,47 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-14 (sesión 3)
+
+### Mejoras y correcciones
+
+#### Estado de eventos calculado en cliente (En curso / Completado)
+
+El estado visible de los eventos dejaba de reflejar la realidad una vez que la partida había comenzado o terminado, ya que se leía directamente de la base de datos sin considerar la hora actual. Ahora se calcula en el cliente usando la hora de inicio, duración y estado almacenado: si la hora actual está dentro del rango de la partida se muestra "En curso"; si ya ha terminado, "Completado". El job existente sigue actualizando el estado en BD a COMPLETED al finalizar el día.
+
+El chip de "plazas libres" / "Lleno" ya no aparece en eventos en curso o completados, ya que no tiene sentido registrarse en ese momento. El filtro "Desde hoy" en la vista de lista dejaba de mostrar eventos completados del día actual; se corrige para que sigan apareciendo.
+
+**Archivos modificados:**
+- `client/src/components/events/EventCard.tsx` — función `getEffectiveStatus`, badge con estado calculado, chip de plazas oculto si no es SCHEDULED
+- `client/src/components/events/EventCalendarDay.tsx` — ídem + nuevo badge de estado junto al contador de asistentes
+- `client/src/pages/EventDetail.tsx` — badge del detalle con estado calculado
+- `client/src/pages/Events.tsx` — filtro "Desde hoy" ya no excluye eventos completados de hoy
+
+#### Formulario de resultados de partida mejorado
+
+El formulario de resultados mostraba una fila vacía al abrirse. Ahora precarga automáticamente los socios confirmados (nombre de solo lectura, vinculado por userId) y los invitados del evento al pulsar "Añadir resultados". Se muestran los nicks en lugar de los nombres completos. El botón "+ Añadir jugador" se elimina ya que los jugadores vienen de la partida. Al rellenar puntos, el ganador se calcula automáticamente; si hay empate, se permite marcar múltiples ganadores con un modal opcional para el motivo.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx` — precarga, cálculo automático de ganador, modal de desempate, nicks
+
+#### Sync BGG asíncrono con jobs y catálogo de juegos compartido
+
+La sincronización BGG pasa a ejecutarse de forma asíncrona mediante un sistema de jobs (`BggSyncJob`). El modelo `UserGame` se refactoriza para referenciar un catálogo compartido de juegos (`Game`) en lugar de almacenar los datos duplicados por usuario. Un nuevo servicio `gameCatalogService` gestiona la creación/reutilización de entradas del catálogo al importar desde BGG.
+
+**Archivos nuevos:**
+- `server/src/jobs/bggSyncJob.ts` — worker que procesa los jobs de sync en background
+- `server/src/services/gameCatalogService.ts` — servicio para upsert de juegos en el catálogo compartido
+- `server/prisma/migrations/20260414110000_normalize_user_games_and_add_bgg_sync_jobs/` — migración que normaliza UserGame y añade BggSyncJob
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` — modelo BggSyncJob, refactor UserGame → gameId
+- `server/src/controllers/myLudotecaController.ts` — endpoints para jobs y nuevo modelo
+- `server/src/routes/myLudotecaRoutes.ts` — rutas de jobs
+- `server/src/index.ts` — arranque del worker de sync
+- `client/src/pages/MiLudoteca.tsx` — UI de progreso del job, polling, nuevos tipos
+
+---
+
 ## 2026-04-14 (sesión 2)
 
 ### Nuevas funcionalidades

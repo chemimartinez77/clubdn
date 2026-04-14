@@ -1,7 +1,27 @@
-// server/src/controllers/myLudotecaController.ts
+import { BggSyncJobStatus, Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
-import { getBGGGame, getBGGCollection } from '../services/bggService';
+import { pokeBggSyncWorker } from '../jobs/bggSyncJob';
+import { getBGGCollection } from '../services/bggService';
+import { ensureGameFromBgg, estimateBggSyncSeconds } from '../services/gameCatalogService';
+
+type SyncImportItem = {
+  bggId: string;
+  title: string;
+  thumbnail: string | null;
+  yearPublished: number | null;
+  minPlayers: number | null;
+  maxPlayers: number | null;
+};
+
+type SyncDeleteItem = {
+  gameId: string;
+  title: string;
+};
+
+function normalizeSearch(value: string) {
+  return value.trim();
+}
 
 /**
  * GET /api/my-ludoteca
@@ -13,14 +33,22 @@ export const getMyGames = async (req: Request, res: Response) => {
     const userId = req.user!.userId;
     const { tab = 'all', search = '', page = '1', pageSize = '48' } = req.query as Record<string, string>;
 
-    const safePage = Math.max(1, parseInt(page) || 1);
-    const safePageSize = Math.min(100, Math.max(1, parseInt(pageSize) || 48));
+    const safePage = Math.max(1, parseInt(page, 10) || 1);
+    const safePageSize = Math.min(100, Math.max(1, parseInt(pageSize, 10) || 48));
     const skip = (safePage - 1) * safePageSize;
+    const normalizedSearch = normalizeSearch(search);
 
-    const where: Record<string, unknown> = {
+    const where: Prisma.UserGameWhereInput = {
       userId,
       status: 'active',
-      ...(search.trim() && { title: { contains: search.trim(), mode: 'insensitive' } }),
+      ...(normalizedSearch && {
+        game: {
+          name: {
+            contains: normalizedSearch,
+            mode: 'insensitive',
+          },
+        },
+      }),
     };
 
     if (tab === 'own') where.own = true;
@@ -30,10 +58,13 @@ export const getMyGames = async (req: Request, res: Response) => {
     const [games, total] = await Promise.all([
       prisma.userGame.findMany({
         where,
-        orderBy: { title: 'asc' },
+        orderBy: { game: { name: 'asc' } },
         skip,
         take: safePageSize,
-        include: { location: true },
+        include: {
+          game: true,
+          location: true,
+        },
       }),
       prisma.userGame.count({ where }),
     ]);
@@ -58,7 +89,7 @@ export const getMyGames = async (req: Request, res: Response) => {
 
 /**
  * POST /api/my-ludoteca
- * Añade un juego a la ludoteca personal.
+ * AÃ±ade un juego a la ludoteca personal.
  * Body: { bggId, own?, wishlist?, wishlistPriority?, wantToPlay? }
  * Si el juego ya existe con status=deleted, lo reactiva.
  */
@@ -78,14 +109,10 @@ export const addGame = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'bggId requerido' });
     }
 
-    // Obtener metadatos del juego desde BGG
-    const bggGame = await getBGGGame(bggId);
-    if (!bggGame) {
-      return res.status(404).json({ success: false, message: 'Juego no encontrado en BGG' });
-    }
+    const { game } = await ensureGameFromBgg(bggId);
 
-    const game = await prisma.userGame.upsert({
-      where: { userId_bggId: { userId, bggId } },
+    const userGame = await prisma.userGame.upsert({
+      where: { userId_gameId: { userId, gameId: game.id } },
       update: {
         status: 'active',
         own: own ?? false,
@@ -93,29 +120,29 @@ export const addGame = async (req: Request, res: Response) => {
         wishlistPriority: wishlistPriority ?? null,
         wantToPlay: wantToPlay ?? false,
         locationId: locationId ?? null,
-        title: bggGame.name,
-        thumbnail: bggGame.thumbnail || null,
-        yearPublished: bggGame.yearPublished ? parseInt(bggGame.yearPublished) : null,
       },
       create: {
         userId,
-        bggId,
-        title: bggGame.name,
-        thumbnail: bggGame.thumbnail || null,
-        yearPublished: bggGame.yearPublished ? parseInt(bggGame.yearPublished) : null,
+        gameId: game.id,
         own: own ?? false,
         wishlist: wishlist ?? false,
         wishlistPriority: wishlistPriority ?? null,
         wantToPlay: wantToPlay ?? false,
         locationId: locationId ?? null,
       },
-      include: { location: true },
+      include: {
+        game: true,
+        location: true,
+      },
     });
 
-    return res.status(201).json({ success: true, data: game });
+    return res.status(201).json({ success: true, data: userGame });
   } catch (error) {
     console.error('[MY_LUDOTECA] Error en addGame:', error);
-    return res.status(500).json({ success: false, message: 'Error al añadir el juego' });
+    if (error instanceof Error && error.message === 'Game not found in BoardGameGeek') {
+      return res.status(404).json({ success: false, message: 'Juego no encontrado en BGG' });
+    }
+    return res.status(500).json({ success: false, message: 'Error al aÃ±adir el juego' });
   }
 };
 
@@ -126,7 +153,7 @@ export const addGame = async (req: Request, res: Response) => {
 export const updateGame = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
-    const bggId = req.params.bggId as string;
+    const gameId = req.params.bggId as string;
     const { own, wishlist, wishlistPriority, wantToPlay, locationId } = req.body as {
       own?: boolean;
       wishlist?: boolean;
@@ -136,7 +163,7 @@ export const updateGame = async (req: Request, res: Response) => {
     };
 
     const existing = await prisma.userGame.findUnique({
-      where: { userId_bggId: { userId, bggId } },
+      where: { userId_gameId: { userId, gameId } },
     });
 
     if (!existing || existing.status === 'deleted') {
@@ -144,7 +171,7 @@ export const updateGame = async (req: Request, res: Response) => {
     }
 
     const updated = await prisma.userGame.update({
-      where: { userId_bggId: { userId, bggId } },
+      where: { userId_gameId: { userId, gameId } },
       data: {
         ...(own !== undefined && { own }),
         ...(wishlist !== undefined && { wishlist }),
@@ -152,7 +179,10 @@ export const updateGame = async (req: Request, res: Response) => {
         ...(wantToPlay !== undefined && { wantToPlay }),
         ...(locationId !== undefined && { locationId }),
       },
-      include: { location: true },
+      include: {
+        game: true,
+        location: true,
+      },
     });
 
     return res.json({ success: true, data: updated });
@@ -169,10 +199,10 @@ export const updateGame = async (req: Request, res: Response) => {
 export const removeGame = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
-    const bggId = req.params.bggId as string;
+    const gameId = req.params.bggId as string;
 
     const existing = await prisma.userGame.findUnique({
-      where: { userId_bggId: { userId, bggId } },
+      where: { userId_gameId: { userId, gameId } },
     });
 
     if (!existing || existing.status === 'deleted') {
@@ -180,7 +210,7 @@ export const removeGame = async (req: Request, res: Response) => {
     }
 
     await prisma.userGame.update({
-      where: { userId_bggId: { userId, bggId } },
+      where: { userId_gameId: { userId, gameId } },
       data: { status: 'deleted' },
     });
 
@@ -215,8 +245,7 @@ export const updateBggUsername = async (req: Request, res: Response) => {
 
 /**
  * GET /api/my-ludoteca/bgg-sync-check
- * Compara la colección BGG del usuario con su ludoteca en DB.
- * Devuelve { bggUsername, toImport[], toDelete[], lastBggSync }.
+ * Compara la colecciÃ³n BGG del usuario con su ludoteca en DB.
  */
 export const getBggSyncCheck = async (req: Request, res: Response) => {
   try {
@@ -228,7 +257,7 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
     if (!bggUsername) {
       return res.status(400).json({
         success: false,
-        message: 'No tienes configurado tu usuario de BGG. Añádelo primero.',
+        message: 'No tienes configurado tu usuario de BGG. AÃ±Ã¡delo primero.',
       });
     }
 
@@ -236,15 +265,43 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
       getBGGCollection(bggUsername),
       prisma.userGame.findMany({
         where: { userId, status: 'active' },
-        select: { bggId: true, title: true },
+        select: {
+          own: true,
+          wishlist: true,
+          wantToPlay: true,
+          gameId: true,
+          game: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
       }),
     ]);
 
-    const dbBggIds = new Set(dbGames.map((g) => g.bggId));
-    const bggIds = new Set(bggCollection.map((g) => g.bggId));
+    const ownedGameIds = new Set(dbGames.filter((game) => game.own).map((game) => game.gameId));
+    const bggIds = new Set(bggCollection.map((game) => game.bggId));
 
-    const toImport = bggCollection.filter((g) => !dbBggIds.has(g.bggId));
-    const toDelete = dbGames.filter((g) => !bggIds.has(g.bggId));
+    const toImport = bggCollection.filter((game) => !ownedGameIds.has(game.bggId));
+    const toDelete = dbGames
+      .filter((game) => game.own && !bggIds.has(game.gameId))
+      .map((game) => ({
+        gameId: game.gameId,
+        title: game.game.name,
+      }));
+
+    const importIds = toImport.map((item) => item.bggId);
+    const existingCatalogGames = importIds.length > 0
+      ? await prisma.game.findMany({
+          where: { id: { in: importIds } },
+          select: { id: true },
+        })
+      : [];
+
+    const existingCatalogIds = new Set(existingCatalogGames.map((game) => game.id));
+    const newCatalogItems = toImport.filter((item) => !existingCatalogIds.has(item.bggId)).length;
+    const estimatedSeconds = estimateBggSyncSeconds(newCatalogItems, toImport.length + toDelete.length);
 
     return res.json({
       success: true,
@@ -253,6 +310,8 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
         lastBggSync: profile?.lastBggSync ?? null,
         toImport,
         toDelete,
+        estimatedSeconds,
+        newCatalogItems,
       },
     });
   } catch (error) {
@@ -264,67 +323,115 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
 
 /**
  * POST /api/my-ludoteca/bgg-sync-confirm
- * Ejecuta la sincronización: importa y/o elimina los juegos confirmados.
- * Body: { toImport: BGGCollectionItem[], toDelete: { bggId }[], locationId?: string | null }
+ * Crea un job persistente de sincronizaciÃ³n en background.
  */
 export const confirmBggSync = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
-    const { toImport = [], toDelete = [], locationId = null } = req.body as {
-      toImport: { bggId: string; title: string; thumbnail: string | null; yearPublished: number | null; minPlayers: number | null; maxPlayers: number | null }[];
-      toDelete: { bggId: string }[];
+    const { toImport = [], toDelete = [], locationId = null, estimatedSeconds = 0 } = req.body as {
+      toImport: SyncImportItem[];
+      toDelete: SyncDeleteItem[];
       locationId?: string | null;
+      estimatedSeconds?: number;
     };
 
-    // Importar nuevos juegos (upsert: si existe deleted, lo reactiva)
-    for (const game of toImport) {
-      await prisma.userGame.upsert({
-        where: { userId_bggId: { userId, bggId: game.bggId } },
-        update: {
-          status: 'active',
-          own: true,
-          title: game.title,
-          thumbnail: game.thumbnail,
-          yearPublished: game.yearPublished,
-          minPlayers: game.minPlayers,
-          maxPlayers: game.maxPlayers,
-          locationId: locationId ?? null,
-        },
-        create: {
-          userId,
-          bggId: game.bggId,
-          title: game.title,
-          thumbnail: game.thumbnail,
-          yearPublished: game.yearPublished,
-          minPlayers: game.minPlayers,
-          maxPlayers: game.maxPlayers,
-          own: true,
-          locationId: locationId ?? null,
-        },
-      });
-    }
-
-    // Soft delete de juegos eliminados en BGG
-    if (toDelete.length > 0) {
-      await prisma.userGame.updateMany({
-        where: { userId, bggId: { in: toDelete.map((g) => g.bggId) } },
-        data: { status: 'deleted' },
-      });
-    }
-
-    // Actualizar lastBggSync
-    await prisma.userProfile.update({
+    const profile = await prisma.userProfile.findUnique({
       where: { userId },
-      data: { lastBggSync: new Date() },
+      select: { bggUsername: true },
     });
+
+    const bggUsername = profile?.bggUsername?.trim();
+    if (!bggUsername) {
+      return res.status(400).json({ success: false, message: 'No tienes configurado tu usuario de BGG' });
+    }
+
+    const activeJob = await prisma.bggSyncJob.findFirst({
+      where: {
+        userId,
+        status: { in: [BggSyncJobStatus.PENDING, BggSyncJobStatus.PROCESSING] },
+      },
+      orderBy: { requestedAt: 'desc' },
+    });
+
+    if (activeJob) {
+      return res.status(409).json({
+        success: false,
+        message: 'Ya tienes una sincronizaciÃ³n en curso',
+        data: activeJob,
+      });
+    }
+
+    const job = await prisma.bggSyncJob.create({
+      data: {
+        userId,
+        bggUsername,
+        locationId: locationId ?? null,
+        totalToImport: toImport.length,
+        totalToDelete: toDelete.length,
+        estimatedSeconds,
+        importPayload: toImport as unknown as Prisma.JsonArray,
+        deletePayload: toDelete as unknown as Prisma.JsonArray,
+      },
+    });
+
+    await pokeBggSyncWorker();
 
     return res.json({
       success: true,
-      data: { imported: toImport.length, deleted: toDelete.length },
+      data: {
+        jobId: job.id,
+        status: job.status,
+        totalToImport: job.totalToImport,
+        totalToDelete: job.totalToDelete,
+        estimatedSeconds: job.estimatedSeconds,
+      },
     });
   } catch (error) {
     console.error('[MY_LUDOTECA] Error en confirmBggSync:', error);
-    return res.status(500).json({ success: false, message: 'Error durante la sincronización' });
+    return res.status(500).json({ success: false, message: 'Error durante la sincronizaciÃ³n' });
+  }
+};
+
+/**
+ * GET /api/my-ludoteca/bgg-sync-jobs/latest
+ * Devuelve el Ãºltimo job del usuario.
+ */
+export const getLatestBggSyncJob = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const job = await prisma.bggSyncJob.findFirst({
+      where: { userId },
+      orderBy: { requestedAt: 'desc' },
+    });
+
+    return res.json({ success: true, data: job });
+  } catch (error) {
+    console.error('[MY_LUDOTECA] Error en getLatestBggSyncJob:', error);
+    return res.status(500).json({ success: false, message: 'Error al obtener el estado de sincronizaciÃ³n' });
+  }
+};
+
+/**
+ * GET /api/my-ludoteca/bgg-sync-jobs/:jobId
+ * Devuelve el estado de un job concreto.
+ */
+export const getBggSyncJobStatus = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const jobId = req.params.jobId;
+
+    const job = await prisma.bggSyncJob.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!job || job.userId !== userId) {
+      return res.status(404).json({ success: false, message: 'SincronizaciÃ³n no encontrada' });
+    }
+
+    return res.json({ success: true, data: job });
+  } catch (error) {
+    console.error('[MY_LUDOTECA] Error en getBggSyncJobStatus:', error);
+    return res.status(500).json({ success: false, message: 'Error al obtener el estado de sincronizaciÃ³n' });
   }
 };
 
@@ -350,7 +457,7 @@ export const getLocations = async (req: Request, res: Response) => {
 
 /**
  * POST /api/my-ludoteca/locations
- * Crea una nueva ubicación para el usuario.
+ * Crea una nueva ubicaciÃ³n para el usuario.
  * Body: { name: string }
  */
 export const createLocation = async (req: Request, res: Response) => {
@@ -359,13 +466,13 @@ export const createLocation = async (req: Request, res: Response) => {
     const { name } = req.body as { name: string };
 
     if (!name?.trim()) {
-      return res.status(400).json({ success: false, message: 'El nombre de la ubicación es obligatorio' });
+      return res.status(400).json({ success: false, message: 'El nombre de la ubicaciÃ³n es obligatorio' });
     }
 
     const trimmed = name.trim();
 
     if (trimmed.toLowerCase() === 'casa') {
-      return res.status(400).json({ success: false, message: '"Casa" es la ubicación predeterminada y no puede crearse como personalizada' });
+      return res.status(400).json({ success: false, message: '"Casa" es la ubicaciÃ³n predeterminada y no puede crearse como personalizada' });
     }
 
     const location = await prisma.gameLocation.create({
@@ -374,18 +481,17 @@ export const createLocation = async (req: Request, res: Response) => {
 
     return res.status(201).json({ success: true, data: location });
   } catch (error: unknown) {
-    // Unique constraint violation
     if ((error as { code?: string })?.code === 'P2002') {
-      return res.status(409).json({ success: false, message: 'Ya tienes una ubicación con ese nombre' });
+      return res.status(409).json({ success: false, message: 'Ya tienes una ubicaciÃ³n con ese nombre' });
     }
     console.error('[MY_LUDOTECA] Error en createLocation:', error);
-    return res.status(500).json({ success: false, message: 'Error al crear la ubicación' });
+    return res.status(500).json({ success: false, message: 'Error al crear la ubicaciÃ³n' });
   }
 };
 
 /**
  * DELETE /api/my-ludoteca/locations/:locationId
- * Elimina una ubicación. Los juegos que la tenían asignada quedan con locationId=null (Casa).
+ * Elimina una ubicaciÃ³n. Los juegos que la tenÃ­an asignada quedan con locationId=null (Casa).
  */
 export const deleteLocation = async (req: Request, res: Response) => {
   try {
@@ -394,13 +500,13 @@ export const deleteLocation = async (req: Request, res: Response) => {
 
     const location = await prisma.gameLocation.findUnique({ where: { id: locationId } });
     if (!location || location.userId !== userId) {
-      return res.status(404).json({ success: false, message: 'Ubicación no encontrada' });
+      return res.status(404).json({ success: false, message: 'UbicaciÃ³n no encontrada' });
     }
 
     await prisma.gameLocation.delete({ where: { id: locationId } });
     return res.json({ success: true });
   } catch (error) {
     console.error('[MY_LUDOTECA] Error en deleteLocation:', error);
-    return res.status(500).json({ success: false, message: 'Error al eliminar la ubicación' });
+    return res.status(500).json({ success: false, message: 'Error al eliminar la ubicaciÃ³n' });
   }
 };
