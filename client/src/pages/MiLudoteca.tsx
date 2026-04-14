@@ -148,6 +148,7 @@ export default function MiLudoteca() {
   const [showNewLocationModal, setShowNewLocationModal] = useState(false);
   const [newLocationName, setNewLocationName] = useState('');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [dismissedJobId, setDismissedJobId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['myGames', tab, search, page],
@@ -399,7 +400,7 @@ export default function MiLudoteca() {
               </div>
             </div>
 
-            {displayedSyncJob && (
+            {displayedSyncJob && displayedSyncJob.id !== dismissedJobId && (
               <div className="rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)]/50 p-3 space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>
@@ -413,8 +414,21 @@ export default function MiLudoteca() {
                         `Se están procesando ${displayedSyncJob.totalToImport + displayedSyncJob.totalToDelete} cambios. Refresca la página en unos ${formatEta(displayedSyncJob.estimatedSeconds)} si te vas antes.`}
                     </p>
                   </div>
-                  <div className="text-xs text-[var(--color-textSecondary)]">
-                    {displayedSyncJob.estimatedSeconds > 0 && `Estimación: ${formatEta(displayedSyncJob.estimatedSeconds)}`}
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-[var(--color-textSecondary)]">
+                      {displayedSyncJob.estimatedSeconds > 0 && `Estimación: ${formatEta(displayedSyncJob.estimatedSeconds)}`}
+                    </span>
+                    {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED') && (
+                      <button
+                        onClick={() => setDismissedJobId(displayedSyncJob.id)}
+                        className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors"
+                        title="Cerrar"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
 
