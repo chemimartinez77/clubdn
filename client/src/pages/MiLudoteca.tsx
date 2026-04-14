@@ -221,7 +221,7 @@ export default function MiLudoteca() {
     setSyncing(true);
     try {
       const res = await api.get<ApiResponse<SyncCheckResponse>>('/api/my-ludoteca/bgg-sync-check');
-      setSyncData(res.data.data);
+      setSyncData(res.data.data ?? null);
       setShowSyncModal(true);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
