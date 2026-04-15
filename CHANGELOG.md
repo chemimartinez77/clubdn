@@ -4,6 +4,30 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-15 (sesion 2)
+
+### Sync BGG serializada en worker, posicion en cola y cancelacion
+
+Se resuelve un problema de rate limit (429) en la API de BGG cuando varios usuarios lanzaban la sincronizacion a la vez. El problema era que `confirmBggSync` llamaba a `getBGGCollection` (3 peticiones HTTP a BGG) durante el propio request HTTP, lo que con 20 usuarios generaba hasta 60 llamadas simultaneas.
+
+**Cambio principal:** el diff de BGG se mueve al worker. `confirmBggSync` ya no llama a BGG; simplemente crea el job con payloads vacios. El worker serializa todo: primero calcula el diff llamando a `getBGGCollection` (nuevo estado `QUEUED`), luego importa los juegos (estado `PENDING` → `PROCESSING`). Toda la comunicacion con BGG queda serializada en un unico worker.
+
+**Cola visible para el usuario:** los endpoints de estado del job devuelven ahora `queuePosition` y `estimatedWaitSeconds` calculados contando cuantos jobs `QUEUED`/`PENDING` hay por delante segun `requestedAt`. La interfaz muestra la posicion y el tiempo estimado de espera mientras el job no ha empezado a importar.
+
+**Cancelacion:** nuevo endpoint `DELETE /api/my-ludoteca/bgg-sync-jobs/:jobId` que permite cancelar un job en estado `QUEUED` o `PENDING`. Un job en `PROCESSING` no se puede cancelar. La UI muestra el boton `Cancelar` mientras el job sea cancelable, y el boton `Cerrar` una vez finalizado (incluyendo cancelados).
+
+Se anaden dos nuevos valores al enum `BggSyncJobStatus`: `QUEUED` (job recien creado, diff pendiente de calcular) y `CANCELLED`.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` - enum `BggSyncJobStatus` con `QUEUED` y `CANCELLED`; default de `BggSyncJob.status` cambiado a `QUEUED`
+- `server/prisma/migrations/20260415200000_add_queued_cancelled_bgg_sync_status/` - migracion con `ADD VALUE IF NOT EXISTS` para los nuevos valores del enum
+- `server/src/jobs/bggSyncJob.ts` - nueva funcion `computeAndSaveDiff()` que calcula el diff desde BGG y actualiza el job a `PENDING`; el worker procesa primero `QUEUED` y luego `PENDING`; soporte de `CANCELLED` en `processJob`
+- `server/src/controllers/myLudotecaController.ts` - `confirmBggSync` simplificado sin llamadas a BGG; nueva funcion helper `getQueueInfo()`; `getLatestBggSyncJob` y `getBggSyncJobStatus` enriquecidos con `queuePosition` y `estimatedWaitSeconds`; nuevo handler `cancelBggSyncJob`
+- `server/src/routes/myLudotecaRoutes.ts` - nueva ruta `DELETE /bgg-sync-jobs/:jobId`
+- `client/src/pages/MiLudoteca.tsx` - interfaz `BggSyncJob` ampliada con nuevos estados y campos de cola; mutation `cancelSyncMutation`; panel de sync con posicion en cola, tiempo de espera y boton Cancelar
+
+---
+
 ## 2026-04-15 (sesion 1)
 
 ### Mantenimiento automatico de notificaciones

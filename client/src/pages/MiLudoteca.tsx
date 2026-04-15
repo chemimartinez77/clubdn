@@ -94,7 +94,7 @@ interface BggSyncLaunchResponse {
 
 interface BggSyncJob {
   id: string;
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  status: 'QUEUED' | 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
   requestedAt: string;
   startedAt: string | null;
   finishedAt: string | null;
@@ -107,6 +107,8 @@ interface BggSyncJob {
   failed: number;
   estimatedSeconds: number;
   error: string | null;
+  queuePosition: number | null;
+  estimatedWaitSeconds: number | null;
 }
 
 const BGG_SYNC_DISMISSED_JOB_KEY = 'bggSyncDismissedJobId';
@@ -140,9 +142,11 @@ function formatDateTime(dateString: string | null) {
 }
 
 function getSyncStatusLabel(job: BggSyncJob) {
+  if (job.status === 'QUEUED') return 'Preparando sincronización...';
   if (job.status === 'PENDING') return 'En cola';
   if (job.status === 'PROCESSING') return 'Sincronizando';
   if (job.status === 'COMPLETED') return 'Importación desde BGG completada';
+  if (job.status === 'CANCELLED') return 'Sincronización cancelada';
   return 'Con incidencias';
 }
 
@@ -233,12 +237,12 @@ export default function MiLudoteca() {
     enabled: !!activeJobId,
     refetchInterval: (query) => {
       const job = query.state.data as BggSyncJob | undefined;
-      return job && (job.status === 'PENDING' || job.status === 'PROCESSING') ? 5000 : false;
+      return job && (job.status === 'QUEUED' || job.status === 'PENDING' || job.status === 'PROCESSING') ? 5000 : false;
     },
   });
 
   useEffect(() => {
-    if (!activeJobId && latestSyncJob && (latestSyncJob.status === 'PENDING' || latestSyncJob.status === 'PROCESSING')) {
+    if (!activeJobId && latestSyncJob && (latestSyncJob.status === 'QUEUED' || latestSyncJob.status === 'PENDING' || latestSyncJob.status === 'PROCESSING')) {
       setActiveJobId(latestSyncJob.id);
     }
   }, [activeJobId, latestSyncJob]);
@@ -247,11 +251,24 @@ export default function MiLudoteca() {
   const games = data?.games ?? [];
   const pagination = data?.pagination;
   const displayedSyncJob = activeSyncJob ?? latestSyncJob ?? null;
-  const syncRunning = displayedSyncJob?.status === 'PENDING' || displayedSyncJob?.status === 'PROCESSING';
+  const syncRunning = displayedSyncJob?.status === 'QUEUED' || displayedSyncJob?.status === 'PENDING' || displayedSyncJob?.status === 'PROCESSING';
   const dismissSyncJob = useCallback((jobId: string) => {
     setDismissedJobId(jobId);
     localStorage.setItem(BGG_SYNC_DISMISSED_JOB_KEY, jobId);
   }, []);
+
+  const cancelSyncMutation = useMutation({
+    mutationFn: async (jobId: string) => {
+      await api.delete(`/api/my-ludoteca/bgg-sync-jobs/${jobId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myLudotecaSyncLatest'] });
+      queryClient.invalidateQueries({ queryKey: ['myLudotecaSyncJob'] });
+      setActiveJobId(null);
+      toastSuccess('Sincronización cancelada');
+    },
+    onError: () => toastError('No se pudo cancelar la sincronización'),
+  });
 
   const addMutation = useMutation({
     mutationFn: async ({ bggId, own, wishlist, previouslyOwned, wantToPlay }: { bggId: string; own?: boolean; wishlist?: boolean; previouslyOwned?: boolean; wantToPlay?: boolean }) => {
@@ -349,7 +366,7 @@ export default function MiLudoteca() {
       localStorage.removeItem(BGG_SYNC_DISMISSED_JOB_KEY);
       queryClient.invalidateQueries({ queryKey: ['myLudotecaSyncLatest'] });
       void refetchActiveSyncJob();
-      toastSuccess(`Sincronización lanzada. Tiempo estimado: ${formatEta(launch.estimatedSeconds)}.`);
+      toastSuccess('Sincronización encolada. Se calcularán los cambios en breve.');
       setShowSyncModal(false);
       setSyncData(null);
       setSyncImportLocationId('');
@@ -431,15 +448,33 @@ export default function MiLudoteca() {
                     <p className="text-sm font-medium text-[var(--color-text)]">
                       {getSyncStatusLabel(displayedSyncJob)}
                     </p>
-                    <p className="text-xs text-[var(--color-textSecondary)]">
-                      {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED') &&
-                        `Última importación: ${formatDateTime(displayedSyncJob.finishedAt ?? displayedSyncJob.requestedAt)}. `}
-                      {displayedSyncJob.status === 'COMPLETED' && `Añadidos: ${displayedSyncJob.imported + displayedSyncJob.linkedExisting}. Nuevos en catálogo: ${displayedSyncJob.imported}. Eliminados: ${displayedSyncJob.deleted}.${displayedSyncJob.failed > 0 ? ` Fallidos: ${displayedSyncJob.failed}.` : ''}`}
-                      {displayedSyncJob.status === 'FAILED' && (displayedSyncJob.error || 'La sincronización terminó con incidencias.')}
-                      {(displayedSyncJob.status === 'PENDING' || displayedSyncJob.status === 'PROCESSING') &&
-                        `Se están procesando ${displayedSyncJob.totalToImport + displayedSyncJob.totalToDelete} cambios. Refresca la página en unos ${formatEta(displayedSyncJob.estimatedSeconds)} si te vas antes.`}
-                    </p>
-                    {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED') && (
+                    <div className="space-y-1">
+                      {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED' || displayedSyncJob.status === 'CANCELLED') && (
+                        <p className="text-xs text-[var(--color-textSecondary)]">
+                          {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED') &&
+                            `Última importación: ${formatDateTime(displayedSyncJob.finishedAt ?? displayedSyncJob.requestedAt)}. `}
+                          {displayedSyncJob.status === 'COMPLETED' && `Añadidos: ${displayedSyncJob.imported + displayedSyncJob.linkedExisting}. Nuevos en catálogo: ${displayedSyncJob.imported}. Eliminados: ${displayedSyncJob.deleted}.${displayedSyncJob.failed > 0 ? ` Fallidos: ${displayedSyncJob.failed}.` : ''}`}
+                          {displayedSyncJob.status === 'FAILED' && (displayedSyncJob.error || 'La sincronización terminó con incidencias.')}
+                        </p>
+                      )}
+                      {(displayedSyncJob.status === 'QUEUED' || displayedSyncJob.status === 'PENDING' || displayedSyncJob.status === 'PROCESSING') && (
+                        <>
+                          {displayedSyncJob.status !== 'PROCESSING' && displayedSyncJob.queuePosition != null && (
+                            <p className="text-xs text-[var(--color-textSecondary)]">
+                              Posición en cola: {displayedSyncJob.queuePosition}
+                              {displayedSyncJob.estimatedWaitSeconds != null && displayedSyncJob.estimatedWaitSeconds > 0 &&
+                                ` · Espera estimada: ~${formatEta(displayedSyncJob.estimatedWaitSeconds)}`}
+                            </p>
+                          )}
+                          <p className="text-xs text-[var(--color-textSecondary)]">
+                            {displayedSyncJob.status === 'QUEUED'
+                              ? 'Calculando cambios desde BGG...'
+                              : `Se están procesando ${displayedSyncJob.totalToImport + displayedSyncJob.totalToDelete} cambios. Refresca la página en unos ${formatEta(displayedSyncJob.estimatedSeconds)} si te vas antes.`}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                    {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED' || displayedSyncJob.status === 'CANCELLED') && (
                       <p className="text-[11px] text-[var(--color-textSecondary)] mt-1">
                         Puedes pulsar &quot;Cerrar&quot; para ocultar este mensaje.
                       </p>
@@ -449,7 +484,16 @@ export default function MiLudoteca() {
                     <span className="text-xs text-[var(--color-textSecondary)]">
                       {displayedSyncJob.estimatedSeconds > 0 && `Estimación: ${formatEta(displayedSyncJob.estimatedSeconds)}`}
                     </span>
-                    {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED') && (
+                    {(displayedSyncJob.status === 'QUEUED' || displayedSyncJob.status === 'PENDING') && (
+                      <button
+                        onClick={() => cancelSyncMutation.mutate(displayedSyncJob.id)}
+                        disabled={cancelSyncMutation.isPending}
+                        className="px-3 py-1 text-xs border border-red-400 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors disabled:opacity-50"
+                      >
+                        {cancelSyncMutation.isPending ? 'Cancelando...' : 'Cancelar'}
+                      </button>
+                    )}
+                    {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED' || displayedSyncJob.status === 'CANCELLED') && (
                       <button
                         onClick={() => dismissSyncJob(displayedSyncJob.id)}
                         className="px-3 py-1 text-xs border border-[var(--color-cardBorder)] rounded-lg text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] transition-colors"

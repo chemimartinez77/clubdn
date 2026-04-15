@@ -644,10 +644,12 @@ model Game {
 }
 
 enum BggSyncJobStatus {
-  PENDING
+  QUEUED       // recién creado, diff aún no calculado
+  PENDING      // diff calculado, esperando turno de importación
   PROCESSING
   COMPLETED
   FAILED
+  CANCELLED
 }
 
 // Configuración del club
@@ -1422,7 +1424,7 @@ model BggSyncJob {
   userId           String
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   bggUsername      String
-  status           BggSyncJobStatus @default(PENDING)
+  status           BggSyncJobStatus @default(QUEUED)
   locationId       String?
   requestedAt      DateTime         @default(now())
   startedAt        DateTime?

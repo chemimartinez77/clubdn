@@ -74,6 +74,26 @@ async function buildBggSyncDiff(userId: string, bggUsername: string) {
   };
 }
 
+async function getQueueInfo(job: { id: string; status: string; requestedAt: Date }) {
+  if (job.status !== BggSyncJobStatus.QUEUED && job.status !== BggSyncJobStatus.PENDING) {
+    return { queuePosition: null, estimatedWaitSeconds: null };
+  }
+
+  const jobsAhead = await prisma.bggSyncJob.findMany({
+    where: {
+      status: { in: [BggSyncJobStatus.QUEUED, BggSyncJobStatus.PENDING] },
+      requestedAt: { lt: job.requestedAt },
+    },
+    select: { estimatedSeconds: true },
+    orderBy: { requestedAt: 'asc' },
+  });
+
+  return {
+    queuePosition: jobsAhead.length + 1,
+    estimatedWaitSeconds: jobsAhead.reduce((sum, j) => sum + j.estimatedSeconds, 0),
+  };
+}
+
 /**
  * GET /api/my-ludoteca
  * Devuelve los juegos activos del usuario autenticado.
@@ -366,7 +386,7 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
 
 /**
  * POST /api/my-ludoteca/bgg-sync-confirm
- * Crea un job persistente de sincronización en background.
+ * Encola un job de sincronización. El diff se calcula en el worker (sin llamadas a BGG aquí).
  */
 export const confirmBggSync = async (req: Request, res: Response) => {
   try {
@@ -388,7 +408,7 @@ export const confirmBggSync = async (req: Request, res: Response) => {
     const activeJob = await prisma.bggSyncJob.findFirst({
       where: {
         userId,
-        status: { in: [BggSyncJobStatus.PENDING, BggSyncJobStatus.PROCESSING] },
+        status: { in: [BggSyncJobStatus.QUEUED, BggSyncJobStatus.PENDING, BggSyncJobStatus.PROCESSING] },
       },
       orderBy: { requestedAt: 'desc' },
     });
@@ -401,22 +421,13 @@ export const confirmBggSync = async (req: Request, res: Response) => {
       });
     }
 
-    const {
-      toImport,
-      toDelete,
-      estimatedSeconds,
-    } = await buildBggSyncDiff(userId, bggUsername);
-
     const job = await prisma.bggSyncJob.create({
       data: {
         userId,
         bggUsername,
         locationId: locationId ?? null,
-        totalToImport: toImport.length,
-        totalToDelete: toDelete.length,
-        estimatedSeconds,
-        importPayload: toImport as unknown as Prisma.JsonArray,
-        deletePayload: toDelete as unknown as Prisma.JsonArray,
+        importPayload: [],
+        deletePayload: [],
       },
     });
 
@@ -450,7 +461,12 @@ export const getLatestBggSyncJob = async (req: Request, res: Response) => {
       orderBy: { requestedAt: 'desc' },
     });
 
-    return res.json({ success: true, data: job });
+    if (!job) {
+      return res.json({ success: true, data: null });
+    }
+
+    const queueInfo = await getQueueInfo(job);
+    return res.json({ success: true, data: { ...job, ...queueInfo } });
   } catch (error) {
     console.error('[MY_LUDOTECA] Error en getLatestBggSyncJob:', error);
     return res.status(500).json({ success: false, message: 'Error al obtener el estado de sincronización' });
@@ -474,10 +490,45 @@ export const getBggSyncJobStatus = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Sincronización no encontrada' });
     }
 
-    return res.json({ success: true, data: job });
+    const queueInfo = await getQueueInfo(job);
+    return res.json({ success: true, data: { ...job, ...queueInfo } });
   } catch (error) {
     console.error('[MY_LUDOTECA] Error en getBggSyncJobStatus:', error);
     return res.status(500).json({ success: false, message: 'Error al obtener el estado de sincronización' });
+  }
+};
+
+/**
+ * DELETE /api/my-ludoteca/bgg-sync-jobs/:jobId
+ * Cancela un job que aún no ha empezado a importar (QUEUED o PENDING).
+ */
+export const cancelBggSyncJob = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const { jobId } = req.params;
+
+    const job = await prisma.bggSyncJob.findUnique({ where: { id: jobId } });
+
+    if (!job || job.userId !== userId) {
+      return res.status(404).json({ success: false, message: 'Sincronización no encontrada' });
+    }
+
+    if (job.status !== BggSyncJobStatus.QUEUED && job.status !== BggSyncJobStatus.PENDING) {
+      const message = job.status === BggSyncJobStatus.PROCESSING
+        ? 'No se puede cancelar una sincronización que ya está en proceso'
+        : 'Esta sincronización ya ha terminado';
+      return res.status(409).json({ success: false, message });
+    }
+
+    await prisma.bggSyncJob.update({
+      where: { id: jobId },
+      data: { status: BggSyncJobStatus.CANCELLED, finishedAt: new Date() },
+    });
+
+    return res.json({ success: true, message: 'Sincronización cancelada' });
+  } catch (error) {
+    console.error('[MY_LUDOTECA] Error en cancelBggSyncJob:', error);
+    return res.status(500).json({ success: false, message: 'Error al cancelar la sincronización' });
   }
 };
 
