@@ -55,10 +55,10 @@ enum ReportPlatform {
   PC
 }
 
-// Tipos de membresía
+// Tipos de membresÃ­a
 enum MembershipType {
-  SOCIO        // 19€/mes, con llave, requiere 1 año como COLABORADOR + aprobación
-  COLABORADOR  // 15€/mes, sin llave
+  SOCIO        // 19â‚¬/mes, con llave, requiere 1 aÃ±o como COLABORADOR + aprobaciÃ³n
+  COLABORADOR  // 15â‚¬/mes, sin llave
   FAMILIAR     // Vinculado a un socio
   EN_PRUEBAS   // Periodo de prueba
   BAJA         // Usuario dado de baja
@@ -154,7 +154,7 @@ model UserProfile {
   userId          String   @unique
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Información personal
+  // InformaciÃ³n personal
   avatar          String?  // URL o path del avatar
   nick            String?  // Nombre visible en partidas, feedback, etc.
   firstName       String?
@@ -184,7 +184,7 @@ model UserProfile {
   discord         String?
   telegram        String?
 
-  // Configuración
+  // ConfiguraciÃ³n
   notifications   Boolean  @default(true)
   emailUpdates    Boolean  @default(false)
 
@@ -195,11 +195,11 @@ model UserProfile {
   notifyInvitations     Boolean @default(true)   // Estado de invitaciones
   allowEventInvitations Boolean @default(true)   // Permitir ser apuntado a eventos por otros miembros
 
-  // Personalización
+  // PersonalizaciÃ³n
   defaultScreen        String   @default("home")       // Pantalla de inicio tras login: "home" o "events"
   noughterColor        String?                         // Color de Noughter: purple, blue, green, red, brown (null = usar tema activo)
   eventsDefaultView    String   @default("calendar")   // Vista por defecto en Eventos: "calendar" o "list"
-  eventsAccordionMode  String   @default("current_only") // Modo acordeón en lista: "current_only" o "all_open"
+  eventsAccordionMode  String   @default("current_only") // Modo acordeÃ³n en lista: "current_only" o "all_open"
   eventButtonStyle     String   @default("dropdown")     // Estilo de botones en detalle de evento: "dropdown" o "multicolor"
   onboardingCompleted        Boolean  @default(false)  // true = ha completado el formulario de bienvenida obligatorio
   tourDismissed              Boolean  @default(false)  // true = no volver a mostrar el tour de inicio
@@ -297,12 +297,12 @@ enum RegistrationStatus {
   CONFIRMED
   CANCELLED
   WAITLIST
-  PENDING_APPROVAL  // Registro pendiente de aprobación del organizador
+  PENDING_APPROVAL  // Registro pendiente de aprobaciÃ³n del organizador
 }
 
 enum InvitationStatus {
-  PENDING            // Válida, en espera de ser usada en puerta
-  PENDING_APPROVAL   // Esperando aprobación del organizador
+  PENDING            // VÃ¡lida, en espera de ser usada en puerta
+  PENDING_APPROVAL   // Esperando aprobaciÃ³n del organizador
   USED
   EXPIRED
   CANCELLED
@@ -323,7 +323,7 @@ model Event {
   bggId           String?
   game            Game?    @relation("GameEvents", fields: [bggId], references: [id])
   expansions      EventExpansion[]
-  gameCategory    BadgeCategory? // Categoría para tracking de badges
+  gameCategory    BadgeCategory? // CategorÃ­a para tracking de badges
   linkedNextEventId   String? @unique
   linkedNextEvent     Event?  @relation("LinkedEventChain", fields: [linkedNextEventId], references: [id])
   linkedPreviousEvent Event?  @relation("LinkedEventChain")
@@ -332,10 +332,10 @@ model Event {
   date            DateTime
   startHour       Int?      // 0-23
   startMinute     Int?      // 0, 15, 30, 45
-  durationHours   Int?      // Duración estimada en horas
-  durationMinutes Int?      // Duración estimada en minutos
+  durationHours   Int?      // DuraciÃ³n estimada en horas
+  durationMinutes Int?      // DuraciÃ³n estimada en minutos
 
-  // Ubicación
+  // UbicaciÃ³n
   location        String
   address         String?
 
@@ -350,20 +350,21 @@ model Event {
   gamePlayHistory GamePlayHistory[]
   gameValidations GameValidation[]
 
-  // Aprobación de jugadores
-  requiresApproval Boolean @default(true) // Si requiere aprobación del organizador
+  // AprobaciÃ³n de jugadores
+  requiresApproval Boolean @default(true) // Si requiere aprobaciÃ³n del organizador
 
   // Estado
   status              EventStatus @default(SCHEDULED)
   cancelledAt         DateTime?
   cancelledById       String?
   cancelledBy         User?     @relation("EventCancelledBy", fields: [cancelledById], references: [id])
-  cancellationReason  String?   // Motivo de cancelación (introducido por el organizador)
+  cancellationReason  String?   // Motivo de cancelaciÃ³n (introducido por el organizador)
 
-  // Confirmación de disputa (¿se jugó la partida?)
-  disputeAsked         Boolean   @default(false) // Si ya se le preguntó al organizador
-  disputeConfirmedAt   DateTime? // Cuándo respondió
-  disputeResult        Boolean?  // true = se jugó, false = no se jugó
+  // ConfirmaciÃ³n de disputa (Â¿se jugÃ³ la partida?)
+  disputeAsked         Boolean   @default(false) // Si ya se le preguntÃ³ al organizador
+  disputeConfirmedAt   DateTime? // CuÃ¡ndo respondiÃ³
+  disputeResult        Boolean?  // true = se jugÃ³, false = no se jugÃ³
+  disputeConfirmedManually Boolean @default(false) // true si el organizador confirmÃ³ manualmente el cierre
 
   // Organizador
   createdBy       String
@@ -463,7 +464,7 @@ model EventRegistration {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   status        RegistrationStatus @default(CONFIRMED)
-  removalReason String?            // Motivo de expulsión por el organizador (desplegable fijo)
+  removalReason String?            // Motivo de expulsiÃ³n por el organizador (desplegable fijo)
 
   cancelledAt DateTime?
   createdAt   DateTime @default(now())
@@ -474,7 +475,7 @@ model EventRegistration {
   @@index([status])
 }
 
-// Membresía del usuario
+// MembresÃ­a del usuario
 model Membership {
   id                String         @id @default(cuid())
   userId            String         @unique
@@ -485,17 +486,17 @@ model Membership {
   notes             String?        @db.Text  // Observaciones internas del admin
 
   // Fechas importantes
-  memberSince       DateTime?      // Fecha real de alta en el club (del CSV histórico)
+  memberSince       DateTime?      // Fecha real de alta en el club (del CSV histÃ³rico)
   startDate         DateTime       @default(now())  // Fecha de inicio como miembro
-  becameSocioAt     DateTime?      // Fecha en que pasó a SOCIO (si aplica)
+  becameSocioAt     DateTime?      // Fecha en que pasÃ³ a SOCIO (si aplica)
   fechaBaja         DateTime?      // Fecha de baja del miembro
-  trialStartDate    DateTime?      // Fecha de inicio del período de prueba actual (se rellena al marcar EN_PRUEBAS manualmente)
-  billingStartDate  DateTime?      // Primer día del mes desde el que se exige pago (mes siguiente al paso a COLABORADOR)
+  trialStartDate    DateTime?      // Fecha de inicio del perÃ­odo de prueba actual (se rellena al marcar EN_PRUEBAS manualmente)
+  billingStartDate  DateTime?      // Primer dÃ­a del mes desde el que se exige pago (mes siguiente al paso a COLABORADOR)
 
   // Estado de pagos
-  isActive          Boolean        @default(true)   // Si está al día con los pagos
-  lastPaymentDate   DateTime?      // Último pago registrado
-  nextPaymentDue    DateTime?      // Próxima fecha de pago
+  isActive          Boolean        @default(true)   // Si estÃ¡ al dÃ­a con los pagos
+  lastPaymentDate   DateTime?      // Ãšltimo pago registrado
+  nextPaymentDue    DateTime?      // PrÃ³xima fecha de pago
 
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
@@ -506,17 +507,17 @@ model Membership {
   @@index([fechaBaja])
 }
 
-// Historial de cambios de tipo de membresía
+// Historial de cambios de tipo de membresÃ­a
 model MembershipChangeLog {
   id            String         @id @default(cuid())
   userId        String
 
   // Cambio realizado
-  previousType  MembershipType?  // null si es la primera membresía
+  previousType  MembershipType?  // null si es la primera membresÃ­a
   newType       MembershipType
   reason        String?          @db.Text  // Motivo del cambio
 
-  // Auditoría
+  // AuditorÃ­a
   changedBy     String           // ID del admin que hizo el cambio
   changedAt     DateTime         @default(now())
 
@@ -548,18 +549,18 @@ model Payment {
   month           Int      // 1-12
   year            Int      // 2024, 2025, etc.
 
-  // Información del pago
+  // InformaciÃ³n del pago
   paymentMethod   String?  // "efectivo", "transferencia", "bizum", etc.
-  reference       String?  // Número de referencia o comprobante
+  reference       String?  // NÃºmero de referencia o comprobante
   notes           String?  @db.Text
 
   // Registro
-  registeredBy    String   // Admin que registró el pago
+  registeredBy    String   // Admin que registrÃ³ el pago
   paidAt          DateTime @default(now())
 
   createdAt       DateTime @default(now())
 
-  @@unique([userId, month, year]) // Un pago por mes/año por usuario
+  @@unique([userId, month, year]) // Un pago por mes/aÃ±o por usuario
   @@index([userId])
   @@index([year, month])
   @@index([paidAt])
@@ -573,11 +574,11 @@ model Game {
   name              String   // Nombre principal
   alternateNames    String[] // Nombres alternativos en otros idiomas
 
-  // Información básica
+  // InformaciÃ³n bÃ¡sica
   description       String?  @db.Text
   yearPublished     Int?
 
-  // Imágenes
+  // ImÃ¡genes
   image             String?  // URL de imagen grande
   thumbnail         String?  // URL de miniatura
 
@@ -586,14 +587,14 @@ model Game {
   maxPlayers        Int?
 
   // Tiempo de juego (en minutos)
-  playingTime       Int?     // Tiempo típico
-  minPlaytime       Int?     // Tiempo mínimo
-  maxPlaytime       Int?     // Tiempo máximo
+  playingTime       Int?     // Tiempo tÃ­pico
+  minPlaytime       Int?     // Tiempo mÃ­nimo
+  maxPlaytime       Int?     // Tiempo mÃ¡ximo
 
   // Edad
   minAge            Int?
 
-  // Estadísticas de BGG
+  // EstadÃ­sticas de BGG
   usersRated        Int?
   averageRating     Float?
   bayesAverage      Float?
@@ -607,31 +608,31 @@ model Game {
   numWishing        Int?
   numComments       Int?
 
-  // Categorías (arrays de strings)
+  // CategorÃ­as (arrays de strings)
   categories        String[] // Economic, Exploration, Nautical, Pirates, etc.
   mechanics         String[] // Hand Management, Set Collection, etc.
   families          String[] // Components, Themes, etc.
 
-  // Categoría para badges (asignada manualmente)
+  // CategorÃ­a para badges (asignada manualmente)
   badgeCategory     BadgeCategory?
 
-  // Categoría confirmada por consenso de la comunidad (2 votos coincidentes)
+  // CategorÃ­a confirmada por consenso de la comunidad (2 votos coincidentes)
   confirmedCategory BadgeCategory?
 
-  // Votos de categoría de la comunidad
+  // Votos de categorÃ­a de la comunidad
   categoryVotes     GameCategoryVote[]
 
   // Creadores
-  designers         String[] // Nombres de diseñadores
+  designers         String[] // Nombres de diseÃ±adores
   artists           String[] // Nombres de artistas
   publishers        String[] // Editoriales
 
   // Metadatos
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  lastSyncedAt      DateTime @default(now()) // Última vez que se sincronizó con BGG
+  lastSyncedAt      DateTime @default(now()) // Ãšltima vez que se sincronizÃ³ con BGG
 
-  // Relación con eventos
+  // RelaciÃ³n con eventos
   events            Event[]  @relation("GameEvents")
   userGames         UserGame[]
   eventExpansions   EventExpansion[]
@@ -649,11 +650,11 @@ enum BggSyncJobStatus {
   FAILED
 }
 
-// Configuración del club
+// ConfiguraciÃ³n del club
 model ClubConfig {
-  id        String   @id @default("club_config") // Solo habrá un registro
+  id        String   @id @default("club_config") // Solo habrÃ¡ un registro
 
-  // Tipos de membresía disponibles con sus configuraciones
+  // Tipos de membresÃ­a disponibles con sus configuraciones
   membershipTypes Json // Array de objetos con: { type, displayName, price, hasKey, description }
 
   // Otras configuraciones del club
@@ -662,18 +663,18 @@ model ClubConfig {
   clubPhone      String?
   clubAddress    String?
 
-  // Configuración de cuotas
+  // ConfiguraciÃ³n de cuotas
   defaultCurrency String  @default("EUR")
   inviteMaxActive Int     @default(5)
   inviteMaxMonthly Int    @default(10)
   inviteMaxGuestYear Int  @default(5)
   inviteAllowSelfValidation Boolean @default(false)
 
-  // Personalización visual
+  // PersonalizaciÃ³n visual
   loginParticleStyle String @default("white") // "white" | "neon" | "theme"
 
-  // Analytics de navegación
-  pageViewCollectionStartedAt DateTime? // Fecha desde la que se recogen datos de navegación
+  // Analytics de navegaciÃ³n
+  pageViewCollectionStartedAt DateTime? // Fecha desde la que se recogen datos de navegaciÃ³n
 
   // Metadatos
   createdAt      DateTime @default(now())
@@ -689,7 +690,7 @@ enum GameType {
   ROL
 }
 
-// Estados de condición física del juego
+// Estados de condiciÃ³n fÃ­sica del juego
 enum GameCondition {
   NUEVO
   BUENO
@@ -697,7 +698,7 @@ enum GameCondition {
   MALO
 }
 
-// Item físico en la ludoteca del club
+// Item fÃ­sico en la ludoteca del club
 model LibraryItem {
   id                String         @id @default(cuid())
 
@@ -705,21 +706,21 @@ model LibraryItem {
   bggId             String?        // BGG ID del juego (almacenado como referencia, puede no estar en la tabla Game)
   internalId        String         @unique // ID interno del club
 
-  // Información del juego
+  // InformaciÃ³n del juego
   name              String
   description       String?        @db.Text
   notes             String?        @db.Text
   thumbnail         String?        // URL de miniatura (BGG o RPGGeek, cacheada)
   image             String?        // URL de imagen completa (BGG o RPGGeek, cacheada)
-  yearPublished     Int?           // Año de publicación (BGG o RPGGeek, cacheado)
+  yearPublished     Int?           // AÃ±o de publicaciÃ³n (BGG o RPGGeek, cacheado)
 
-  // Clasificación
+  // ClasificaciÃ³n
   gameType          GameType       // wargame, mesa, cartas, mini, rol
   condition         GameCondition  // Nuevo, Bueno, Regular, Malo
 
-  // Propiedad y adquisición
+  // Propiedad y adquisiciÃ³n
   ownerEmail        String?        // Email del propietario (si no es del club)
-  acquisitionDate   DateTime?      // Fecha de adquisición
+  acquisitionDate   DateTime?      // Fecha de adquisiciÃ³n
 
   // Metadatos
   createdAt         DateTime       @default(now())
@@ -748,19 +749,19 @@ model Document {
   title         String
   filename      String             // Nombre original del archivo
   mimeType      String             // application/pdf, image/png, etc.
-  size          Int                // Tamaño en bytes
+  size          Int                // TamaÃ±o en bytes
 
   // Cloudinary storage
   cloudinaryId  String             // public_id de Cloudinary
   url           String             // Secure URL del documento
 
-  // Estadísticas
+  // EstadÃ­sticas
   downloadCount Int                @default(0)
 
   // Permisos/Visibilidad
   visibility    DocumentVisibility @default(PUBLIC)
 
-  // Auditoría
+  // AuditorÃ­a
   uploadedById  String
   uploadedBy    User               @relation(fields: [uploadedById], references: [id])
   createdAt     DateTime           @default(now())
@@ -780,12 +781,12 @@ model EventPhoto {
   // Datos de Cloudinary
   cloudinaryId  String   // public_id de Cloudinary
   url           String   // URL de la imagen
-  thumbnailUrl  String?  // URL de miniatura (transformación de Cloudinary)
+  thumbnailUrl  String?  // URL de miniatura (transformaciÃ³n de Cloudinary)
 
   // Metadatos
   uploadedById  String
   uploadedBy    User     @relation(fields: [uploadedById], references: [id])
-  caption       String?  // Descripción opcional de la foto
+  caption       String?  // DescripciÃ³n opcional de la foto
 
   createdAt     DateTime @default(now())
 
@@ -811,7 +812,7 @@ model Report {
   devResponse      String?        @db.Text
   votesCount       Int            @default(0)
 
-  // Threading y asignación
+  // Threading y asignaciÃ³n
   assignedToId     String?
   assignedTo       User?          @relation("AssignedReports", fields: [assignedToId], references: [id])
   comments         ReportComment[]
@@ -898,7 +899,7 @@ model EventAuditLog {
   @@index([action])
 }
 
-// Categorías de badges
+// CategorÃ­as de badges
 enum BadgeCategory {
   EUROGAMES
   TEMATICOS
@@ -921,14 +922,14 @@ enum BadgeCategory {
 // Tipos de notificaciones
 enum NotificationType {
   EVENT_CANCELLED         // Partida cancelada
-  EVENT_MODIFIED          // Partida modificada (fecha/hora/ubicación)
+  EVENT_MODIFIED          // Partida modificada (fecha/hora/ubicaciÃ³n)
   EVENT_CREATED           // Nueva partida creada (si tiene habilitadas las notificaciones)
   EVENT_REMINDER          // Recordatorio 24h antes
   USER_APPROVED           // Tu solicitud fue aprobada
   USER_REJECTED           // Tu solicitud fue rechazada
-  ADMIN_NEW_USER          // Nuevo usuario pendiente de aprobación (para admins)
-  INVITATION_VALIDATED    // Tu invitación fue validada
-  INVITATION_REJECTED     // Tu invitación fue rechazada
+  ADMIN_NEW_USER          // Nuevo usuario pendiente de aprobaciÃ³n (para admins)
+  INVITATION_VALIDATED    // Tu invitaciÃ³n fue validada
+  INVITATION_REJECTED     // Tu invitaciÃ³n fue rechazada
   WAITLIST_SPOT_AVAILABLE // Plaza disponible desde waitlist
   BADGE_UNLOCKED          // Badge desbloqueado
   REGISTRATION_PENDING    // Solicitud de registro pendiente (para organizador)
@@ -937,10 +938,10 @@ enum NotificationType {
   REPORT_CREATED          // Nuevo reporte creado (para admins)
   REPORT_UPDATED          // Reporte actualizado (para creador)
   REPORT_COMMENT          // Nuevo comentario en reporte
-  EVENT_DISPUTE_CONFIRMATION // Confirmar si la partida se disputó (para organizador)
-  ANNOUNCEMENT_CREATED       // Nuevo anuncio publicado en el tablón
-  MEMBER_PROMOTED            // Miembro EN_PRUEBAS promovido a COLABORADOR automáticamente
-  MARKETPLACE_NEW_MESSAGE      // Nuevo mensaje en conversación de mercadillo
+  EVENT_DISPUTE_CONFIRMATION // Confirmar si la partida se disputÃ³ (para organizador)
+  ANNOUNCEMENT_CREATED       // Nuevo anuncio publicado en el tablÃ³n
+  MEMBER_PROMOTED            // Miembro EN_PRUEBAS promovido a COLABORADOR automÃ¡ticamente
+  MARKETPLACE_NEW_MESSAGE      // Nuevo mensaje en conversaciÃ³n de mercadillo
   MARKETPLACE_NEW_OFFER        // Nueva oferta recibida
   MARKETPLACE_OFFER_ACCEPTED   // Tu oferta fue aceptada
   MARKETPLACE_OFFER_REJECTED   // Tu oferta fue rechazada
@@ -1006,7 +1007,7 @@ model GlobalNotificationRead {
   @@index([userId, dismissed])
 }
 
-// Definiciones de badges (catálogo estático)
+// Definiciones de badges (catÃ¡logo estÃ¡tico)
 model BadgeDefinition {
   id            String        @id @default(cuid())
   category      BadgeCategory
@@ -1026,7 +1027,7 @@ model BadgeDefinition {
   @@index([level])
 }
 
-// Votos de categoría de juego por la comunidad
+// Votos de categorÃ­a de juego por la comunidad
 model GameCategoryVote {
   id        String        @id @default(cuid())
   bggId     String
@@ -1041,7 +1042,7 @@ model GameCategoryVote {
   @@index([userId])
 }
 
-// Historial de consensos de categoría (para badge CONOCEDOR_GENEROS)
+// Historial de consensos de categorÃ­a (para badge CONOCEDOR_GENEROS)
 model GenreConsensusHistory {
   id        String        @id @default(cuid())
   userId    String
@@ -1054,12 +1055,12 @@ model GenreConsensusHistory {
   @@index([userId])
 }
 
-// Validación cruzada de partidas por QR
+// ValidaciÃ³n cruzada de partidas por QR
 model GameValidation {
   id          String   @id @default(cuid())
   eventId     String
   event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  scannerId   String   // quien escaneó el QR del otro
+  scannerId   String   // quien escaneÃ³ el QR del otro
   scanner     User     @relation("GameValidationScanner", fields: [scannerId], references: [id], onDelete: Cascade)
   scannedId   String   // cuyo QR fue escaneado
   scanned     User     @relation("GameValidationScanned", fields: [scannedId], references: [id], onDelete: Cascade)
@@ -1079,6 +1080,7 @@ model UserBadge {
   badgeDefinitionId String
   badgeDefinition   BadgeDefinition @relation(fields: [badgeDefinitionId], references: [id], onDelete: Cascade)
   unlockedAt        DateTime        @default(now())
+  revealedAt        DateTime?
 
   @@unique([userId, badgeDefinitionId])
   @@index([userId])
@@ -1093,7 +1095,7 @@ model GamePlayHistory {
   eventId      String
   event        Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
   gameName     String         // Nombre del juego jugado
-  gameCategory BadgeCategory? // Categoría del juego (puede ser null si no está categorizado)
+  gameCategory BadgeCategory? // CategorÃ­a del juego (puede ser null si no estÃ¡ categorizado)
   playedAt     DateTime       @default(now())
   createdAt    DateTime       @default(now())
 
@@ -1134,7 +1136,7 @@ model AzulGame {
 // ==================== JUEGO VIERNES ====================
 
 enum ViernesGameStatus {
-  ACTIVE    // Partida en curso (solitario: activa desde el momento de creación)
+  ACTIVE    // Partida en curso (solitario: activa desde el momento de creaciÃ³n)
   FINISHED  // Partida terminada
 }
 
@@ -1155,7 +1157,7 @@ model ViernesGame {
   @@index([createdAt])
 }
 
-// ==================== GESTIÓN FINANCIERA ====================
+// ==================== GESTIÃ“N FINANCIERA ====================
 
 enum FinancialCategoryType {
   GASTO
@@ -1167,12 +1169,12 @@ enum FinancialAttachmentType {
   PDF
 }
 
-// Categorías de gastos/ingresos
+// CategorÃ­as de gastos/ingresos
 model FinancialCategory {
   id              String                  @id @default(cuid())
-  name            String                  @unique // Nombre de la categoría (ej: "Alquiler", "Luz")
+  name            String                  @unique // Nombre de la categorÃ­a (ej: "Alquiler", "Luz")
   type            FinancialCategoryType   // GASTO o INGRESO
-  icon            String                  @default("💰") // Emoji o icono para la categoría
+  icon            String                  @default("ðŸ’°") // Emoji o icono para la categorÃ­a
   color           String                  @default("bg-blue-100 text-blue-800") // Clases de color para UI
   showInBalance   Boolean                 @default(true) // Si se muestra en el balance
   createdAt       DateTime                @default(now())
@@ -1189,11 +1191,11 @@ model FinancialMovement {
   categoryId      String
   category        FinancialCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   amount          Float             // Monto del movimiento (positivo para ingresos, negativo para gastos)
-  description     String?           // Descripción opcional del movimiento
+  description     String?           // DescripciÃ³n opcional del movimiento
   date            DateTime          // Fecha del movimiento
-  year            Int               // Año extraído para facilitar consultas
-  month           Int               // Mes (1-12) extraído para facilitar consultas
-  createdBy       String            // Usuario que creó el movimiento
+  year            Int               // AÃ±o extraÃ­do para facilitar consultas
+  month           Int               // Mes (1-12) extraÃ­do para facilitar consultas
+  createdBy       String            // Usuario que creÃ³ el movimiento
   user            User              @relation("FinancialMovements", fields: [createdBy], references: [id])
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -1218,7 +1220,7 @@ model FinancialMovementAttachment {
   @@index([movementId])
 }
 
-// ==================== ANALYTICS DE NAVEGACIÓN ====================
+// ==================== ANALYTICS DE NAVEGACIÃ“N ====================
 
 model PageView {
   id          String   @id @default(cuid())
@@ -1232,17 +1234,17 @@ model PageView {
   @@index([visitedAt])
 }
 
-// Archivo histórico de analytics (tras un reset)
+// Archivo histÃ³rico de analytics (tras un reset)
 model PageViewArchive {
   id          String   @id @default(cuid())
   archivedAt  DateTime @default(now())
   fromDate    DateTime // Fecha de inicio del periodo archivado
   toDate      DateTime // Fecha de fin del periodo archivado
   totalViews  Int      // Total de registros archivados
-  data        Json     // Snapshot agregado: top páginas, usuarios activos, etc.
+  data        Json     // Snapshot agregado: top pÃ¡ginas, usuarios activos, etc.
 }
 
-// ─── Mercadillo ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Mercadillo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 enum MarketplaceListingStatus {
   PUBLICADO
@@ -1402,7 +1404,7 @@ model UserGame {
   previouslyOwned  Boolean       @default(false)
   wishlistPriority Int?          // 1-5
   wantToPlay       Boolean       @default(false)
-  locationId       String?       // null = "Casa" (ubicación por defecto)
+  locationId       String?       // null = "Casa" (ubicaciÃ³n por defecto)
   location         GameLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   status           String        @default("active") // "active" | "deleted" (soft delete)
   createdAt        DateTime      @default(now())
@@ -1462,3 +1464,4 @@ model EventResult {
   @@index([eventId])
   @@index([userId])
 }
+

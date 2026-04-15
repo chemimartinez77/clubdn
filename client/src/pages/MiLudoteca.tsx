@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
@@ -113,7 +113,7 @@ const BGG_SYNC_DISMISSED_JOB_KEY = 'bggSyncDismissedJobId';
 type Tab = 'own' | 'wishlist' | 'previouslyOwned' | 'wantToPlay';
 
 const TAB_LABELS: Record<Tab, string> = {
-  own: 'Mi colecciÃ³n',
+  own: 'Mi colección',
   wishlist: 'Wishlist',
   previouslyOwned: 'Lo tuve',
   wantToPlay: 'Quiero jugar',
@@ -142,7 +142,7 @@ function formatDateTime(dateString: string | null) {
 function getSyncStatusLabel(job: BggSyncJob) {
   if (job.status === 'PENDING') return 'En cola';
   if (job.status === 'PROCESSING') return 'Sincronizando';
-  if (job.status === 'COMPLETED') return 'ImportaciÃ³n desde BGG completada';
+  if (job.status === 'COMPLETED') return 'Importación desde BGG completada';
   return 'Con incidencias';
 }
 
@@ -259,9 +259,9 @@ export default function MiLudoteca() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myGames'] });
-      toastSuccess('Juego aÃ±adido a tu ludoteca');
+      toastSuccess('Juego añadido a tu ludoteca');
     },
-    onError: () => toastError('Error al aÃ±adir el juego'),
+    onError: () => toastError('Error al añadir el juego'),
   });
 
   const updateMutation = useMutation({
@@ -290,13 +290,13 @@ export default function MiLudoteca() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myLocations'] });
-      toastSuccess('UbicaciÃ³n creada');
+      toastSuccess('Ubicación creada');
       setShowNewLocationModal(false);
       setNewLocationName('');
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toastError(msg || 'Error al crear la ubicaciÃ³n');
+      toastError(msg || 'Error al crear la ubicación');
     },
   });
 
@@ -342,21 +342,21 @@ export default function MiLudoteca() {
 
       const launch = res.data.data;
       if (!launch) {
-        throw new Error('No se pudo iniciar la sincronizaciÃ³n');
+        throw new Error('No se pudo iniciar la sincronización');
       }
       setActiveJobId(launch.jobId);
       setDismissedJobId(null);
       localStorage.removeItem(BGG_SYNC_DISMISSED_JOB_KEY);
       queryClient.invalidateQueries({ queryKey: ['myLudotecaSyncLatest'] });
       void refetchActiveSyncJob();
-      toastSuccess(`SincronizaciÃ³n lanzada. Tiempo estimado: ${formatEta(launch.estimatedSeconds)}.`);
+      toastSuccess(`Sincronización lanzada. Tiempo estimado: ${formatEta(launch.estimatedSeconds)}.`);
       setShowSyncModal(false);
       setSyncData(null);
       setSyncImportLocationId('');
       setShowSyncDetails(false);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toastError(msg || 'Error durante la sincronizaciÃ³n');
+      toastError(msg || 'Error durante la sincronización');
     } finally {
       setSyncing(false);
     }
@@ -389,7 +389,7 @@ export default function MiLudoteca() {
         <div>
           <h1 className="text-3xl font-bold text-[var(--color-text)]">Mi ludoteca</h1>
           <p className="text-[var(--color-textSecondary)] mt-1">
-            Tu colecciÃ³n personal de juegos
+            Tu colección personal de juegos
           </p>
         </div>
 
@@ -416,7 +416,7 @@ export default function MiLudoteca() {
                       Consultando BGG...
                     </>
                   ) : syncRunning ? (
-                    'SincronizaciÃ³n en curso'
+                    'Sincronización en curso'
                   ) : (
                     'Actualizar desde BGG'
                   )}
@@ -434,10 +434,10 @@ export default function MiLudoteca() {
                     <p className="text-xs text-[var(--color-textSecondary)]">
                       {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED') &&
                         `Última importación: ${formatDateTime(displayedSyncJob.finishedAt ?? displayedSyncJob.requestedAt)}. `}
-                      {displayedSyncJob.status === 'COMPLETED' && `AÃ±adidos: ${displayedSyncJob.imported + displayedSyncJob.linkedExisting}. Nuevos en catÃ¡logo: ${displayedSyncJob.imported}. Eliminados: ${displayedSyncJob.deleted}.${displayedSyncJob.failed > 0 ? ` Fallidos: ${displayedSyncJob.failed}.` : ''}`}
-                      {displayedSyncJob.status === 'FAILED' && (displayedSyncJob.error || 'La sincronizaciÃ³n terminÃ³ con incidencias.')}
+                      {displayedSyncJob.status === 'COMPLETED' && `Añadidos: ${displayedSyncJob.imported + displayedSyncJob.linkedExisting}. Nuevos en catálogo: ${displayedSyncJob.imported}. Eliminados: ${displayedSyncJob.deleted}.${displayedSyncJob.failed > 0 ? ` Fallidos: ${displayedSyncJob.failed}.` : ''}`}
+                      {displayedSyncJob.status === 'FAILED' && (displayedSyncJob.error || 'La sincronización terminó con incidencias.')}
                       {(displayedSyncJob.status === 'PENDING' || displayedSyncJob.status === 'PROCESSING') &&
-                        `Se estÃ¡n procesando ${displayedSyncJob.totalToImport + displayedSyncJob.totalToDelete} cambios. Refresca la pÃ¡gina en unos ${formatEta(displayedSyncJob.estimatedSeconds)} si te vas antes.`}
+                        `Se están procesando ${displayedSyncJob.totalToImport + displayedSyncJob.totalToDelete} cambios. Refresca la página en unos ${formatEta(displayedSyncJob.estimatedSeconds)} si te vas antes.`}
                     </p>
                     {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED') && (
                       <p className="text-[11px] text-[var(--color-textSecondary)] mt-1">
@@ -447,7 +447,7 @@ export default function MiLudoteca() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-[var(--color-textSecondary)]">
-                      {displayedSyncJob.estimatedSeconds > 0 && `EstimaciÃ³n: ${formatEta(displayedSyncJob.estimatedSeconds)}`}
+                      {displayedSyncJob.estimatedSeconds > 0 && `Estimación: ${formatEta(displayedSyncJob.estimatedSeconds)}`}
                     </span>
                     {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED') && (
                       <button
@@ -485,7 +485,7 @@ export default function MiLudoteca() {
               onClick={() => setShowBggSearch(!showBggSearch)}
               className="text-sm font-medium text-[var(--color-primary)] hover:underline"
             >
-              {showBggSearch ? 'Ocultar bÃºsqueda en BGG' : 'Buscar juego en BGG y aÃ±adir'}
+              {showBggSearch ? 'Ocultar búsqueda en BGG' : 'Buscar juego en BGG y añadir'}
             </button>
             {showBggSearch && (
               <div className="mt-3 space-y-3">
@@ -537,7 +537,7 @@ export default function MiLudoteca() {
                             disabled={inLibrary || addMutation.isPending}
                             className="text-xs px-2 py-1 rounded bg-[var(--color-primary)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-default"
                           >
-                            {inLibrary ? 'Ya tienes' : 'AÃ±adir'}
+                            {inLibrary ? 'Ya tienes' : 'Añadir'}
                           </button>
                         </div>
                       );
@@ -583,8 +583,8 @@ export default function MiLudoteca() {
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-[var(--color-textSecondary)]">
-                {tab === 'own' && 'Tu colecciÃ³n estÃ¡ vacÃ­a. Busca juegos arriba o sincroniza con BGG.'}
-                {tab === 'wishlist' && 'Tu wishlist estÃ¡ vacÃ­a.'}
+                {tab === 'own' && 'Tu colección está vacía. Busca juegos arriba o sincroniza con BGG.'}
+                {tab === 'wishlist' && 'Tu wishlist está vacía.'}
                 {tab === 'previouslyOwned' && 'No tienes juegos marcados como "Lo tuve".'}
                 {tab === 'wantToPlay' && 'No tienes juegos marcados como "Quiero jugar".'}
               </p>
@@ -606,7 +606,7 @@ export default function MiLudoteca() {
             </div>
             {pagination && pagination.totalPages > 1 && (
               <div className="flex items-center justify-between text-sm text-[var(--color-textSecondary)] pt-2">
-                <span>{pagination.total} juegos Â· PÃ¡gina {pagination.currentPage} de {pagination.totalPages}</span>
+                <span>{pagination.total} juegos · Página {pagination.currentPage} de {pagination.totalPages}</span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -632,14 +632,14 @@ export default function MiLudoteca() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50" onClick={() => { setShowSyncModal(false); setSyncImportLocationId(''); }} />
             <div className="relative bg-[var(--color-cardBackground)] rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
-              <h2 className="text-lg font-bold text-[var(--color-text)]">SincronizaciÃ³n con BGG</h2>
+              <h2 className="text-lg font-bold text-[var(--color-text)]">Sincronización con BGG</h2>
               <p className="text-sm text-[var(--color-textSecondary)]">
                 Se van a <span className="text-green-600 font-medium">importar {syncData.toImport.length} juegos</span>
                 {(syncData.toImportOwned > 0 || syncData.toImportWishlist > 0 || syncData.toImportPreviouslyOwned > 0) && (
                   <span className="text-[var(--color-textSecondary)]">
                     {' '}(
                     {[
-                      syncData.toImportOwned > 0 ? `${syncData.toImportOwned} de tu colecciÃ³n` : null,
+                      syncData.toImportOwned > 0 ? `${syncData.toImportOwned} de tu colección` : null,
                       syncData.toImportWishlist > 0 ? `${syncData.toImportWishlist} de wishlist` : null,
                       syncData.toImportPreviouslyOwned > 0 ? `${syncData.toImportPreviouslyOwned} marcados como "Lo tuve"` : null,
                     ].filter(Boolean).join(', ')}
@@ -650,8 +650,8 @@ export default function MiLudoteca() {
               </p>
               <div className="rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)]/50 p-3 text-xs text-[var(--color-textSecondary)]">
                 Tiempo estimado: {formatEta(syncData.estimatedSeconds)}.
-                {syncData.newCatalogItems > 0 && ` ${syncData.newCatalogItems} juego${syncData.newCatalogItems !== 1 ? 's' : ''} se aÃ±adirÃ¡n al catÃ¡logo compartido por primera vez.`}
-                {' '}La sincronizaciÃ³n se ejecutarÃ¡ en background; podrÃ¡s seguir usando la web y refrescar la pÃ¡gina mÃ¡s tarde.
+                {syncData.newCatalogItems > 0 && ` ${syncData.newCatalogItems} juego${syncData.newCatalogItems !== 1 ? 's' : ''} se añadirán al catálogo compartido por primera vez.`}
+                {' '}La sincronización se ejecutará en background; podrás seguir usando la web y refrescar la página más tarde.
               </div>
 
               {(syncData.toImport.length > 0 || syncData.toDelete.length > 0) && (
@@ -688,13 +688,13 @@ export default function MiLudoteca() {
               )}
 
               {syncData.toImport.length === 0 && syncData.toDelete.length === 0 && (
-                <p className="text-sm text-[var(--color-textSecondary)]">Tu ludoteca ya estÃ¡ sincronizada con BGG.</p>
+                <p className="text-sm text-[var(--color-textSecondary)]">Tu ludoteca ya está sincronizada con BGG.</p>
               )}
 
               {syncData.toImport.length > 0 && (
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-[var(--color-text)]">
-                    UbicaciÃ³n para los juegos importados
+                    Ubicación para los juegos importados
                   </label>
                   <select
                     value={syncImportLocationId}
@@ -711,10 +711,10 @@ export default function MiLudoteca() {
                     {locations.map((location) => (
                       <option key={location.id} value={location.id}>{location.name}</option>
                     ))}
-                    <option value="__new__">AÃ±adir otra ubicaciÃ³n...</option>
+                    <option value="__new__">Añadir otra ubicación...</option>
                   </select>
                   <p className="text-[10px] text-[var(--color-textSecondary)]">
-                    PodrÃ¡s cambiar la ubicaciÃ³n de cada juego individualmente despuÃ©s.
+                    Podrás cambiar la ubicación de cada juego individualmente después.
                   </p>
                 </div>
               )}
@@ -732,7 +732,7 @@ export default function MiLudoteca() {
                     disabled={syncing}
                     className="px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 disabled:opacity-50"
                   >
-                    {syncing ? 'Lanzando...' : 'Lanzar sincronizaciÃ³n'}
+                    {syncing ? 'Lanzando...' : 'Lanzar sincronización'}
                   </button>
                 )}
               </div>
@@ -746,7 +746,7 @@ export default function MiLudoteca() {
             <div className="relative bg-[var(--color-cardBackground)] rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
               <h2 className="text-lg font-bold text-[var(--color-text)]">Quitar juego</h2>
               <p className="text-sm text-[var(--color-textSecondary)]">
-                Se quitarÃ¡ <span className="font-medium text-[var(--color-text)]">{pendingRemovalGame.game.name}</span> de tu lista.
+                Se quitará <span className="font-medium text-[var(--color-text)]">{pendingRemovalGame.game.name}</span> de tu lista.
               </p>
               <p className="text-xs text-[var(--color-textSecondary)]">
                 Pulsa Aceptar para confirmar o Cancelar para mantenerlo en tu ludoteca.
@@ -776,9 +776,9 @@ export default function MiLudoteca() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50" onClick={() => setShowNewLocationModal(false)} />
             <div className="relative bg-[var(--color-cardBackground)] rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
-              <h2 className="text-lg font-bold text-[var(--color-text)]">Nueva ubicaciÃ³n</h2>
+              <h2 className="text-lg font-bold text-[var(--color-text)]">Nueva ubicación</h2>
               <p className="text-sm text-[var(--color-textSecondary)]">
-                Dale un nombre a la ubicaciÃ³n donde guardas tus juegos.
+                Dale un nombre a la ubicación donde guardas tus juegos.
               </p>
               <input
                 type="text"
@@ -898,11 +898,11 @@ function GameCard({ game, locations, onUpdate, onLocationChange, onRemove }: Gam
             className="mt-0.5 w-full text-[10px] px-1.5 py-1 border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
           >
             <option value="">Sin prioridad</option>
-            <option value="1">1 Â· Imprescindible</option>
-            <option value="2">2 Â· Me encantarÃ­a tenerlo</option>
-            <option value="3">3 Â· Me gustarÃ­a tenerlo</option>
-            <option value="4">4 Â· Lo estoy pensando</option>
-            <option value="5">5 Â· Mejor no comprarlo</option>
+            <option value="1">1 · Imprescindible</option>
+            <option value="2">2 · Me encantaría tenerlo</option>
+            <option value="3">3 · Me gustaría tenerlo</option>
+            <option value="4">4 · Lo estoy pensando</option>
+            <option value="5">5 · Mejor no comprarlo</option>
           </select>
         )}
 
@@ -915,7 +915,7 @@ function GameCard({ game, locations, onUpdate, onLocationChange, onRemove }: Gam
           {locations.map((location) => (
             <option key={location.id} value={location.id}>{location.name}</option>
           ))}
-          <option value="__new__">AÃ±adir otra ubicaciÃ³n...</option>
+          <option value="__new__">Añadir otra ubicación...</option>
         </select>
 
         <div className="flex items-center justify-between mt-auto pt-1">

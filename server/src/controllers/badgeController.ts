@@ -88,6 +88,74 @@ export const getUserBadgesById = async (req: Request, res: Response): Promise<vo
 };
 
 /**
+ * Marcar un badge desbloqueado como descubierto por el usuario autenticado
+ */
+export const revealBadge = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+    const { badgeDefinitionId } = req.params;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+      return;
+    }
+
+    if (!badgeDefinitionId) {
+      res.status(400).json({
+        success: false,
+        message: 'Falta el identificador del badge'
+      });
+      return;
+    }
+
+    const userBadge = await prisma.userBadge.findUnique({
+      where: {
+        userId_badgeDefinitionId: {
+          userId,
+          badgeDefinitionId
+        }
+      }
+    });
+
+    if (!userBadge) {
+      res.status(404).json({
+        success: false,
+        message: 'No tienes ese badge desbloqueado'
+      });
+      return;
+    }
+
+    const revealedAt = userBadge.revealedAt ?? new Date();
+
+    const updatedBadge = await prisma.userBadge.update({
+      where: { id: userBadge.id },
+      data: {
+        revealedAt
+      },
+      include: {
+        badgeDefinition: true
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        badge: updatedBadge
+      }
+    });
+  } catch (error) {
+    console.error('Error al marcar badge como descubierto:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al marcar badge como descubierto'
+    });
+  }
+};
+
+/**
  * Calcular progreso de badges por categoría
  */
 async function getCategoryCount(userId: string, category: BadgeCategory): Promise<number> {
@@ -123,9 +191,9 @@ async function getCategoryCount(userId: string, category: BadgeCategory): Promis
     return validations.length;
   }
   if (category === BadgeCategory.AUDITOR_LUDICO) {
-    // Cuenta partidas confirmadas como celebradas por el organizador
+    // Cuenta solo confirmaciones manuales del organizador de partidas celebradas
     return prisma.event.count({
-      where: { createdBy: userId, disputeResult: true }
+      where: { createdBy: userId, disputeResult: true, disputeConfirmedManually: true }
     });
   }
   if (category === BadgeCategory.CONOCEDOR_GENEROS) {

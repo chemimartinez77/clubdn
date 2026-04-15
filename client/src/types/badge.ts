@@ -35,6 +35,7 @@ export interface UserBadge {
   badgeDefinitionId: string;
   badgeDefinition: BadgeDefinition;
   unlockedAt: string;
+  revealedAt?: string | null;
 }
 
 export interface BadgeProgress {

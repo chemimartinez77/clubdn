@@ -160,6 +160,32 @@ export default function Profile() {
     }
   });
 
+  const revealBadgeMutation = useMutation({
+    mutationFn: async (badgeDefinitionId: string) => {
+      const response = await api.post<ApiResponse<{ badge: UserBadgesResponse['data']['unlockedBadges'][number] }>>(
+        `/api/badges/${badgeDefinitionId}/reveal`
+      );
+      return response.data.data?.badge;
+    },
+    onSuccess: (updatedBadge) => {
+      if (!updatedBadge) return;
+
+      queryClient.setQueryData<UserBadgesResponse['data'] | undefined>(['myBadges'], current => {
+        if (!current) return current;
+
+        return {
+          ...current,
+          unlockedBadges: current.unlockedBadges.map(badge =>
+            badge.badgeDefinitionId === updatedBadge.badgeDefinitionId ? updatedBadge : badge
+          )
+        };
+      });
+    },
+    onError: () => {
+      showError('No se pudo marcar el logro como descubierto');
+    }
+  });
+
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (data: UpdateProfileData) => {
@@ -995,7 +1021,9 @@ export default function Profile() {
                     allBadges={badgesData.allBadges}
                     unlockedBadges={badgesData.unlockedBadges}
                     progress={badgesData.progress}
-                    userId={profile?.userId}
+                    onRevealBadge={(badgeId) => {
+                      revealBadgeMutation.mutate(badgeId);
+                    }}
                   />
                 ) : (
                   <div className="text-center py-8">

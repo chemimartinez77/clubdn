@@ -4,6 +4,7 @@ import { authenticate } from '../middleware/auth';
 import {
   getUserBadges,
   getUserBadgesById,
+  revealBadge,
   trackGamePlayed,
   getGamePlayHistory,
   getGameStats
@@ -25,6 +26,12 @@ router.get('/my-badges', getUserBadges);
  * Obtener badges de un usuario específico (público)
  */
 router.get('/user/:userId', getUserBadgesById);
+
+/**
+ * POST /api/badges/:badgeDefinitionId/reveal
+ * Marcar un badge desbloqueado como descubierto
+ */
+router.post('/:badgeDefinitionId/reveal', revealBadge);
 
 /**
  * POST /api/badges/track-game

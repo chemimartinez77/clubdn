@@ -1,0 +1,2 @@
+ALTER TABLE "UserBadge"
+ADD COLUMN "revealedAt" TIMESTAMP(3);

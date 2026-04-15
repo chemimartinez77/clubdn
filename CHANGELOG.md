@@ -57,6 +57,61 @@ Por otro lado, la importacion desde BGG incluye ahora tambien los juegos marcado
 - `npx.cmd tsc --noEmit` en `server`
 - `npx.cmd prisma generate` en `server`
 
+### Ajuste del logro Auditor Ludico
+
+Se corrige el criterio del logro `AUDITOR_LUDICO` para que solo cuente confirmaciones manuales realizadas por la persona organizadora tras una disputa postpartida. Las validaciones por QR ya no suman progreso para este logro, que era lo que provocaba desbloqueos antes de tiempo.
+
+Para distinguir ambos casos se anade el flag `disputeConfirmedManually` en `Event`. Las confirmaciones manuales lo marcan a `true`, mientras que la validacion por QR lo deja a `false`. La migracion incluida marca como manuales los eventos historicos confirmados sin registros de `GameValidation`, de forma que no se pierda progreso valido anterior.
+
+**Archivos modificados:**
+- `server/src/controllers/badgeController.ts` - `AUDITOR_LUDICO` filtra solo eventos con confirmacion manual
+- `server/src/controllers/eventController.ts` - separacion explicita entre confirmacion manual y validacion por QR
+- `server/prisma/schema.prisma` - nuevo campo `Event.disputeConfirmedManually`
+- `server/prisma/migrations/20260415103000_add_event_dispute_confirmed_manually/` - migracion y backfill del historico
+
+**Verificacion:**
+- `npx.cmd prisma generate` en `server`
+- `npx.cmd tsc --noEmit` en `server`
+
+### Persistencia server-side de logros descubiertos
+
+El estado de los logros ya descubiertos deja de depender del navegador y pasa a persistirse en servidor. Hasta ahora ese estado se guardaba en `localStorage`, lo que podia hacer que un badge desbloqueado volviera a aparecer tapado si cambiaba la clave local o si se accedia desde otro dispositivo.
+
+Se anade el campo `revealedAt` en `UserBadge` y un endpoint especifico para marcar un logro como descubierto. La pantalla de perfil consume ya ese estado persistido y actualiza la cache local tras descubrirlo, sin depender de almacenamiento del navegador.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` - nuevo campo `UserBadge.revealedAt`
+- `server/prisma/migrations/20260415123000_add_user_badge_revealed_at/` - migracion para persistir la fecha de descubrimiento
+- `server/src/controllers/badgeController.ts` - nuevo endpoint para marcar badges como descubiertos
+- `server/src/routes/badgeRoutes.ts` - ruta `POST /api/badges/:badgeDefinitionId/reveal`
+- `client/src/types/badge.ts` - tipado de `revealedAt`
+- `client/src/components/badges/BadgeGrid.tsx` - el estado revelado se calcula desde servidor
+- `client/src/pages/Profile.tsx` - mutacion para descubrir logros y actualizar cache
+
+**Verificacion:**
+- `npx.cmd prisma generate` en `server`
+- `npx.cmd tsc --noEmit` en `server`
+- `npx.cmd tsc -b` en `client`
+
+### Atenuacion de dias pasados en la vista mensual
+
+La vista mensual del calendario aplica ahora un tratamiento visual similar al de la vista semanal para los dias ya pasados. Las celdas anteriores a hoy aparecen mas apagadas y con menos contraste en su contenido, manteniendo aun asi el acceso al detalle del dia y sin afectar al resaltado de `Hoy`.
+
+**Archivos modificados:**
+- `client/src/components/events/EventCalendar.tsx` - atenuacion visual de dias pasados en la vista mensual
+
+**Verificacion:**
+- `npx.cmd tsc -b` en `client`
+
+### Correccion de codificacion en Mi ludoteca
+
+Se corrige la codificacion de `MiLudoteca.tsx` para recuperar acentos, enes y caracteres especiales que habian quedado corruptos tras una reescritura del archivo. El fichero queda guardado en UTF-8 sin BOM para reducir el riesgo de volver a introducir mojibake al editarlo.
+
+**Archivos modificados:**
+- `client/src/pages/MiLudoteca.tsx` - restauracion de textos con acentos y caracteres especiales
+
+**Verificacion:**
+- `npx.cmd tsc -b` en `client`
 ---
 ## 2026-04-14 (sesión 5)
 
@@ -128,7 +183,7 @@ Además, la segunda partida ya no se gestiona como un evento independiente a niv
 - `cmd /c npx tsc --noEmit` en `server`
 - `cmd /c npx tsc -b` en `client`
 
----
+
 ## 2026-04-14 (sesión 3)
 
 ### Mejoras y correcciones
@@ -2949,4 +3004,6 @@ Incluye:
 ---
 
 **Última actualización:** 10 de Marzo de 2026
+
+
 

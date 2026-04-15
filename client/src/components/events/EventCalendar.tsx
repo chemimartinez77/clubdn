@@ -54,6 +54,7 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
     const hasSocio = dayEvents.some(event => event.hasSocioRegistered);
     const hasColaborador = dayEvents.some(event => event.hasColaboradorRegistered);
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const isToday =
       day === today.getDate() &&
       currentMonth.getMonth() === today.getMonth() &&
@@ -62,6 +63,7 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
     // Formatear fecha para detalle (YYYY-MM-DD)
     const dateString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const dayDate = new Date(`${dateString}T00:00:00`);
+    const isPastDay = dayDate < today;
 
     const handleDayClick = () => {
       onDaySelect(dayDate);
@@ -72,11 +74,16 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
       : hasEvents && hasColaborador
       ? 'bg-[var(--color-calendarDayColaborador)]'
       : 'bg-[var(--color-cardBackground)]';
+    const isMutedPastDay = isPastDay && !isToday;
     const dayText = hasSocio
       ? 'text-[var(--color-calendarTextSocio)]'
       : hasColaborador
       ? 'text-[var(--color-calendarTextColaborador)]'
       : 'text-[var(--color-text)]';
+    const dayTextClass = isMutedPastDay ? `${dayText} opacity-70` : dayText;
+    const summaryTextClass = isMutedPastDay
+      ? 'text-[10px] text-[var(--color-textSecondary)] opacity-60'
+      : 'text-[10px] text-[var(--color-textSecondary)]';
 
     return (
       <div
@@ -84,10 +91,10 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
         onClick={handleDayClick}
         className={`min-h-[72px] border p-1 sm:p-2 ${dayBackground} ${
           isToday ? 'border-2 border-[var(--color-primary)]' : 'border border-[var(--color-cardBorder)]'
-        } cursor-pointer transition-colors hover:brightness-95`}
-        title="Toca un dia para ver el detalle"
+        } cursor-pointer transition-colors hover:brightness-95 ${isMutedPastDay ? 'opacity-60' : ''}`}
+        title={isMutedPastDay ? 'Dia pasado - toca para ver el detalle' : 'Toca un dia para ver el detalle'}
       >
-        <div className={`text-xs sm:text-sm font-semibold mb-1 ${dayText}`}>
+        <div className={`text-xs sm:text-sm font-semibold mb-1 ${dayTextClass}`}>
           {day}
         </div>
 
@@ -98,7 +105,7 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
           if (partidas > 0) parts.push(`${partidas} ${partidas === 1 ? 'partida' : 'partidas'}`);
           if (otros > 0) parts.push(`${otros} ${otros === 1 ? 'evento' : 'eventos'}`);
           return (
-            <div className="text-[10px] text-[var(--color-textSecondary)]">
+            <div className={summaryTextClass}>
               {parts.join(', ')}
             </div>
           );

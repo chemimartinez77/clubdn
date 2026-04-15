@@ -1,5 +1,5 @@
 // client/src/components/badges/BadgeGrid.tsx
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { useTheme } from '../../hooks/useTheme';
 import type {
@@ -20,42 +20,37 @@ interface BadgeGridProps {
   allBadges: BadgeDefinition[];
   unlockedBadges: UserBadge[];
   progress: Record<BadgeCategory, BadgeProgress>;
-  userId?: string;
+  onRevealBadge?: (badgeId: string) => void;
 }
 
 const BadgeGrid: React.FC<BadgeGridProps> = ({
   allBadges,
   unlockedBadges,
   progress,
-  userId
+  onRevealBadge
 }) => {
   const { theme } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState<BadgeCategory | 'ALL'>('ALL');
   const [expandedCategories, setExpandedCategories] = useState<Set<BadgeCategory>>(new Set());
 
-  // Clave única en localStorage por usuario
-  const storageKey = userId ? `badges_revealed_${userId}` : 'badges_revealed_guest';
+  const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
 
-  // Cargar IDs revelados desde localStorage
-  const [revealedIds, setRevealedIds] = useState<Set<string>>(() => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      return stored ? new Set<string>(JSON.parse(stored)) : new Set<string>();
-    } catch {
-      return new Set<string>();
-    }
-  });
+  useEffect(() => {
+    setRevealedIds(new Set(
+      unlockedBadges
+        .filter(ub => Boolean(ub.revealedAt))
+        .map(ub => ub.badgeDefinitionId)
+    ));
+  }, [unlockedBadges]);
 
   const handleReveal = useCallback((badgeId: string) => {
     setRevealedIds(prev => {
       const next = new Set(prev);
       next.add(badgeId);
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(Array.from(next)));
-      } catch { /* noop */ }
       return next;
     });
-  }, [storageKey]);
+    onRevealBadge?.(badgeId);
+  }, [onRevealBadge]);
 
   const toggleCategory = (category: BadgeCategory) => {
     setExpandedCategories(prev => {

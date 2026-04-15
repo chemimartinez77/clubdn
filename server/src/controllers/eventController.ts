@@ -2522,7 +2522,7 @@ export const confirmEventPlayed = async (req: Request, res: Response): Promise<v
 
     await prisma.event.update({
       where: { id },
-      data: { disputeResult: true, disputeConfirmedAt: new Date() }
+      data: { disputeResult: true, disputeConfirmedAt: new Date(), disputeConfirmedManually: true }
     });
 
     await processEventPlayHistory(id);
@@ -2569,7 +2569,7 @@ export const confirmEventNotPlayed = async (req: Request, res: Response): Promis
 
     await prisma.event.update({
       where: { id },
-      data: { disputeResult: false, disputeConfirmedAt: new Date() }
+      data: { disputeResult: false, disputeConfirmedAt: new Date(), disputeConfirmedManually: true }
     });
 
     await prisma.notification.deleteMany({
@@ -2672,7 +2672,7 @@ export const validateGameQr = async (req: Request, res: Response): Promise<void>
     if (event.disputeResult === null) {
       await prisma.event.update({
         where: { id: eventId },
-        data: { disputeResult: true, disputeConfirmedAt: now, disputeAsked: true }
+        data: { disputeResult: true, disputeConfirmedAt: now, disputeAsked: true, disputeConfirmedManually: false }
       });
 
       // Eliminar la notificación de disputa pendiente al organizador si existe
