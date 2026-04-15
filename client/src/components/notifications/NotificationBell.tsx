@@ -117,11 +117,10 @@ export default function NotificationBell() {
       }
     }
 
-    setIsOpen(false);
-
     // Navegar según el tipo de notificación
     switch (notification.type) {
       case 'EVENT_DISPUTE_CONFIRMATION':
+        setIsOpen(false);
         setDisputeNotification(notification);
         return;
 
@@ -136,7 +135,6 @@ export default function NotificationBell() {
       case 'REGISTRATION_APPROVED':
       case 'REGISTRATION_REJECTED':
       case 'REGISTRATION_PENDING':
-        // Navegar a detalle del evento usando metadata.eventId
         if (notification.metadata && typeof notification.metadata === 'object') {
           const metadata = notification.metadata as { eventId?: string };
           if (metadata.eventId) {
@@ -149,11 +147,11 @@ export default function NotificationBell() {
         if (notification.metadata && typeof notification.metadata === 'object') {
           const metadata = notification.metadata as { announcementId?: string };
           if (metadata.announcementId) {
-            navigate(`/announcements#announcement-${metadata.announcementId}`);
+            navigate(`/anuncios#announcement-${metadata.announcementId}`);
             break;
           }
         }
-        navigate('/announcements');
+        navigate('/anuncios');
         break;
 
       case 'REPORT_CREATED':
@@ -170,9 +168,10 @@ export default function NotificationBell() {
         break;
 
       default:
-        // No hay navegación para otros tipos
         break;
     }
+
+    setIsOpen(false);
   };
 
   const getNotificationIcon = (type: string) => {
