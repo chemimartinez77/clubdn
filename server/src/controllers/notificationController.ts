@@ -331,7 +331,6 @@ export const deleteAllNotifications = async (req: Request, res: Response) => {
     // Marcar globales como descartadas (las que aún no lo están)
     const globals = await prisma.globalNotification.findMany({
       where: { NOT: { reads: { some: { userId, dismissed: true } } } },
-      select: { id: true },
       include: { reads: { where: { userId } } },
     });
     if (globals.length > 0) {
