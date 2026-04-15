@@ -4,6 +4,28 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-16 (sesion 1)
+
+### Notificaciones: navegacion al tablon, eliminar todas y correcciones
+
+Se añade navegacion directa al anuncio al hacer click en una notificacion de tipo `ANNOUNCEMENT_CREATED`. Al pulsar, la app navega a `/anuncios#announcement-{id}` y la pagina hace scroll automatico al anuncio concreto usando un `useEffect` que escucha el hash de la URL una vez cargada la lista. El error inicial era que la ruta estaba codificada como `/announcements` en vez de `/anuncios` (la ruta real del router).
+
+Se añade el boton "Eliminar todas" junto a "Marcar todas como leidas" en el panel de notificaciones. Ambas opciones aparecen debajo del titulo "Notificaciones". El nuevo endpoint `DELETE /api/notifications/delete-all` elimina las notificaciones personales del usuario y marca las globales como `dismissed: true` en `GlobalNotificationRead`, de forma que no vuelvan a aparecer. Se corrigio un error de TypeScript en el handler (no se pueden usar `select` e `include` simultaneamente en Prisma).
+
+Se corrige tambien un bug en `markAllAsRead`: el filtro de globales solo incluia `EVENT_CREATED` y excluia `ANNOUNCEMENT_CREATED`, por lo que las notificaciones del tablon no se marcaban como leidas al pulsar "Marcar todas como leidas".
+
+Ademas, el carnet de socio (modal ID) ahora muestra correctamente todos los tipos de membresia: `FAMILIAR` → "Familiar", `EN_PRUEBAS` → "Colaborador en pruebas", `BAJA` → "Baja". Antes solo contemplaba `SOCIO` y `COLABORADOR`.
+
+**Archivos modificados:**
+- `client/src/pages/Announcements.tsx` - id `announcement-{id}` en cada card; `useEffect` para scroll al hash tras cargar
+- `client/src/components/notifications/NotificationBell.tsx` - caso `ANNOUNCEMENT_CREATED` con navegacion a `/anuncios#announcement-{id}`; boton "Eliminar todas" con handler `handleDeleteAll`; `setIsOpen(false)` movido al final del handler para no interferir con la navegacion
+- `client/src/api/notifications.ts` - nueva funcion `deleteAllNotifications`
+- `server/src/controllers/notificationController.ts` - nuevo handler `deleteAllNotifications`; correccion del filtro de globales en `markAllAsRead` para incluir `ANNOUNCEMENT_CREATED`
+- `server/src/routes/notificationRoutes.ts` - nueva ruta `DELETE /delete-all`
+- `client/src/components/layout/Header.tsx` - `membershipLabel` ampliado con `FAMILIAR`, `EN_PRUEBAS` ("Colaborador en pruebas") y `BAJA`
+
+---
+
 ## 2026-04-15 (sesion 2)
 
 ### Sync BGG serializada en worker, posicion en cola y cancelacion
