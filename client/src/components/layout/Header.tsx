@@ -45,6 +45,12 @@ export default function Header() {
       ? 'Socio'
       : user?.membership?.type === 'COLABORADOR'
       ? 'Colaborador'
+      : user?.membership?.type === 'FAMILIAR'
+      ? 'Familiar'
+      : user?.membership?.type === 'EN_PRUEBAS'
+      ? 'Colaborador en pruebas'
+      : user?.membership?.type === 'BAJA'
+      ? 'Baja'
       : 'Miembro';
   const isCombatZoneEnabledForUser =
     user?.id === 'cmlnolhj4000oo175283glccj' ||
