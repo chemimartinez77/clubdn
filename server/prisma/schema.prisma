@@ -495,7 +495,7 @@ model Membership {
 
   // Estado de pagos
   isActive          Boolean        @default(true)   // Si está al día con los pagos
-  lastPaymentDate   DateTime?      // ?ltimo pago registrado
+  lastPaymentDate   DateTime?      // Último pago registrado
   nextPaymentDue    DateTime?      // Próxima fecha de pago
 
   createdAt         DateTime       @default(now())

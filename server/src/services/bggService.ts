@@ -92,6 +92,12 @@ async function requestWithRetry(
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         throw new Error('BGG API request unauthorized. Check API token or credentials.');
       }
+      if (axios.isAxiosError(error) && error.response?.status === 429) {
+        // Rate limit: esperar más tiempo antes de reintentar
+        attempt += 1;
+        await sleep(RETRY_DELAY_MS * attempt * 2);
+        continue;
+      }
       throw error;
     }
 
@@ -599,11 +605,12 @@ function mapCollectionItem(item: any, own: boolean, wishlist: boolean, previousl
  * Maneja el 202 (BGG procesando) con reintentos.
  */
 export async function getBGGCollection(username: string): Promise<BGGCollectionItem[]> {
-  const [ownedRaw, wishlistRaw, previouslyOwnedRaw] = await Promise.all([
-    requestWithRetry('/collection', { username, own: 1, stats: 0 }),
-    requestWithRetry('/collection', { username, wishlist: 1, stats: 0 }),
-    requestWithRetry('/collection', { username, prevowned: 1, stats: 0 }),
-  ]);
+  // Las llamadas van en serie para evitar el rate limit (429) de BGG
+  const ownedRaw = await requestWithRetry('/collection', { username, own: 1, stats: 0 });
+  await sleep(1000);
+  const wishlistRaw = await requestWithRetry('/collection', { username, wishlist: 1, stats: 0 });
+  await sleep(1000);
+  const previouslyOwnedRaw = await requestWithRetry('/collection', { username, prevowned: 1, stats: 0 });
 
   const ownedItems: BGGCollectionItem[] = normalizeItems((await parseStringPromise(ownedRaw))?.items?.item)
     .map((item: any) => mapCollectionItem(item, true, false, false))
