@@ -701,6 +701,26 @@ export default function EventDetail() {
 
     return durationText ? `${startText}-${endText} (${durationText})` : `${startText}-${endText}`;
   };
+  const calcLinkedEstimatedStartDate = (prev: NonNullable<Event['linkedPreviousEvent']>) => {
+    const previousStart = resolveEventStartDate(prev.date, prev.startHour, prev.startMinute);
+    if (!previousStart) return null;
+
+    const previousDurationMinutes = (prev.durationHours ?? 0) * 60 + (prev.durationMinutes ?? 0);
+    if (previousDurationMinutes <= 0) return null;
+
+    return new Date(previousStart.getTime() + previousDurationMinutes * 60 * 1000);
+  };
+  const formatScheduleFromStart = (start: Date, durationHours?: number | null, durationMinutes?: number | null) => {
+    const startText = formatClockTime(start);
+    const totalMinutes = (durationHours ?? 0) * 60 + (durationMinutes ?? 0);
+    if (totalMinutes <= 0) return startText;
+
+    const end = new Date(start.getTime() + totalMinutes * 60 * 1000);
+    const endText = formatClockTime(end);
+    const durationText = formatDurationText(durationHours, durationMinutes);
+
+    return durationText ? `${startText}-${endText} (${durationText})` : `${startText}-${endText}`;
+  };
   const formatNumber = (value?: number | null, digits = 2) =>
     typeof value === 'number' ? value.toFixed(digits) : '—';
   const formatRange = (min?: number | null, max?: number | null, suffix = '') => {
@@ -841,13 +861,18 @@ export default function EventDetail() {
     ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrUrl)}`
     : null;
   const eventDateText = formatDateOnly(event.date);
-  const eventScheduleText = formatEventSchedule(
-    event.date,
-    event.startHour,
-    event.startMinute,
-    event.durationHours,
-    event.durationMinutes
-  );
+  const linkedEstimatedStart = event.linkedPreviousEvent
+    ? calcLinkedEstimatedStartDate(event.linkedPreviousEvent)
+    : null;
+  const eventScheduleText = linkedEstimatedStart
+    ? `${formatScheduleFromStart(linkedEstimatedStart, event.durationHours, event.durationMinutes)} (estimado)`
+    : formatEventSchedule(
+        event.date,
+        event.startHour,
+        event.startMinute,
+        event.durationHours,
+        event.durationMinutes
+      );
 
   const handleCreateInvitation = () => {
     if (!guestFirstName.trim()) {

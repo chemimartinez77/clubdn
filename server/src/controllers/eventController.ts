@@ -489,6 +489,21 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
             thumbnail: true,
             image: true
           }
+        },
+        linkedPreviousEvent: {
+          select: {
+            id: true,
+            title: true,
+            gameName: true,
+            gameImage: true,
+            bggId: true,
+            startHour: true,
+            startMinute: true,
+            durationHours: true,
+            durationMinutes: true,
+            status: true,
+            date: true,
+          }
         }
       },
       orderBy: { date: 'asc' }

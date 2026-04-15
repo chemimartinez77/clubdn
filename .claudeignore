@@ -1,0 +1,30 @@
+# Dependencias
+node_modules/
+
+# Configuracion local y secretos
+.claude/
+.env
+.env.*
+
+# Artefactos generados
+dist/
+build/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.vite/
+.turbo/
+.cache/
+src/generated/
+
+# Carpetas del ecosistema
+.sfdx/
+
+# Temporales y logs
+tmp/
+tmp*
+*.tmp
+*.log

@@ -106,6 +106,9 @@ interface BggSyncJob {
   error: string | null;
 }
 
+const BGG_SYNC_DISMISSED_JOB_KEY = 'bggSyncDismissedJobId';
+const BGG_SYNC_AUTO_DISMISS_MS = 8000;
+
 type Tab = 'own' | 'wishlist' | 'wantToPlay';
 
 const TAB_LABELS: Record<Tab, string> = {
@@ -126,7 +129,7 @@ function formatEta(seconds: number) {
 function getSyncStatusLabel(job: BggSyncJob) {
   if (job.status === 'PENDING') return 'En cola';
   if (job.status === 'PROCESSING') return 'Sincronizando';
-  if (job.status === 'COMPLETED') return 'Completada';
+  if (job.status === 'COMPLETED') return 'Importación desde BGG completada';
   return 'Con incidencias';
 }
 
@@ -151,7 +154,7 @@ export default function MiLudoteca() {
   const [newLocationName, setNewLocationName] = useState('');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [dismissedJobId, setDismissedJobId] = useState<string | null>(
-    () => localStorage.getItem('bggSyncDismissedJobId')
+    () => localStorage.getItem(BGG_SYNC_DISMISSED_JOB_KEY)
   );
   const prevSyncStatusRef = useRef<string | null>(null);
 
@@ -232,6 +235,10 @@ export default function MiLudoteca() {
   const pagination = data?.pagination;
   const displayedSyncJob = activeSyncJob ?? latestSyncJob ?? null;
   const syncRunning = displayedSyncJob?.status === 'PENDING' || displayedSyncJob?.status === 'PROCESSING';
+  const dismissSyncJob = useCallback((jobId: string) => {
+    setDismissedJobId(jobId);
+    localStorage.setItem(BGG_SYNC_DISMISSED_JOB_KEY, jobId);
+  }, []);
 
   // Auto-cierre a los 8s cuando el job pasa a COMPLETED/FAILED en esta sesión
   useEffect(() => {
@@ -247,11 +254,32 @@ export default function MiLudoteca() {
     ) {
       const timer = setTimeout(() => {
         setDismissedJobId(displayedSyncJob.id);
-        localStorage.setItem('bggSyncDismissedJobId', displayedSyncJob.id);
+        localStorage.setItem(BGG_SYNC_DISMISSED_JOB_KEY, displayedSyncJob.id);
       }, 8000);
       return () => clearTimeout(timer);
     }
   }, [displayedSyncJob]);
+
+  useEffect(() => {
+    if (!displayedSyncJob) return;
+    if (displayedSyncJob.id === dismissedJobId) return;
+    if (displayedSyncJob.status !== 'COMPLETED' && displayedSyncJob.status !== 'FAILED') return;
+
+    const finishedAtMs = displayedSyncJob.finishedAt ? new Date(displayedSyncJob.finishedAt).getTime() : NaN;
+    const elapsedMs = Number.isNaN(finishedAtMs) ? 0 : Date.now() - finishedAtMs;
+    const remainingMs = BGG_SYNC_AUTO_DISMISS_MS - elapsedMs;
+
+    if (remainingMs <= 0) {
+      dismissSyncJob(displayedSyncJob.id);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      dismissSyncJob(displayedSyncJob.id);
+    }, remainingMs);
+
+    return () => clearTimeout(timer);
+  }, [dismissSyncJob, dismissedJobId, displayedSyncJob]);
 
   const addMutation = useMutation({
     mutationFn: async ({ bggId, own, wishlist, wantToPlay }: { bggId: string; own?: boolean; wishlist?: boolean; wantToPlay?: boolean }) => {
@@ -348,6 +376,8 @@ export default function MiLudoteca() {
         throw new Error('No se pudo iniciar la sincronización');
       }
       setActiveJobId(launch.jobId);
+      setDismissedJobId(null);
+      localStorage.removeItem(BGG_SYNC_DISMISSED_JOB_KEY);
       queryClient.invalidateQueries({ queryKey: ['myLudotecaSyncLatest'] });
       void refetchActiveSyncJob();
       toastSuccess(`Sincronización lanzada. Tiempo estimado: ${formatEta(launch.estimatedSeconds)}.`);
@@ -445,10 +475,7 @@ export default function MiLudoteca() {
                     </span>
                     {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED') && (
                       <button
-                        onClick={() => {
-                          setDismissedJobId(displayedSyncJob.id);
-                          localStorage.setItem('bggSyncDismissedJobId', displayedSyncJob.id);
-                        }}
+                        onClick={() => dismissSyncJob(displayedSyncJob.id)}
                         className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors"
                         title="Cerrar"
                       >

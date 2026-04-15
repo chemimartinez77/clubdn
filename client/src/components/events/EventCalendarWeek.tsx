@@ -3,6 +3,18 @@ import { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Event } from '../../types/event';
 
+function calcLinkedStartTime(prev: NonNullable<Event['linkedPreviousEvent']>): string | null {
+  if (prev.startHour == null) return null;
+  const startMinutes = prev.startHour * 60 + (prev.startMinute ?? 0);
+  const durationMinutes = (prev.durationHours ?? 0) * 60 + (prev.durationMinutes ?? 0);
+  if (durationMinutes <= 0) return null;
+
+  const totalMinutes = startMinutes + durationMinutes;
+  const hours = Math.floor(totalMinutes / 60) % 24;
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
 interface EventCalendarWeekProps {
   events: Event[];
   currentMonth: Date;
@@ -95,10 +107,14 @@ export default function EventCalendarWeek({ events, currentMonth }: EventCalenda
           <div className="space-y-2">
             {dayEvents.map(event => {
               const eventDate = new Date(event.date);
-              const time = new Intl.DateTimeFormat('es-ES', {
+              const defaultTime = new Intl.DateTimeFormat('es-ES', {
                 hour: '2-digit',
                 minute: '2-digit'
               }).format(eventDate);
+              const estimatedTime = event.linkedPreviousEvent
+                ? calcLinkedStartTime(event.linkedPreviousEvent)
+                : null;
+              const time = estimatedTime ? `~${estimatedTime}` : defaultTime;
               const registeredCount = event.registeredCount || 0;
               const isFull = registeredCount >= event.maxAttendees;
 
