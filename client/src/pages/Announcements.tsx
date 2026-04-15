@@ -1,4 +1,5 @@
 // client/src/pages/Announcements.tsx
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
 import Layout from '../components/layout/Layout';
@@ -19,6 +20,13 @@ export default function Announcements() {
       return res.data.data ?? [];
     }
   });
+
+  useEffect(() => {
+    if (!isLoading && announcements.length > 0 && window.location.hash) {
+      const el = document.querySelector(window.location.hash);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [isLoading, announcements]);
 
   const likeMutation = useMutation({
     mutationFn: (id: string) => api.post<{ success: boolean; data: { userHasLiked: boolean; likeCount: number } }>(`/api/announcements/${id}/like`),
@@ -54,7 +62,7 @@ export default function Announcements() {
         ) : (
           <div className="space-y-6">
             {announcements.map(a => (
-              <div key={a.id} className="relative">
+              <div key={a.id} id={`announcement-${a.id}`} className="relative">
                 <Card>
                   <CardContent className="py-4">
                     <div className="flex items-center gap-2 mb-1">

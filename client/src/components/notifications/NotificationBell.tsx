@@ -145,6 +145,17 @@ export default function NotificationBell() {
         }
         break;
 
+      case 'ANNOUNCEMENT_CREATED':
+        if (notification.metadata && typeof notification.metadata === 'object') {
+          const metadata = notification.metadata as { announcementId?: string };
+          if (metadata.announcementId) {
+            navigate(`/announcements#announcement-${metadata.announcementId}`);
+            break;
+          }
+        }
+        navigate('/announcements');
+        break;
+
       case 'REPORT_CREATED':
       case 'REPORT_UPDATED':
       case 'REPORT_COMMENT':
