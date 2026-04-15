@@ -237,7 +237,7 @@ export const markAllAsRead = async (req: Request, res: Response) => {
     if (wantsNewEvents) {
       const unreadGlobals = await prisma.globalNotification.findMany({
         where: {
-          type: 'EVENT_CREATED',
+          type: { in: ['EVENT_CREATED', 'ANNOUNCEMENT_CREATED'] },
           reads: { none: { userId } },
         },
         select: { id: true },
@@ -315,5 +315,50 @@ export const deleteNotification = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error al eliminar notificación:', error);
     return res.status(500).json({ success: false, message: 'Error al eliminar notificación' });
+  }
+};
+
+export const deleteAllNotifications = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'No autenticado' });
+    }
+
+    // Eliminar notificaciones personales
+    await prisma.notification.deleteMany({ where: { userId } });
+
+    // Marcar globales como descartadas (las que aún no lo están)
+    const globals = await prisma.globalNotification.findMany({
+      where: { NOT: { reads: { some: { userId, dismissed: true } } } },
+      select: { id: true },
+      include: { reads: { where: { userId } } },
+    });
+    if (globals.length > 0) {
+      const now = new Date();
+      const withRead = globals.filter(g => g.reads.length > 0).map(g => g.id);
+      const withoutRead = globals.filter(g => g.reads.length === 0).map(g => g.id);
+      if (withRead.length > 0) {
+        await prisma.globalNotificationRead.updateMany({
+          where: { userId, globalNotificationId: { in: withRead } },
+          data: { dismissed: true },
+        });
+      }
+      if (withoutRead.length > 0) {
+        await prisma.globalNotificationRead.createMany({
+          data: withoutRead.map(id => ({
+            userId,
+            globalNotificationId: id,
+            readAt: now,
+            dismissed: true,
+          })),
+        });
+      }
+    }
+
+    return res.status(200).json({ success: true, message: 'Todas las notificaciones eliminadas' });
+  } catch (error) {
+    console.error('Error al eliminar todas las notificaciones:', error);
+    return res.status(500).json({ success: false, message: 'Error al eliminar notificaciones' });
   }
 };

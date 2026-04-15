@@ -72,3 +72,11 @@ export const deleteNotification = async (id: string): Promise<NotificationAction
   const response = await api.delete(`/api/notifications/${id}`);
   return response.data;
 };
+
+/**
+ * Delete all notifications
+ */
+export const deleteAllNotifications = async (): Promise<NotificationActionResponse> => {
+  const response = await api.delete('/api/notifications/delete-all');
+  return response.data;
+};

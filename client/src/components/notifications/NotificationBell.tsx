@@ -7,6 +7,7 @@ import {
   markAsRead,
   markAllAsRead,
   deleteNotification,
+  deleteAllNotifications,
   type Notification,
 } from '../../api/notifications';
 import DisputeConfirmationModal from './DisputeConfirmationModal';
@@ -87,6 +88,16 @@ export default function NotificationBell() {
       setUnreadCount(0);
     } catch (error) {
       console.error('Error marking all as read:', error);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    try {
+      await deleteAllNotifications();
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error deleting all notifications:', error);
     }
   };
 
@@ -252,15 +263,25 @@ export default function NotificationBell() {
         <>
           <div className="fixed inset-0 z-10 cursor-pointer" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 mt-2 w-80 bg-[var(--color-cardBackground)] rounded-lg shadow-lg border border-[var(--color-cardBorder)] z-20 max-h-[32rem] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-[var(--color-cardBorder)]">
-              <h3 className="text-lg font-semibold text-[var(--color-text)]">Notificaciones</h3>
-              {notifications.length > 0 && unreadCount > 0 && (
-                <button
-                  onClick={handleMarkAllAsRead}
-                  className="text-xs text-primary hover:text-primary/80 font-medium"
-                >
-                  {'Marcar todas como leida'}
-                </button>
+            <div className="p-4 border-b border-[var(--color-cardBorder)]">
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Notificaciones</h3>
+              {notifications.length > 0 && (
+                <div className="flex items-center gap-3">
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={handleMarkAllAsRead}
+                      className="text-xs text-primary hover:text-primary/80 font-medium"
+                    >
+                      Marcar todas como leídas
+                    </button>
+                  )}
+                  <button
+                    onClick={handleDeleteAll}
+                    className="text-xs text-red-500 hover:text-red-400 font-medium"
+                  >
+                    Eliminar todas
+                  </button>
+                </div>
               )}
             </div>
 

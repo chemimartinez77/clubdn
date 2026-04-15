@@ -7,6 +7,7 @@ import {
   markAsRead,
   markAllAsRead,
   deleteNotification,
+  deleteAllNotifications,
 } from '../controllers/notificationController';
 
 const router = Router();
@@ -21,6 +22,9 @@ router.get('/unread-count', getUnreadCount);
 
 // Marcar todas como leídas (ANTES de /:id)
 router.patch('/mark-all-read', markAllAsRead);
+
+// Eliminar todas (ANTES de /:id)
+router.delete('/delete-all', deleteAllNotifications);
 
 // Obtener notificaciones del usuario
 router.get('/', getNotifications);
