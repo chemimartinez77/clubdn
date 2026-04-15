@@ -141,7 +141,7 @@ export const getMyGames = async (req: Request, res: Response) => {
 
 /**
  * POST /api/my-ludoteca
- * AÃ±ade un juego a la ludoteca personal.
+ * Añade un juego a la ludoteca personal.
  * Body: { bggId, own?, wishlist?, previouslyOwned?, wishlistPriority?, wantToPlay? }
  * Si el juego ya existe con status=deleted, lo reactiva.
  */
@@ -197,7 +197,7 @@ export const addGame = async (req: Request, res: Response) => {
     if (error instanceof Error && error.message === 'Game not found in BoardGameGeek') {
       return res.status(404).json({ success: false, message: 'Juego no encontrado en BGG' });
     }
-    return res.status(500).json({ success: false, message: 'Error al aÃ±adir el juego' });
+    return res.status(500).json({ success: false, message: 'Error al añadir el juego' });
   }
 };
 
@@ -317,7 +317,7 @@ export const updateBggUsername = async (req: Request, res: Response) => {
 
 /**
  * GET /api/my-ludoteca/bgg-sync-check
- * Compara la colecciÃ³n BGG del usuario con su ludoteca en DB.
+ * Compara la colección BGG del usuario con su ludoteca en DB.
  */
 export const getBggSyncCheck = async (req: Request, res: Response) => {
   try {
@@ -329,7 +329,7 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
     if (!bggUsername) {
       return res.status(400).json({
         success: false,
-        message: 'No tienes configurado tu usuario de BGG. AÃ±Ã¡delo primero.',
+        message: 'No tienes configurado tu usuario de BGG. Añádelo primero.',
       });
     }
 
@@ -366,7 +366,7 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
 
 /**
  * POST /api/my-ludoteca/bgg-sync-confirm
- * Crea un job persistente de sincronizaciÃ³n en background.
+ * Crea un job persistente de sincronización en background.
  */
 export const confirmBggSync = async (req: Request, res: Response) => {
   try {
@@ -396,7 +396,7 @@ export const confirmBggSync = async (req: Request, res: Response) => {
     if (activeJob) {
       return res.status(409).json({
         success: false,
-        message: 'Ya tienes una sincronizaciÃ³n en curso',
+        message: 'Ya tienes una sincronización en curso',
         data: activeJob,
       });
     }
@@ -434,13 +434,13 @@ export const confirmBggSync = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('[MY_LUDOTECA] Error en confirmBggSync:', error);
-    return res.status(500).json({ success: false, message: 'Error durante la sincronizaciÃ³n' });
+    return res.status(500).json({ success: false, message: 'Error durante la sincronización' });
   }
 };
 
 /**
  * GET /api/my-ludoteca/bgg-sync-jobs/latest
- * Devuelve el Ãºltimo job del usuario.
+ * Devuelve el último job del usuario.
  */
 export const getLatestBggSyncJob = async (req: Request, res: Response) => {
   try {
@@ -453,7 +453,7 @@ export const getLatestBggSyncJob = async (req: Request, res: Response) => {
     return res.json({ success: true, data: job });
   } catch (error) {
     console.error('[MY_LUDOTECA] Error en getLatestBggSyncJob:', error);
-    return res.status(500).json({ success: false, message: 'Error al obtener el estado de sincronizaciÃ³n' });
+    return res.status(500).json({ success: false, message: 'Error al obtener el estado de sincronización' });
   }
 };
 
@@ -471,13 +471,13 @@ export const getBggSyncJobStatus = async (req: Request, res: Response) => {
     });
 
     if (!job || job.userId !== userId) {
-      return res.status(404).json({ success: false, message: 'SincronizaciÃ³n no encontrada' });
+      return res.status(404).json({ success: false, message: 'Sincronización no encontrada' });
     }
 
     return res.json({ success: true, data: job });
   } catch (error) {
     console.error('[MY_LUDOTECA] Error en getBggSyncJobStatus:', error);
-    return res.status(500).json({ success: false, message: 'Error al obtener el estado de sincronizaciÃ³n' });
+    return res.status(500).json({ success: false, message: 'Error al obtener el estado de sincronización' });
   }
 };
 
@@ -503,7 +503,7 @@ export const getLocations = async (req: Request, res: Response) => {
 
 /**
  * POST /api/my-ludoteca/locations
- * Crea una nueva ubicaciÃ³n para el usuario.
+ * Crea una nueva ubicación para el usuario.
  * Body: { name: string }
  */
 export const createLocation = async (req: Request, res: Response) => {
@@ -512,13 +512,13 @@ export const createLocation = async (req: Request, res: Response) => {
     const { name } = req.body as { name: string };
 
     if (!name?.trim()) {
-      return res.status(400).json({ success: false, message: 'El nombre de la ubicaciÃ³n es obligatorio' });
+      return res.status(400).json({ success: false, message: 'El nombre de la ubicación es obligatorio' });
     }
 
     const trimmed = name.trim();
 
     if (trimmed.toLowerCase() === 'casa') {
-      return res.status(400).json({ success: false, message: '"Casa" es la ubicaciÃ³n predeterminada y no puede crearse como personalizada' });
+      return res.status(400).json({ success: false, message: '"Casa" es la ubicación predeterminada y no puede crearse como personalizada' });
     }
 
     const location = await prisma.gameLocation.create({
@@ -528,16 +528,16 @@ export const createLocation = async (req: Request, res: Response) => {
     return res.status(201).json({ success: true, data: location });
   } catch (error: unknown) {
     if ((error as { code?: string })?.code === 'P2002') {
-      return res.status(409).json({ success: false, message: 'Ya tienes una ubicaciÃ³n con ese nombre' });
+      return res.status(409).json({ success: false, message: 'Ya tienes una ubicación con ese nombre' });
     }
     console.error('[MY_LUDOTECA] Error en createLocation:', error);
-    return res.status(500).json({ success: false, message: 'Error al crear la ubicaciÃ³n' });
+    return res.status(500).json({ success: false, message: 'Error al crear la ubicación' });
   }
 };
 
 /**
  * DELETE /api/my-ludoteca/locations/:locationId
- * Elimina una ubicaciÃ³n. Los juegos que la tenÃ­an asignada quedan con locationId=null (Casa).
+ * Elimina una ubicación. Los juegos que la tenían asignada quedan con locationId=null (Casa).
  */
 export const deleteLocation = async (req: Request, res: Response) => {
   try {
@@ -546,13 +546,13 @@ export const deleteLocation = async (req: Request, res: Response) => {
 
     const location = await prisma.gameLocation.findUnique({ where: { id: locationId } });
     if (!location || location.userId !== userId) {
-      return res.status(404).json({ success: false, message: 'UbicaciÃ³n no encontrada' });
+      return res.status(404).json({ success: false, message: 'Ubicación no encontrada' });
     }
 
     await prisma.gameLocation.delete({ where: { id: locationId } });
     return res.json({ success: true });
   } catch (error) {
     console.error('[MY_LUDOTECA] Error en deleteLocation:', error);
-    return res.status(500).json({ success: false, message: 'Error al eliminar la ubicaciÃ³n' });
+    return res.status(500).json({ success: false, message: 'Error al eliminar la ubicación' });
   }
 };
