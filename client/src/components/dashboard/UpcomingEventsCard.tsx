@@ -22,6 +22,18 @@ const statusClass = (status: string) => {
   return 'bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)]';
 };
 
+function calcLinkedStartTime(prev: NonNullable<EventDetail['linkedPreviousEvent']>): string | null {
+  if (prev.startHour == null) return null;
+  const startMinutes = prev.startHour * 60 + (prev.startMinute ?? 0);
+  const durationMinutes = (prev.durationHours ?? 0) * 60 + (prev.durationMinutes ?? 0);
+  if (durationMinutes <= 0) return null;
+
+  const totalMinutes = startMinutes + durationMinutes;
+  const hours = Math.floor(totalMinutes / 60) % 24;
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
 export default function UpcomingEventsCard() {
   const navigate = useNavigate();
 
@@ -69,7 +81,15 @@ export default function UpcomingEventsCard() {
   };
 
   const formatTimeWithDuration = (event: EventDetail) => {
-    const start = getStartTime(event);
+    const estimatedStartTime = event.linkedPreviousEvent
+      ? calcLinkedStartTime(event.linkedPreviousEvent)
+      : null;
+    const start = estimatedStartTime
+      ? {
+          hour: Number(estimatedStartTime.slice(0, 2)),
+          minute: Number(estimatedStartTime.slice(3, 5)),
+        }
+      : getStartTime(event);
     if (!start) return '';
 
     const startText = formatTime(start.hour, start.minute);
@@ -81,7 +101,8 @@ export default function UpcomingEventsCard() {
     const endDate = new Date(startDate.getTime() + durationMins * 60 * 1000);
     const endText = formatTime(endDate.getHours(), endDate.getMinutes());
 
-    return `${startText}-${endText}${formatDuration(event.durationHours, event.durationMinutes)}`;
+    const schedule = `${startText}-${endText}${formatDuration(event.durationHours, event.durationMinutes)}`;
+    return estimatedStartTime ? `Inicio estimado: ${schedule}` : schedule;
   };
 
   const formatCapacityText = (registeredCount?: number, maxAttendees?: number) => {

@@ -14,6 +14,7 @@ type ImportPayloadItem = {
   maxPlayers: number | null;
   own: boolean;
   wishlist: boolean;
+  previouslyOwned: boolean;
   wishlistPriority: number | null;
 };
 
@@ -114,6 +115,7 @@ async function processJob(jobId: string) {
             status: 'active',
             own: item.own ?? true,
             wishlist: item.wishlist ?? false,
+            previouslyOwned: item.previouslyOwned ?? false,
             wishlistPriority: item.wishlistPriority ?? null,
             locationId: item.own ? (job.locationId ?? undefined) : undefined,
           },
@@ -122,6 +124,7 @@ async function processJob(jobId: string) {
             gameId: item.bggId,
             own: item.own ?? true,
             wishlist: item.wishlist ?? false,
+            previouslyOwned: item.previouslyOwned ?? false,
             wishlistPriority: item.wishlistPriority ?? null,
             locationId: item.own ? (job.locationId ?? null) : null,
           },

@@ -721,6 +721,21 @@ export const getUserUpcomingEvents = async (req: Request, res: Response): Promis
                 thumbnail: true,
                 image: true
               }
+            },
+            linkedPreviousEvent: {
+              select: {
+                id: true,
+                title: true,
+                gameName: true,
+                gameImage: true,
+                bggId: true,
+                startHour: true,
+                startMinute: true,
+                durationHours: true,
+                durationMinutes: true,
+                status: true,
+                date: true,
+              }
             }
           }
         }

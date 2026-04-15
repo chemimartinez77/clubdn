@@ -1,0 +1,2 @@
+ALTER TABLE "UserGame"
+ADD COLUMN "previouslyOwned" BOOLEAN NOT NULL DEFAULT false;

@@ -865,7 +865,7 @@ export default function EventDetail() {
     ? calcLinkedEstimatedStartDate(event.linkedPreviousEvent)
     : null;
   const eventScheduleText = linkedEstimatedStart
-    ? `${formatScheduleFromStart(linkedEstimatedStart, event.durationHours, event.durationMinutes)} (estimado)`
+    ? `Inicio estimado: ${formatScheduleFromStart(linkedEstimatedStart, event.durationHours, event.durationMinutes)}`
     : formatEventSchedule(
         event.date,
         event.startHour,

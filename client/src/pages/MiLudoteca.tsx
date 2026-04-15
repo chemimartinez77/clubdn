@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
@@ -27,6 +27,7 @@ interface UserGame {
   game: CatalogGame;
   own: boolean;
   wishlist: boolean;
+  previouslyOwned: boolean;
   wishlistPriority: number | null;
   wantToPlay: boolean;
   locationId: string | null;
@@ -67,6 +68,7 @@ interface BggCollectionItem {
   maxPlayers: number | null;
   own: boolean;
   wishlist: boolean;
+  previouslyOwned: boolean;
   wishlistPriority: number | null;
 }
 
@@ -76,6 +78,7 @@ interface SyncCheckResponse {
   toImport: BggCollectionItem[];
   toImportOwned: number;
   toImportWishlist: number;
+  toImportPreviouslyOwned: number;
   toDelete: { gameId: string; title: string }[];
   estimatedSeconds: number;
   newCatalogItems: number;
@@ -107,13 +110,12 @@ interface BggSyncJob {
 }
 
 const BGG_SYNC_DISMISSED_JOB_KEY = 'bggSyncDismissedJobId';
-const BGG_SYNC_AUTO_DISMISS_MS = 8000;
-
-type Tab = 'own' | 'wishlist' | 'wantToPlay';
+type Tab = 'own' | 'wishlist' | 'previouslyOwned' | 'wantToPlay';
 
 const TAB_LABELS: Record<Tab, string> = {
-  own: 'Mi colección',
+  own: 'Mi colecciÃ³n',
   wishlist: 'Wishlist',
+  previouslyOwned: 'Lo tuve',
   wantToPlay: 'Quiero jugar',
 };
 
@@ -126,10 +128,21 @@ function formatEta(seconds: number) {
   return `${minutes} min`;
 }
 
+function formatDateTime(dateString: string | null) {
+  if (!dateString) return 'No disponible';
+  return new Intl.DateTimeFormat('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(dateString));
+}
+
 function getSyncStatusLabel(job: BggSyncJob) {
   if (job.status === 'PENDING') return 'En cola';
   if (job.status === 'PROCESSING') return 'Sincronizando';
-  if (job.status === 'COMPLETED') return 'Importación desde BGG completada';
+  if (job.status === 'COMPLETED') return 'ImportaciÃ³n desde BGG completada';
   return 'Con incidencias';
 }
 
@@ -153,10 +166,10 @@ export default function MiLudoteca() {
   const [showNewLocationModal, setShowNewLocationModal] = useState(false);
   const [newLocationName, setNewLocationName] = useState('');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [pendingRemovalGame, setPendingRemovalGame] = useState<UserGame | null>(null);
   const [dismissedJobId, setDismissedJobId] = useState<string | null>(
     () => localStorage.getItem(BGG_SYNC_DISMISSED_JOB_KEY)
   );
-  const prevSyncStatusRef = useRef<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['myGames', tab, search, page],
@@ -240,60 +253,19 @@ export default function MiLudoteca() {
     localStorage.setItem(BGG_SYNC_DISMISSED_JOB_KEY, jobId);
   }, []);
 
-  // Auto-cierre a los 8s cuando el job pasa a COMPLETED/FAILED en esta sesión
-  useEffect(() => {
-    const currentStatus = displayedSyncJob?.status ?? null;
-    const prevStatus = prevSyncStatusRef.current;
-    prevSyncStatusRef.current = currentStatus;
-
-    if (
-      displayedSyncJob &&
-      (currentStatus === 'COMPLETED' || currentStatus === 'FAILED') &&
-      prevStatus !== null &&
-      prevStatus !== currentStatus
-    ) {
-      const timer = setTimeout(() => {
-        setDismissedJobId(displayedSyncJob.id);
-        localStorage.setItem(BGG_SYNC_DISMISSED_JOB_KEY, displayedSyncJob.id);
-      }, 8000);
-      return () => clearTimeout(timer);
-    }
-  }, [displayedSyncJob]);
-
-  useEffect(() => {
-    if (!displayedSyncJob) return;
-    if (displayedSyncJob.id === dismissedJobId) return;
-    if (displayedSyncJob.status !== 'COMPLETED' && displayedSyncJob.status !== 'FAILED') return;
-
-    const finishedAtMs = displayedSyncJob.finishedAt ? new Date(displayedSyncJob.finishedAt).getTime() : NaN;
-    const elapsedMs = Number.isNaN(finishedAtMs) ? 0 : Date.now() - finishedAtMs;
-    const remainingMs = BGG_SYNC_AUTO_DISMISS_MS - elapsedMs;
-
-    if (remainingMs <= 0) {
-      dismissSyncJob(displayedSyncJob.id);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      dismissSyncJob(displayedSyncJob.id);
-    }, remainingMs);
-
-    return () => clearTimeout(timer);
-  }, [dismissSyncJob, dismissedJobId, displayedSyncJob]);
-
   const addMutation = useMutation({
-    mutationFn: async ({ bggId, own, wishlist, wantToPlay }: { bggId: string; own?: boolean; wishlist?: boolean; wantToPlay?: boolean }) => {
-      await api.post('/api/my-ludoteca', { bggId, own, wishlist, wantToPlay });
+    mutationFn: async ({ bggId, own, wishlist, previouslyOwned, wantToPlay }: { bggId: string; own?: boolean; wishlist?: boolean; previouslyOwned?: boolean; wantToPlay?: boolean }) => {
+      await api.post('/api/my-ludoteca', { bggId, own, wishlist, previouslyOwned, wantToPlay });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myGames'] });
-      toastSuccess('Juego añadido a tu ludoteca');
+      toastSuccess('Juego aÃ±adido a tu ludoteca');
     },
-    onError: () => toastError('Error al añadir el juego'),
+    onError: () => toastError('Error al aÃ±adir el juego'),
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ gameId, data }: { gameId: string; data: Partial<Pick<UserGame, 'own' | 'wishlist' | 'wantToPlay' | 'wishlistPriority' | 'locationId'>> }) => {
+    mutationFn: async ({ gameId, data }: { gameId: string; data: Partial<Pick<UserGame, 'own' | 'wishlist' | 'previouslyOwned' | 'wantToPlay' | 'wishlistPriority' | 'locationId'>> }) => {
       await api.patch(`/api/my-ludoteca/${gameId}`, data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['myGames'] }),
@@ -318,13 +290,13 @@ export default function MiLudoteca() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myLocations'] });
-      toastSuccess('Ubicación creada');
+      toastSuccess('UbicaciÃ³n creada');
       setShowNewLocationModal(false);
       setNewLocationName('');
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toastError(msg || 'Error al crear la ubicación');
+      toastError(msg || 'Error al crear la ubicaciÃ³n');
     },
   });
 
@@ -365,29 +337,26 @@ export default function MiLudoteca() {
     setSyncing(true);
     try {
       const res = await api.post<ApiResponse<BggSyncLaunchResponse>>('/api/my-ludoteca/bgg-sync-confirm', {
-        toImport: syncData.toImport,
-        toDelete: syncData.toDelete,
         locationId: syncImportLocationId || null,
-        estimatedSeconds: syncData.estimatedSeconds,
       });
 
       const launch = res.data.data;
       if (!launch) {
-        throw new Error('No se pudo iniciar la sincronización');
+        throw new Error('No se pudo iniciar la sincronizaciÃ³n');
       }
       setActiveJobId(launch.jobId);
       setDismissedJobId(null);
       localStorage.removeItem(BGG_SYNC_DISMISSED_JOB_KEY);
       queryClient.invalidateQueries({ queryKey: ['myLudotecaSyncLatest'] });
       void refetchActiveSyncJob();
-      toastSuccess(`Sincronización lanzada. Tiempo estimado: ${formatEta(launch.estimatedSeconds)}.`);
+      toastSuccess(`SincronizaciÃ³n lanzada. Tiempo estimado: ${formatEta(launch.estimatedSeconds)}.`);
       setShowSyncModal(false);
       setSyncData(null);
       setSyncImportLocationId('');
       setShowSyncDetails(false);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toastError(msg || 'Error durante la sincronización');
+      toastError(msg || 'Error durante la sincronizaciÃ³n');
     } finally {
       setSyncing(false);
     }
@@ -420,7 +389,7 @@ export default function MiLudoteca() {
         <div>
           <h1 className="text-3xl font-bold text-[var(--color-text)]">Mi ludoteca</h1>
           <p className="text-[var(--color-textSecondary)] mt-1">
-            Tu colección personal de juegos
+            Tu colecciÃ³n personal de juegos
           </p>
         </div>
 
@@ -447,7 +416,7 @@ export default function MiLudoteca() {
                       Consultando BGG...
                     </>
                   ) : syncRunning ? (
-                    'Sincronización en curso'
+                    'SincronizaciÃ³n en curso'
                   ) : (
                     'Actualizar desde BGG'
                   )}
@@ -463,25 +432,30 @@ export default function MiLudoteca() {
                       {getSyncStatusLabel(displayedSyncJob)}
                     </p>
                     <p className="text-xs text-[var(--color-textSecondary)]">
-                      {displayedSyncJob.status === 'COMPLETED' && `Añadidos: ${displayedSyncJob.imported + displayedSyncJob.linkedExisting}. Nuevos en catálogo: ${displayedSyncJob.imported}. Eliminados: ${displayedSyncJob.deleted}.${displayedSyncJob.failed > 0 ? ` Fallidos: ${displayedSyncJob.failed}.` : ''}`}
-                      {displayedSyncJob.status === 'FAILED' && (displayedSyncJob.error || 'La sincronización terminó con incidencias.')}
+                      {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED') &&
+                        `Última importación: ${formatDateTime(displayedSyncJob.finishedAt ?? displayedSyncJob.requestedAt)}. `}
+                      {displayedSyncJob.status === 'COMPLETED' && `AÃ±adidos: ${displayedSyncJob.imported + displayedSyncJob.linkedExisting}. Nuevos en catÃ¡logo: ${displayedSyncJob.imported}. Eliminados: ${displayedSyncJob.deleted}.${displayedSyncJob.failed > 0 ? ` Fallidos: ${displayedSyncJob.failed}.` : ''}`}
+                      {displayedSyncJob.status === 'FAILED' && (displayedSyncJob.error || 'La sincronizaciÃ³n terminÃ³ con incidencias.')}
                       {(displayedSyncJob.status === 'PENDING' || displayedSyncJob.status === 'PROCESSING') &&
-                        `Se están procesando ${displayedSyncJob.totalToImport + displayedSyncJob.totalToDelete} cambios. Refresca la página en unos ${formatEta(displayedSyncJob.estimatedSeconds)} si te vas antes.`}
+                        `Se estÃ¡n procesando ${displayedSyncJob.totalToImport + displayedSyncJob.totalToDelete} cambios. Refresca la pÃ¡gina en unos ${formatEta(displayedSyncJob.estimatedSeconds)} si te vas antes.`}
                     </p>
+                    {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED') && (
+                      <p className="text-[11px] text-[var(--color-textSecondary)] mt-1">
+                        Puedes pulsar &quot;Cerrar&quot; para ocultar este mensaje.
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-[var(--color-textSecondary)]">
-                      {displayedSyncJob.estimatedSeconds > 0 && `Estimación: ${formatEta(displayedSyncJob.estimatedSeconds)}`}
+                      {displayedSyncJob.estimatedSeconds > 0 && `EstimaciÃ³n: ${formatEta(displayedSyncJob.estimatedSeconds)}`}
                     </span>
                     {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED') && (
                       <button
                         onClick={() => dismissSyncJob(displayedSyncJob.id)}
-                        className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors"
+                        className="px-3 py-1 text-xs border border-[var(--color-cardBorder)] rounded-lg text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                         title="Cerrar"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        Cerrar
                       </button>
                     )}
                   </div>
@@ -511,7 +485,7 @@ export default function MiLudoteca() {
               onClick={() => setShowBggSearch(!showBggSearch)}
               className="text-sm font-medium text-[var(--color-primary)] hover:underline"
             >
-              {showBggSearch ? 'Ocultar búsqueda en BGG' : 'Buscar juego en BGG y añadir'}
+              {showBggSearch ? 'Ocultar bÃºsqueda en BGG' : 'Buscar juego en BGG y aÃ±adir'}
             </button>
             {showBggSearch && (
               <div className="mt-3 space-y-3">
@@ -563,7 +537,7 @@ export default function MiLudoteca() {
                             disabled={inLibrary || addMutation.isPending}
                             className="text-xs px-2 py-1 rounded bg-[var(--color-primary)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-default"
                           >
-                            {inLibrary ? 'Ya tienes' : 'Añadir'}
+                            {inLibrary ? 'Ya tienes' : 'AÃ±adir'}
                           </button>
                         </div>
                       );
@@ -609,8 +583,9 @@ export default function MiLudoteca() {
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-[var(--color-textSecondary)]">
-                {tab === 'own' && 'Tu colección está vacía. Busca juegos arriba o sincroniza con BGG.'}
-                {tab === 'wishlist' && 'Tu wishlist está vacía.'}
+                {tab === 'own' && 'Tu colecciÃ³n estÃ¡ vacÃ­a. Busca juegos arriba o sincroniza con BGG.'}
+                {tab === 'wishlist' && 'Tu wishlist estÃ¡ vacÃ­a.'}
+                {tab === 'previouslyOwned' && 'No tienes juegos marcados como "Lo tuve".'}
                 {tab === 'wantToPlay' && 'No tienes juegos marcados como "Quiero jugar".'}
               </p>
             </CardContent>
@@ -625,13 +600,13 @@ export default function MiLudoteca() {
                   locations={locations}
                   onUpdate={(payload) => updateMutation.mutate({ gameId: game.gameId, data: payload })}
                   onLocationChange={(value) => handleLocationChange(game.gameId, value)}
-                  onRemove={() => removeMutation.mutate(game.gameId)}
+                  onRemove={() => setPendingRemovalGame(game)}
                 />
               ))}
             </div>
             {pagination && pagination.totalPages > 1 && (
               <div className="flex items-center justify-between text-sm text-[var(--color-textSecondary)] pt-2">
-                <span>{pagination.total} juegos · Página {pagination.currentPage} de {pagination.totalPages}</span>
+                <span>{pagination.total} juegos Â· PÃ¡gina {pagination.currentPage} de {pagination.totalPages}</span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -657,21 +632,26 @@ export default function MiLudoteca() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50" onClick={() => { setShowSyncModal(false); setSyncImportLocationId(''); }} />
             <div className="relative bg-[var(--color-cardBackground)] rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
-              <h2 className="text-lg font-bold text-[var(--color-text)]">Sincronización con BGG</h2>
+              <h2 className="text-lg font-bold text-[var(--color-text)]">SincronizaciÃ³n con BGG</h2>
               <p className="text-sm text-[var(--color-textSecondary)]">
                 Se van a <span className="text-green-600 font-medium">importar {syncData.toImport.length} juegos</span>
-                {syncData.toImportOwned > 0 && syncData.toImportWishlist > 0 && (
-                  <span className="text-[var(--color-textSecondary)]"> ({syncData.toImportOwned} de tu colección, {syncData.toImportWishlist} de wishlist)</span>
-                )}
-                {syncData.toImportWishlist > 0 && syncData.toImportOwned === 0 && (
-                  <span className="text-[var(--color-textSecondary)]"> (todos de wishlist)</span>
+                {(syncData.toImportOwned > 0 || syncData.toImportWishlist > 0 || syncData.toImportPreviouslyOwned > 0) && (
+                  <span className="text-[var(--color-textSecondary)]">
+                    {' '}(
+                    {[
+                      syncData.toImportOwned > 0 ? `${syncData.toImportOwned} de tu colecciÃ³n` : null,
+                      syncData.toImportWishlist > 0 ? `${syncData.toImportWishlist} de wishlist` : null,
+                      syncData.toImportPreviouslyOwned > 0 ? `${syncData.toImportPreviouslyOwned} marcados como "Lo tuve"` : null,
+                    ].filter(Boolean).join(', ')}
+                    )
+                  </span>
                 )}
                 {' '}y <span className="text-red-600 font-medium">eliminar {syncData.toDelete.length}</span> de tu ludoteca.
               </p>
               <div className="rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)]/50 p-3 text-xs text-[var(--color-textSecondary)]">
                 Tiempo estimado: {formatEta(syncData.estimatedSeconds)}.
-                {syncData.newCatalogItems > 0 && ` ${syncData.newCatalogItems} juego${syncData.newCatalogItems !== 1 ? 's' : ''} se añadirán al catálogo compartido por primera vez.`}
-                {' '}La sincronización se ejecutará en background; podrás seguir usando la web y refrescar la página más tarde.
+                {syncData.newCatalogItems > 0 && ` ${syncData.newCatalogItems} juego${syncData.newCatalogItems !== 1 ? 's' : ''} se aÃ±adirÃ¡n al catÃ¡logo compartido por primera vez.`}
+                {' '}La sincronizaciÃ³n se ejecutarÃ¡ en background; podrÃ¡s seguir usando la web y refrescar la pÃ¡gina mÃ¡s tarde.
               </div>
 
               {(syncData.toImport.length > 0 || syncData.toDelete.length > 0) && (
@@ -689,6 +669,13 @@ export default function MiLudoteca() {
                     <div key={game.bggId} className="flex items-center gap-1">
                       <span className="text-green-600 font-bold">+</span>
                       <span className="text-[var(--color-text)]">{game.title}</span>
+                      <span className="text-[10px] text-[var(--color-textSecondary)]">
+                        {[
+                          game.own ? 'Tengo' : null,
+                          game.wishlist ? 'Wishlist' : null,
+                          game.previouslyOwned ? 'Lo tuve' : null,
+                        ].filter(Boolean).join(' · ')}
+                      </span>
                     </div>
                   ))}
                   {syncData.toDelete.map((game) => (
@@ -701,13 +688,13 @@ export default function MiLudoteca() {
               )}
 
               {syncData.toImport.length === 0 && syncData.toDelete.length === 0 && (
-                <p className="text-sm text-[var(--color-textSecondary)]">Tu ludoteca ya está sincronizada con BGG.</p>
+                <p className="text-sm text-[var(--color-textSecondary)]">Tu ludoteca ya estÃ¡ sincronizada con BGG.</p>
               )}
 
               {syncData.toImport.length > 0 && (
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-[var(--color-text)]">
-                    Ubicación para los juegos importados
+                    UbicaciÃ³n para los juegos importados
                   </label>
                   <select
                     value={syncImportLocationId}
@@ -724,10 +711,10 @@ export default function MiLudoteca() {
                     {locations.map((location) => (
                       <option key={location.id} value={location.id}>{location.name}</option>
                     ))}
-                    <option value="__new__">Añadir otra ubicación...</option>
+                    <option value="__new__">AÃ±adir otra ubicaciÃ³n...</option>
                   </select>
                   <p className="text-[10px] text-[var(--color-textSecondary)]">
-                    Podrás cambiar la ubicación de cada juego individualmente después.
+                    PodrÃ¡s cambiar la ubicaciÃ³n de cada juego individualmente despuÃ©s.
                   </p>
                 </div>
               )}
@@ -745,9 +732,41 @@ export default function MiLudoteca() {
                     disabled={syncing}
                     className="px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 disabled:opacity-50"
                   >
-                    {syncing ? 'Lanzando...' : 'Lanzar sincronización'}
+                    {syncing ? 'Lanzando...' : 'Lanzar sincronizaciÃ³n'}
                   </button>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {pendingRemovalGame && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setPendingRemovalGame(null)} />
+            <div className="relative bg-[var(--color-cardBackground)] rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
+              <h2 className="text-lg font-bold text-[var(--color-text)]">Quitar juego</h2>
+              <p className="text-sm text-[var(--color-textSecondary)]">
+                Se quitarÃ¡ <span className="font-medium text-[var(--color-text)]">{pendingRemovalGame.game.name}</span> de tu lista.
+              </p>
+              <p className="text-xs text-[var(--color-textSecondary)]">
+                Pulsa Aceptar para confirmar o Cancelar para mantenerlo en tu ludoteca.
+              </p>
+              <div className="flex justify-end gap-3 pt-1">
+                <button
+                  onClick={() => setPendingRemovalGame(null)}
+                  className="px-4 py-2 text-sm border border-[var(--color-cardBorder)] rounded-lg text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    removeMutation.mutate(pendingRemovalGame.gameId);
+                    setPendingRemovalGame(null);
+                  }}
+                  className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  Aceptar
+                </button>
               </div>
             </div>
           </div>
@@ -757,9 +776,9 @@ export default function MiLudoteca() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50" onClick={() => setShowNewLocationModal(false)} />
             <div className="relative bg-[var(--color-cardBackground)] rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
-              <h2 className="text-lg font-bold text-[var(--color-text)]">Nueva ubicación</h2>
+              <h2 className="text-lg font-bold text-[var(--color-text)]">Nueva ubicaciÃ³n</h2>
               <p className="text-sm text-[var(--color-textSecondary)]">
-                Dale un nombre a la ubicación donde guardas tus juegos.
+                Dale un nombre a la ubicaciÃ³n donde guardas tus juegos.
               </p>
               <input
                 type="text"
@@ -800,7 +819,7 @@ export default function MiLudoteca() {
 interface GameCardProps {
   game: UserGame;
   locations: GameLocation[];
-  onUpdate: (data: Partial<Pick<UserGame, 'own' | 'wishlist' | 'wantToPlay' | 'wishlistPriority' | 'locationId'>>) => void;
+  onUpdate: (data: Partial<Pick<UserGame, 'own' | 'wishlist' | 'previouslyOwned' | 'wantToPlay' | 'wishlistPriority' | 'locationId'>>) => void;
   onLocationChange: (value: string) => void;
   onRemove: () => void;
 }
@@ -810,28 +829,37 @@ function GameCard({ game, locations, onUpdate, onLocationChange, onRemove }: Gam
 
   const handleOwnClick = () => {
     // Can't deactivate "Tengo" if it's the only active flag
-    if (game.own && !game.wishlist && !game.wantToPlay) return;
-    onUpdate({ own: !game.own });
+    if (game.own && !game.wishlist && !game.previouslyOwned && !game.wantToPlay) return;
+    onUpdate({ own: !game.own, ...(game.own ? {} : { previouslyOwned: false }) });
   };
 
   const handleWishlistClick = () => {
     if (!game.wishlist) {
-      // Activating wishlist → deactivate "Tengo"
+      // Activating wishlist â†’ deactivate "Tengo"
       onUpdate({ wishlist: true, own: false });
     } else {
       // Deactivating wishlist only allowed if something else stays active
-      if (!game.wantToPlay && !game.own) return;
+      if (!game.wantToPlay && !game.own && !game.previouslyOwned) return;
       onUpdate({ wishlist: false });
+    }
+  };
+
+  const handlePreviouslyOwnedClick = () => {
+    if (!game.previouslyOwned) {
+      onUpdate({ previouslyOwned: true, own: false });
+    } else {
+      if (!game.wantToPlay && !game.own && !game.wishlist) return;
+      onUpdate({ previouslyOwned: false });
     }
   };
 
   const handleWantToPlayClick = () => {
     if (!game.wantToPlay) {
-      // Activating wantToPlay → deactivate "Tengo"
+      // Activating wantToPlay â†’ deactivate "Tengo"
       onUpdate({ wantToPlay: true, own: false });
     } else {
       // Deactivating only allowed if something else stays active
-      if (!game.wishlist && !game.own) return;
+      if (!game.wishlist && !game.own && !game.previouslyOwned) return;
       onUpdate({ wantToPlay: false });
     }
   };
@@ -860,6 +888,7 @@ function GameCard({ game, locations, onUpdate, onLocationChange, onRemove }: Gam
         <div className="flex flex-wrap gap-1 mt-1">
           <FlagChip label="Tengo" active={game.own} onClick={handleOwnClick} />
           <FlagChip label="Wishlist" active={game.wishlist} onClick={handleWishlistClick} />
+          <FlagChip label="Lo tuve" active={game.previouslyOwned} onClick={handlePreviouslyOwnedClick} />
           <FlagChip label="Jugar" active={game.wantToPlay} onClick={handleWantToPlayClick} />
         </div>
         {game.wishlist && (
@@ -869,11 +898,11 @@ function GameCard({ game, locations, onUpdate, onLocationChange, onRemove }: Gam
             className="mt-0.5 w-full text-[10px] px-1.5 py-1 border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
           >
             <option value="">Sin prioridad</option>
-            <option value="1">1 · Imprescindible</option>
-            <option value="2">2 · Me encantaría tenerlo</option>
-            <option value="3">3 · Me gustaría tenerlo</option>
-            <option value="4">4 · Lo estoy pensando</option>
-            <option value="5">5 · Mejor no comprarlo</option>
+            <option value="1">1 Â· Imprescindible</option>
+            <option value="2">2 Â· Me encantarÃ­a tenerlo</option>
+            <option value="3">3 Â· Me gustarÃ­a tenerlo</option>
+            <option value="4">4 Â· Lo estoy pensando</option>
+            <option value="5">5 Â· Mejor no comprarlo</option>
           </select>
         )}
 
@@ -886,7 +915,7 @@ function GameCard({ game, locations, onUpdate, onLocationChange, onRemove }: Gam
           {locations.map((location) => (
             <option key={location.id} value={location.id}>{location.name}</option>
           ))}
-          <option value="__new__">Añadir otra ubicación...</option>
+          <option value="__new__">AÃ±adir otra ubicaciÃ³n...</option>
         </select>
 
         <div className="flex items-center justify-between mt-auto pt-1">
@@ -925,3 +954,4 @@ function FlagChip({ label, active, onClick }: { label: string; active: boolean; 
     </button>
   );
 }
+

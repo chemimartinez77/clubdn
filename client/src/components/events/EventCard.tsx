@@ -174,7 +174,7 @@ export default function EventCard({ event }: EventCardProps) {
                 </svg>
                 <span className="text-sm">
                   {estimatedStartTime
-                    ? `${new Intl.DateTimeFormat('es-ES', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(event.date))} · ~${estimatedStartTime} (estimado)`
+                    ? `${new Intl.DateTimeFormat('es-ES', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(event.date))} · Inicio estimado: ${estimatedStartTime}`
                     : formatDate(event.date)}
                 </span>
               </div>

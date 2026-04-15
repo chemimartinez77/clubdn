@@ -158,7 +158,7 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
             const estimatedTime = event.linkedPreviousEvent
               ? calcLinkedStartTime(event.linkedPreviousEvent)
               : null;
-            const time = estimatedTime ? `~${estimatedTime}` : defaultTime;
+            const time = estimatedTime ? `Inicio estimado: ${estimatedTime}` : defaultTime;
             const registeredCount = event.registeredCount || 0;
             const isFull = registeredCount >= event.maxAttendees;
             const spotsLeft = event.maxAttendees - registeredCount;

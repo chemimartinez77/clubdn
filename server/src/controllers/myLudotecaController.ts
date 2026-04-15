@@ -5,31 +5,79 @@ import { pokeBggSyncWorker } from '../jobs/bggSyncJob';
 import { getBGGCollection } from '../services/bggService';
 import { ensureGameFromBgg, estimateBggSyncSeconds } from '../services/gameCatalogService';
 
-type SyncImportItem = {
-  bggId: string;
-  title: string;
-  thumbnail: string | null;
-  yearPublished: number | null;
-  minPlayers: number | null;
-  maxPlayers: number | null;
-  own: boolean;
-  wishlist: boolean;
-  wishlistPriority: number | null;
-};
-
-type SyncDeleteItem = {
-  gameId: string;
-  title: string;
-};
-
 function normalizeSearch(value: string) {
   return value.trim();
+}
+
+async function buildBggSyncDiff(userId: string, bggUsername: string) {
+  const [bggCollection, dbGames] = await Promise.all([
+    getBGGCollection(bggUsername),
+    prisma.userGame.findMany({
+      where: { userId, status: 'active' },
+      select: {
+        own: true,
+        wishlist: true,
+        previouslyOwned: true,
+        wishlistPriority: true,
+        wantToPlay: true,
+        gameId: true,
+        game: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  const dbGameMap = new Map(dbGames.map((g) => [g.gameId, g] as const));
+  const bggIds = new Set(bggCollection.map((game) => game.bggId));
+
+  const toImport = bggCollection.filter((bggGame) => {
+    const existing = dbGameMap.get(bggGame.bggId);
+    if (!existing) return true;
+    if (bggGame.own !== existing.own) return true;
+    if (bggGame.wishlist !== existing.wishlist) return true;
+    if (bggGame.previouslyOwned !== existing.previouslyOwned) return true;
+    if (bggGame.wishlist && bggGame.wishlistPriority !== existing.wishlistPriority) return true;
+    return false;
+  });
+
+  const toDelete = dbGames
+    .filter((game) => (game.own || game.wishlist || game.previouslyOwned) && !bggIds.has(game.gameId))
+    .map((game) => ({
+      gameId: game.gameId,
+      title: game.game.name,
+    }));
+
+  const importIds = toImport.map((item) => item.bggId);
+  const existingCatalogGames = importIds.length > 0
+    ? await prisma.game.findMany({
+        where: { id: { in: importIds } },
+        select: { id: true },
+      })
+    : [];
+
+  const existingCatalogIds = new Set(existingCatalogGames.map((game) => game.id));
+  const newCatalogItems = toImport.filter((item) => !existingCatalogIds.has(item.bggId)).length;
+  const estimatedSeconds = estimateBggSyncSeconds(newCatalogItems, toImport.length + toDelete.length);
+
+  return {
+    toImport,
+    toDelete,
+    newCatalogItems,
+    estimatedSeconds,
+    toImportOwned: toImport.filter((item) => item.own).length,
+    toImportWishlist: toImport.filter((item) => item.wishlist).length,
+    toImportPreviouslyOwned: toImport.filter((item) => item.previouslyOwned).length,
+  };
 }
 
 /**
  * GET /api/my-ludoteca
  * Devuelve los juegos activos del usuario autenticado.
- * Query params: tab (own|wishlist|wantToPlay|all), search, page, pageSize
+ * Query params: tab (own|wishlist|previouslyOwned|wantToPlay|all), search, page, pageSize
  */
 export const getMyGames = async (req: Request, res: Response) => {
   try {
@@ -56,6 +104,7 @@ export const getMyGames = async (req: Request, res: Response) => {
 
     if (tab === 'own') where.own = true;
     else if (tab === 'wishlist') where.wishlist = true;
+    else if (tab === 'previouslyOwned') where.previouslyOwned = true;
     else if (tab === 'wantToPlay') where.wantToPlay = true;
 
     const [games, total] = await Promise.all([
@@ -93,16 +142,17 @@ export const getMyGames = async (req: Request, res: Response) => {
 /**
  * POST /api/my-ludoteca
  * AÃ±ade un juego a la ludoteca personal.
- * Body: { bggId, own?, wishlist?, wishlistPriority?, wantToPlay? }
+ * Body: { bggId, own?, wishlist?, previouslyOwned?, wishlistPriority?, wantToPlay? }
  * Si el juego ya existe con status=deleted, lo reactiva.
  */
 export const addGame = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
-    const { bggId, own = false, wishlist = false, wishlistPriority, wantToPlay = false, locationId } = req.body as {
+    const { bggId, own = false, wishlist = false, previouslyOwned = false, wishlistPriority, wantToPlay = false, locationId } = req.body as {
       bggId: string;
       own?: boolean;
       wishlist?: boolean;
+      previouslyOwned?: boolean;
       wishlistPriority?: number;
       wantToPlay?: boolean;
       locationId?: string | null;
@@ -120,6 +170,7 @@ export const addGame = async (req: Request, res: Response) => {
         status: 'active',
         own: own ?? false,
         wishlist: wishlist ?? false,
+        previouslyOwned: previouslyOwned ?? false,
         wishlistPriority: wishlistPriority ?? null,
         wantToPlay: wantToPlay ?? false,
         locationId: locationId ?? null,
@@ -129,6 +180,7 @@ export const addGame = async (req: Request, res: Response) => {
         gameId: game.id,
         own: own ?? false,
         wishlist: wishlist ?? false,
+        previouslyOwned: previouslyOwned ?? false,
         wishlistPriority: wishlistPriority ?? null,
         wantToPlay: wantToPlay ?? false,
         locationId: locationId ?? null,
@@ -151,15 +203,16 @@ export const addGame = async (req: Request, res: Response) => {
 
 /**
  * PATCH /api/my-ludoteca/:bggId
- * Actualiza los flags de un juego (own, wishlist, wishlistPriority, wantToPlay).
+ * Actualiza los flags de un juego (own, wishlist, previouslyOwned, wishlistPriority, wantToPlay).
  */
 export const updateGame = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
     const gameId = req.params.bggId as string;
-    const { own, wishlist, wishlistPriority, wantToPlay, locationId } = req.body as {
+    const { own, wishlist, previouslyOwned, wishlistPriority, wantToPlay, locationId } = req.body as {
       own?: boolean;
       wishlist?: boolean;
+      previouslyOwned?: boolean;
       wishlistPriority?: number | null;
       wantToPlay?: boolean;
       locationId?: string | null;
@@ -178,6 +231,7 @@ export const updateGame = async (req: Request, res: Response) => {
       data: {
         ...(own !== undefined && { own }),
         ...(wishlist !== undefined && { wishlist }),
+        ...(previouslyOwned !== undefined && { previouslyOwned }),
         ...(wishlistPriority !== undefined && { wishlistPriority }),
         ...(wantToPlay !== undefined && { wantToPlay }),
         ...(locationId !== undefined && { locationId }),
@@ -279,60 +333,15 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
       });
     }
 
-    const [bggCollection, dbGames] = await Promise.all([
-      getBGGCollection(bggUsername),
-      prisma.userGame.findMany({
-        where: { userId, status: 'active' },
-        select: {
-          own: true,
-          wishlist: true,
-          wishlistPriority: true,
-          wantToPlay: true,
-          gameId: true,
-          game: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      }),
-    ]);
-
-    // Juegos que el usuario ya tiene en su ludoteca (own o wishlist activos)
-    const dbGameMap = new Map(dbGames.map((g) => [g.gameId, g] as const));
-
-    const bggIds = new Set(bggCollection.map((game) => game.bggId));
-
-    // Importar si no existe en DB, o si existe pero los flags difieren
-    const toImport = bggCollection.filter((bggGame) => {
-      const existing = dbGameMap.get(bggGame.bggId);
-      if (!existing) return true;
-      // Ya existe: importar solo si los flags cambiaron
-      if (bggGame.own && !existing.own) return true;
-      if (bggGame.wishlist && !existing.wishlist) return true;
-      if (bggGame.wishlist && bggGame.wishlistPriority !== existing.wishlistPriority) return true;
-      return false;
-    });
-
-    const toDelete = dbGames
-      .filter((game) => game.own && !bggIds.has(game.gameId))
-      .map((game) => ({
-        gameId: game.gameId,
-        title: game.game.name,
-      }));
-
-    const importIds = toImport.map((item) => item.bggId);
-    const existingCatalogGames = importIds.length > 0
-      ? await prisma.game.findMany({
-          where: { id: { in: importIds } },
-          select: { id: true },
-        })
-      : [];
-
-    const existingCatalogIds = new Set(existingCatalogGames.map((game) => game.id));
-    const newCatalogItems = toImport.filter((item) => !existingCatalogIds.has(item.bggId)).length;
-    const estimatedSeconds = estimateBggSyncSeconds(newCatalogItems, toImport.length + toDelete.length);
+    const {
+      toImport,
+      toDelete,
+      newCatalogItems,
+      estimatedSeconds,
+      toImportOwned,
+      toImportWishlist,
+      toImportPreviouslyOwned,
+    } = await buildBggSyncDiff(userId, bggUsername);
 
     return res.json({
       success: true,
@@ -340,8 +349,9 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
         bggUsername,
         lastBggSync: profile?.lastBggSync ?? null,
         toImport,
-        toImportOwned: toImport.filter((item) => item.own).length,
-        toImportWishlist: toImport.filter((item) => item.wishlist).length,
+        toImportOwned,
+        toImportWishlist,
+        toImportPreviouslyOwned,
         toDelete,
         estimatedSeconds,
         newCatalogItems,
@@ -361,11 +371,8 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
 export const confirmBggSync = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
-    const { toImport = [], toDelete = [], locationId = null, estimatedSeconds = 0 } = req.body as {
-      toImport: SyncImportItem[];
-      toDelete: SyncDeleteItem[];
+    const { locationId = null } = req.body as {
       locationId?: string | null;
-      estimatedSeconds?: number;
     };
 
     const profile = await prisma.userProfile.findUnique({
@@ -393,6 +400,12 @@ export const confirmBggSync = async (req: Request, res: Response) => {
         data: activeJob,
       });
     }
+
+    const {
+      toImport,
+      toDelete,
+      estimatedSeconds,
+    } = await buildBggSyncDiff(userId, bggUsername);
 
     const job = await prisma.bggSyncJob.create({
       data: {

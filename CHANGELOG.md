@@ -4,6 +4,60 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-15 (sesion 1)
+
+### Mantenimiento automatico de notificaciones
+
+Se anade un cron job independiente para limpiar diariamente las notificaciones antiguas, sin mezclar esta tarea con la promocion automatica de miembros. El job se ejecuta a las `08:05` y elimina registros de `Notification` y `GlobalNotification` con mas de 7 dias de antiguedad. Al borrar `GlobalNotification`, sus lecturas asociadas (`GlobalNotificationRead`) tambien desaparecen por cascada.
+
+**Archivos modificados:**
+- `server/src/jobs/notificationCleanupJob.ts` - nuevo job diario de limpieza con retencion de 7 dias
+- `server/src/index.ts` - registro del nuevo job al arrancar el servidor
+
+### Hora estimada en partidas enlazadas
+
+Se completa la visualizacion de la hora estimada de inicio para partidas enlazadas en todas las vistas relevantes. Cuando una partida depende de la duracion de la anterior, la interfaz ya no muestra una hora fija como si fuera definitiva, sino el texto `Inicio estimado` seguido de la franja calculada a partir de la partida principal.
+
+Esto se aplica en:
+- listado de eventos
+- calendario diario
+- calendario semanal
+- detalle del evento
+- tarjeta de proximos eventos de la pantalla de inicio
+
+Ademas, el endpoint de estadisticas de proximos eventos devuelve ahora la informacion necesaria de `linkedPreviousEvent` para poder calcular esa hora estimada tambien en el dashboard.
+
+**Archivos modificados:**
+- `client/src/components/events/EventCard.tsx` - copy unificado a `Inicio estimado` en la lista
+- `client/src/components/events/EventCalendarDay.tsx` - hora estimada visible en vista diaria
+- `client/src/components/events/EventCalendarWeek.tsx` - hora estimada visible en vista semanal
+- `client/src/pages/EventDetail.tsx` - franja mostrada como `Inicio estimado` en la ficha del evento
+- `client/src/components/dashboard/UpcomingEventsCard.tsx` - calculo y renderizado de hora estimada en la home
+- `client/src/types/stats.ts` - tipado de `linkedPreviousEvent` para el dashboard
+- `server/src/controllers/statsController.ts` - inclusion de `linkedPreviousEvent` en `upcoming-events`
+
+**Verificacion:**
+- `npx.cmd tsc -b` en `client`
+
+### Mejoras en la sincronizacion con BGG y en Mi ludoteca
+
+Se ajusta el flujo de sincronizacion con BGG para que el servidor recalcule el diff real al lanzar la importacion, en vez de fiarse del payload enviado por el cliente. Con esto se evita importar juegos que ya no formen parte de la coleccion actual en BGG si el modal se ha quedado obsoleto o si el estado cambia entre la previsualizacion y la confirmacion.
+
+Ademas, el banner del resultado de la sincronizacion deja de autocerrarse. Ahora muestra la fecha de la ultima importacion, un aviso indicando que se puede cerrar manualmente y un boton explicito `Cerrar` en lugar del aspa. Tambien se anade confirmacion modal al usar `Quitar`, para que el juego no se elimine directamente de la lista sin confirmacion.
+
+Por otro lado, la importacion desde BGG incluye ahora tambien los juegos marcados como `Previously Owned`, que se guardan en un nuevo flag `previouslyOwned` dentro de `UserGame`. En la interfaz aparece una nueva pill `Lo tuve` y una nueva pestana con ese mismo nombre para consultar esos juegos de forma independiente.
+
+**Archivos modificados:**
+- `client/src/pages/MiLudoteca.tsx` - banner persistente con boton `Cerrar`, fecha de ultima importacion, nueva pestana `Lo tuve`, pill `Lo tuve` y modal de confirmacion al quitar
+- `server/src/controllers/myLudotecaController.ts` - recalculo server-side del diff de BGG, soporte de `previouslyOwned` y nuevas reglas de importacion/eliminacion
+- `server/src/services/bggService.ts` - lectura de `prevowned=1` en la coleccion de BGG
+- `server/src/jobs/bggSyncJob.ts` - persistencia de `previouslyOwned` durante la importacion
+- `server/prisma/schema.prisma` - nuevo campo `UserGame.previouslyOwned`
+- `server/prisma/migrations/20260415090000_add_user_game_previously_owned/` - migracion para anadir `previouslyOwned`
+- `npx.cmd tsc --noEmit` en `server`
+- `npx.cmd prisma generate` en `server`
+
+---
 ## 2026-04-14 (sesión 5)
 
 ### Mejoras en Mi ludoteca
@@ -2895,3 +2949,4 @@ Incluye:
 ---
 
 **Última actualización:** 10 de Marzo de 2026
+

@@ -1399,6 +1399,7 @@ model UserGame {
   game             Game          @relation(fields: [gameId], references: [id], onDelete: Cascade)
   own              Boolean       @default(false)
   wishlist         Boolean       @default(false)
+  previouslyOwned  Boolean       @default(false)
   wishlistPriority Int?          // 1-5
   wantToPlay       Boolean       @default(false)
   locationId       String?       // null = "Casa" (ubicación por defecto)

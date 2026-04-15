@@ -64,4 +64,17 @@ export interface EventDetail {
     thumbnail: string | null;
     image: string | null;
   } | null;
+  linkedPreviousEvent?: {
+    id: string;
+    title: string;
+    gameName?: string | null;
+    gameImage?: string | null;
+    bggId?: string | null;
+    startHour?: number | null;
+    startMinute?: number | null;
+    durationHours?: number | null;
+    durationMinutes?: number | null;
+    status: string;
+    date: string;
+  } | null;
 }
