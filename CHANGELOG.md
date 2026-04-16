@@ -4,6 +4,17 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-16 (sesion 3)
+
+### Mi ludoteca: botón "Cerrar" recarga la página al completar sincronización BGG
+
+Tras completar una sincronización con BGG, el botón "Cerrar" del panel de estado ahora recarga la página automáticamente para que los juegos importados aparezcan en la lista sin necesidad de un refresco manual. El mensaje informativo se actualiza también para indicar este comportamiento solo cuando el estado es `COMPLETED` (para `FAILED` y `CANCELLED` el texto sigue siendo el anterior).
+
+**Archivos modificados:**
+- `client/src/pages/MiLudoteca.tsx` - `dismissSyncJob` acepta parámetro `reload`; el botón Cerrar lo pasa como `true` cuando `status === 'COMPLETED'`; texto del mensaje diferenciado por estado
+
+---
+
 ## 2026-04-16 (sesion 2)
 
 ### Consejo del día: opción de desactivar permanentemente

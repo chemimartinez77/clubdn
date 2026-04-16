@@ -252,9 +252,10 @@ export default function MiLudoteca() {
   const pagination = data?.pagination;
   const displayedSyncJob = activeSyncJob ?? latestSyncJob ?? null;
   const syncRunning = displayedSyncJob?.status === 'QUEUED' || displayedSyncJob?.status === 'PENDING' || displayedSyncJob?.status === 'PROCESSING';
-  const dismissSyncJob = useCallback((jobId: string) => {
+  const dismissSyncJob = useCallback((jobId: string, reload = false) => {
     setDismissedJobId(jobId);
     localStorage.setItem(BGG_SYNC_DISMISSED_JOB_KEY, jobId);
+    if (reload) window.location.reload();
   }, []);
 
   const cancelSyncMutation = useMutation({
@@ -476,7 +477,9 @@ export default function MiLudoteca() {
                     </div>
                     {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED' || displayedSyncJob.status === 'CANCELLED') && (
                       <p className="text-[11px] text-[var(--color-textSecondary)] mt-1">
-                        Puedes pulsar &quot;Cerrar&quot; para ocultar este mensaje.
+                        {displayedSyncJob.status === 'COMPLETED'
+                          ? 'Puedes pulsar "Cerrar" para ocultar este mensaje y recargar la página para que aparezcan los juegos en tu ludoteca.'
+                          : 'Puedes pulsar "Cerrar" para ocultar este mensaje.'}
                       </p>
                     )}
                   </div>
@@ -495,7 +498,7 @@ export default function MiLudoteca() {
                     )}
                     {(displayedSyncJob.status === 'COMPLETED' || displayedSyncJob.status === 'FAILED' || displayedSyncJob.status === 'CANCELLED') && (
                       <button
-                        onClick={() => dismissSyncJob(displayedSyncJob.id)}
+                        onClick={() => dismissSyncJob(displayedSyncJob.id, displayedSyncJob.status === 'COMPLETED')}
                         className="px-3 py-1 text-xs border border-[var(--color-cardBorder)] rounded-lg text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                         title="Cerrar"
                       >
