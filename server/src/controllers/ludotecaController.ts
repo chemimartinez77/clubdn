@@ -88,6 +88,24 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
           }
           return { ...item, gameThumbnail: thumbnail };
         }
+        // Para juegos no-ROL sin thumbnail cacheado, buscar en tabla Game (sin llamada externa)
+        if (item.gameType !== 'ROL' && item.bggId && !item.thumbnail) {
+          const gameData = await prisma.game.findUnique({
+            where: { id: item.bggId },
+            select: { thumbnail: true, image: true, yearPublished: true }
+          });
+          if (gameData?.thumbnail) {
+            await prisma.libraryItem.update({
+              where: { id: item.id },
+              data: {
+                thumbnail: gameData.thumbnail,
+                image: gameData.image ?? undefined,
+                yearPublished: gameData.yearPublished ?? undefined
+              }
+            });
+            return { ...item, gameThumbnail: gameData.thumbnail };
+          }
+        }
         return { ...item, gameThumbnail: item.thumbnail || null };
       })
     );

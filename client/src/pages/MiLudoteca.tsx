@@ -158,6 +158,7 @@ export default function MiLudoteca() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
   const [bggQuery, setBggQuery] = useState('');
   const [bggQueryInput, setBggQueryInput] = useState('');
   const [showBggSearch, setShowBggSearch] = useState(false);
@@ -176,9 +177,9 @@ export default function MiLudoteca() {
   );
 
   const { data, isLoading } = useQuery({
-    queryKey: ['myGames', tab, search, page],
+    queryKey: ['myGames', tab, search, page, locationFilter],
     queryFn: async () => {
-      const params = new URLSearchParams({ tab, page: String(page), pageSize: '48', ...(search && { search }) });
+      const params = new URLSearchParams({ tab, page: String(page), pageSize: '48', ...(search && { search }), ...(locationFilter && { locationId: locationFilter }) });
       const res = await api.get<ApiResponse<MyGamesResponse>>(`/api/my-ludoteca?${params}`);
       return res.data.data;
     },
@@ -620,6 +621,19 @@ export default function MiLudoteca() {
               Filtrar
             </button>
           </form>
+          {(locations?.length ?? 0) > 0 && (
+            <select
+              value={locationFilter}
+              onChange={(e) => { setLocationFilter(e.target.value); setPage(1); }}
+              className="px-3 py-2 text-sm border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+            >
+              <option value="">Todas las ubicaciones</option>
+              <option value="__casa__">Casa</option>
+              {locations!.map(loc => (
+                <option key={loc.id} value={loc.id}>{loc.name}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         {isLoading ? (
@@ -920,7 +934,7 @@ function GameCard({ game, locations, onUpdate, onLocationChange, onRemove }: Gam
             src={imageUrl}
             alt={game.game.name}
             loading="lazy"
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-contain"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

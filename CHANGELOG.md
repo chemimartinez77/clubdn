@@ -4,6 +4,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-16 (sesion 5)
+
+### Ludoteca: cacheo de thumbnails, filtro por ubicación e imágenes sin corte
+
+**Ludoteca del club — cacheo lazy de thumbnails para juegos no-ROL** (`server/src/controllers/ludotecaController.ts`): al cargar el listado, los juegos de mesa/wargame sin thumbnail pero con `bggId` ya no mostraban imagen porque el bloque de cacheo solo cubría ROL. Se amplía para que cualquier item no-ROL sin thumbnail busque en la tabla `Game` (sin llamada externa) y, si existe el dato, lo propague a `LibraryItem.thumbnail` para futuras cargas.
+
+**Mi Ludoteca — filtro por ubicación** (`client/src/pages/MiLudoteca.tsx`, `server/src/controllers/myLudotecaController.ts`): se añade un select "Todas las ubicaciones / Casa / [ubicaciones personalizadas]" junto al buscador, visible solo cuando el usuario tiene al menos una ubicación creada. El backend acepta el nuevo parámetro `locationId` en `getMyGames`; el valor especial `__casa__` filtra por `locationId = null`.
+
+**Mi Ludoteca — imágenes de cards sin corte** (`client/src/pages/MiLudoteca.tsx`): `object-cover` recortaba las carátulas que no tenían exactamente la proporción del contenedor. Se cambia a `object-contain` para mostrar la imagen completa con franjas del color de fondo (letterbox) cuando la proporción no encaja.
+
+**Archivos modificados:**
+- `client/src/pages/MiLudoteca.tsx`
+- `server/src/controllers/ludotecaController.ts`
+- `server/src/controllers/myLudotecaController.ts`
+
+---
+
 ## 2026-04-16 (sesion 4)
 
 ### Mejoras de UI en móvil y correcciones varias

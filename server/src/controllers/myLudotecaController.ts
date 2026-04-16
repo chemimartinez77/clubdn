@@ -102,7 +102,7 @@ async function getQueueInfo(job: { id: string; status: string; requestedAt: Date
 export const getMyGames = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
-    const { tab = 'all', search = '', page = '1', pageSize = '48' } = req.query as Record<string, string>;
+    const { tab = 'all', search = '', page = '1', pageSize = '48', locationId = '' } = req.query as Record<string, string>;
 
     const safePage = Math.max(1, parseInt(page, 10) || 1);
     const safePageSize = Math.min(100, Math.max(1, parseInt(pageSize, 10) || 48));
@@ -126,6 +126,9 @@ export const getMyGames = async (req: Request, res: Response) => {
     else if (tab === 'wishlist') where.wishlist = true;
     else if (tab === 'previouslyOwned') where.previouslyOwned = true;
     else if (tab === 'wantToPlay') where.wantToPlay = true;
+
+    if (locationId === '__casa__') where.locationId = null;
+    else if (locationId) where.locationId = locationId;
 
     const [games, total] = await Promise.all([
       prisma.userGame.findMany({
