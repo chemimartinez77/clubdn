@@ -155,7 +155,7 @@ function TipController() {
 
   const { data: profileData, isSuccess: profileLoaded } = useQuery({
     queryKey: ['myProfile'],
-    queryFn: () => api.get('/api/profile/me').then(r => r.data),
+    queryFn: () => api.get('/api/profile/me').then(r => r.data.data?.profile),
     enabled: !!user && !isLoading,
     staleTime: 5 * 60 * 1000,
   });
@@ -165,7 +165,7 @@ function TipController() {
     if (tipCheckedRef.current) return;
     tipCheckedRef.current = true;
 
-    const showTipPref = profileData?.data?.profile?.showTipOfTheDay;
+    const showTipPref = profileData?.showTipOfTheDay;
     if (showTipPref !== false && shouldShowTip() && !NO_TIP_PATHS.includes(pathname)) {
       setTip(getRandomTip());
     }
