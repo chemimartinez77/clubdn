@@ -20,6 +20,7 @@ async function buildBggSyncDiff(userId: string, bggUsername: string) {
         previouslyOwned: true,
         wishlistPriority: true,
         wantToPlay: true,
+        bggSynced: true,
         gameId: true,
         game: {
           select: {
@@ -45,7 +46,7 @@ async function buildBggSyncDiff(userId: string, bggUsername: string) {
   });
 
   const toDelete = dbGames
-    .filter((game) => (game.own || game.wishlist || game.previouslyOwned) && !bggIds.has(game.gameId))
+    .filter((game) => game.bggSynced && (game.own || game.wishlist || game.previouslyOwned) && !bggIds.has(game.gameId))
     .map((game) => ({
       gameId: game.gameId,
       title: game.game.name,

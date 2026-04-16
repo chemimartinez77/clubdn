@@ -714,6 +714,9 @@ export default function MiLudoteca() {
                 {syncData.newCatalogItems > 0 && ` ${syncData.newCatalogItems} juego${syncData.newCatalogItems !== 1 ? 's' : ''} se añadirán al catálogo compartido por primera vez.`}
                 {' '}La sincronización se ejecutará en background; podrás seguir usando la web y refrescar la página más tarde.
               </div>
+              <p className="text-xs text-[var(--color-textSecondary)]">
+                Solo se eliminan juegos que fueron importados desde BGG. Los añadidos manualmente desde la app no se ven afectados.
+              </p>
 
               {(syncData.toImport.length > 0 || syncData.toDelete.length > 0) && (
                 <button

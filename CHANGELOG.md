@@ -4,6 +4,26 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-16 (sesion 6)
+
+### Protección de juegos manuales en sync BGG, bottom sheet de opciones en móvil e info en modal de sync
+
+**Mi Ludoteca — sync BGG no elimina juegos añadidos manualmente** (`server/prisma/schema.prisma`, `server/src/jobs/bggSyncJob.ts`, `server/src/controllers/myLudotecaController.ts`, migración `20260416110000_add_bgg_synced_to_user_game`): el sync de BGG eliminaba juegos que el usuario había añadido manualmente desde la app si no estaban en su colección BGG. Se añade el campo `bggSynced Boolean @default(false)` a `UserGame`. El job de sync lo pone a `true` al importar/actualizar. `toDelete` ahora solo incluye juegos con `bggSynced = true`, protegiendo los añadidos manualmente.
+
+**Mi Ludoteca — aviso en modal de sync** (`client/src/pages/MiLudoteca.tsx`): se añade una nota informativa bajo el recuadro de tiempo estimado explicando que solo se eliminan juegos importados desde BGG y que los añadidos manualmente no se ven afectados.
+
+**EventDetail — menú de opciones como bottom sheet en móvil** (`client/src/pages/EventDetail.tsx`): el dropdown de opciones en móvil se cortaba por debajo del viewport y se despegaba del botón al hacer scroll. En móvil (`< sm`) se reemplaza por un bottom sheet con overlay oscuro que sube desde la parte inferior de la pantalla, siempre visible y anclado independientemente del scroll. En desktop se mantiene el dropdown `fixed` posicionado bajo el botón.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx`
+- `client/src/pages/MiLudoteca.tsx`
+- `server/prisma/schema.prisma`
+- `server/src/controllers/myLudotecaController.ts`
+- `server/src/jobs/bggSyncJob.ts`
+- `server/prisma/migrations/20260416110000_add_bgg_synced_to_user_game/migration.sql`
+
+---
+
 ## 2026-04-16 (sesion 5)
 
 ### Ludoteca: cacheo de thumbnails, filtro por ubicación e imágenes sin corte

@@ -1409,6 +1409,7 @@ model UserGame {
   wantToPlay       Boolean       @default(false)
   locationId       String?       // null = "Casa" (ubicación por defecto)
   location         GameLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  bggSynced        Boolean       @default(false) // true = importado/actualizado por sync BGG (no tocar en próximo sync si false)
   status           String        @default("active") // "active" | "deleted" (soft delete)
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt

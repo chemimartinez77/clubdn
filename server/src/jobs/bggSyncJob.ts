@@ -193,6 +193,7 @@ async function processJob(jobId: string) {
             previouslyOwned: item.previouslyOwned ?? false,
             wishlistPriority: item.wishlistPriority ?? null,
             locationId: item.own ? (job.locationId ?? undefined) : undefined,
+            bggSynced: true,
           },
           create: {
             userId: job.userId,
@@ -202,6 +203,7 @@ async function processJob(jobId: string) {
             previouslyOwned: item.previouslyOwned ?? false,
             wishlistPriority: item.wishlistPriority ?? null,
             locationId: item.own ? (job.locationId ?? null) : null,
+            bggSynced: true,
           },
         });
       } catch (error) {
