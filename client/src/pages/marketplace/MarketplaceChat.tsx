@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../../components/layout/Layout';
 import { api } from '../../api/axios';
 import { useAuth } from '../../contexts/AuthContext';
+import UserPopover from '../../components/ui/UserPopover';
+import { displayName } from '../../utils/displayName';
 import { STATUS_LABELS, CANCELLATION_REASONS } from '../../types/marketplace';
 import type { MarketplaceConversationDetail, MarketplaceMessage, MarketplaceOffer, CancellationReason } from '../../types/marketplace';
 import type { ApiResponse } from '../../types/auth';
@@ -163,7 +165,15 @@ export default function MarketplaceChat() {
               {listing.isArchived && <span className="text-xs text-amber-600">· Retirado</span>}
             </div>
             <p className="text-xs text-[var(--color-textSecondary)]">
-              {isSeller ? 'Comprador:' : 'Vendedor:'} <span className="font-medium">{otherParty.name}</span>
+              {isSeller ? 'Comprador:' : 'Vendedor:'}{' '}
+              <UserPopover
+                userId={otherParty.id}
+                name={otherParty.name}
+                nick={otherParty.profile?.nick}
+                avatar={otherParty.profile?.avatar}
+              >
+                <span className="font-medium">{displayName(otherParty.name, otherParty.profile?.nick)}</span>
+              </UserPopover>
             </p>
           </div>
         </div>

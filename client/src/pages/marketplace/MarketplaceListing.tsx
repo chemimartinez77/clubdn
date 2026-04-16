@@ -9,6 +9,8 @@ import InfoTooltip from '../../components/ui/InfoTooltip';
 import MarketplaceListingShareCard from '../../components/marketplace/MarketplaceListingShareCard';
 import { api } from '../../api/axios';
 import { useAuth } from '../../contexts/AuthContext';
+import UserPopover from '../../components/ui/UserPopover';
+import { displayName } from '../../utils/displayName';
 import { CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS } from '../../types/marketplace';
 import type { MarketplaceListing, MarketplaceConversationSummary } from '../../types/marketplace';
 import type { ApiResponse } from '../../types/auth';
@@ -299,7 +301,17 @@ Si tu anuncio tiene más fotos, podrás decidir en la siguiente ventana si quier
             )}
 
             <div className="text-sm text-[var(--color-textSecondary)]">
-              Publicado por <span className="font-medium text-[var(--color-text)]">{listing.author.name}</span>
+              Publicado por{' '}
+              <UserPopover
+                userId={listing.author.id}
+                name={listing.author.name}
+                nick={listing.author.profile?.nick}
+                avatar={listing.author.profile?.avatar}
+              >
+                <span className="font-medium text-[var(--color-text)]">
+                  {displayName(listing.author.name, listing.author.profile?.nick)}
+                </span>
+              </UserPopover>
               {' · '}
               {new Date(listing.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
             </div>

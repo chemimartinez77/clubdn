@@ -461,63 +461,69 @@ export default function Documentos() {
             <CardContent>
               <div className="divide-y divide-gray-200">
                 {documents.map((doc) => (
-                  <div key={doc.id} className="py-4 flex items-center gap-4 hover:bg-[var(--color-tableRowHover)] -mx-6 px-6 transition-colors">
-                    {getFileIcon(doc.mimeType)}
+                  <div key={doc.id} className="py-4 hover:bg-[var(--color-tableRowHover)] -mx-6 px-6 transition-colors">
+                    {/* Fila principal: icono + info + acciones */}
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5">{getFileIcon(doc.mimeType)}</div>
 
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-[var(--color-text)] truncate">{doc.title}</h4>
-                      <div className="flex items-center gap-3 text-sm text-[var(--color-textSecondary)] mt-1">
-                        <span>{doc.filename}</span>
-                        <span>{formatFileSize(doc.size)}</span>
-                        <span>{new Date(doc.createdAt).toLocaleDateString('es-ES')}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-medium text-[var(--color-text)] break-words">{doc.title}</h4>
+                          {/* Botones: siempre a la derecha del título */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <div className="flex items-center gap-0.5">
+                              <button
+                                onClick={() => handleDownload(doc)}
+                                className="p-2 hover:bg-[var(--color-tableRowHover)] rounded-lg transition-colors cursor-pointer"
+                                title="Descargar"
+                              >
+                                <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                              </button>
+                              {doc.downloadCount > 0 && (
+                                <span className="text-xs text-[var(--color-textSecondary)] pr-1" title="Descargas">
+                                  {doc.downloadCount}
+                                </span>
+                              )}
+                            </div>
+                            {isAdmin && (
+                              <>
+                                <button
+                                  onClick={() => handleEdit(doc)}
+                                  className="p-2 hover:bg-[var(--color-tableRowHover)] rounded-lg transition-colors cursor-pointer"
+                                  title="Editar"
+                                >
+                                  <svg className="w-5 h-5 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(doc)}
+                                  className="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                  title="Eliminar"
+                                >
+                                  <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Metadatos + badge de visibilidad */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-textSecondary)] mt-1">
+                          <span className="truncate max-w-[160px] sm:max-w-none">{doc.filename}</span>
+                          <span>{formatFileSize(doc.size)}</span>
+                          <span>{new Date(doc.createdAt).toLocaleDateString('es-ES')}</span>
+                          {isAdmin && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${visibilityColors[doc.visibility]}`}>
+                              {visibilityLabels[doc.visibility]}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-
-                    {isAdmin && (
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${visibilityColors[doc.visibility]}`}>
-                        {visibilityLabels[doc.visibility]}
-                      </span>
-                    )}
-
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleDownload(doc)}
-                          className="p-2 hover:bg-[var(--color-tableRowHover)] rounded-lg transition-colors cursor-pointer"
-                          title="Descargar"
-                        >
-                          <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                          </svg>
-                        </button>
-                        {doc.downloadCount > 0 && (
-                          <span className="text-xs text-[var(--color-textSecondary)]" title="Descargas">
-                            {doc.downloadCount}
-                          </span>
-                        )}
-                      </div>
-                      {isAdmin && (
-                        <>
-                          <button
-                            onClick={() => handleEdit(doc)}
-                            className="p-2 hover:bg-[var(--color-tableRowHover)] rounded-lg transition-colors cursor-pointer"
-                            title="Editar"
-                          >
-                            <svg className="w-5 h-5 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(doc)}
-                            className="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                            title="Eliminar"
-                          >
-                            <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </>
-                      )}
                     </div>
                   </div>
                 ))}

@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
 import { api } from '../../api/axios';
 import { useAuth } from '../../contexts/AuthContext';
+import UserPopover from '../../components/ui/UserPopover';
+import { displayName } from '../../utils/displayName';
 import { STATUS_LABELS, STATUS_COLORS } from '../../types/marketplace';
 import type { MarketplaceConversationSummary } from '../../types/marketplace';
 import type { ApiResponse } from '../../types/auth';
@@ -94,7 +96,15 @@ function ConversationRow({ conv, userId }: { conv: MarketplaceConversationSummar
           </span>
         </div>
         <p className="text-xs text-[var(--color-textSecondary)] mt-0.5">
-          {isSeller ? 'Comprador:' : 'Vendedor:'} <span className="font-medium">{otherParty.name}</span>
+          {isSeller ? 'Comprador:' : 'Vendedor:'}{' '}
+          <UserPopover
+            userId={otherParty.id}
+            name={otherParty.name}
+            nick={otherParty.profile?.nick}
+            avatar={otherParty.profile?.avatar}
+          >
+            <span className="font-medium">{displayName(otherParty.name, otherParty.profile?.nick)}</span>
+          </UserPopover>
           {' · '}
           {Number(conv.listing.price).toFixed(2)} €
         </p>

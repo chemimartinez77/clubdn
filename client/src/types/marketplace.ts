@@ -46,6 +46,7 @@ export const STATUS_COLORS: Record<MarketplaceListingStatus, string> = {
 export interface MarketplaceAuthor {
   id: string;
   name: string;
+  profile?: { nick?: string | null; avatar?: string | null } | null;
 }
 
 export interface MarketplaceListing {
@@ -98,7 +99,7 @@ export interface MarketplaceConversationSummary {
     isArchived: boolean;
     author: MarketplaceAuthor;
   };
-  buyer: { id: string; name: string };
+  buyer: { id: string; name: string; profile?: { nick?: string | null; avatar?: string | null } | null };
   messages: MarketplaceMessage[];
   offers: MarketplaceOffer[];
   unreadCount: number;

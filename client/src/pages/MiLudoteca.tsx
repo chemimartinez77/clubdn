@@ -639,7 +639,7 @@ export default function MiLudoteca() {
           </Card>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
               {games.map((game) => (
                 <GameCard
                   key={game.id}
@@ -912,21 +912,24 @@ function GameCard({ game, locations, onUpdate, onLocationChange, onRemove }: Gam
   };
 
   return (
-    <div className="flex flex-col bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-      <div className="aspect-[3/4] bg-[linear-gradient(180deg,rgba(0,0,0,0.18),rgba(0,0,0,0.28))] flex items-center justify-center p-3">
+    <div className="flex max-sm:flex-row sm:flex-col bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+      {/* Imagen: en móvil rectangular 2:3 a la izquierda; en sm+ vertical 3:4 ancho completo */}
+      <div className="max-sm:w-[72px] max-sm:aspect-[2/3] max-sm:shrink-0 sm:aspect-[3/4] sm:w-full bg-[var(--color-tableRowHover)] overflow-hidden">
         {imageUrl ? (
           <img
             src={imageUrl}
             alt={game.game.name}
             loading="lazy"
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover object-center"
           />
         ) : (
-          <span className="text-xs text-[var(--color-textSecondary)] text-center px-2">{game.game.name}</span>
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-[10px] text-[var(--color-textSecondary)] text-center px-1">{game.game.name}</span>
+          </div>
         )}
       </div>
 
-      <div className="p-2 flex flex-col gap-1 flex-1">
+      <div className="p-2 flex flex-col gap-1 flex-1 min-w-0">
         <p className="text-xs font-medium text-[var(--color-text)] leading-tight line-clamp-2">{game.game.name}</p>
         {game.game.yearPublished && (
           <p className="text-[10px] text-[var(--color-textSecondary)]">{game.game.yearPublished}</p>
@@ -991,7 +994,7 @@ function FlagChip({ label, active, onClick }: { label: string; active: boolean; 
   return (
     <button
       onClick={onClick}
-      className={`text-[9px] px-1.5 py-0.5 rounded-full border transition-colors ${
+      className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
         active
           ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
           : 'text-[var(--color-textSecondary)] border-[var(--color-cardBorder)] hover:border-[var(--color-primary)]'

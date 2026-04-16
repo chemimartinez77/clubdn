@@ -304,10 +304,10 @@ export default function StatsCard() {
                     className="flex items-center justify-between p-3 bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-lg"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold text-[var(--color-primary)]">#{index + 1}</span>
+                      <span className="text-lg font-bold text-[var(--color-primaryLight)]">#{index + 1}</span>
                       <span className="text-sm font-medium text-[var(--color-text)]">{game.name}</span>
                     </div>
-                    <span className="text-sm text-[var(--color-primary)]">{game.count} {game.count === 1 ? 'partida' : 'partidas'}</span>
+                    <span className="text-sm text-[var(--color-primaryLight)]">{game.count} {game.count === 1 ? 'partida' : 'partidas'}</span>
                   </div>
                 ))}
               </div>

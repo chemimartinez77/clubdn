@@ -4,6 +4,42 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-16 (sesion 4)
+
+### Mejoras de UI en móvil y correcciones varias
+
+Sesión con múltiples mejoras de interfaz y correcciones de comportamiento:
+
+**Tema Negro dark — colores lilas reemplazados por grises neutros** (`client/src/config/themes.ts`): el tema "Negro" en modo oscuro usaba `primary: #5865f2` (azul-lila de Discord) y colores de calendario con tintes índigo. Se reemplazan todos por grises neutros (`primary: #d4d4d8`, `accent: #71717a`, colores de calendario en tonos `#313338`/`#e4e4e7`).
+
+**StatsCard — contraste en ranking de juegos** (`client/src/components/dashboard/StatsCard.tsx`): los textos `#1`, `#2`, `#3` y "X partidas" usaban `--color-primary` que en temas como azul o verde dark tiene muy poco contraste sobre el fondo. Se cambia a `--color-primaryLight` que es la variante clara del acento, visible en ambos modos.
+
+**Mercadillo — nick clicable con UserPopover** (`client/src/pages/marketplace/Marketplace.tsx`, `MarketplaceListing.tsx`, `MarketplaceChat.tsx`, `MarketplaceConversations.tsx`, `client/src/types/marketplace.ts`): el nombre del vendedor/comprador se mostraba como texto plano con el campo `name`. Ahora usa `displayName()` para mostrar el nick si existe, y `UserPopover` para abrir el perfil al pulsar. Backend actualizado (`server/src/controllers/marketplaceController.ts`) para incluir `profile: { nick, avatar }` en todos los selects de `author` y `buyer`.
+
+**Resultados de partidas — nick y UserPopover** (`client/src/pages/EventDetail.tsx`, `server/src/controllers/eventResultController.ts`): los resultados guardados de una partida mostraban el nombre completo. Ahora el backend incluye `profile: { nick, avatar }` en los selects de `user`, y el frontend muestra el nick mediante `displayName()` con `UserPopover` clicable.
+
+**EventDetail — menú de opciones no se cierra al hacer scroll en móvil** (`client/src/pages/EventDetail.tsx`): el menú de opciones se cerraba ante cualquier evento scroll, lo que en móvil lo hacía desaparecer al mínimo deslizamiento. Se elimina el listener de scroll; el cierre solo ocurre al pulsar fuera del menú.
+
+**Documentos — layout móvil corregido** (`client/src/pages/Documentos.tsx`): la lista de documentos en móvil mostraba icono, texto, badge de visibilidad y botones en una sola fila horizontal, causando solapamientos. Rediseño: layout en dos niveles (título + botones arriba, metadatos + badge abajo en `flex-wrap`).
+
+**Mi Ludoteca — layout móvil en 1 columna** (`client/src/pages/MiLudoteca.tsx`): el grid de 2 columnas en móvil causaba cards de altura desigual por el wrap de los chips. En móvil pasa a 1 columna con layout horizontal (imagen `aspect-[2/3]` sin padding a la izquierda, info a la derecha). Los chips suben de `text-[9px]` a `text-[10px]` para mayor facilidad de pulsación. En tablet+ sin cambios.
+
+**Archivos modificados:**
+- `client/src/config/themes.ts`
+- `client/src/components/dashboard/StatsCard.tsx`
+- `client/src/pages/marketplace/Marketplace.tsx`
+- `client/src/pages/marketplace/MarketplaceListing.tsx`
+- `client/src/pages/marketplace/MarketplaceChat.tsx`
+- `client/src/pages/marketplace/MarketplaceConversations.tsx`
+- `client/src/types/marketplace.ts`
+- `client/src/pages/EventDetail.tsx`
+- `client/src/pages/Documentos.tsx`
+- `client/src/pages/MiLudoteca.tsx`
+- `server/src/controllers/marketplaceController.ts`
+- `server/src/controllers/eventResultController.ts`
+
+---
+
 ## 2026-04-16 (sesion 3)
 
 ### Mi ludoteca: botón "Cerrar" recarga la página al completar sincronización BGG

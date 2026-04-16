@@ -51,7 +51,11 @@ const listingPublicSelect = {
   createdAt: true,
   updatedAt: true,
   author: {
-    select: { id: true, name: true }
+    select: {
+      id: true,
+      name: true,
+      profile: { select: { nick: true, avatar: true } },
+    }
   },
 };
 
@@ -585,8 +589,8 @@ export const getMyConversations = async (req: Request, res: Response): Promise<v
         ],
       },
       include: {
-        listing: { select: { id: true, title: true, price: true, status: true, images: true, isArchived: true, author: { select: { id: true, name: true } } } },
-        buyer: { select: { id: true, name: true } },
+        listing: { select: { id: true, title: true, price: true, status: true, images: true, isArchived: true, author: { select: { id: true, name: true, profile: { select: { nick: true, avatar: true } } } } } },
+        buyer: { select: { id: true, name: true, profile: { select: { nick: true, avatar: true } } } },
         messages: { orderBy: { createdAt: 'desc' }, take: 1, include: { sender: { select: { id: true, name: true } } } },
         offers: { orderBy: { createdAt: 'desc' }, take: 1, include: { proposedBy: { select: { id: true, name: true } } } },
         reads: { where: { userId }, select: { lastReadAt: true } },
@@ -633,8 +637,8 @@ export const getConversation = async (req: Request, res: Response): Promise<void
     const conversation = await prisma.marketplaceConversation.findUnique({
       where: { id },
       include: {
-        listing: { select: { id: true, title: true, price: true, status: true, images: true, isArchived: true, authorId: true, author: { select: { id: true, name: true } } } },
-        buyer: { select: { id: true, name: true } },
+        listing: { select: { id: true, title: true, price: true, status: true, images: true, isArchived: true, authorId: true, author: { select: { id: true, name: true, profile: { select: { nick: true, avatar: true } } } } } },
+        buyer: { select: { id: true, name: true, profile: { select: { nick: true, avatar: true } } } },
         messages: { orderBy: { createdAt: 'asc' }, include: { sender: { select: { id: true, name: true } } } },
         offers: { orderBy: { createdAt: 'desc' }, include: { proposedBy: { select: { id: true, name: true } } } },
       },

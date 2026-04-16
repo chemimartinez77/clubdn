@@ -261,9 +261,9 @@ export const themes: Record<ThemeName, Theme> = {
         ...lightBase
       },
       dark: {
-        primary: '#5865f2',
-        primaryDark: '#4752c4',
-        primaryLight: '#7289da',
+        primary: '#d4d4d8',
+        primaryDark: '#a1a1aa',
+        primaryLight: '#e4e4e7',
         background: '#1e1f22',
         surface: '#2b2d31',
         cardBackground: '#2b2d31',
@@ -279,11 +279,11 @@ export const themes: Record<ThemeName, Theme> = {
         textSecondary: '#b5bac1',
         border: '#3f4147',
         hover: '#404249',
-        accent: '#949cf7',
-        calendarDaySocio: '#1c2559',
-        calendarDayColaborador: '#13172f',
-        calendarTextSocio: '#a5b4fc',
-        calendarTextColaborador: '#c7d2fe'
+        accent: '#71717a',
+        calendarDaySocio: '#313338',
+        calendarDayColaborador: '#27272a',
+        calendarTextSocio: '#e4e4e7',
+        calendarTextColaborador: '#f2f3f5'
       }
     }
   }

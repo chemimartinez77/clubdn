@@ -13,7 +13,7 @@ export const getEventResults = async (req: Request, res: Response) => {
     const results = await prisma.eventResult.findMany({
       where: { eventId },
       include: {
-        user: { select: { id: true, name: true } },
+        user: { select: { id: true, name: true, profile: { select: { nick: true, avatar: true } } } },
         creator: { select: { id: true, name: true } },
       },
       orderBy: [{ isWinner: 'desc' }, { score: 'desc' }],
@@ -105,7 +105,7 @@ export const upsertEventResults = async (req: Request, res: Response) => {
     const saved = await prisma.eventResult.findMany({
       where: { eventId },
       include: {
-        user: { select: { id: true, name: true } },
+        user: { select: { id: true, name: true, profile: { select: { nick: true, avatar: true } } } },
         creator: { select: { id: true, name: true } },
       },
       orderBy: [{ isWinner: 'desc' }, { score: 'desc' }],

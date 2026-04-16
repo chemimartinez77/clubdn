@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
 import { api } from '../../api/axios';
+import UserPopover from '../../components/ui/UserPopover';
+import { displayName } from '../../utils/displayName';
 import type { MarketplaceListing, MarketplaceFilters, MarketplaceListingsResponse, MarketplaceCategory } from '../../types/marketplace';
 import { CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS } from '../../types/marketplace';
 import type { ApiResponse } from '../../types/auth';
@@ -214,7 +216,16 @@ function ListingCard({ listing }: { listing: MarketplaceListing }) {
         <p className="text-xs text-[var(--color-textSecondary)] mb-2">{CATEGORY_LABELS[listing.category]}</p>
         <div className="flex items-center justify-between">
           <span className="text-lg font-bold text-[var(--color-primary)]">{Number(listing.price).toFixed(2)}€</span>
-          <span className="text-xs text-[var(--color-textSecondary)]">{listing.author.name}</span>
+          <UserPopover
+            userId={listing.author.id}
+            name={listing.author.name}
+            nick={listing.author.profile?.nick}
+            avatar={listing.author.profile?.avatar}
+          >
+            <span className="text-xs text-[var(--color-textSecondary)]">
+              {displayName(listing.author.name, listing.author.profile?.nick)}
+            </span>
+          </UserPopover>
         </div>
       </div>
     </Link>

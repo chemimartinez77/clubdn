@@ -29,7 +29,7 @@ interface EventResultEntry {
   score: number | null;
   isWinner: boolean;
   notes: string | null;
-  user: { id: string; name: string; profile?: { nick?: string | null } | null } | null;
+  user: { id: string; name: string; profile?: { nick?: string | null; avatar?: string | null } | null } | null;
   creator: { id: string; name: string };
 }
 
@@ -98,12 +98,9 @@ export default function EventDetail() {
         setIsOptionsOpen(false);
       }
     };
-    const handleScroll = () => setIsOptionsOpen(false);
     document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('scroll', handleScroll, true);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', handleScroll, true);
     };
   }, []);
 
@@ -1987,8 +1984,18 @@ export default function EventDetail() {
                     <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg bg-[var(--color-tableRowHover)]">
                       {r.isWinner && <span title="Ganador">🏆</span>}
                       <span className="flex-1 text-sm text-[var(--color-text)] font-medium">
-                        {r.user ? displayName(r.user.name, r.user.profile?.nick) : (r.guestName ?? 'Invitado')}
-                        {r.guestName && <span className="ml-1 text-xs text-[var(--color-textSecondary)]">(invitado)</span>}
+                        {r.user ? (
+                          <UserPopover
+                            userId={r.user.id}
+                            name={r.user.name}
+                            nick={r.user.profile?.nick}
+                            avatar={r.user.profile?.avatar}
+                          >
+                            <span>{displayName(r.user.name, r.user.profile?.nick)}</span>
+                          </UserPopover>
+                        ) : (
+                          <>{r.guestName ?? 'Invitado'}<span className="ml-1 text-xs text-[var(--color-textSecondary)]">(invitado)</span></>
+                        )}
                         {r.isWinner && r.notes && (
                           <span className="ml-1 text-xs text-[var(--color-textSecondary)]">({r.notes})</span>
                         )}
