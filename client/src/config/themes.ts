@@ -261,9 +261,9 @@ export const themes: Record<ThemeName, Theme> = {
         ...lightBase
       },
       dark: {
-        primary: '#d4d4d8',
-        primaryDark: '#a1a1aa',
-        primaryLight: '#e4e4e7',
+        primary: '#71717a',
+        primaryDark: '#52525b',
+        primaryLight: '#d4d4d8',
         background: '#1e1f22',
         surface: '#2b2d31',
         cardBackground: '#2b2d31',

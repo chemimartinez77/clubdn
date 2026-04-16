@@ -37,8 +37,11 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
 
     if (ownerEmail && typeof ownerEmail === 'string') {
       if (ownerEmail === 'club') {
-        // Filtrar solo items del club (sin propietario individual)
-        where.ownerEmail = null;
+        // Filtrar solo items del club (null o email del club)
+        where.OR = [
+          { ownerEmail: null },
+          { ownerEmail: 'clubdreadnought.vlc@gmail.com' }
+        ];
       } else {
         where.ownerEmail = ownerEmail;
       }
@@ -318,21 +321,44 @@ export const getLibraryFilters = async (_req: Request, res: Response): Promise<v
     // Condiciones disponibles
     const conditions = Object.values(GameCondition);
 
-    // Propietarios únicos
-    const owners = await prisma.libraryItem.findMany({
-      where: { ownerEmail: { not: null } },
+    // Propietarios únicos (excluyendo el email del club, que se agrupa bajo 'club')
+    const ownerRows = await prisma.libraryItem.findMany({
+      where: {
+        AND: [
+          { ownerEmail: { not: null } },
+          { ownerEmail: { not: 'clubdreadnought.vlc@gmail.com' } }
+        ]
+      },
       select: { ownerEmail: true },
       distinct: ['ownerEmail']
     });
 
-    const uniqueOwners = owners.map(o => o.ownerEmail).filter(Boolean);
+    const ownerEmails = ownerRows.map(o => o.ownerEmail).filter(Boolean) as string[];
+
+    // Buscar nick/nombre para cada email
+    const users = await prisma.user.findMany({
+      where: { email: { in: ownerEmails } },
+      select: {
+        email: true,
+        name: true,
+        profile: { select: { nick: true } }
+      }
+    });
+
+    const userByEmail = new Map(users.map(u => [u.email, u]));
+
+    const owners = ownerEmails.map(email => {
+      const u = userByEmail.get(email);
+      const displayName = u?.profile?.nick || u?.name || email;
+      return { email, displayName };
+    });
 
     res.json({
       success: true,
       data: {
         gameTypes,
         conditions,
-        owners: ['club', ...uniqueOwners]
+        owners: [{ email: 'club', displayName: 'Club Dreadnought' }, ...owners]
       }
     });
   } catch (error) {

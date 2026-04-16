@@ -1,5 +1,5 @@
 // client/src/pages/Ludoteca.tsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
 import { useToast } from '../contexts/ToastContext';
@@ -33,10 +33,15 @@ interface LibraryStats {
   uniqueOwners: number;
 }
 
+interface OwnerOption {
+  email: string;
+  displayName: string;
+}
+
 interface Filters {
   gameTypes: GameType[];
   conditions: GameCondition[];
-  owners: string[];
+  owners: OwnerOption[];
 }
 
 const gameTypeLabels: Record<GameType, string> = {
@@ -69,12 +74,12 @@ const conditionColors: Record<GameCondition, string> = {
   MALO: 'bg-red-100 text-red-800'
 };
 
-// Helper para mostrar el nombre del propietario
-const getOwnerDisplayName = (ownerEmail: string | null): string => {
+// Helper para mostrar el nombre del propietario a partir del mapa email→displayName
+const getOwnerDisplayName = (ownerEmail: string | null, ownerMap?: Map<string, string>): string => {
   if (!ownerEmail || ownerEmail === 'club' || ownerEmail === 'clubdreadnought.vlc@gmail.com') {
     return 'Club Dreadnought';
   }
-  return ownerEmail;
+  return ownerMap?.get(ownerEmail) ?? ownerEmail;
 };
 
 export default function Ludoteca() {
@@ -95,6 +100,11 @@ export default function Ludoteca() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [selectedGameSource, setSelectedGameSource] = useState<'bgg' | 'rpggeek'>('bgg');
   const [isMobile, setIsMobile] = useState(false);
+
+  const ownerMap = useMemo(() => {
+    if (!filters?.owners) return new Map<string, string>();
+    return new Map(filters.owners.map(o => [o.email, o.displayName]));
+  }, [filters?.owners]);
   const [mobileSearchActive, setMobileSearchActive] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
@@ -416,8 +426,8 @@ export default function Ludoteca() {
                 >
                   <option value="all">Todos los propietarios</option>
                   {filters?.owners.map(owner => (
-                    <option key={owner} value={owner}>
-                      {getOwnerDisplayName(owner === 'club' ? null : owner)}
+                    <option key={owner.email} value={owner.email}>
+                      {owner.displayName}
                     </option>
                   ))}
                 </select>
@@ -499,7 +509,7 @@ export default function Ludoteca() {
               >
                 <option value="all">Todos los propietarios</option>
                 {filters?.owners.map(owner => (
-                  <option key={owner} value={owner}>{getOwnerDisplayName(owner === 'club' ? null : owner)}</option>
+                  <option key={owner.email} value={owner.email}>{owner.displayName}</option>
                 ))}
               </select>
 
@@ -590,7 +600,7 @@ export default function Ludoteca() {
                     <div className="flex items-center justify-between pt-3 border-t border-[var(--color-cardBorder)]">
                       <div className="flex items-center gap-2 text-sm text-[var(--color-textSecondary)]">
                         <span className="text-lg">🏛️</span>
-                        <span className="text-xs font-medium">{getOwnerDisplayName(item.ownerEmail)}</span>
+                        <span className="text-xs font-medium">{getOwnerDisplayName(item.ownerEmail, ownerMap)}</span>
                       </div>
 
                       {item.bggId && (

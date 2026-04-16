@@ -24,6 +24,10 @@ Sesión con múltiples mejoras de interfaz y correcciones de comportamiento:
 
 **Mi Ludoteca — layout móvil en 1 columna** (`client/src/pages/MiLudoteca.tsx`): el grid de 2 columnas en móvil causaba cards de altura desigual por el wrap de los chips. En móvil pasa a 1 columna con layout horizontal (imagen `aspect-[2/3]` sin padding a la izquierda, info a la derecha). Los chips suben de `text-[9px]` a `text-[10px]` para mayor facilidad de pulsación. En tablet+ sin cambios.
 
+**Tema Negro dark — ajuste de contraste en primary** (`client/src/config/themes.ts`): tras el cambio anterior, `primary: #d4d4d8` (gris claro) causaba bajo contraste en elementos que usan `primary` como fondo con texto blanco (WelcomeCard, círculos de iniciales). Se ajusta a `primary: #71717a` (gris medio-oscuro), `primaryDark: #52525b` y se mueve el gris claro a `primaryLight: #d4d4d8` (usado por el ranking de StatsCard).
+
+**Ludoteca — propietarios muestran nick o nombre en lugar del email** (`client/src/pages/Ludoteca.tsx`, `server/src/controllers/ludotecaController.ts`): el desplegable de filtro por propietario y el badge de cada card mostraban el email crudo. Ahora el backend resuelve `nick || name || email` para cada propietario cruzando con `User` y `Profile`, y devuelve `{ email, displayName }[]`. El frontend construye un `Map` con `useMemo` para resolver el displayName en la card. El email del club (`clubdreadnought.vlc@gmail.com`) se agrupa bajo la entrada "Club Dreadnought" y el filtro de backend lo incluye junto a `ownerEmail = null`. Además se corrige el nombre del usuario del club en BD de "Club Club Dreadnought Valencia" a "Club Dreadnought Valencia".
+
 **Archivos modificados:**
 - `client/src/config/themes.ts`
 - `client/src/components/dashboard/StatsCard.tsx`
@@ -35,8 +39,10 @@ Sesión con múltiples mejoras de interfaz y correcciones de comportamiento:
 - `client/src/pages/EventDetail.tsx`
 - `client/src/pages/Documentos.tsx`
 - `client/src/pages/MiLudoteca.tsx`
+- `client/src/pages/Ludoteca.tsx`
 - `server/src/controllers/marketplaceController.ts`
 - `server/src/controllers/eventResultController.ts`
+- `server/src/controllers/ludotecaController.ts`
 
 ---
 
