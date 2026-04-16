@@ -4,6 +4,31 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-16 (sesion 2)
+
+### Consejo del día: opción de desactivar permanentemente
+
+Se añade la posibilidad de desactivar el consejo del día que aparece al iniciar sesión, tanto desde el propio modal como desde el perfil de usuario.
+
+**Nuevo campo en BD:** `showTipOfTheDay Boolean @default(true)` en `UserProfile`. La migración `20260416100000_add_show_tip_of_the_day` añade la columna con `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` (seguro en producción, no afecta a datos existentes).
+
+**Modal:** nuevo botón "No volver a mostrar" en el footer. Al pulsarlo, llama a `PATCH /api/profile/me` con `showTipOfTheDay: false`, invalida la query `myProfile` para que el estado quede sincronizado, y cierra el modal.
+
+**Perfil:** nueva subsección "Interfaz" en la sección "Configuración" con un toggle "Mostrar consejo del día al iniciar sesión", consistente con el patrón de los demás toggles de notificaciones.
+
+**Lógica de visualización en `TipController` (App.tsx):** antes el tip se mostraba solo con el check de 24h en localStorage. Ahora espera a que el perfil cargue (`isSuccess`) y comprueba también que `showTipOfTheDay !== false`. Si el usuario tiene la preferencia desactivada, el modal no aparece aunque hayan pasado 24h. Al cerrar sesión, el ref de control se resetea para la próxima sesión.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma` - nuevo campo `showTipOfTheDay` en `UserProfile`
+- `server/prisma/migrations/20260416100000_add_show_tip_of_the_day/migration.sql` - nueva migración
+- `server/src/controllers/profileController.ts` - `showTipOfTheDay` en destructuring, `create` y `update`
+- `client/src/types/profile.ts` - `showTipOfTheDay` en `UserProfile` e `UpdateProfileData`
+- `client/src/App.tsx` - `TipController` ahora consulta el perfil y respeta la preferencia antes de mostrar el tip
+- `client/src/components/tips/TipOfTheDayModal.tsx` - botón "No volver a mostrar" con llamada a `PATCH /api/profile/me`
+- `client/src/pages/Profile.tsx` - toggle en nueva subsección "Interfaz"
+
+---
+
 ## 2026-04-16 (sesion 1)
 
 ### Notificaciones: navegacion al tablon, eliminar todas y correcciones

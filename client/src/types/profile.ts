@@ -26,6 +26,7 @@ export interface UserProfile {
   notifyEventCancelled: boolean;
   notifyInvitations: boolean;
   allowEventInvitations: boolean;
+  showTipOfTheDay: boolean;
   noughterColor: string | null;
   defaultScreen: string;
   eventsDefaultView: string;
@@ -59,6 +60,7 @@ export interface UpdateProfileData {
   notifyEventCancelled?: boolean;
   notifyInvitations?: boolean;
   allowEventInvitations?: boolean;
+  showTipOfTheDay?: boolean;
   noughterColor?: string | null;
   defaultScreen?: string;
   eventsDefaultView?: string;

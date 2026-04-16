@@ -902,6 +902,18 @@ export default function Profile() {
                   </div>
 
                   <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Interfaz</p>
+                    <div className="space-y-2">
+                      <NotifToggle
+                        value={profile.showTipOfTheDay ?? true}
+                        label="Mostrar consejo del día al iniciar sesión"
+                        onToggle={() => updateMutation.mutate({ showTipOfTheDay: !(profile.showTipOfTheDay ?? true) })}
+                        disabled={updateMutation.isPending}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-[var(--color-cardBorder)]">
                     <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Pantalla de inicio</p>
                     <div className="flex gap-3">
                       {[

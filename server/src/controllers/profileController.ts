@@ -217,7 +217,8 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
       defaultScreen,
       eventsDefaultView,
       eventsAccordionMode,
-      eventButtonStyle
+      eventButtonStyle,
+      showTipOfTheDay
     } = req.body;
 
     // Buscar o crear perfil
@@ -248,6 +249,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           notifyEventCancelled: notifyEventCancelled ?? true,
           notifyInvitations: notifyInvitations ?? true,
           allowEventInvitations: allowEventInvitations ?? true,
+          showTipOfTheDay: showTipOfTheDay ?? true,
           noughterColor: noughterColor ?? null,
           defaultScreen: defaultScreen ?? 'home',
           onboardingCompleted
@@ -287,6 +289,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           ...(notifyEventCancelled !== undefined && { notifyEventCancelled }),
           ...(notifyInvitations !== undefined && { notifyInvitations }),
           ...(allowEventInvitations !== undefined && { allowEventInvitations }),
+          ...(showTipOfTheDay !== undefined && { showTipOfTheDay }),
           ...(noughterColor !== undefined && { noughterColor }),
           ...(defaultScreen !== undefined && { defaultScreen }),
           ...(eventsDefaultView !== undefined && { eventsDefaultView }),

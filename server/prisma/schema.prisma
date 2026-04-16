@@ -194,6 +194,7 @@ model UserProfile {
   notifyEventCancelled  Boolean @default(true)   // Eventos cancelados
   notifyInvitations     Boolean @default(true)   // Estado de invitaciones
   allowEventInvitations Boolean @default(true)   // Permitir ser apuntado a eventos por otros miembros
+  showTipOfTheDay       Boolean @default(true)   // Mostrar consejo del día al iniciar sesión
 
   // Personalización
   defaultScreen        String   @default("home")       // Pantalla de inicio tras login: "home" o "events"

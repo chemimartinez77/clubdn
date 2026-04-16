@@ -151,20 +151,32 @@ function TipController() {
   const { user, isLoading } = useAuth();
   const { pathname } = useLocation();
   const [tip, setTip] = useState<Tip | null>(null);
-  const prevUserRef = useRef<string | null>(null);
+  const tipCheckedRef = useRef(false);
+
+  const { data: profileData, isSuccess: profileLoaded } = useQuery({
+    queryKey: ['myProfile'],
+    queryFn: () => api.get('/api/profile/me').then(r => r.data),
+    enabled: !!user && !isLoading,
+    staleTime: 5 * 60 * 1000,
+  });
 
   useEffect(() => {
-    if (isLoading) return;
-    const currentId = user?.id ?? null;
-    const wasLoggedOut = prevUserRef.current === null;
-    const isNowLoggedIn = currentId !== null;
+    if (isLoading || !user || !profileLoaded) return;
+    if (tipCheckedRef.current) return;
+    tipCheckedRef.current = true;
 
-    if (wasLoggedOut && isNowLoggedIn && shouldShowTip() && !NO_TIP_PATHS.includes(pathname)) {
+    const showTipPref = profileData?.data?.profile?.showTipOfTheDay;
+    if (showTipPref !== false && shouldShowTip() && !NO_TIP_PATHS.includes(pathname)) {
       setTip(getRandomTip());
     }
+  }, [user, isLoading, profileLoaded, profileData, pathname]);
 
-    prevUserRef.current = currentId;
-  }, [user, isLoading, pathname]);
+  // Resetear cuando el usuario cierra sesión
+  useEffect(() => {
+    if (!user) {
+      tipCheckedRef.current = false;
+    }
+  }, [user]);
 
   if (!tip) return null;
   return <TipOfTheDayModal tip={tip} onClose={() => setTip(null)} />;

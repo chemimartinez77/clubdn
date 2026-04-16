@@ -1,5 +1,7 @@
 // client/src/components/tips/TipOfTheDayModal.tsx
 import { useState } from 'react';
+import { api } from '../../api/axios';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Tip } from '../../data/tips';
 import { getRandomTipExcluding, markTipShown } from '../../data/tips';
 
@@ -10,6 +12,8 @@ interface TipOfTheDayModalProps {
 
 export default function TipOfTheDayModal({ tip, onClose }: TipOfTheDayModalProps) {
   const [current, setCurrent] = useState<Tip>(tip);
+  const [disabling, setDisabling] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleClose = () => {
     markTipShown();
@@ -18,6 +22,18 @@ export default function TipOfTheDayModal({ tip, onClose }: TipOfTheDayModalProps
 
   const handleAnother = () => {
     setCurrent(getRandomTipExcluding(current.id));
+  };
+
+  const handleDisable = async () => {
+    setDisabling(true);
+    try {
+      await api.patch('/api/profile/me', { showTipOfTheDay: false });
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+    } catch {
+      // Si falla, cerramos igualmente
+    }
+    markTipShown();
+    onClose();
   };
 
   return (
@@ -76,12 +92,21 @@ export default function TipOfTheDayModal({ tip, onClose }: TipOfTheDayModalProps
 
           {/* Footer */}
           <div className="flex items-center justify-between px-5 pb-5 pt-1 border-t border-[var(--color-cardBorder)] mt-1 gap-3">
-            <button
-              onClick={handleAnother}
-              className="text-sm text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors underline underline-offset-2"
-            >
-              Ver otro consejo
-            </button>
+            <div className="flex flex-col gap-1">
+              <button
+                onClick={handleAnother}
+                className="text-sm text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors underline underline-offset-2 text-left"
+              >
+                Ver otro consejo
+              </button>
+              <button
+                onClick={handleDisable}
+                disabled={disabling}
+                className="text-xs text-[var(--color-textSecondary)] hover:text-red-500 transition-colors underline underline-offset-2 text-left disabled:opacity-50"
+              >
+                No volver a mostrar
+              </button>
+            </div>
             <button
               onClick={handleClose}
               className="px-4 py-2 rounded-lg bg-[var(--color-primary)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
