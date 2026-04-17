@@ -4,6 +4,18 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-17 (sesion 2)
+
+### Enlace a BGG en ludotecas de jugadores
+
+**Enlace "Ver en BGG" en colección de jugador y búsqueda global** (`client/src/pages/JugadorDetalle.tsx`, `client/src/pages/JugadoresLudoteca.tsx`): se añade un enlace directo a BoardGameGeek en cada tarjeta de juego. En la vista de colección de un jugador (`JugadorDetalle`) aparece debajo del año de publicación; en los resultados de búsqueda global (`JugadoresLudoteca`) aparece junto al contador de propietarios. El enlace usa el `id` del juego que ya es el BGG ID, se abre en pestaña nueva con `rel="noopener noreferrer"`.
+
+**Archivos modificados:**
+- `client/src/pages/JugadorDetalle.tsx`
+- `client/src/pages/JugadoresLudoteca.tsx`
+
+---
+
 ## 2026-04-17 (sesion 1)
 
 ### Nueva sección: Ludotecas de jugadores

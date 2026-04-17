@@ -195,6 +195,14 @@ export default function JugadorDetalle() {
                         {game.yearPublished && (
                           <p className="text-xs text-[var(--color-textSecondary)] mt-1">{game.yearPublished}</p>
                         )}
+                        <a
+                          href={`https://boardgamegeek.com/boardgame/${game.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-[var(--color-primary)] hover:underline mt-1 w-fit"
+                        >
+                          Ver en BGG
+                        </a>
                       </div>
                     </div>
                   ))}

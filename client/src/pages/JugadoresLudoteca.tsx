@@ -232,9 +232,19 @@ export default function JugadoresLudoteca() {
                             </span>
                           )}
                         </p>
-                        <p className="text-xs text-[var(--color-textSecondary)] mt-0.5 mb-2">
-                          Lo tienen {result.ownerCount} {result.ownerCount === 1 ? 'jugador' : 'jugadores'}
-                        </p>
+                        <div className="flex items-center gap-3 mt-0.5 mb-2">
+                          <p className="text-xs text-[var(--color-textSecondary)]">
+                            Lo tienen {result.ownerCount} {result.ownerCount === 1 ? 'jugador' : 'jugadores'}
+                          </p>
+                          <a
+                            href={`https://boardgamegeek.com/boardgame/${result.gameId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-[var(--color-primary)] hover:underline"
+                          >
+                            Ver en BGG
+                          </a>
+                        </div>
                         <div className="flex flex-wrap gap-2">
                           {result.owners.map((owner) => (
                             <UserPopover
