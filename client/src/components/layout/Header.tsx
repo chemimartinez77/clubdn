@@ -167,6 +167,13 @@ export default function Header() {
                       Ludotecas de jugadores
                     </Link>
                     <Link
+                      to="/quien-sabe-jugar"
+                      className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                      onClick={() => setIsGamesMenuOpen(false)}
+                    >
+                      ¿Quién sabe jugar?
+                    </Link>
+                    <Link
                       to="/games"
                       className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                       onClick={() => setIsGamesMenuOpen(false)}
@@ -557,6 +564,13 @@ export default function Header() {
                       onClick={closeAllMenus}
                     >
                       Ludotecas de jugadores
+                    </Link>
+                    <Link
+                      to="/quien-sabe-jugar"
+                      className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                      onClick={closeAllMenus}
+                    >
+                      ¿Quién sabe jugar?
                     </Link>
                     <Link
                       to="/games"

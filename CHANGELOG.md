@@ -4,6 +4,29 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-17 (sesion 5)
+
+### Comparador de ludotecas, Top 10 y sección "¿Quién sabe jugar?"
+
+**Comparador de ludotecas** (`server/src/controllers/jugadoresLudotecaController.ts`, `server/src/routes/jugadoresLudotecaRoutes.ts`, `client/src/pages/JugadoresLudoteca.tsx`): nuevo endpoint `POST /api/jugadores-ludoteca/compare` que recibe hasta 5 `userIds`, obtiene todos sus juegos activos en una sola query y agrupa en JS: `common` (juegos que todos tienen) y `uniqueByPlayer` (juegos que solo tiene ese jugador). En el frontend, nuevo tab "Comparar" con grid seleccionable de jugadores (borde primario al seleccionar, deshabilitado al llegar a 5), chips de seleccionados con botón "×", botón "Comparar" activo con ≥2 jugadores, y resultados agrupados en secciones sin paginación.
+
+**Top 10 juegos más comunes** (`server/src/controllers/jugadoresLudotecaController.ts`, `client/src/pages/JugadoresLudoteca.tsx`): `getPlayers` incluye ahora una query `groupBy` sobre `UserGame` ordenada por count desc (take 10), con join posterior a `Game` para nombre y thumbnail. Se renderiza bajo las estadísticas en la tab "Lista de jugadores" como grid de 2 columnas con posición, thumbnail, nombre y número de propietarios.
+
+**Nueva sección "¿Quién sabe jugar?"** (`server/src/controllers/quienSabeJugarController.ts` nuevo, `server/src/routes/quienSabeJugarRoutes.ts` nuevo, `server/src/index.ts`, `client/src/pages/QuienSabeJugar.tsx` nuevo, `client/src/App.tsx`, `client/src/components/layout/Header.tsx`): endpoint `GET /api/quien-sabe-jugar?q=` que busca en paralelo propietarios del juego con ludoteca pública (via `UserGame`), historial de partidas (via `GamePlayHistory.gameName` texto libre) y asistentes a eventos (via `Event.gameName + EventRegistration`). Devuelve por jugador: `ownsGame`, `playCount` y `hasAttended`. Página accesible desde menú Juegos con debounce 400ms, badges informativos y link a la colección del jugador si su ludoteca es pública.
+
+**Archivos modificados/creados:**
+- `server/src/controllers/jugadoresLudotecaController.ts`
+- `server/src/routes/jugadoresLudotecaRoutes.ts`
+- `server/src/controllers/quienSabeJugarController.ts` (nuevo)
+- `server/src/routes/quienSabeJugarRoutes.ts` (nuevo)
+- `server/src/index.ts`
+- `client/src/pages/JugadoresLudoteca.tsx`
+- `client/src/pages/QuienSabeJugar.tsx` (nuevo)
+- `client/src/App.tsx`
+- `client/src/components/layout/Header.tsx`
+
+---
+
 ## 2026-04-17 (sesion 4)
 
 ### Tarjeta "Mi ludoteca" y estadísticas globales correctas

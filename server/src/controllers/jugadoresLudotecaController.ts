@@ -12,7 +12,6 @@ export const getPlayers = async (req: Request, res: Response) => {
   try {
     const currentUserId = req.user!.userId;
 
-    // Usuarios con ludoteca pública y al menos 1 juego activo (excluye al usuario actual)
     const publicUsersPromise = prisma.user.findMany({
       where: {
         id: { not: currentUserId },
@@ -28,7 +27,6 @@ export const getPlayers = async (req: Request, res: Response) => {
       orderBy: { name: 'asc' },
     });
 
-    // Recuento de usuarios con ludoteca privada y al menos 1 juego activo (todos, incluido el usuario actual)
     const privateCountPromise = prisma.user.count({
       where: {
         profile: { ludotecaPublica: false },
@@ -36,7 +34,6 @@ export const getPlayers = async (req: Request, res: Response) => {
       },
     });
 
-    // Total de juegos en ludotecas públicas (todos, incluido el usuario actual)
     const totalGamesPublicPromise = prisma.userGame.count({
       where: {
         ...activeOwn,
@@ -44,14 +41,12 @@ export const getPlayers = async (req: Request, res: Response) => {
       },
     });
 
-    // Total de juegos únicos en ludotecas de todos los jugadores (todos, incluido el usuario actual)
     const uniqueGamesPromise = prisma.userGame.findMany({
       where: { ...activeOwn },
       select: { gameId: true },
       distinct: ['gameId'],
     });
 
-    // publicCount global (incluye al usuario actual)
     const publicCountPromise = prisma.user.count({
       where: {
         profile: { ludotecaPublica: true },
@@ -59,13 +54,44 @@ export const getPlayers = async (req: Request, res: Response) => {
       },
     });
 
-    const [publicUsers, privateCount, totalGamesPublic, uniqueGamesRows, publicCount] = await Promise.all([
-      publicUsersPromise,
-      privateCountPromise,
-      totalGamesPublicPromise,
-      uniqueGamesPromise,
-      publicCountPromise,
-    ]);
+    // Top 10 juegos más presentes en ludotecas
+    const top10GroupPromise = prisma.userGame.groupBy({
+      by: ['gameId'],
+      where: { own: true, status: 'active' },
+      _count: { gameId: true },
+      orderBy: { _count: { gameId: 'desc' } },
+      take: 10,
+    });
+
+    const [publicUsers, privateCount, totalGamesPublic, uniqueGamesRows, publicCount, top10Group] =
+      await Promise.all([
+        publicUsersPromise,
+        privateCountPromise,
+        totalGamesPublicPromise,
+        uniqueGamesPromise,
+        publicCountPromise,
+        top10GroupPromise,
+      ]);
+
+    const top10GameIds = top10Group.map((g) => g.gameId);
+    const top10Games = await prisma.game.findMany({
+      where: { id: { in: top10GameIds } },
+      select: { id: true, name: true, thumbnail: true, yearPublished: true },
+    });
+
+    const top10 = top10Group
+      .map((g) => {
+        const game = top10Games.find((gm) => gm.id === g.gameId);
+        if (!game) return null;
+        return {
+          gameId: g.gameId,
+          name: game.name,
+          thumbnail: game.thumbnail,
+          yearPublished: game.yearPublished,
+          ownerCount: g._count.gameId,
+        };
+      })
+      .filter(Boolean);
 
     const players = publicUsers.map((u) => ({
       userId: u.id,
@@ -84,6 +110,7 @@ export const getPlayers = async (req: Request, res: Response) => {
           totalGamesPublic,
           uniqueGamesTotal: uniqueGamesRows.length,
         },
+        top10,
       },
     });
   } catch (error) {
@@ -109,7 +136,6 @@ export const searchGames = async (req: Request, res: Response) => {
       });
     }
 
-    // Filtro base: propietario activo, no el usuario actual
     const ownerFilterBase: Prisma.UserGameWhereInput = {
       ...activeOwn,
       userId: { not: currentUserId },
@@ -206,7 +232,6 @@ export const getPlayerGames = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Jugador no encontrado' });
     }
 
-    // Ludoteca privada: solo el propio usuario puede verla
     const currentUserId = req.user!.userId;
     if (player.profile?.ludotecaPublica === false && player.id !== currentUserId) {
       return res.status(403).json({ success: false, message: 'Esta ludoteca es privada' });
@@ -259,5 +284,99 @@ export const getPlayerGames = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('[JUGADORES_LUDOTECA] Error en getPlayerGames:', error);
     return res.status(500).json({ success: false, message: 'Error al obtener la colección del jugador' });
+  }
+};
+
+export const compareCollections = async (req: Request, res: Response) => {
+  try {
+    const currentUserId = req.user!.userId;
+    const { userIds } = req.body as { userIds: unknown };
+
+    if (!Array.isArray(userIds) || userIds.length < 1 || userIds.length > 5) {
+      return res.status(400).json({ success: false, message: 'Debes seleccionar entre 1 y 5 jugadores' });
+    }
+
+    const ids = [...new Set(userIds.filter((id): id is string => typeof id === 'string'))];
+
+    if (ids.length < 1 || ids.length > 5) {
+      return res.status(400).json({ success: false, message: 'IDs inválidos o duplicados' });
+    }
+
+    // Verificar que los usuarios externos tienen ludoteca pública (el usuario propio puede incluirse sin restricción)
+    const externalIds = ids.filter((id) => id !== currentUserId);
+    if (externalIds.length > 0) {
+      const validExternal = await prisma.user.count({
+        where: {
+          id: { in: externalIds },
+          profile: { ludotecaPublica: true },
+        },
+      });
+      if (validExternal !== externalIds.length) {
+        return res.status(400).json({ success: false, message: 'Algunos jugadores tienen la ludoteca privada' });
+      }
+    }
+
+    const totalPlayers = ids.length;
+
+    const [userGames, playerInfos] = await Promise.all([
+      prisma.userGame.findMany({
+        where: { userId: { in: ids }, own: true, status: 'active' },
+        select: {
+          userId: true,
+          gameId: true,
+          game: { select: { id: true, name: true, yearPublished: true, thumbnail: true } },
+        },
+        orderBy: { game: { name: 'asc' } },
+      }),
+      prisma.user.findMany({
+        where: { id: { in: ids } },
+        select: {
+          id: true,
+          name: true,
+          profile: { select: { nick: true, avatar: true } },
+        },
+      }),
+    ]);
+
+    // Agrupar por gameId
+    const gameMap = new Map<string, { game: { id: string; name: string; yearPublished: number | null; thumbnail: string | null }; owners: Set<string> }>();
+    for (const ug of userGames) {
+      if (!gameMap.has(ug.gameId)) {
+        gameMap.set(ug.gameId, { game: ug.game, owners: new Set() });
+      }
+      gameMap.get(ug.gameId)!.owners.add(ug.userId);
+    }
+
+    const common: { id: string; name: string; yearPublished: number | null; thumbnail: string | null }[] = [];
+    const uniqueByPlayer: Record<string, { id: string; name: string; yearPublished: number | null; thumbnail: string | null }[]> = {};
+    for (const id of ids) uniqueByPlayer[id] = [];
+
+    for (const [, { game, owners }] of gameMap) {
+      if (owners.size === totalPlayers) {
+        common.push(game);
+      } else if (owners.size === 1) {
+        const ownerId = [...owners][0];
+        if (ownerId) uniqueByPlayer[ownerId]?.push(game);
+      }
+    }
+
+    // Ordenar: el usuario actual primero, luego el resto
+    const players = ids.map((id) => {
+      const p = playerInfos.find((pi) => pi.id === id)!;
+      return {
+        userId: p.id,
+        displayName: displayName(p),
+        avatar: p.profile?.avatar ?? null,
+        isCurrentUser: id === currentUserId,
+      };
+    }).sort((a, b) => (b.isCurrentUser ? 1 : 0) - (a.isCurrentUser ? 1 : 0));
+
+    return res.json({
+      success: true,
+      data: { players, common, uniqueByPlayer },
+    });
+  } catch (error) {
+    console.error('[JUGADORES_LUDOTECA] Error en compareCollections:', error);
+    return res.status(500).json({ success: false, message: 'Error al comparar colecciones' });
   }
 };

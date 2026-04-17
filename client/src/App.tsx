@@ -39,6 +39,7 @@ import Ludoteca from './pages/Ludoteca';
 import MiLudoteca from './pages/MiLudoteca';
 import JugadoresLudoteca from './pages/JugadoresLudoteca';
 import JugadorDetalle from './pages/JugadorDetalle';
+import QuienSabeJugar from './pages/QuienSabeJugar';
 import Documentos from './pages/Documentos';
 import Feedback from './pages/Feedback';
 import UserProfile from './pages/UserProfile';
@@ -416,6 +417,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <JugadorDetalle />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/quien-sabe-jugar"
+            element={
+              <ProtectedRoute>
+                <QuienSabeJugar />
               </ProtectedRoute>
             }
           />
