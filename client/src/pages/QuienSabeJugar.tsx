@@ -217,7 +217,7 @@ export default function QuienSabeJugar() {
                 <p className="text-sm text-[var(--color-textSecondary)] mb-3">
                   {players.length} {players.length === 1 ? 'jugador conoce' : 'jugadores conocen'} este juego
                 </p>
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {players.map((player) => {
                     const inner = (
                       <div className="flex items-center gap-3 p-3 rounded-xl border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] hover:bg-[var(--color-tableRowHover)] transition-colors">
