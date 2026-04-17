@@ -177,20 +177,20 @@ export default function JugadorDetalle() {
                   {games.map(({ gameId, game }) => (
                     <div
                       key={gameId}
-                      className="flex gap-4 p-4 rounded-xl border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)]"
+                      className="flex overflow-hidden rounded-xl border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)]"
                     >
                       {game.thumbnail ? (
                         <img
                           src={game.thumbnail}
                           alt={game.name}
-                          className="w-24 h-24 rounded object-contain flex-shrink-0"
+                          className="w-36 h-36 object-contain flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-24 h-24 rounded bg-[var(--color-tableRowHover)] flex items-center justify-center flex-shrink-0 text-4xl">
+                        <div className="w-36 h-36 bg-[var(--color-tableRowHover)] flex items-center justify-center flex-shrink-0 text-5xl">
                           🎲
                         </div>
                       )}
-                      <div className="min-w-0 flex flex-col justify-center">
+                      <div className="min-w-0 flex flex-col justify-center px-4">
                         <p className="font-semibold text-[var(--color-text)] leading-tight line-clamp-3">{game.name}</p>
                         {game.yearPublished && (
                           <p className="text-xs text-[var(--color-textSecondary)] mt-1">{game.yearPublished}</p>
