@@ -7,36 +7,44 @@ function displayName(user: { name: string; profile: { nick: string | null } | nu
 
 export const searchExperts = async (req: Request, res: Response) => {
   try {
-    const { q = '' } = req.query as Record<string, string>;
-    const term = q.trim();
+    const { gameId = '' } = req.query as Record<string, string>;
 
-    if (term.length < 2) {
-      return res.json({ success: true, data: { gameName: term, players: [] } });
+    if (!gameId) {
+      return res.json({ success: true, data: { game: null, players: [] } });
     }
 
-    const contains = { contains: term, mode: 'insensitive' as const };
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      select: { id: true, name: true, thumbnail: true, yearPublished: true },
+    });
 
-    // 1. Propietarios con ludoteca pública
+    if (!game) {
+      return res.status(404).json({ success: false, message: 'Juego no encontrado' });
+    }
+
+    const nameContains = { contains: game.name, mode: 'insensitive' as const };
+
+    // 1. Propietarios con ludoteca pública (por gameId exacto)
     const ownersPromise = prisma.userGame.findMany({
       where: {
+        gameId,
         own: true,
         status: 'active',
         user: { profile: { ludotecaPublica: true } },
-        game: { name: contains },
       },
       select: { userId: true },
     });
 
-    // 2. Historial de partidas (gameName texto libre)
+    // 2. Historial de partidas (gameName texto libre, sin FK)
     const historyPromise = prisma.gamePlayHistory.findMany({
-      where: { gameName: contains },
+      where: { gameName: nameContains },
       select: { userId: true },
     });
 
-    // 3. Asistentes a eventos con ese juego (status != CANCELLED)
+    // 3. Asistentes a eventos con ese juego (por bggId exacto o gameName)
     const eventsPromise = prisma.event.findMany({
       where: {
-        gameName: contains,
+        OR: [{ bggId: gameId }, { gameName: nameContains }],
         status: { not: 'CANCELLED' as any },
       },
       select: {
@@ -59,7 +67,7 @@ export const searchExperts = async (req: Request, res: Response) => {
     const allUserIds = new Set([...ownerSet, ...playCountMap.keys(), ...attendedSet]);
 
     if (allUserIds.size === 0) {
-      return res.json({ success: true, data: { gameName: term, players: [] } });
+      return res.json({ success: true, data: { game, players: [] } });
     }
 
     const userInfos = await prisma.user.findMany({
@@ -82,12 +90,11 @@ export const searchExperts = async (req: Request, res: Response) => {
         hasAttended: attendedSet.has(u.id),
       }))
       .sort((a, b) => {
-        // Propietarios primero, luego por partidas jugadas desc
         if (a.ownsGame !== b.ownsGame) return a.ownsGame ? -1 : 1;
         return b.playCount - a.playCount;
       });
 
-    return res.json({ success: true, data: { gameName: term, players } });
+    return res.json({ success: true, data: { game, players } });
   } catch (error) {
     console.error('[QUIEN_SABE_JUGAR] Error en searchExperts:', error);
     return res.status(500).json({ success: false, message: 'Error al buscar jugadores' });

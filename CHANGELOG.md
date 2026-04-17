@@ -4,6 +4,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-17 (sesion 6)
+
+### Rediseño de "¿Quién sabe jugar?": autocompletado y selección de juego exacto
+
+**Backend** (`server/src/controllers/quienSabeJugarController.ts`): el endpoint cambia de búsqueda por texto libre (`?q=`) a búsqueda por ID exacto (`?gameId=`). Se valida que el juego existe, se obtiene su `name` para las búsquedas secundarias en `GamePlayHistory` (que no tiene FK a `Game`), y se usa `OR [{ bggId: gameId }, { gameName: contains }]` para eventos. La respuesta ahora incluye el objeto `game { id, name, thumbnail, yearPublished }` junto a la lista de jugadores.
+
+**Frontend** (`client/src/pages/QuienSabeJugar.tsx`): rediseño completo con flujo en dos fases. Fase 1: input con debounce 400ms dispara `GET /api/games?search=&pageSize=8` (endpoint existente) y muestra un dropdown con thumbnail, nombre y año de cada sugerencia. Al hacer clic en una sugerencia se cierra el dropdown (listener `mousedown` en `document` para clics fuera). Fase 2: se muestra la cabecera del juego seleccionado (thumbnail grande, nombre, año, botón "× Cambiar") y la lista de jugadores. Badges rediseñados con colores: verde "Tiene el juego", azul "X partidas en el club", gris "Ha asistido a un evento". Dos queries TanStack Query independientes: sugerencias (`enabled: debouncedInput.length >= 2 && !selectedGame`) y expertos (`enabled: !!selectedGame`).
+
+**Archivos modificados:**
+- `server/src/controllers/quienSabeJugarController.ts`
+- `client/src/pages/QuienSabeJugar.tsx`
+
+---
+
 ## 2026-04-17 (sesion 5)
 
 ### Comparador de ludotecas, Top 10 y sección "¿Quién sabe jugar?"
