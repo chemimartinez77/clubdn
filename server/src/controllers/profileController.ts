@@ -218,7 +218,8 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
       eventsDefaultView,
       eventsAccordionMode,
       eventButtonStyle,
-      showTipOfTheDay
+      showTipOfTheDay,
+      ludotecaPublica
     } = req.body;
 
     // Buscar o crear perfil
@@ -294,7 +295,8 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           ...(defaultScreen !== undefined && { defaultScreen }),
           ...(eventsDefaultView !== undefined && { eventsDefaultView }),
           ...(eventsAccordionMode !== undefined && { eventsAccordionMode }),
-          ...(eventButtonStyle !== undefined && { eventButtonStyle })
+          ...(eventButtonStyle !== undefined && { eventButtonStyle }),
+          ...(ludotecaPublica !== undefined && { ludotecaPublica })
         },
         include: {
           user: {

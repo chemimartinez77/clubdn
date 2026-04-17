@@ -914,6 +914,19 @@ export default function Profile() {
                   </div>
 
                   <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Ludoteca</p>
+                    <div className="space-y-2">
+                      <NotifToggle
+                        value={profile.ludotecaPublica ?? true}
+                        label="Mi ludoteca es pública"
+                        onToggle={() => updateMutation.mutate({ ludotecaPublica: !(profile.ludotecaPublica ?? true) })}
+                        disabled={updateMutation.isPending}
+                        tooltip="Si está activo, tu colección aparece en 'Ludotecas de jugadores' y otros miembros pueden ver qué juegos tienes"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-[var(--color-cardBorder)]">
                     <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Pantalla de inicio</p>
                     <div className="flex gap-3">
                       {[

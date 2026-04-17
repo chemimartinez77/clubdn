@@ -12,13 +12,32 @@ interface Player {
   gameCount: number;
 }
 
+interface Stats {
+  publicCount: number;
+  privateCount: number;
+  totalGamesPublic: number;
+  uniqueGamesTotal: number;
+}
+
+interface PlayersResponse {
+  players: Player[];
+  stats: Stats;
+}
+
+interface PublicOwner {
+  userId: string;
+  displayName: string;
+  avatar: string | null;
+}
+
 interface GameResult {
   gameId: string;
   name: string;
   yearPublished: number | null;
   thumbnail: string | null;
-  ownerCount: number;
-  owners: Array<{ userId: string; displayName: string; avatar: string | null }>;
+  publicOwners: PublicOwner[];
+  privateCount: number;
+  totalOwners: number;
 }
 
 interface SearchResponse {
@@ -48,6 +67,52 @@ function PlayerAvatar({ player }: { player: Player }) {
   );
 }
 
+function OwnerChip({ owner }: { owner: PublicOwner }) {
+  return (
+    <UserPopover userId={owner.userId} name={owner.displayName} avatar={owner.avatar}>
+      <Link
+        to={`/ludotecas-jugadores/${owner.userId}`}
+        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-[var(--color-tableRowHover)] text-[var(--color-text)] border border-[var(--color-cardBorder)] hover:bg-[var(--color-cardBorder)] transition-colors"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {owner.avatar ? (
+          <img src={owner.avatar} alt={owner.displayName} className="w-4 h-4 rounded-full object-cover" />
+        ) : (
+          <span
+            className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
+            style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
+          >
+            {owner.displayName.charAt(0).toUpperCase()}
+          </span>
+        )}
+        {owner.displayName}
+      </Link>
+    </UserPopover>
+  );
+}
+
+function OwnersLine({ publicOwners, privateCount }: { publicOwners: PublicOwner[]; privateCount: number }) {
+  const hasPublic = publicOwners.length > 0;
+  const hasPrivate = privateCount > 0;
+
+  if (!hasPublic && !hasPrivate) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 mt-1">
+      {publicOwners.map((owner) => (
+        <OwnerChip key={owner.userId} owner={owner} />
+      ))}
+      {hasPrivate && (
+        <span className="text-xs text-[var(--color-textSecondary)] italic">
+          {hasPublic
+            ? `y ${privateCount} jugador${privateCount > 1 ? 'es' : ''} más`
+            : `${privateCount} jugador${privateCount > 1 ? 'es' : ''} (ludoteca privada)`}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function JugadoresLudoteca() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = (searchParams.get('tab') as Tab) ?? 'players';
@@ -68,15 +133,13 @@ export default function JugadoresLudoteca() {
     setSearchParams({ tab: t });
   };
 
-  // Query: lista de jugadores
-  const { data: playersData, isLoading: playersLoading } = useQuery<{ players: Player[] }>({
+  const { data: playersData, isLoading: playersLoading } = useQuery<PlayersResponse>({
     queryKey: ['jugadores'],
     queryFn: () => api.get('/api/jugadores-ludoteca').then((r) => r.data.data),
     staleTime: 5 * 60 * 1000,
     enabled: tab === 'players',
   });
 
-  // Query: búsqueda global
   const { data: searchData, isLoading: searchLoading } = useQuery<SearchResponse>({
     queryKey: ['jugadoresSearch', search, page],
     queryFn: () =>
@@ -88,6 +151,7 @@ export default function JugadoresLudoteca() {
   });
 
   const players = playersData?.players ?? [];
+  const stats = playersData?.stats;
   const searchResults = searchData?.results ?? [];
   const pagination = searchData?.pagination;
 
@@ -124,6 +188,28 @@ export default function JugadoresLudoteca() {
         {/* Tab: Lista de jugadores */}
         {tab === 'players' && (
           <>
+            {/* Estadísticas */}
+            {!playersLoading && stats && (
+              <div className="mb-6 p-4 rounded-xl border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)]">
+                <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-[var(--color-textSecondary)]">
+                  <span>
+                    <span className="font-semibold text-[var(--color-text)]">{stats.publicCount}</span> ludoteca{stats.publicCount !== 1 ? 's' : ''} pública{stats.publicCount !== 1 ? 's' : ''}
+                  </span>
+                  {stats.privateCount > 0 && (
+                    <span>
+                      <span className="font-semibold text-[var(--color-text)]">{stats.privateCount}</span> privada{stats.privateCount !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  <span>
+                    <span className="font-semibold text-[var(--color-text)]">{stats.totalGamesPublic}</span> juegos en colecciones públicas
+                  </span>
+                  <span>
+                    <span className="font-semibold text-[var(--color-text)]">{stats.uniqueGamesTotal}</span> juegos únicos en el club
+                  </span>
+                </div>
+              </div>
+            )}
+
             {playersLoading && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -234,7 +320,7 @@ export default function JugadoresLudoteca() {
                         </p>
                         <div className="flex items-center gap-3 mt-0.5 mb-2">
                           <p className="text-xs text-[var(--color-textSecondary)]">
-                            Lo tienen {result.ownerCount} {result.ownerCount === 1 ? 'jugador' : 'jugadores'}
+                            Lo tienen {result.totalOwners} {result.totalOwners === 1 ? 'jugador' : 'jugadores'}
                           </p>
                           <a
                             href={`https://boardgamegeek.com/boardgame/${result.gameId}`}
@@ -245,34 +331,7 @@ export default function JugadoresLudoteca() {
                             Ver en BGG
                           </a>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          {result.owners.map((owner) => (
-                            <UserPopover
-                              key={owner.userId}
-                              userId={owner.userId}
-                              name={owner.displayName}
-                              avatar={owner.avatar}
-                            >
-                              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-[var(--color-tableRowHover)] text-[var(--color-text)] border border-[var(--color-cardBorder)]">
-                                {owner.avatar ? (
-                                  <img
-                                    src={owner.avatar}
-                                    alt={owner.displayName}
-                                    className="w-4 h-4 rounded-full object-cover"
-                                  />
-                                ) : (
-                                  <span
-                                    className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
-                                    style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
-                                  >
-                                    {owner.displayName.charAt(0).toUpperCase()}
-                                  </span>
-                                )}
-                                {owner.displayName}
-                              </span>
-                            </UserPopover>
-                          ))}
-                        </div>
+                        <OwnersLine publicOwners={result.publicOwners} privateCount={result.privateCount} />
                       </div>
                     </div>
                   ))}

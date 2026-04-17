@@ -4,6 +4,29 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-17 (sesion 3)
+
+### Privacidad de ludoteca y estadísticas en "Ludotecas de jugadores"
+
+**Nueva migración Prisma** (`server/prisma/schema.prisma`, `server/prisma/migrations/20260417100000_add_ludoteca_publica/`): se añade el campo `ludotecaPublica Boolean @default(true)` en el modelo `UserProfile`. Por defecto todas las ludotecas son públicas; el usuario puede desactivarlo desde su perfil.
+
+**Toggle en perfil** (`client/src/pages/Profile.tsx`, `client/src/types/profile.ts`, `server/src/controllers/profileController.ts`): se añade una nueva sección "Ludoteca" en Configuración con un toggle "Mi ludoteca es pública". El campo `ludotecaPublica` se añade a la interfaz `UserProfile`, a `UpdateProfileData` y al controlador de perfil (destructuring del body + campo en el `update`).
+
+**Lógica de privacidad en el controlador** (`server/src/controllers/jugadoresLudotecaController.ts`): `getPlayers` ahora solo devuelve jugadores con `ludotecaPublica: true` y añade estadísticas al response (`publicCount`, `privateCount`, `totalGamesPublic`, `uniqueGamesTotal`). `searchGames` devuelve `publicOwners` (con link a su colección) y `privateCount` (contador anónimo) en lugar de un array plano de owners. `getPlayerGames` devuelve 403 si la ludoteca es privada y el solicitante no es el propio usuario.
+
+**UI de búsqueda y estadísticas** (`client/src/pages/JugadoresLudoteca.tsx`): bloque de estadísticas del club en la tab "Lista de jugadores" (ludotecas públicas, privadas, juegos en colecciones públicas, juegos únicos). Componente `OwnersLine` que muestra chips con link para propietarios públicos y texto anónimo para privados (ej: "Sandra, Nacho y 3 jugadores más lo tienen"). Los chips de propietario son ahora `Link` a la colección del jugador además de `UserPopover`.
+
+**Archivos modificados/creados:**
+- `server/prisma/schema.prisma`
+- `server/prisma/migrations/20260417100000_add_ludoteca_publica/migration.sql` (nuevo)
+- `server/src/controllers/jugadoresLudotecaController.ts`
+- `server/src/controllers/profileController.ts`
+- `client/src/pages/JugadoresLudoteca.tsx`
+- `client/src/pages/Profile.tsx`
+- `client/src/types/profile.ts`
+
+---
+
 ## 2026-04-17 (sesion 2)
 
 ### Enlace a BGG en ludotecas de jugadores

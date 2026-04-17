@@ -27,6 +27,7 @@ export interface UserProfile {
   notifyInvitations: boolean;
   allowEventInvitations: boolean;
   showTipOfTheDay: boolean;
+  ludotecaPublica: boolean;
   noughterColor: string | null;
   defaultScreen: string;
   eventsDefaultView: string;
@@ -61,6 +62,7 @@ export interface UpdateProfileData {
   notifyInvitations?: boolean;
   allowEventInvitations?: boolean;
   showTipOfTheDay?: boolean;
+  ludotecaPublica?: boolean;
   noughterColor?: string | null;
   defaultScreen?: string;
   eventsDefaultView?: string;

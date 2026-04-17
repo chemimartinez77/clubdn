@@ -208,6 +208,9 @@ model UserProfile {
   feedbackTourDismissed      Boolean  @default(false)  // true = no volver a mostrar el tour de feedback
   createPartidaTourDismissed Boolean  @default(false)  // true = no volver a mostrar el tour de crear partida
 
+  // Ludoteca
+  ludotecaPublica Boolean  @default(true)  // true = visible en "Ludotecas de jugadores"
+
   // BGG (BoardGameGeek)
   bggUsername     String?
   lastBggSync     DateTime?
