@@ -28,39 +28,43 @@ export const getPlayers = async (req: Request, res: Response) => {
       orderBy: { name: 'asc' },
     });
 
-    // Recuento de usuarios con ludoteca privada y al menos 1 juego activo (excluye al usuario actual)
+    // Recuento de usuarios con ludoteca privada y al menos 1 juego activo (todos, incluido el usuario actual)
     const privateCountPromise = prisma.user.count({
       where: {
-        id: { not: currentUserId },
         profile: { ludotecaPublica: false },
         userGames: { some: activeOwn },
       },
     });
 
-    // Total de juegos en ludotecas públicas (excluye al usuario actual)
+    // Total de juegos en ludotecas públicas (todos, incluido el usuario actual)
     const totalGamesPublicPromise = prisma.userGame.count({
       where: {
         ...activeOwn,
-        userId: { not: currentUserId },
         user: { profile: { ludotecaPublica: true } },
       },
     });
 
-    // Total de juegos únicos en ludotecas de todos los jugadores (excluye al usuario actual)
+    // Total de juegos únicos en ludotecas de todos los jugadores (todos, incluido el usuario actual)
     const uniqueGamesPromise = prisma.userGame.findMany({
-      where: {
-        ...activeOwn,
-        userId: { not: currentUserId },
-      },
+      where: { ...activeOwn },
       select: { gameId: true },
       distinct: ['gameId'],
     });
 
-    const [publicUsers, privateCount, totalGamesPublic, uniqueGamesRows] = await Promise.all([
+    // publicCount global (incluye al usuario actual)
+    const publicCountPromise = prisma.user.count({
+      where: {
+        profile: { ludotecaPublica: true },
+        userGames: { some: activeOwn },
+      },
+    });
+
+    const [publicUsers, privateCount, totalGamesPublic, uniqueGamesRows, publicCount] = await Promise.all([
       publicUsersPromise,
       privateCountPromise,
       totalGamesPublicPromise,
       uniqueGamesPromise,
+      publicCountPromise,
     ]);
 
     const players = publicUsers.map((u) => ({
@@ -75,7 +79,7 @@ export const getPlayers = async (req: Request, res: Response) => {
       data: {
         players,
         stats: {
-          publicCount: publicUsers.length,
+          publicCount,
           privateCount,
           totalGamesPublic,
           uniqueGamesTotal: uniqueGamesRows.length,

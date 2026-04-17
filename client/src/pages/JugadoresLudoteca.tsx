@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import UserPopover from '../components/ui/UserPopover';
+import { useAuth } from '../contexts/AuthContext';
 import { api } from '../api/axios';
 
 interface Player {
@@ -114,6 +115,7 @@ function OwnersLine({ publicOwners, privateCount }: { publicOwners: PublicOwner[
 }
 
 export default function JugadoresLudoteca() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = (searchParams.get('tab') as Tab) ?? 'players';
 
@@ -132,6 +134,14 @@ export default function JugadoresLudoteca() {
   const setTab = (t: Tab) => {
     setSearchParams({ tab: t });
   };
+
+  const { data: myGamesData } = useQuery<{ player: { gameCount: number } }>({
+    queryKey: ['jugadorGames', user?.id, '', 1],
+    queryFn: () =>
+      api.get(`/api/jugadores-ludoteca/${user!.id}/games`, { params: { pageSize: 1 } }).then((r) => r.data.data),
+    enabled: !!user?.id && tab === 'players',
+    staleTime: 5 * 60 * 1000,
+  });
 
   const { data: playersData, isLoading: playersLoading } = useQuery<PlayersResponse>({
     queryKey: ['jugadores'],
@@ -218,14 +228,47 @@ export default function JugadoresLudoteca() {
               </div>
             )}
 
-            {!playersLoading && players.length === 0 && (
-              <p className="text-center text-[var(--color-textSecondary)] py-12">
-                Ningún jugador tiene juegos en su ludoteca todavía.
-              </p>
-            )}
-
-            {!playersLoading && players.length > 0 && (
+            {!playersLoading && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Tarjeta propia siempre al inicio */}
+                {user && (
+                  <Link
+                    to="/mi-ludoteca"
+                    className="flex items-center gap-4 p-4 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-cardBackground)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                  >
+                    {user.profile?.avatar ? (
+                      <img
+                        src={user.profile.avatar}
+                        alt={user.profile.nick ?? user.name}
+                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div
+                        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
+                        style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primaryDark))' }}
+                      >
+                        {(user.profile?.nick ?? user.name).charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-semibold text-[var(--color-text)] truncate">
+                        {user.profile?.nick ?? user.name}
+                        <span className="ml-2 text-xs font-normal text-[var(--color-primary)]">tú</span>
+                      </p>
+                      <p className="text-sm text-[var(--color-textSecondary)]">
+                        {myGamesData ? `${myGamesData.player.gameCount} juegos` : 'Mi ludoteca'}
+                      </p>
+                    </div>
+                    <svg
+                      className="w-4 h-4 text-[var(--color-primary)] ml-auto flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                )}
                 {players.map((player) => (
                   <Link
                     key={player.userId}

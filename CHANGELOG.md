@@ -4,6 +4,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-17 (sesion 4)
+
+### Tarjeta "Mi ludoteca" y estadísticas globales correctas
+
+**Tarjeta propia al inicio de la lista** (`client/src/pages/JugadoresLudoteca.tsx`): se añade una tarjeta especial al principio del grid de jugadores que muestra el avatar, nombre y número de juegos del usuario autenticado, con borde de color primario y etiqueta "tú" para distinguirla. Enlaza a `/mi-ludoteca`. Se usa `useAuth` para los datos de nombre/avatar y una query al endpoint `/:userId/games?pageSize=1` para obtener el `gameCount` real.
+
+**Estadísticas corregidas para incluir al usuario actual** (`server/src/controllers/jugadoresLudotecaController.ts`): las queries de `privateCount`, `totalGamesPublic` y `uniqueGamesTotal` ya no excluían al usuario autenticado con `id: { not: currentUserId }`, por lo que los totales eran incorrectos. Se separa el `publicCount` en una query independiente sin filtro de usuario para que las estadísticas reflejen el total real del club.
+
+**Archivos modificados:**
+- `client/src/pages/JugadoresLudoteca.tsx`
+- `server/src/controllers/jugadoresLudotecaController.ts`
+
+---
+
 ## 2026-04-17 (sesion 3)
 
 ### Privacidad de ludoteca y estadísticas en "Ludotecas de jugadores"
