@@ -4,6 +4,29 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-17 (sesion 1)
+
+### Nueva sección: Ludotecas de jugadores
+
+**Nueva sección — ver colecciones de otros jugadores y buscar quién tiene un juego** (`client/src/pages/JugadoresLudoteca.tsx`, `client/src/pages/JugadorDetalle.tsx`, `server/src/controllers/jugadoresLudotecaController.ts`, `server/src/routes/jugadoresLudotecaRoutes.ts`): se añade la sección "Ludotecas de jugadores" accesible desde el menú Juegos. Consta de dos partes:
+
+- **Lista de jugadores** (`/ludotecas-jugadores`): muestra en un grid a todos los usuarios con al menos un juego en propiedad (`own: true`), con avatar, displayName y número de juegos. Al hacer clic se navega a la colección del jugador.
+- **Buscar juego** (tab en la misma página): input con debounce 400ms que busca un juego en todas las colecciones del club. Los resultados se agrupan por juego (thumbnail, nombre, año) y muestran chips de propietarios con `UserPopover` para ver el perfil sin salir de la página.
+- **Detalle de colección** (`/ludotecas-jugadores/:userId`): vista paginada (48 items) y filtrable por nombre de la colección de un jugador específico, en modo solo lectura.
+
+**Backend** (`server/src/controllers/jugadoresLudotecaController.ts`, `server/src/routes/jugadoresLudotecaRoutes.ts`, `server/src/index.ts`): tres endpoints bajo `/api/jugadores-ludoteca`: `GET /` (lista de jugadores), `GET /search?q=` (búsqueda global paginada agrupada por juego), `GET /:userId/games` (colección paginada de un jugador). Solo expone `own: true` y `status: 'active'`; nunca expone email ni wishlist.
+
+**Archivos modificados/creados:**
+- `client/src/pages/JugadoresLudoteca.tsx` (nuevo)
+- `client/src/pages/JugadorDetalle.tsx` (nuevo)
+- `client/src/App.tsx`
+- `client/src/components/layout/Header.tsx`
+- `server/src/controllers/jugadoresLudotecaController.ts` (nuevo)
+- `server/src/routes/jugadoresLudotecaRoutes.ts` (nuevo)
+- `server/src/index.ts`
+
+---
+
 ## 2026-04-16 (sesion 6)
 
 ### Protección de juegos manuales en sync BGG, bottom sheet de opciones en móvil e info en modal de sync

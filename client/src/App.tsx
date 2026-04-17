@@ -37,6 +37,8 @@ import Games from './pages/Games';
 import Financiero from './pages/Financiero';
 import Ludoteca from './pages/Ludoteca';
 import MiLudoteca from './pages/MiLudoteca';
+import JugadoresLudoteca from './pages/JugadoresLudoteca';
+import JugadorDetalle from './pages/JugadorDetalle';
 import Documentos from './pages/Documentos';
 import Feedback from './pages/Feedback';
 import UserProfile from './pages/UserProfile';
@@ -398,6 +400,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <MiLudoteca />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ludotecas-jugadores"
+            element={
+              <ProtectedRoute>
+                <JugadoresLudoteca />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ludotecas-jugadores/:userId"
+            element={
+              <ProtectedRoute>
+                <JugadorDetalle />
               </ProtectedRoute>
             }
           />
