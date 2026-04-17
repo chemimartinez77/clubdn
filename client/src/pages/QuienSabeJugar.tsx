@@ -66,7 +66,13 @@ export default function QuienSabeJugar() {
   const { data: suggestions, isFetching: suggestionsLoading } = useQuery<GameSuggestion[]>({
     queryKey: ['gamesSuggest', debouncedInput],
     queryFn: () =>
-      api.get('/api/games', { params: { search: debouncedInput, pageSize: 8 } }).then((r) => r.data.data.games),
+      api
+        .get('/api/jugadores-ludoteca/search', { params: { q: debouncedInput, pageSize: 8 } })
+        .then((r) =>
+          (r.data.data.results as { gameId: string; name: string; yearPublished: number | null; thumbnail: string | null }[]).map(
+            (g) => ({ id: g.gameId, name: g.name, yearPublished: g.yearPublished, thumbnail: g.thumbnail })
+          )
+        ),
     enabled: debouncedInput.length >= 2 && !selectedGame,
     staleTime: 2 * 60 * 1000,
   });
