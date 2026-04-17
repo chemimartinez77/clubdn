@@ -34,6 +34,39 @@ interface PlayerGamesResponse {
   pagination: Pagination;
 }
 
+function Paginador({
+  pagination,
+  page,
+  setPage,
+}: {
+  pagination: Pagination | undefined;
+  page: number;
+  setPage: React.Dispatch<React.SetStateAction<number>>;
+}) {
+  if (!pagination || pagination.totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-center gap-4">
+      <button
+        onClick={() => setPage((p) => p - 1)}
+        disabled={page <= 1}
+        className="px-4 py-2 rounded-lg border border-[var(--color-cardBorder)] text-sm font-medium text-[var(--color-text)] disabled:opacity-40 hover:bg-[var(--color-tableRowHover)] transition-colors"
+      >
+        Anterior
+      </button>
+      <span className="text-sm text-[var(--color-textSecondary)]">
+        Página {pagination.currentPage} de {pagination.totalPages}
+      </span>
+      <button
+        onClick={() => setPage((p) => p + 1)}
+        disabled={page >= pagination.totalPages}
+        className="px-4 py-2 rounded-lg border border-[var(--color-cardBorder)] text-sm font-medium text-[var(--color-text)] disabled:opacity-40 hover:bg-[var(--color-tableRowHover)] transition-colors"
+      >
+        Siguiente
+      </button>
+    </div>
+  );
+}
+
 export default function JugadorDetalle() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
@@ -119,7 +152,7 @@ export default function JugadorDetalle() {
 
         {/* Estado de carga / error */}
         {isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-28 bg-[var(--color-cardBorder)] animate-pulse rounded-xl" />
             ))}
@@ -138,55 +171,36 @@ export default function JugadorDetalle() {
                 {search ? 'No se encontraron juegos con ese nombre.' : 'Este jugador no tiene juegos en su colección.'}
               </p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {games.map(({ gameId, game }) => (
-                  <div
-                    key={gameId}
-                    className="flex gap-4 p-4 rounded-xl border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)]"
-                  >
-                    {game.thumbnail ? (
-                      <img
-                        src={game.thumbnail}
-                        alt={game.name}
-                        className="w-16 h-16 rounded object-contain flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded bg-[var(--color-tableRowHover)] flex items-center justify-center flex-shrink-0 text-2xl">
-                        🎲
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="font-semibold text-[var(--color-text)] leading-tight line-clamp-2">{game.name}</p>
-                      {game.yearPublished && (
-                        <p className="text-xs text-[var(--color-textSecondary)] mt-1">{game.yearPublished}</p>
+              <>
+                <Paginador pagination={pagination} page={page} setPage={setPage} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6">
+                  {games.map(({ gameId, game }) => (
+                    <div
+                      key={gameId}
+                      className="flex gap-4 p-4 rounded-xl border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)]"
+                    >
+                      {game.thumbnail ? (
+                        <img
+                          src={game.thumbnail}
+                          alt={game.name}
+                          className="w-24 h-24 rounded object-contain flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-24 h-24 rounded bg-[var(--color-tableRowHover)] flex items-center justify-center flex-shrink-0 text-4xl">
+                          🎲
+                        </div>
                       )}
+                      <div className="min-w-0 flex flex-col justify-center">
+                        <p className="font-semibold text-[var(--color-text)] leading-tight line-clamp-3">{game.name}</p>
+                        {game.yearPublished && (
+                          <p className="text-xs text-[var(--color-textSecondary)] mt-1">{game.yearPublished}</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Paginación */}
-            {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-center gap-4 mt-8">
-                <button
-                  onClick={() => setPage((p) => p - 1)}
-                  disabled={page <= 1}
-                  className="px-4 py-2 rounded-lg border border-[var(--color-cardBorder)] text-sm font-medium text-[var(--color-text)] disabled:opacity-40 hover:bg-[var(--color-tableRowHover)] transition-colors"
-                >
-                  Anterior
-                </button>
-                <span className="text-sm text-[var(--color-textSecondary)]">
-                  Página {pagination.currentPage} de {pagination.totalPages}
-                </span>
-                <button
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={page >= pagination.totalPages}
-                  className="px-4 py-2 rounded-lg border border-[var(--color-cardBorder)] text-sm font-medium text-[var(--color-text)] disabled:opacity-40 hover:bg-[var(--color-tableRowHover)] transition-colors"
-                >
-                  Siguiente
-                </button>
-              </div>
+                  ))}
+                </div>
+                <Paginador pagination={pagination} page={page} setPage={setPage} />
+              </>
             )}
           </>
         )}
