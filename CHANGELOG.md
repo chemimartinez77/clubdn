@@ -4,6 +4,28 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-19 (sesión 3)
+
+### Animaciones de puntuación incrementales, penalización de suelo animada, bonus endgame y niveles de IA
+
+Tres mejoras visuales y una de jugabilidad sobre el sandbox local de Azul (`/azul/local`).
+
+**`client/src/pages/azul/AzulLocal.tsx`** (modificado):
+
+**Puntos positivos incrementales:** Antes los scores se actualizaban de golpe al empezar la animación. Ahora se introduce `displayScores: number[] | null` — un array de scores "en curso" que parte de los valores pre-mosaico y se va incrementando con cada evento de tile animado. Los componentes `PlayerPanel` y `RivalMiniCard` reciben la prop `displayScore?: number` y la muestran en lugar de `state.score` cuando está activa.
+
+**Penalización de suelo animada:** Se añade `FloorPenaltyEvent` (tipo nuevo) y el estado `floorPenalties`. La penalización se detecta comparando `after.score` vs `preScore + tilePoints`, y se anima al final de la cola de tiles con un efecto de "shake" rojo durante 1200ms. El componente `PlayerPanel` recibe `floorShake?: boolean` para activar la clase CSS `.azul-floor-shake`.
+
+**Bonus endgame animado:** Se añaden `EndGameBonusEvent` (tipo nuevo), `endGameBonusEvents` y `isEndGameAnimating`. La función `computeEndGameBonusEvents(players)` calcula, a partir de la pared final de cada jugador, cuántas filas completas (+2 c/u), columnas (+7 c/u) y colores (+10 c/u) tiene. Al terminar la última ronda, antes de mostrar el banner de ganador, aparece durante 2.8s un panel dorado con el desglose por jugador. Importado `wallColumnForColor` del engine para el cálculo de colores.
+
+**Niveles de IA:** Se reemplaza el checkbox "IA J2" por un botón desplegable con cuatro niveles: Fácil (150ms MCTS + 800ms delay), Normal (500ms + 600ms), Difícil (1500ms + 400ms), Experto (3000ms + 200ms). El delay post-cálculo permite ver el tablero antes de que la IA ejecute su movimiento. El menú se cierra al hacer click fuera.
+
+**Fix bucle IA:** El `useEffect` de la IA dejó de incluir `isAiThinking` en sus dependencias (causaba que el cleanup cancelara el timer activo al hacer `setIsAiThinking(true)`). Se usa `aiThinkingRef` (ref, sin re-render) como guard, y `isAiThinking` queda solo para el UI.
+
+**`client/src/index.css`** (modificado): animación `@keyframes azul-floor-shake` + clase `.azul-floor-shake` para el shake rojo del score al aplicar penalizaciones de suelo.
+
+---
+
 ## 2026-04-19 (sesión 2)
 
 ### IA con MCTS para Azul Local

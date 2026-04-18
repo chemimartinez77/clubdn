@@ -6,6 +6,7 @@ import {
   getWinnerIndex,
   scoreAdjacency,
   calculateFloorPenalty,
+  wallColumnForColor,
   type GameState,
   type PlayerState,
   type TileColor,
@@ -51,6 +52,30 @@ interface TileScoringEvent {
   chain: { row: number; col: number }[];
   points: number;
 }
+
+interface FloorPenaltyEvent {
+  playerIndex: number;
+  penalty: number; // valor negativo
+}
+
+interface EndGameBonusEvent {
+  playerIndex: number;
+  rows: number;    // número de filas completas
+  cols: number;    // número de columnas completas
+  colors: number;  // número de colores completos
+  total: number;   // puntos totales del bonus
+}
+
+// ─── Niveles de IA ────────────────────────────────────────────────────────────
+
+type AiLevel = 'easy' | 'normal' | 'hard' | 'expert';
+
+const AI_LEVELS: Record<AiLevel, { label: string; mctsMs: number; delayMs: number }> = {
+  easy:   { label: 'Fácil',   mctsMs:  150, delayMs: 800 },
+  normal: { label: 'Normal',  mctsMs:  500, delayMs: 600 },
+  hard:   { label: 'Difícil', mctsMs: 1500, delayMs: 400 },
+  expert: { label: 'Experto', mctsMs: 3000, delayMs: 200 },
+};
 
 // ─── Helpers de animación ─────────────────────────────────────────────────────
 
@@ -103,6 +128,36 @@ function countDir(wall: TileOrNull[][], row: number, col: number, dr: number, dc
   let n = 0, r = row + dr, c = col + dc;
   while (r >= 0 && r < 5 && c >= 0 && c < 5 && wall[r]?.[c] !== null) { n++; r += dr; c += dc; }
   return n;
+}
+
+const BONUS_COLORS: TileColor[] = ['BLUE', 'YELLOW', 'RED', 'BLACK', 'TEAL'];
+
+function computeEndGameBonusEvents(players: PlayerState[]): EndGameBonusEvent[] {
+  return players.flatMap((player, pi) => {
+    const wall = player.wall;
+
+    let rows = 0;
+    for (let r = 0; r < 5; r++) {
+      if (wall[r]?.every(c => c !== null)) rows++;
+    }
+    let cols = 0;
+    for (let c = 0; c < 5; c++) {
+      if (wall.every(row => row[c] !== null)) cols++;
+    }
+    let colors = 0;
+    for (const color of BONUS_COLORS) {
+      let count = 0;
+      for (let r = 0; r < 5; r++) {
+        const col = wallColumnForColor(r, color);
+        if (col >= 0 && wall[r]?.[col] !== null) count++;
+      }
+      if (count === 5) colors++;
+    }
+
+    const total = rows * 2 + cols * 7 + colors * 10;
+    if (total === 0) return [];
+    return [{ playerIndex: pi, rows, cols, colors, total }];
+  });
 }
 
 // ─── Tile ─────────────────────────────────────────────────────────────────────
@@ -347,6 +402,7 @@ function PlayerPanel({
   state, name, isActive, isTurn, selectedColor,
   onSelectLine, onSelectFloor, scoringEvents, playerIndex,
   compact = false, large = false, mobile = false,
+  displayScore, floorShake = false,
 }: {
   state: PlayerState; name: string; isActive: boolean; isTurn: boolean;
   selectedColor: TileColor | null;
@@ -355,6 +411,8 @@ function PlayerPanel({
   compact?: boolean;
   large?: boolean;
   mobile?: boolean;
+  displayScore?: number;
+  floorShake?: boolean;
 }) {
   return (
     <div className={[
@@ -370,7 +428,13 @@ function PlayerPanel({
         </div>
         <div className="flex items-center gap-1">
           <span className="text-xs text-gray-500">Pts:</span>
-          <span className={`font-bold text-purple-600 ${compact ? 'text-xl' : large ? 'text-3xl' : 'text-2xl'}`}>{state.score}</span>
+          <span className={[
+            'font-bold transition-colors duration-300',
+            compact ? 'text-xl' : large ? 'text-3xl' : 'text-2xl',
+            floorShake ? 'text-red-500 azul-floor-shake' : 'text-purple-600',
+          ].join(' ')}>
+            {displayScore ?? state.score}
+          </span>
         </div>
       </div>
       <div className={`flex items-start ${mobile ? 'gap-2 justify-center' : compact ? 'gap-2' : large ? 'gap-6 justify-center' : 'gap-3'}`}>
@@ -426,9 +490,9 @@ function useIsMobile(): boolean {
 // ─── RivalMiniCard ────────────────────────────────────────────────────────────
 
 function RivalMiniCard({
-  state, name, isTurn, onClick,
+  state, name, isTurn, onClick, displayScore,
 }: {
-  state: PlayerState; name: string; isTurn: boolean; onClick: () => void;
+  state: PlayerState; name: string; isTurn: boolean; onClick: () => void; displayScore?: number;
 }) {
   return (
     <button
@@ -441,7 +505,7 @@ function RivalMiniCard({
     >
       <div className="flex items-center justify-between w-full px-0.5">
         <span className="text-[10px] font-semibold text-gray-700 truncate max-w-[52px]">{name}</span>
-        <span className="text-[11px] font-bold text-purple-600">{state.score}</span>
+        <span className="text-[11px] font-bold text-purple-600">{displayScore ?? state.score}</span>
       </div>
       <div className="flex flex-col gap-px">
         {state.wall.map((row, r) => (
@@ -528,7 +592,10 @@ export default function AzulLocal() {
   const [winner, setWinner] = useState<string | null>(null);
   const [rivalModal, setRivalModal] = useState<number | null>(null);
   const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiLevel, setAiLevel] = useState<AiLevel>('normal');
+  const [aiLevelMenuOpen, setAiLevelMenuOpen] = useState(false);
   const [isAiThinking, setIsAiThinking] = useState(false);
+  const aiThinkingRef = useRef(false);
   const isMobile = useIsMobile();
 
   // Cola completa de eventos calculados al final de la fase de mosaico
@@ -543,6 +610,15 @@ export default function AzulLocal() {
   const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Estado del juego que se aplicará cuando acabe la cola de animación
   const pendingPostAnimState = useRef<{ newState: GameState; result: ReturnType<typeof applyMove> } | null>(null);
+  // Scores mostrados en pantalla durante la animación (van incrementando con cada tile)
+  const [displayScores, setDisplayScores] = useState<number[] | null>(null);
+  // Penalizaciones de suelo pendientes de animar al final de la cola de tiles
+  const [floorPenalties, setFloorPenalties] = useState<FloorPenaltyEvent[]>([]);
+  // true mientras se está animando la penalización de suelo
+  const [isFloorAnimating, setIsFloorAnimating] = useState(false);
+  // Bonus de fin de partida pendientes de animar
+  const [endGameBonusEvents, setEndGameBonusEvents] = useState<EndGameBonusEvent[]>([]);
+  const [isEndGameAnimating, setIsEndGameAnimating] = useState(false);
 
   const activePlayerIndex = gs.turnIndex;
   const activeName = PLAYER_NAMES[activePlayerIndex] ?? `J${activePlayerIndex + 1}`;
@@ -550,27 +626,97 @@ export default function AzulLocal() {
   // Cerrar modal de rival al cambiar de turno
   useEffect(() => { setRivalModal(null); }, [activePlayerIndex]);
 
-  // Avanza al siguiente evento de la cola, o termina la secuencia
-  const advanceQueue = useCallback((queue: TileScoringEvent[], nextIdx: number) => {
-    if (nextIdx < queue.length) {
-      setCurrentEventIdx(nextIdx);
-      animTimerRef.current = setTimeout(() => advanceQueue(queue, nextIdx + 1), STEP_DURATION_MS);
+  // Cerrar menú de nivel IA al hacer click fuera
+  useEffect(() => {
+    if (!aiLevelMenuOpen) return;
+    const close = () => setAiLevelMenuOpen(false);
+    const tid = setTimeout(() => {
+      document.addEventListener('click', close, { once: true });
+    }, 0);
+    return () => {
+      clearTimeout(tid);
+      document.removeEventListener('click', close);
+    };
+  }, [aiLevelMenuOpen]);
+
+  // Finaliza toda la secuencia de animación (tiles + suelo + bonus endgame)
+  const finishAnimation = useCallback((bonusEvents: EndGameBonusEvent[] = []) => {
+    setCurrentEventIdx(-1);
+    setEventQueue([]);
+    setFloorPenalties([]);
+    setIsFloorAnimating(false);
+
+    const pending = pendingPostAnimState.current;
+    pendingPostAnimState.current = null;
+
+    if (pending?.result.gameOver && bonusEvents.length > 0) {
+      // Animar bonus endgame: mostrar durante 2s y luego revelar ganador
+      setIsEndGameAnimating(true);
+      setEndGameBonusEvents(bonusEvents);
+      setDisplayScores(pending.newState.players.map(p => p.score));
+      animTimerRef.current = setTimeout(() => {
+        setIsEndGameAnimating(false);
+        setEndGameBonusEvents([]);
+        setDisplayScores(null);
+        const winIdx = pending.result.winnerIndex ?? getWinnerIndex(pending.newState);
+        const winName = winIdx >= 0 ? (PLAYER_NAMES[winIdx] ?? `J${winIdx + 1}`) : null;
+        setWinner(winName ?? 'Empate');
+      }, 2800);
     } else {
-      // Cola terminada: limpiar y desbloquear
-      setCurrentEventIdx(-1);
-      setEventQueue([]);
-      const pending = pendingPostAnimState.current;
-      pendingPostAnimState.current = null;
-      if (pending) {
-        const { newState, result } = pending;
-        if (result.gameOver) {
-          const winIdx = result.winnerIndex ?? getWinnerIndex(newState);
-          const winName = winIdx >= 0 ? (PLAYER_NAMES[winIdx] ?? `J${winIdx + 1}`) : null;
-          setWinner(winName ?? 'Empate');
-        }
+      setDisplayScores(null);
+      setEndGameBonusEvents([]);
+      if (pending?.result.gameOver) {
+        const winIdx = pending.result.winnerIndex ?? getWinnerIndex(pending.newState);
+        const winName = winIdx >= 0 ? (PLAYER_NAMES[winIdx] ?? `J${winIdx + 1}`) : null;
+        setWinner(winName ?? 'Empate');
       }
     }
   }, []);
+
+  // Avanza al siguiente evento de la cola, o termina la secuencia
+  const advanceQueue = useCallback((
+    queue: TileScoringEvent[],
+    nextIdx: number,
+    scores: number[],
+    penalties: FloorPenaltyEvent[],
+  ) => {
+    if (nextIdx < queue.length) {
+      const ev = queue[nextIdx]!;
+      const updatedScores = scores.map((s, pi) =>
+        pi === ev.playerIndex ? s + ev.points : s
+      );
+      setCurrentEventIdx(nextIdx);
+      setDisplayScores(updatedScores);
+      animTimerRef.current = setTimeout(
+        () => advanceQueue(queue, nextIdx + 1, updatedScores, penalties),
+        STEP_DURATION_MS,
+      );
+    } else {
+      // Cola de tiles terminada: animar penalizaciones de suelo
+      setCurrentEventIdx(-1);
+      setEventQueue([]);
+
+      const applyPenaltiesAndFinish = () => {
+        const pending = pendingPostAnimState.current;
+        const bonusEvents = pending?.result.gameOver
+          ? computeEndGameBonusEvents(pending.newState.players)
+          : [];
+        finishAnimation(bonusEvents);
+      };
+
+      if (penalties.length > 0) {
+        setIsFloorAnimating(true);
+        const penScores = scores.map((s, pi) => {
+          const pen = penalties.find(p => p.playerIndex === pi);
+          return pen ? Math.max(0, s + pen.penalty) : s;
+        });
+        setDisplayScores(penScores);
+        animTimerRef.current = setTimeout(() => applyPenaltiesAndFinish(), 1200);
+      } else {
+        applyPenaltiesAndFinish();
+      }
+    }
+  }, [finishAnimation]);
 
   const addLog = useCallback((entry: LogEntry) => {
     setLog(prev => [entry, ...prev].slice(0, 40));
@@ -608,15 +754,26 @@ export default function AzulLocal() {
     // ── Calcular eventos de puntuación ───────────────────────────────────────
     // Solo ocurren cuando el engine pasó por la fase de mosaico (tiles nuevos en la pared)
     const events: TileScoringEvent[] = [];
+    // Penalizaciones de suelo (calculadas del estado pre-mosaico)
+    const penalties: FloorPenaltyEvent[] = [];
+    const preScores = gs.players.map(p => p.score);
+
     for (let pi = 0; pi < gs.players.length; pi++) {
       const before = gs.players[pi];
       const after = newState.players[pi];
       if (before && after) {
-        events.push(...computeScoringEvents(before, after, pi));
+        const playerEvents = computeScoringEvents(before, after, pi);
+        events.push(...playerEvents);
+        // Penalización de suelo: score final vs (preScore + tiles positivos)
+        const tilePoints = playerEvents.reduce((sum, e) => sum + e.points, 0);
+        const pen = after.score - Math.max(0, before.score + tilePoints);
+        if (pen < 0) {
+          penalties.push({ playerIndex: pi, penalty: pen });
+        }
       }
     }
 
-    if (events.length > 0) {
+    if (events.length > 0 || penalties.length > 0) {
       // Hay puntuación que animar: actualizamos el estado YA y arrancamos la cola
       setGs(newState);
       setSelected(null);
@@ -627,6 +784,14 @@ export default function AzulLocal() {
         addLog({
           round: gs.round, player: pName,
           text: `puntúa +${ev.points} por (${ev.newTile.row + 1},${ev.newTile.col + 1})`,
+          type: 'score',
+        });
+      }
+      for (const pen of penalties) {
+        const pName = PLAYER_NAMES[pen.playerIndex] ?? `J${pen.playerIndex + 1}`;
+        addLog({
+          round: gs.round, player: pName,
+          text: `penalización de suelo: ${pen.penalty} pts`,
           type: 'score',
         });
       }
@@ -641,14 +806,36 @@ export default function AzulLocal() {
       // Guardar estado post-animación para procesarlo al terminar la cola
       pendingPostAnimState.current = { newState, result };
 
+      // Iniciar displayScores desde los scores pre-mosaico
+      const initScores = [...preScores];
+      setDisplayScores(initScores);
+      setFloorPenalties(penalties);
+
       // Cancelar timer previo y arrancar la cola desde el primer evento
       if (animTimerRef.current) clearTimeout(animTimerRef.current);
-      setEventQueue(events);
-      setCurrentEventIdx(0);
-      animTimerRef.current = setTimeout(
-        () => advanceQueue(events, 1),
-        STEP_DURATION_MS + STEP_GAP_MS
-      );
+
+      if (events.length > 0) {
+        const firstEv = events[0]!;
+        const scoresAfterFirst = initScores.map((s, pi) =>
+          pi === firstEv.playerIndex ? s + firstEv.points : s
+        );
+        setEventQueue(events);
+        setCurrentEventIdx(0);
+        setDisplayScores(scoresAfterFirst);
+        animTimerRef.current = setTimeout(
+          () => advanceQueue(events, 1, scoresAfterFirst, penalties),
+          STEP_DURATION_MS + STEP_GAP_MS,
+        );
+      } else {
+        // Solo hay penalizaciones de suelo, sin tiles positivos
+        setIsFloorAnimating(true);
+        const penScores = initScores.map((s, pi) => {
+          const pen = penalties.find(p => p.playerIndex === pi);
+          return pen ? Math.max(0, s + pen.penalty) : s;
+        });
+        setDisplayScores(penScores);
+        animTimerRef.current = setTimeout(() => finishAnimation(), 1200);
+      }
 
     } else {
       // Sin puntuación: transición inmediata
@@ -689,9 +876,15 @@ export default function AzulLocal() {
     setGs(makeInitialState(n));
     setSelected(null);
     setWinner(null);
+    aiThinkingRef.current = false;
     setIsAiThinking(false);
     setEventQueue([]);
     setCurrentEventIdx(-1);
+    setDisplayScores(null);
+    setFloorPenalties([]);
+    setIsFloorAnimating(false);
+    setEndGameBonusEvents([]);
+    setIsEndGameAnimating(false);
     setLog([{ round: 1, player: '', text: `¡Partida nueva iniciada (${n}J)! Turno de ${PLAYER_NAMES[0]}.`, type: 'round' }]);
   };
 
@@ -705,28 +898,37 @@ export default function AzulLocal() {
 
   // IA: disparar cuando es el turno del jugador 2 (índice 1, id 'player-1')
   useEffect(() => {
-    if (!aiEnabled || winner || isAnimating || isAiThinking) return;
+    if (!aiEnabled || winner || isAnimating) return;
+    if (aiThinkingRef.current) return;
     if (gs.phase !== 'OFFER') return;
     const aiIndex = 1;
     if (gs.turnIndex !== aiIndex) return;
     if (gs.players[aiIndex]?.id !== 'player-1') return;
 
+    aiThinkingRef.current = true;
     setIsAiThinking(true);
 
-    // Usar inline MCTS en un setTimeout para no bloquear el render
+    const { mctsMs, delayMs } = AI_LEVELS[aiLevel];
+
+    // Pequeño delay para que React pinte el spinner antes de bloquear el hilo
     const timeoutId = setTimeout(() => {
       try {
-        const move = runMCTS(gs, aiIndex, 1000);
-        setIsAiThinking(false);
-        dispatchMove(move);
+        const move = runMCTS(gs, aiIndex, mctsMs);
+        // Delay adicional para que el movimiento sea visible
+        setTimeout(() => {
+          aiThinkingRef.current = false;
+          setIsAiThinking(false);
+          dispatchMove(move);
+        }, delayMs);
       } catch {
+        aiThinkingRef.current = false;
         setIsAiThinking(false);
       }
-    }, 50); // pequeño delay para que React pinte el spinner primero
+    }, 50);
 
     return () => clearTimeout(timeoutId);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gs.turnIndex, gs.phase, gs.round, aiEnabled, winner, isAnimating, isAiThinking]);
+  }, [gs.turnIndex, gs.phase, gs.round, aiEnabled, winner, isAnimating]);
 
   const disabled = !!winner || isAnimating || isAiThinking;
 
@@ -758,15 +960,63 @@ export default function AzulLocal() {
                 </button>
               ))}
             </div>
-            <label className="flex items-center gap-1.5 cursor-pointer select-none text-sm text-gray-600">
-              <input
-                type="checkbox"
-                checked={aiEnabled}
-                onChange={e => setAiEnabled(e.target.checked)}
-                className="accent-purple-600 w-4 h-4"
-              />
-              IA J2
-            </label>
+            {/* Botón IA J2 con menú de niveles */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  if (!aiEnabled) {
+                    setAiEnabled(true);
+                    setAiLevelMenuOpen(true);
+                  } else {
+                    setAiLevelMenuOpen(prev => !prev);
+                  }
+                }}
+                className={[
+                  'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-all',
+                  aiEnabled
+                    ? 'border-purple-400 bg-purple-50 text-purple-700'
+                    : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50',
+                ].join(' ')}
+              >
+                <span className={`w-2 h-2 rounded-full ${aiEnabled ? 'bg-purple-500' : 'bg-gray-300'}`} />
+                IA J2
+                {aiEnabled && (
+                  <span className="text-[10px] font-semibold text-purple-500 border border-purple-300 rounded px-1">
+                    {AI_LEVELS[aiLevel].label}
+                  </span>
+                )}
+                <span className="text-gray-400 text-xs">{aiLevelMenuOpen ? '▲' : '▼'}</span>
+              </button>
+
+              {aiLevelMenuOpen && (
+                <div className="absolute right-0 top-full mt-1 z-20 w-44 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
+                  {/* Apagar IA */}
+                  {aiEnabled && (
+                    <button
+                      onClick={() => { setAiEnabled(false); setAiLevelMenuOpen(false); }}
+                      className="w-full text-left px-3 py-2 text-xs text-red-500 hover:bg-red-50 border-b border-gray-100 font-medium"
+                    >
+                      Desactivar IA
+                    </button>
+                  )}
+                  {(Object.entries(AI_LEVELS) as [AiLevel, typeof AI_LEVELS[AiLevel]][]).map(([key, lvl]) => (
+                    <button
+                      key={key}
+                      onClick={() => { setAiLevel(key); setAiEnabled(true); setAiLevelMenuOpen(false); }}
+                      className={[
+                        'w-full text-left px-3 py-2.5 text-sm transition-colors flex items-center justify-between',
+                        aiLevel === key && aiEnabled
+                          ? 'bg-purple-50 text-purple-700 font-semibold'
+                          : 'text-gray-700 hover:bg-gray-50',
+                      ].join(' ')}
+                    >
+                      <span>{lvl.label}</span>
+                      {aiLevel === key && aiEnabled && <span className="text-purple-500 text-xs">✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button
               onClick={() => handleReset()}
               className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
@@ -775,6 +1025,26 @@ export default function AzulLocal() {
             </button>
           </div>
         </div>
+
+        {/* Banner de bonus endgame */}
+        {isEndGameAnimating && endGameBonusEvents.length > 0 && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+            <p className="text-center text-sm font-bold text-amber-700 mb-3">Bonus de fin de partida</p>
+            <div className="flex flex-col gap-2">
+              {endGameBonusEvents.map(ev => (
+                <div key={ev.playerIndex} className="flex items-center justify-between rounded-lg bg-white border border-amber-100 px-3 py-2">
+                  <span className="font-semibold text-gray-700 text-sm">{PLAYER_NAMES[ev.playerIndex] ?? `J${ev.playerIndex + 1}`}</span>
+                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                    {ev.rows > 0 && <span className="text-green-600 font-semibold">+{ev.rows * 2} filas</span>}
+                    {ev.cols > 0 && <span className="text-blue-600 font-semibold">+{ev.cols * 7} columnas</span>}
+                    {ev.colors > 0 && <span className="text-purple-600 font-semibold">+{ev.colors * 10} colores</span>}
+                    <span className="font-bold text-amber-700 text-sm">+{ev.total} pts</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Banner de ganador */}
         {winner && (
@@ -927,6 +1197,7 @@ export default function AzulLocal() {
                         name={PLAYER_NAMES[idx] ?? `J${idx + 1}`}
                         isTurn={false}
                         onClick={() => setRivalModal(idx)}
+                        displayScore={displayScores?.[idx]}
                       />
                     );
                   })}
@@ -944,6 +1215,8 @@ export default function AzulLocal() {
               scoringEvents={activeEvents}
               playerIndex={activePlayerIndex}
               mobile={true}
+              displayScore={displayScores?.[activePlayerIndex]}
+              floorShake={isFloorAnimating && floorPenalties.some(p => p.playerIndex === activePlayerIndex)}
             />
           </>
         ) : (
@@ -966,6 +1239,8 @@ export default function AzulLocal() {
                 playerIndex={idx}
                 compact={numPlayers >= 3}
                 large={numPlayers === 2}
+                displayScore={displayScores?.[idx]}
+                floorShake={isFloorAnimating && floorPenalties.some(p => p.playerIndex === idx)}
               />
             ))}
           </div>
