@@ -4,6 +4,43 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-19 (sesión 1)
+
+### Azul online: soporte 2-4 jugadores con lobby de espera
+
+El juego Azul online estaba limitado a exactamente 2 jugadores por el modelo de base de datos (`player1Id` / `player2Id`). El motor del juego (`AzulEngine.ts`) ya soportaba 2-4 jugadores nativamente, así que el cambio afecta principalmente a la capa de datos, el controlador y la UI.
+
+**Schema Prisma** (`server/prisma/schema.prisma`): se añaden `player3Id String?`, `player4Id String?` y `maxPlayers Int @default(2)` al modelo `AzulGame`, con sus relaciones inversas en `User` (`azulGamesAsPlayer3`, `azulGamesAsPlayer4`) e índices correspondientes. Migración: `server/prisma/migrations/20260419100000_add_azul_multiplayer_support/migration.sql`.
+
+**Backend** (`server/src/controllers/azulController.ts`): reescritura completa con dos helpers privados (`getFilledSlots`, `getNextPlayerSlot`) que permiten gestionar N slots de forma genérica.
+- `createGame()`: acepta `maxPlayers: 2 | 3 | 4` del body (default 2). Ya no inicializa el motor al crear la partida; guarda un `{ pending: true }` hasta que todos los jugadores estén en la sala.
+- `joinGame()`: ocupa dinámicamente el siguiente slot libre (player2Id → player3Id → player4Id). Cuando el último jugador necesario se une, llama a `createInitialState(...orderedIds)` y cambia el estado a `ACTIVE`. Si aún faltan jugadores, solo guarda el slot y el estado sigue `WAITING`.
+- `getGame()`, `listGames()`, `makeMove()`: ampliados para incluir `player3` y `player4` en los `include` y los filtros `OR` / `isParticipant`. `makeMove()` añade una guarda contra el estado `{ pending: true }`.
+
+**Frontend — `client/src/hooks/useGame.ts`**: interfaz `AzulGame` actualizada con `maxPlayers`, `player3?` y `player4?`. Nuevos helpers exportados `getAllPlayers(game)` y `getJoinedCount(game)`. El hook `useGame` cambia `opponentState` (singular) por `opponentStates: PlayerState[]` (array de todos los oponentes). `createGame` en `useAzulGameList` acepta `maxPlayers: 2 | 3 | 4`. El polling en `WAITING` se mantiene activo para detectar cuando llegan nuevos jugadores.
+
+**Frontend — `client/src/components/combatzone/azul/GameBoard.tsx`**:
+- Estado `WAITING`: nuevo componente `WaitingLobby` con slots visuales (verde = unido, gris = esperando), contador `X/N unidos`, URL copiable y botón "Unirse" visible solo si el usuario no está ya en la sala.
+- Estado `FINISHED`: usa `getAllPlayers` para resolver el nombre del ganador dinámicamente; muestra scores de todos los jugadores con `.map()`.
+- Estado `ACTIVE`: grid CSS condicional según número de jugadores (`lg:grid-cols-2` para 2p, `md:grid-cols-3` para 3p, `sm:grid-cols-2` (2×2) para 4p). Todos los tableros se renderizan con `.map()` sobre `gs.players`. El highlight del último movimiento pasa de un único `useRef<PlayerState>` a un `Map<string, PlayerState>` indexado por `playerId`, generando un `Record<string, LastMoveHighlight>` para cada oponente de forma independiente. La barra de estado resuelve el nombre del jugador activo con `getAllPlayers`.
+
+**Frontend — `client/src/pages/azul/CombatZone.tsx`**:
+- Selector de jugadores (botones 2/3/4) que aparece al seleccionar Azul, antes del botón "Nueva partida".
+- `handleNewGame` pasa `selectedMaxPlayers` a `createGame`.
+- `statusLabel`: en `WAITING` muestra `Esperando (X/N)` si el usuario ya está en la sala o `Disponible (X/N)` si no.
+- `opponentName` renombrado a `opponentNames` y devuelve todos los rivales separados por coma.
+- `GameRow`: muestra el formato `(Np)` junto al nombre y la línea de estado diferencia entre lobby y partida en curso.
+
+**Archivos modificados/creados:**
+- `server/prisma/schema.prisma`
+- `server/prisma/migrations/20260419100000_add_azul_multiplayer_support/migration.sql` (nuevo)
+- `server/src/controllers/azulController.ts`
+- `client/src/hooks/useGame.ts`
+- `client/src/components/combatzone/azul/GameBoard.tsx`
+- `client/src/pages/azul/CombatZone.tsx`
+
+---
+
 ## 2026-04-18 (sesion 2)
 
 ### Badge "Invitador" y validacion de invitaciones restringida al socio invitador

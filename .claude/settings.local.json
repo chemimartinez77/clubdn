@@ -71,7 +71,9 @@
       "Bash(npx jest:*)",
       "Bash(railway version:*)",
       "Bash(node -e \"require\\(''nodemailer''\\)\")",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(npx.cmd prisma *)",
+      "Bash(npx.cmd tsc *)"
     ]
   }
 }

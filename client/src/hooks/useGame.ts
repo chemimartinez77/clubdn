@@ -31,9 +31,12 @@ export interface AzulGame {
   status: 'WAITING' | 'ACTIVE' | 'FINISHED';
   currentTurn: string | null;
   winnerId: string | null;
+  maxPlayers: number;
   gameState: GameState;
   player1: { id: string; name: string };
   player2: { id: string; name: string } | null;
+  player3: { id: string; name: string } | null;
+  player4: { id: string; name: string } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,11 +48,25 @@ export interface MovePayload {
   patternLineIndex: number; // -1 = suelo
 }
 
+// ─── Helpers exportados ───────────────────────────────────────────────────────
+
+/** Devuelve todos los jugadores confirmados en orden de slot (player1…player4). */
+export function getAllPlayers(game: AzulGame): { id: string; name: string }[] {
+  return [game.player1, game.player2, game.player3, game.player4].filter(
+    (p): p is { id: string; name: string } => p !== null,
+  );
+}
+
+/** Cuántos jugadores se han unido ya a la sala. */
+export function getJoinedCount(game: AzulGame): number {
+  return getAllPlayers(game).length;
+}
+
 // ─── Hook principal ───────────────────────────────────────────────────────────
 
 /**
  * Gestiona el estado de una partida en curso.
- * Hace polling cada 3 segundos cuando es turno del oponente.
+ * Hace polling cada 3 segundos cuando es turno del oponente o la sala está incompleta.
  */
 export function useGame(gameId: string, myUserId: string) {
   const queryClient = useQueryClient();
@@ -60,11 +77,12 @@ export function useGame(gameId: string, myUserId: string) {
       const res = await api.get<{ success: boolean; data: AzulGame }>(`/api/azul/games/${gameId}`);
       return res.data.data;
     },
-    // Pollear cada 3s cuando es turno del oponente o la partida está esperando
+    // Pollear cada 3s cuando es turno del oponente o la partida está en lobby
     refetchInterval: (query) => {
       const game = query.state.data;
       if (!game) return 3000;
       if (game.status === 'FINISHED') return false;
+      if (game.status === 'WAITING') return 3000; // Esperando que lleguen más jugadores
       if (game.currentTurn === myUserId) return false; // Es mi turno, no hace falta pollear
       return 3000;
     },
@@ -80,7 +98,6 @@ export function useGame(gameId: string, myUserId: string) {
       return res.data;
     },
     onSuccess: (data) => {
-      // Actualizar el caché directamente con el estado recibido del servidor
       queryClient.setQueryData(['azul-game', gameId], data.data);
     },
   });
@@ -99,9 +116,11 @@ export function useGame(gameId: string, myUserId: string) {
 
   const game = query.data;
   const isMyTurn = game?.currentTurn === myUserId;
-  const myPlayerIndex = game?.gameState.players.findIndex(p => p.id === myUserId) ?? -1;
+  const myPlayerIndex = game?.gameState?.players?.findIndex(p => p.id === myUserId) ?? -1;
   const myState = myPlayerIndex >= 0 ? game?.gameState.players[myPlayerIndex] : undefined;
-  const opponentState = myPlayerIndex >= 0 ? game?.gameState.players[1 - myPlayerIndex] : undefined;
+
+  // Array de estados de oponentes (todos los jugadores excepto yo)
+  const opponentStates = game?.gameState?.players?.filter(p => p.id !== myUserId) ?? [];
 
   return {
     game,
@@ -110,7 +129,7 @@ export function useGame(gameId: string, myUserId: string) {
     isMyTurn,
     myPlayerIndex,
     myState,
-    opponentState,
+    opponentStates,
     sendMove: moveMutation.mutate,
     isSendingMove: moveMutation.isPending,
     moveError: moveMutation.error,
@@ -133,8 +152,10 @@ export function useAzulGameList() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async () => {
-      const res = await api.post<{ success: boolean; data: AzulGame }>('/api/azul/games');
+    mutationFn: async (maxPlayers: 2 | 3 | 4 = 2) => {
+      const res = await api.post<{ success: boolean; data: AzulGame }>('/api/azul/games', {
+        maxPlayers,
+      });
       return res.data.data;
     },
     onSuccess: () => {

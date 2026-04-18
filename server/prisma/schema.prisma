@@ -125,6 +125,8 @@ model User {
   financialMovements FinancialMovement[] @relation("FinancialMovements")
   azulGamesAsPlayer1  AzulGame[]          @relation("AzulGamesAsPlayer1")
   azulGamesAsPlayer2  AzulGame[]          @relation("AzulGamesAsPlayer2")
+  azulGamesAsPlayer3  AzulGame[]          @relation("AzulGamesAsPlayer3")
+  azulGamesAsPlayer4  AzulGame[]          @relation("AzulGamesAsPlayer4")
   viernesGames        ViernesGame[]       @relation("ViernesGamesAsPlayer")
   pageViews           PageView[]
   gameValidationsAsScanner GameValidation[]    @relation("GameValidationScanner")
@@ -1115,18 +1117,23 @@ model GamePlayHistory {
 // ==================== JUEGO AZUL ====================
 
 enum AzulGameStatus {
-  WAITING   // Esperando segundo jugador
+  WAITING   // Esperando que se complete la sala (2-4 jugadores)
   ACTIVE    // Partida en curso
   FINISHED  // Partida terminada
 }
 
-// Partida del juego de mesa Azul (2 jugadores, turnos online)
+// Partida del juego de mesa Azul (2-4 jugadores, turnos online)
 model AzulGame {
   id          String          @id @default(cuid())
   player1Id   String
   player1     User            @relation("AzulGamesAsPlayer1", fields: [player1Id], references: [id])
   player2Id   String?
   player2     User?           @relation("AzulGamesAsPlayer2", fields: [player2Id], references: [id])
+  player3Id   String?
+  player3     User?           @relation("AzulGamesAsPlayer3", fields: [player3Id], references: [id])
+  player4Id   String?
+  player4     User?           @relation("AzulGamesAsPlayer4", fields: [player4Id], references: [id])
+  maxPlayers  Int             @default(2)   // Número de jugadores requeridos para empezar (2, 3 o 4)
   gameState   Json            // Estado completo del tablero (factories, walls, scores, etc.)
   currentTurn String?         // userId del jugador que tiene el turno
   status      AzulGameStatus  @default(WAITING)
@@ -1136,6 +1143,8 @@ model AzulGame {
 
   @@index([player1Id])
   @@index([player2Id])
+  @@index([player3Id])
+  @@index([player4Id])
   @@index([status])
   @@index([createdAt])
 }

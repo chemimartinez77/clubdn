@@ -1,6 +1,14 @@
 // client/src/components/combatzone/azul/GameBoard.tsx
 import { useState, useEffect, useRef } from 'react';
-import { useGame, type TileColor, type TileOrNull, type PlayerState } from '../../../hooks/useGame';
+import {
+  useGame,
+  getAllPlayers,
+  getJoinedCount,
+  type AzulGame,
+  type TileColor,
+  type TileOrNull,
+  type PlayerState,
+} from '../../../hooks/useGame';
 import { useAuth } from '../../../contexts/AuthContext';
 
 // ─── Tipos para el highlight del último movimiento ────────────────────────────
@@ -349,7 +357,7 @@ function Floor({ floor, hasMarker, selectedColor, onSelectFloor, isMyBoard, high
 
 interface PlayerBoardProps {
   playerName: string;
-  state: ReturnType<typeof useGame>['myState'];
+  state: PlayerState;
   isMyBoard: boolean;
   isCurrentTurn: boolean;
   selectedColor: TileColor | null;
@@ -368,8 +376,6 @@ function PlayerBoard({
   onSelectFloor,
   highlight,
 }: PlayerBoardProps) {
-  if (!state) return null;
-
   return (
     <div
       className={[
@@ -426,6 +432,89 @@ function PlayerBoard({
   );
 }
 
+// ─── Lobby de espera ──────────────────────────────────────────────────────────
+
+function WaitingLobby({
+  game,
+  myUserId,
+  onJoin,
+  isJoining,
+}: {
+  game: AzulGame;
+  myUserId: string;
+  onJoin: () => void;
+  isJoining: boolean;
+}) {
+  const joinedPlayers = getAllPlayers(game);
+  const joinedCount = getJoinedCount(game);
+  const isParticipant = joinedPlayers.some(p => p.id === myUserId);
+  const canJoin = !isParticipant && joinedCount < game.maxPlayers;
+
+  return (
+    <div className="flex flex-col items-center gap-6 py-12 text-center max-w-sm mx-auto">
+      <div className="text-2xl font-bold text-[var(--color-text)]">Sala de espera</div>
+      <p className="text-sm text-[var(--color-textSecondary)]">
+        Partida para <strong>{game.maxPlayers} jugadores</strong> · {joinedCount}/{game.maxPlayers} unidos
+      </p>
+
+      {/* Slots visuales */}
+      <div className="flex flex-col gap-2 w-full">
+        {Array.from({ length: game.maxPlayers }).map((_, i) => {
+          const player = joinedPlayers[i];
+          return (
+            <div
+              key={i}
+              className={[
+                'flex items-center gap-3 rounded-xl border-2 px-4 py-2.5 text-sm',
+                player
+                  ? 'border-green-400 bg-green-50 text-green-800'
+                  : 'border-dashed border-gray-300 bg-gray-50 text-gray-400',
+              ].join(' ')}
+            >
+              <span className={['w-2.5 h-2.5 rounded-full flex-shrink-0', player ? 'bg-green-500' : 'bg-gray-300'].join(' ')} />
+              {player ? (
+                <span className="font-semibold">
+                  {player.name}
+                  {player.id === myUserId && (
+                    <span className="ml-1 text-xs font-normal text-green-600">(tú)</span>
+                  )}
+                </span>
+              ) : (
+                <span>Esperando jugador {i + 1}…</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* URL para compartir */}
+      <div className="w-full">
+        <p className="text-xs text-[var(--color-textSecondary)] mb-1">Comparte este enlace:</p>
+        <code className="block rounded-lg bg-[var(--color-hover)] px-4 py-2 text-sm font-mono text-[var(--color-text)] break-all">
+          {window.location.href}
+        </code>
+      </div>
+
+      {/* Botón unirse */}
+      {canJoin && (
+        <button
+          onClick={onJoin}
+          disabled={isJoining}
+          className="rounded-lg bg-[var(--color-primary)] px-6 py-2 text-white font-semibold hover:bg-[var(--color-primaryDark)] transition-colors disabled:opacity-60"
+        >
+          {isJoining ? 'Uniéndose…' : 'Unirse a la partida'}
+        </button>
+      )}
+
+      {isParticipant && (
+        <p className="text-xs text-[var(--color-textSecondary)]">
+          Esperando a los demás jugadores…
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ─── GameBoard principal ──────────────────────────────────────────────────────
 
 interface GameBoardProps {
@@ -434,20 +523,20 @@ interface GameBoardProps {
 
 export function GameBoard({ gameId }: GameBoardProps) {
   const { user } = useAuth();
+  const myUserId = user?.id ?? '';
+
   const {
     game,
     isLoading,
     error,
     isMyTurn,
-    myPlayerIndex,
-    myState,
-    opponentState,
+    opponentStates,
     sendMove,
     isSendingMove,
     moveError,
     joinGame,
     isJoining,
-  } = useGame(gameId, user?.id ?? '');
+  } = useGame(gameId, myUserId);
 
   // Estado de selección de azulejo (paso 1 del movimiento)
   const [selected, setSelected] = useState<{
@@ -456,23 +545,32 @@ export function GameBoard({ gameId }: GameBoardProps) {
     color: TileColor;
   } | null>(null);
 
-  // Highlight del último movimiento del rival
-  const prevOpponentState = useRef<PlayerState | undefined>(undefined);
-  const [lastMoveHighlight, setLastMoveHighlight] = useState<LastMoveHighlight | null>(null);
+  // Highlight del último movimiento de cada oponente (mapa playerId → highlight)
+  const prevOpponentStates = useRef<Map<string, PlayerState>>(new Map());
+  const [opponentHighlights, setOpponentHighlights] = useState<Record<string, LastMoveHighlight>>({});
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const prev = prevOpponentState.current;
-    if (prev && opponentState) {
-      const diff = computeDiff(prev, opponentState);
-      if (diff) {
-        setLastMoveHighlight(diff);
-        if (highlightTimer.current) clearTimeout(highlightTimer.current);
-        highlightTimer.current = setTimeout(() => setLastMoveHighlight(null), 2200);
+    if (!game) return;
+
+    const newHighlights: Record<string, LastMoveHighlight> = {};
+
+    game.gameState?.players?.forEach(playerState => {
+      if (playerState.id === myUserId) return;
+      const prev = prevOpponentStates.current.get(playerState.id);
+      if (prev) {
+        const diff = computeDiff(prev, playerState);
+        if (diff) newHighlights[playerState.id] = diff;
       }
+      prevOpponentStates.current.set(playerState.id, { ...playerState });
+    });
+
+    if (Object.keys(newHighlights).length > 0) {
+      setOpponentHighlights(newHighlights);
+      if (highlightTimer.current) clearTimeout(highlightTimer.current);
+      highlightTimer.current = setTimeout(() => setOpponentHighlights({}), 2200);
     }
-    prevOpponentState.current = opponentState ? { ...opponentState } : undefined;
-  }, [opponentState]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [game?.gameState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => () => {
     if (highlightTimer.current) clearTimeout(highlightTimer.current);
@@ -494,47 +592,34 @@ export function GameBoard({ gameId }: GameBoardProps) {
     );
   }
 
-  // ── Estado: esperando jugador 2 ───────────────────────────────────────────
+  // ── Estado: lobby de espera ───────────────────────────────────────────────
   if (game.status === 'WAITING') {
     return (
-      <div className="flex flex-col items-center gap-4 py-12 text-center">
-        <div className="text-2xl font-bold text-[var(--color-text)]">Esperando oponente…</div>
-        <p className="text-[var(--color-textSecondary)] text-sm">
-          Comparte este enlace con tu rival o únete si llegaste a través de uno.
-        </p>
-        <code className="rounded-lg bg-[var(--color-hover)] px-4 py-2 text-sm font-mono text-[var(--color-text)] break-all">
-          {window.location.href}
-        </code>
-        {game.player1.id !== user?.id && (
-          <button
-            onClick={() => joinGame()}
-            disabled={isJoining}
-            className="rounded-lg bg-[var(--color-primary)] px-6 py-2 text-white font-semibold hover:bg-[var(--color-primaryDark)] transition-colors disabled:opacity-60"
-          >
-            {isJoining ? 'Uniéndose…' : 'Unirse a la partida'}
-          </button>
-        )}
-      </div>
+      <WaitingLobby
+        game={game}
+        myUserId={myUserId}
+        onJoin={joinGame}
+        isJoining={isJoining}
+      />
     );
   }
 
   // ── Estado: partida terminada ─────────────────────────────────────────────
   if (game.status === 'FINISHED') {
-    const winner = game.winnerId
-      ? (game.player1.id === game.winnerId ? game.player1.name : game.player2?.name)
-      : null;
+    const allPlayers = getAllPlayers(game);
+    const winnerPlayer = allPlayers.find(p => p.id === game.winnerId) ?? null;
     return (
       <div className="flex flex-col items-center gap-4 py-8 text-center">
         <div className="text-3xl font-bold text-[var(--color-primary)]">¡Partida terminada!</div>
         <div className="text-xl text-[var(--color-text)]">
-          {winner ? `Ganador: ${winner}` : 'Empate'}
+          {winnerPlayer ? `Ganador: ${winnerPlayer.name}` : 'Empate'}
         </div>
-        <div className="flex gap-8 mt-4">
-          {game.gameState.players.map((p, i) => {
-            const name = i === 0 ? game.player1.name : (game.player2?.name ?? '?');
+        <div className="flex gap-8 mt-4 flex-wrap justify-center">
+          {game.gameState.players.map((p) => {
+            const info = allPlayers.find(pl => pl.id === p.id);
             return (
               <div key={p.id} className="text-center">
-                <div className="text-sm text-[var(--color-textSecondary)]">{name}</div>
+                <div className="text-sm text-[var(--color-textSecondary)]">{info?.name ?? p.id}</div>
                 <div className="text-4xl font-bold text-[var(--color-text)]">{p.score}</div>
                 <div className="text-xs text-[var(--color-textSecondary)]">puntos</div>
               </div>
@@ -547,17 +632,24 @@ export function GameBoard({ gameId }: GameBoardProps) {
 
   // ── Partida activa ────────────────────────────────────────────────────────
   const gs = game.gameState;
-  const opponentIndex = myPlayerIndex >= 0 ? 1 - myPlayerIndex : -1;
-  const opponentName = opponentIndex === 0
-    ? game.player1.name
-    : (game.player2?.name ?? 'Oponente');
-  const myName = myPlayerIndex === 0
-    ? game.player1.name
-    : (game.player2?.name ?? 'Tú');
+  const allPlayers = getAllPlayers(game);
+
+  // Nombre del jugador activo en esta ronda
+  const activePlayerId = gs.players[gs.turnIndex]?.id;
+  const activePlayerName = allPlayers.find(p => p.id === activePlayerId)?.name ?? '…';
+  const myName = allPlayers.find(p => p.id === myUserId)?.name ?? 'Tú';
+
+  // Layout del grid según número de jugadores
+  const playerCount = gs.players.length;
+  const gridClass =
+    playerCount <= 2
+      ? 'grid grid-cols-1 gap-4 lg:grid-cols-2'
+      : playerCount === 3
+      ? 'grid grid-cols-1 gap-4 md:grid-cols-3'
+      : 'grid grid-cols-1 gap-4 sm:grid-cols-2';
 
   const handleSelectTile = (src: { source: 'factory' | 'center'; factoryIndex?: number; color: TileColor }) => {
     if (!isMyTurn) return;
-    // Toggle: clic en el mismo color deselecciona
     if (selected?.source === src.source && selected?.factoryIndex === src.factoryIndex && selected?.color === src.color) {
       setSelected(null);
     } else {
@@ -578,7 +670,7 @@ export function GameBoard({ gameId }: GameBoardProps) {
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+    <div className="flex flex-col gap-6 max-w-5xl mx-auto">
       {/* Barra de estado */}
       <div className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm">
         <span className="text-[var(--color-textSecondary)]">Ronda {gs.round}</span>
@@ -588,7 +680,7 @@ export function GameBoard({ gameId }: GameBoardProps) {
             isMyTurn ? 'text-yellow-600' : 'text-[var(--color-textSecondary)]',
           ].join(' ')}
         >
-          {isMyTurn ? '¡Tu turno!' : `Turno de ${opponentName}`}
+          {isMyTurn ? '¡Tu turno!' : `Turno de ${activePlayerName}`}
         </span>
         <span className="text-[var(--color-textSecondary)] text-xs">
           Fase: {gs.phase === 'OFFER' ? 'Selección' : 'Mosaico'}
@@ -611,14 +703,13 @@ export function GameBoard({ gameId }: GameBoardProps) {
         </div>
       )}
 
-      {/* Zona de oferta: fábricas en círculo + centro */}
+      {/* Zona de oferta: fábricas en arco + centro */}
       <div className="flex flex-col items-center gap-4">
-        {/* Fábricas dispuestas en arco */}
         <div className="relative w-72 h-36">
           {gs.factories.map((tiles, i) => {
             const total = gs.factories.length;
-            const angle = (i / total) * Math.PI; // arco superior (0 → π)
-            const cx = 50 + 45 * Math.cos(Math.PI - angle); // 0% a 100%
+            const angle = (i / total) * Math.PI;
+            const cx = 50 + 45 * Math.cos(Math.PI - angle);
             const cy = 90 - 80 * Math.sin(angle);
             return (
               <div
@@ -638,7 +729,6 @@ export function GameBoard({ gameId }: GameBoardProps) {
           })}
         </div>
 
-        {/* Centro */}
         <Center
           tiles={gs.center}
           hasFirstPlayerMarker={gs.firstPlayerMarkerInCenter}
@@ -648,35 +738,43 @@ export function GameBoard({ gameId }: GameBoardProps) {
         />
       </div>
 
-      {/* Tableros de jugadores */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Mi tablero */}
-        {myState && (
-          <PlayerBoard
-            playerName={myName}
-            state={myState}
-            isMyBoard={true}
-            isCurrentTurn={isMyTurn}
-            selectedColor={selected?.color ?? null}
-            onSelectLine={handleSelectLine}
-            onSelectFloor={handleSelectFloor}
-          />
-        )}
+      {/* Tableros de todos los jugadores */}
+      <div className={gridClass}>
+        {gs.players.map((playerGameState, idx) => {
+          const isMe = playerGameState.id === myUserId;
+          const info = allPlayers.find(p => p.id === playerGameState.id);
+          const isCurrentTurnPlayer = gs.turnIndex === idx;
 
-        {/* Tablero del oponente */}
-        {opponentState && (
-          <PlayerBoard
-            playerName={opponentName}
-            state={opponentState}
-            isMyBoard={false}
-            isCurrentTurn={!isMyTurn}
-            selectedColor={null}
-            onSelectLine={() => {}}
-            onSelectFloor={() => {}}
-            highlight={lastMoveHighlight ?? undefined}
-          />
-        )}
+          return (
+            <PlayerBoard
+              key={playerGameState.id}
+              playerName={isMe ? myName : (info?.name ?? 'Jugador')}
+              state={playerGameState}
+              isMyBoard={isMe}
+              isCurrentTurn={isCurrentTurnPlayer}
+              selectedColor={isMe ? (selected?.color ?? null) : null}
+              onSelectLine={isMe ? handleSelectLine : () => {}}
+              onSelectFloor={isMe ? handleSelectFloor : () => {}}
+              highlight={!isMe ? opponentHighlights[playerGameState.id] : undefined}
+            />
+          );
+        })}
       </div>
+
+      {/* Panel compacto de oponentes en móvil (solo muestra score cuando hay 3-4 jugadores) */}
+      {opponentStates.length > 1 && (
+        <div className="flex gap-3 justify-center flex-wrap md:hidden">
+          {opponentStates.map(opp => {
+            const info = allPlayers.find(p => p.id === opp.id);
+            return (
+              <div key={opp.id} className="text-center text-xs text-[var(--color-textSecondary)]">
+                <div className="font-semibold">{info?.name ?? 'Jugador'}</div>
+                <div className="text-lg font-bold text-[var(--color-primary)]">{opp.score} pts</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

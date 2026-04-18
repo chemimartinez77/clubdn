@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../../components/layout/Layout';
-import { useAzulGameList } from '../../hooks/useGame';
+import { useAzulGameList, getAllPlayers, getJoinedCount } from '../../hooks/useGame';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../api/axios';
 import type { AzulGame } from '../../hooks/useGame';
@@ -115,9 +115,12 @@ function GameCard({ bggId, name, solo, fetchInfo, isSelected, onClick }: {
 
 function statusLabel(game: AzulGame, myId: string): { text: string; color: string } {
   if (game.status === 'WAITING') {
-    return game.player1.id === myId
-      ? { text: 'Esperando rival', color: 'text-yellow-600 bg-yellow-50' }
-      : { text: 'Disponible', color: 'text-green-600 bg-green-50' };
+    const joined = getJoinedCount(game);
+    const isParticipant = getAllPlayers(game).some(p => p.id === myId);
+    if (isParticipant) {
+      return { text: `Esperando (${joined}/${game.maxPlayers})`, color: 'text-yellow-600 bg-yellow-50' };
+    }
+    return { text: `Disponible (${joined}/${game.maxPlayers})`, color: 'text-green-600 bg-green-50' };
   }
   if (game.status === 'ACTIVE') {
     return game.currentTurn === myId
@@ -127,9 +130,10 @@ function statusLabel(game: AzulGame, myId: string): { text: string; color: strin
   return { text: 'Terminada', color: 'text-gray-400 bg-gray-50' };
 }
 
-function opponentName(game: AzulGame, myId: string): string {
-  if (!game.player2) return '—';
-  return game.player1.id === myId ? game.player2.name : game.player1.name;
+function opponentNames(game: AzulGame, myId: string): string {
+  const others = getAllPlayers(game).filter(p => p.id !== myId);
+  if (others.length === 0) return '—';
+  return others.map(p => p.name).join(', ');
 }
 
 function timeAgo(dateStr: string): string {
@@ -146,7 +150,9 @@ function timeAgo(dateStr: string): string {
 
 function GameRow({ game, myId, onClick }: { game: AzulGame; myId: string; onClick: () => void }) {
   const status = statusLabel(game, myId);
-  const opponent = opponentName(game, myId);
+  const rivals = opponentNames(game, myId);
+  const joined = getJoinedCount(game);
+  const allPlayers = getAllPlayers(game);
 
   return (
     <button
@@ -161,25 +167,28 @@ function GameRow({ game, myId, onClick }: { game: AzulGame; myId: string; onClic
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-800 truncate">
-          vs {opponent}
+          vs {rivals}
+          <span className="ml-1 text-xs font-normal text-gray-400">({game.maxPlayers}p)</span>
         </p>
         <p className="text-xs text-gray-400">
-          Ronda {game.gameState.round} · {timeAgo(game.updatedAt)}
+          {game.status === 'WAITING'
+            ? `${joined}/${game.maxPlayers} jugadores · ${timeAgo(game.updatedAt)}`
+            : `Ronda ${game.gameState.round} · ${timeAgo(game.updatedAt)}`}
         </p>
       </div>
 
       {/* Puntuaciones si está activa o terminada */}
       {game.status !== 'WAITING' && (
         <div className="shrink-0 flex items-center gap-3 text-sm">
-          {game.gameState.players.map((p, i) => {
-            const name = i === 0 ? game.player1.name : (game.player2?.name ?? '?');
+          {game.gameState.players.map((p) => {
+            const info = allPlayers.find(pl => pl.id === p.id);
             const isMe = p.id === myId;
             return (
               <div key={p.id} className="text-center">
                 <div className={`font-bold ${isMe ? 'text-purple-600' : 'text-gray-500'}`}>
                   {p.score}
                 </div>
-                <div className="text-[10px] text-gray-400 truncate max-w-[48px]">{name}</div>
+                <div className="text-[10px] text-gray-400 truncate max-w-[48px]">{info?.name ?? '?'}</div>
               </div>
             );
           })}
@@ -198,19 +207,20 @@ export default function CombatZone() {
   const navigate = useNavigate();
   const { games, isLoading, createGame, isCreating } = useAzulGameList();
   const [selectedBggId, setSelectedBggId] = useState<string | null>(null);
+  const [selectedMaxPlayers, setSelectedMaxPlayers] = useState<2 | 3 | 4>(2);
 
   const myId = user?.id ?? '';
   const selectedGame = COMBAT_ZONE_GAMES.find(g => g.bggId === selectedBggId) ?? null;
+  const isAzulSelected = selectedGame?.launchMode === 'AZUL_CREATE';
 
   const handleNewGame = async () => {
     if (!selectedGame) return;
     if (selectedGame.launchMode === 'NAVIGATE') {
-      // Juegos con flujo propio o en desarrollo
       navigate(selectedGame.path);
     } else {
-      // Azul: crear partida directamente
+      // Azul: crear partida con el número de jugadores elegido
       try {
-        const game = await createGame();
+        const game = await createGame(selectedMaxPlayers);
         navigate(`/azul/combatzone/${game.id}`);
       } catch (err) {
         console.error('[CombatZone] Error al crear partida:', err);
@@ -245,6 +255,7 @@ export default function CombatZone() {
               {isCreating ? 'Creando…' : selectedGame ? `+ Nueva partida de ${selectedGame.name}` : '+ Nueva partida'}
             </button>
           </div>
+
           <div className="flex gap-4">
             {COMBAT_ZONE_GAMES.map(g => (
               <div key={g.bggId} className="w-40">
@@ -259,6 +270,28 @@ export default function CombatZone() {
               </div>
             ))}
           </div>
+
+          {/* Selector de jugadores (solo para Azul) */}
+          {isAzulSelected && (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-500 font-medium">Jugadores:</span>
+              {([2, 3, 4] as const).map(n => (
+                <button
+                  key={n}
+                  onClick={() => setSelectedMaxPlayers(n)}
+                  className={[
+                    'rounded-full px-3 py-1 text-xs font-semibold border transition-colors',
+                    selectedMaxPlayers === n
+                      ? 'bg-purple-600 border-purple-600 text-white'
+                      : 'border-gray-300 text-gray-600 hover:border-purple-400',
+                  ].join(' ')}
+                >
+                  {n} jugadores
+                </button>
+              ))}
+            </div>
+          )}
+
           {!selectedGame && (
             <p className="text-xs text-gray-400 italic">Selecciona un juego para crear una nueva partida.</p>
           )}
