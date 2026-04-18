@@ -807,19 +807,18 @@ export default function EventDetail() {
     && !isFull
     && (event.registeredCount || 0) > 0;
 
-  // Ventana de validación QR: desde 1h antes del inicio hasta el final del día en que termina
+  // Ventana de validación QR: desde 1h antes del inicio hasta 24h tras el fin estimado
   const validationWindowOpen = new Date(eventStart.getTime() - 60 * 60 * 1000);
   const durationMinutes = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
   const eventEndTime = new Date(eventStart.getTime() + durationMinutes * 60 * 1000);
-  const validationWindowClose = new Date(eventEndTime);
-  validationWindowClose.setHours(23, 59, 59, 999);
+  const validationWindowClose = new Date(eventEndTime.getTime() + 24 * 60 * 60 * 1000);
   const now = new Date();
   const isInValidationWindow = now >= validationWindowOpen && now <= validationWindowClose;
 
-  // Ventana de resultados: desde el inicio de la partida hasta el final del día en que se disputa
-  const resultsWindowClose = new Date(eventStart);
-  resultsWindowClose.setHours(23, 59, 59, 999);
-  const isInResultsWindow = isPartida && now >= eventStart && now <= resultsWindowClose;
+  // Ventana de resultados: desde el inicio de la partida hasta 24h tras el fin estimado
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const resultsWindowClose = new Date(eventEndTime.getTime() + 24 * 60 * 60 * 1000);
+  const isInResultsWindow = isSuperAdmin || (isPartida && now >= eventStart && now <= resultsWindowClose);
   // Pueden añadir/editar resultados: organizador, admin, o participante confirmado; dentro de la ventana temporal
   const canAddResults = isInResultsWindow && (isAdmin || user?.id === event.createdBy || (event.isUserRegistered && event.userRegistrationStatus === 'CONFIRMED'));
 
@@ -2664,7 +2663,7 @@ export default function EventDetail() {
             type="text"
             value={memberSearchQuery}
             onChange={(e) => handleMemberSearch(e.target.value)}
-            placeholder="Escribe el nombre del miembro..."
+            placeholder="Escribe nombre, apellidos o nick..."
             autoFocus
             className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
           />

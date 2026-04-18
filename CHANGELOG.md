@@ -4,6 +4,32 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-18 (sesion 1)
+
+### Búsqueda de personas con soporte de tildes y nick + ventanas de partida a 24h + fix sincronización partidas enlazadas
+
+**Búsqueda de personas normalizada** (`server/src/utils/personSearch.ts` nuevo): nueva utilidad compartida que busca usuarios por nombre, apellidos, nick y/o email ignorando tildes y mayúsculas, usando `unaccent` de PostgreSQL vía raw SQL. Expone `findUserIdsByPersonSearch`, `findInvitationIdsByPersonSearch`, `countInvitationsByPersonSearch` y `normalizeSearchTerm`. Se aplica a tres controladores:
+- `memberController.ts` (`getMembers` y `exportMembersCSV`): la búsqueda ahora encuentra por nombre, apellidos, nick y email, incluyendo socios suspendidos. Placeholder actualizado a "Buscar por nombre, apellidos, nick o email..." en `client/src/pages/admin/Members.tsx`.
+- `invitationController.ts` (`getInvitationHistory`): la búsqueda de invitaciones por socio ahora usa la misma utilidad, encontrando por nombre, apellidos y nick. Placeholder actualizado en `client/src/pages/admin/InvitationHistory.tsx`.
+- `eventController.ts` (`searchMembersForEvent`): el buscador de miembros al añadir a una partida ahora busca también por nick. Placeholder actualizado a "Escribe nombre, apellidos o nick..." en `client/src/pages/EventDetail.tsx`.
+
+**Ventana de validación y puntuaciones ampliada a 24h** (`server/src/controllers/eventController.ts`, `server/src/controllers/eventResultController.ts`, `client/src/pages/EventDetail.tsx`): la ventana de validación QR y de edición de puntuaciones ya no cierra a las 23:59:59 del día de la partida, sino 24 horas después del fin estimado (inicio + duración). Motivo: partidas que empiezan tarde y terminan tras medianoche quedaban bloqueadas. Además, `SUPER_ADMIN` puede editar puntuaciones en cualquier momento (bypass en servidor y cliente). Se añade por primera vez validación temporal en el servidor para puntuaciones (antes solo existía en cliente).
+
+**Fix: `addMemberToEvent` no sincronizaba partidas enlazadas** (`server/src/controllers/eventController.ts`): cuando un admin/organizador añadía un miembro a una partida principal mediante "Añadir miembro", el participante no se propagaba automáticamente a la partida enlazada. Se envuelve la operación en una transacción y se llama a `syncRegistrationToLinkedEvent` igual que el resto de operaciones de registro.
+
+**Archivos modificados/creados:**
+- `server/src/utils/personSearch.ts` (nuevo)
+- `server/prisma/migrations/20260418110000_add_unaccent_extension/` (nuevo)
+- `server/src/controllers/memberController.ts`
+- `server/src/controllers/invitationController.ts`
+- `server/src/controllers/eventController.ts`
+- `server/src/controllers/eventResultController.ts`
+- `client/src/pages/EventDetail.tsx`
+- `client/src/pages/admin/Members.tsx`
+- `client/src/pages/admin/InvitationHistory.tsx`
+
+---
+
 ## 2026-04-17 (sesion 6)
 
 ### Rediseño de "¿Quién sabe jugar?": autocompletado y selección de juego exacto

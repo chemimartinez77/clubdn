@@ -1,4 +1,5 @@
 // server/src/controllers/memberController.ts
+import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 import { v2 as cloudinary } from 'cloudinary';
 import jwt from 'jsonwebtoken';
@@ -9,6 +10,7 @@ import { MemberData, MembersResponse } from '../types/members';
 import { getPaymentStatus } from '../utils/paymentStatus';
 import { normalizeDni, isValidSpanishDni } from '../utils/dni';
 import { getMembershipFeeMap } from '../services/membershipFeeService';
+import { findUserIdsByPersonSearch, normalizeSearchTerm } from '../utils/personSearch';
 
 // Configurar Cloudinary
 cloudinary.config({
@@ -44,19 +46,12 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
     const pageNum = parseInt(page as string);
     const pageSizeNum = parseInt(pageSize as string);
     const skip = (pageNum - 1) * pageSizeNum;
+    const normalizedSearch = normalizeSearchTerm(search as string);
 
     // Build where clause — incluir APPROVED y SUSPENDED (dados de baja)
     const where: any = {
       status: { in: ['APPROVED', 'SUSPENDED'] },
     };
-
-    // Search filter (name or email)
-    if (search) {
-      where.OR = [
-        { name: { contains: search as string, mode: 'insensitive' } },
-        { email: { contains: search as string, mode: 'insensitive' } }
-      ];
-    }
 
     // Build membership filter object
     const membershipFilter: any = {};
@@ -85,6 +80,39 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
     // Si no hay filtro específico, mostrar TODOS los usuarios (con o sin membresía)
 
     // Determine orderBy — email/startDate sort via Prisma; firstName/lastName/paymentStatus in-memory
+    if (normalizedSearch) {
+      const extraWhere: Prisma.Sql[] = [
+        Prisma.sql`u."status" IN ('APPROVED', 'SUSPENDED')`,
+      ];
+
+      if (membershipType !== 'all') {
+        if (membershipType === 'BAJA') {
+          extraWhere.push(Prisma.sql`m."fechaBaja" IS NOT NULL`);
+        } else {
+          extraWhere.push(
+            Prisma.sql`m."type" = ${membershipType as string} AND m."fechaBaja" IS NULL`
+          );
+        }
+      }
+
+      if (dateFrom) {
+        extraWhere.push(Prisma.sql`m."startDate" >= ${new Date(dateFrom as string)}`);
+      }
+
+      if (dateTo) {
+        extraWhere.push(Prisma.sql`m."startDate" <= ${new Date(dateTo as string)}`);
+      }
+
+      const matchedUserIds = await findUserIdsByPersonSearch({
+        search: normalizedSearch,
+        extraWhere,
+        includeNick: true,
+        includeEmail: true,
+      });
+
+      where.id = { in: matchedUserIds };
+    }
+
     const dir = (sortDir as string) === 'desc' ? 'desc' : 'asc';
     let orderBy: any;
     const inMemorySort = sortBy === 'firstName' || sortBy === 'lastName' || sortBy === 'paymentStatus';
@@ -812,17 +840,11 @@ export const exportMembersCSV = async (req: Request, res: Response): Promise<voi
       dateTo,
       paymentStatus: paymentStatusFilter = 'all'
     } = req.query;
+    const normalizedSearch = normalizeSearchTerm(search as string);
 
     const where: any = {
-      status: 'APPROVED',
+      status: { in: ['APPROVED', 'SUSPENDED'] },
     };
-
-    if (search) {
-      where.OR = [
-        { name: { contains: search as string, mode: 'insensitive' } },
-        { email: { contains: search as string, mode: 'insensitive' } }
-      ];
-    }
 
     // Build membership filter object
     const membershipFilterExport: any = {};
@@ -849,6 +871,39 @@ export const exportMembersCSV = async (req: Request, res: Response): Promise<voi
       where.membership = membershipFilterExport;
     }
     // Si no hay filtro específico, mostrar TODOS los usuarios (con o sin membresía)
+
+    if (normalizedSearch) {
+      const extraWhere: Prisma.Sql[] = [
+        Prisma.sql`u."status" IN ('APPROVED', 'SUSPENDED')`,
+      ];
+
+      if (membershipType !== 'all') {
+        if (membershipType === 'BAJA') {
+          extraWhere.push(Prisma.sql`m."fechaBaja" IS NOT NULL`);
+        } else {
+          extraWhere.push(
+            Prisma.sql`m."type" = ${membershipType as string} AND m."fechaBaja" IS NULL`
+          );
+        }
+      }
+
+      if (dateFrom) {
+        extraWhere.push(Prisma.sql`m."startDate" >= ${new Date(dateFrom as string)}`);
+      }
+
+      if (dateTo) {
+        extraWhere.push(Prisma.sql`m."startDate" <= ${new Date(dateTo as string)}`);
+      }
+
+      const matchedUserIds = await findUserIdsByPersonSearch({
+        search: normalizedSearch,
+        extraWhere,
+        includeNick: true,
+        includeEmail: true,
+      });
+
+      where.id = { in: matchedUserIds };
+    }
 
     const users = await prisma.user.findMany({
       where,

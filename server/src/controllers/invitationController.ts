@@ -3,6 +3,11 @@ import { Request, Response } from 'express';
 import { InvitationStatus, UserRole } from '@prisma/client';
 import { prisma } from '../config/database';
 import { generateInvitationToken } from '../utils/invitationToken';
+import {
+  countInvitationsByPersonSearch,
+  findInvitationIdsByPersonSearch,
+  normalizeSearchTerm,
+} from '../utils/personSearch';
 const DNI_REGEX = /^\d{8}[A-HJ-NP-TV-Z]$/i;
 const NIE_REGEX = /^[XYZ]\d{7}[A-HJ-NP-TV-Z]$/i;
 const DNI_LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE';
@@ -792,51 +797,68 @@ export const getInvitationHistory = async (req: Request, res: Response): Promise
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
     const skip = (pageNum - 1) * limitNum;
+    const normalizedSearch = normalizeSearchTerm(search);
 
     const where: any = {};
     if (memberId) where.memberId = memberId;
-    if (search) {
-      where.OR = [
-        { guestFirstName: { contains: search, mode: 'insensitive' } },
-        { guestLastName:  { contains: search, mode: 'insensitive' } },
-        { member: { name: { contains: search, mode: 'insensitive' } } },
-      ];
+    const [matchedInvitationIds, total] = normalizedSearch
+      ? await Promise.all([
+          findInvitationIdsByPersonSearch({
+            search: normalizedSearch,
+            memberId: memberId || undefined,
+            limit: limitNum,
+            offset: skip,
+          }),
+          countInvitationsByPersonSearch({
+            search: normalizedSearch,
+            memberId: memberId || undefined,
+          }),
+        ])
+      : await Promise.all([
+          Promise.resolve<string[]>([]),
+          prisma.invitation.count({ where }),
+        ]);
+
+    if (normalizedSearch) {
+      where.id = { in: matchedInvitationIds };
     }
 
-    const [invitations, total] = await Promise.all([
-      prisma.invitation.findMany({
-        where,
-        skip,
-        take: limitNum,
-        orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          guestFirstName: true,
-          guestLastName: true,
-          guestPhone: true,
-          status: true,
-          validDate: true,
-          createdAt: true,
-          usedAt: true,
-          member: {
-            select: {
-              id: true,
-              name: true,
-              profile: { select: { nick: true, avatar: true } },
-              membership: { select: { type: true } },
-            },
+    const invitations = await prisma.invitation.findMany({
+      where,
+      ...(normalizedSearch ? {} : { skip, take: limitNum }),
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        guestFirstName: true,
+        guestLastName: true,
+        guestPhone: true,
+        status: true,
+        validDate: true,
+        createdAt: true,
+        usedAt: true,
+        member: {
+          select: {
+            id: true,
+            name: true,
+            profile: { select: { nick: true, avatar: true } },
+            membership: { select: { type: true } },
           },
-          event: { select: { id: true, title: true, date: true } },
-          validatedBy: { select: { id: true, name: true } },
         },
-      }),
-      prisma.invitation.count({ where }),
-    ]);
+        event: { select: { id: true, title: true, date: true } },
+        validatedBy: { select: { id: true, name: true } },
+      },
+    });
+
+    const orderedInvitations = normalizedSearch
+      ? matchedInvitationIds
+          .map(id => invitations.find(invitation => invitation.id === id))
+          .filter((invitation): invitation is typeof invitations[number] => !!invitation)
+      : invitations;
 
     res.json({
       success: true,
       data: {
-        data: invitations.map(inv => ({
+        data: orderedInvitations.map(inv => ({
           ...inv,
           guestDniMasked: maskDni(inv.guestPhone),
           guestPhone: undefined,

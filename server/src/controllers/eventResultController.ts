@@ -63,14 +63,26 @@ export const upsertEventResults = async (req: Request, res: Response) => {
     }
 
     // Solo el organizador o un participante confirmado puede guardar resultados
+    const isSuperAdmin = req.user!.role === 'SUPER_ADMIN';
     const isOrganizer = event.createdBy === createdBy;
     const isParticipant = event.registrations.some((r) => r.userId === createdBy);
 
-    if (!isOrganizer && !isParticipant) {
+    if (!isSuperAdmin && !isOrganizer && !isParticipant) {
       return res.status(403).json({
         success: false,
         message: 'Solo el organizador o los participantes confirmados pueden registrar resultados',
       });
+    }
+
+    // Validación temporal: hasta 24h tras el fin estimado (bypass para SUPER_ADMIN)
+    if (!isSuperAdmin) {
+      const eventStart = new Date(event.date);
+      const durationMinutes = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
+      const eventEnd = new Date(eventStart.getTime() + durationMinutes * 60 * 1000);
+      const windowClose = new Date(eventEnd.getTime() + 24 * 60 * 60 * 1000);
+      if (new Date() > windowClose) {
+        return res.status(400).json({ success: false, message: 'El plazo para editar resultados ha expirado' });
+      }
     }
 
     // Si hay empate y nadie está marcado como ganador, marcar al de mayor score

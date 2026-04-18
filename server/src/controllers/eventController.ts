@@ -4,6 +4,7 @@ import { prisma } from '../config/database';
 import { BadgeCategory, Prisma, RegistrationStatus } from '@prisma/client';
 import { checkAndUnlockBadges, processGameCategoryVote } from './badgeController';
 import { processEventPlayHistory } from './statsController';
+import { findUserIdsByPersonSearch, normalizeSearchTerm } from '../utils/personSearch';
 import {
   sendRegistrationJoinedEmail,
   sendRegistrationLeftEmail,
@@ -1886,25 +1887,23 @@ export const searchMembersForEvent = async (req: Request, res: Response): Promis
       return;
     }
 
-    const term = q.trim();
-    const normalize = (s: string) =>
-      s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    const normalizedTerm = normalize(term);
+    const term = normalizeSearchTerm(q);
+    const matchedUserIds = await findUserIdsByPersonSearch({
+      search: term,
+      extraWhere: [
+        Prisma.sql`u."status" = 'APPROVED'`,
+        Prisma.sql`m."type" IN ('SOCIO', 'COLABORADOR', 'EN_PRUEBAS', 'FAMILIAR')`,
+        Prisma.sql`m."isActive" = true`,
+        Prisma.sql`up."allowEventInvitations" = true`,
+      ],
+      includeNick: true,
+      includeEmail: false,
+      limit: 50,
+    });
 
-    const candidates = await prisma.user.findMany({
+    const users = await prisma.user.findMany({
       where: {
-        status: 'APPROVED',
-        membership: {
-          type: { in: ['SOCIO', 'COLABORADOR', 'EN_PRUEBAS', 'FAMILIAR'] },
-          isActive: true
-        },
-        profile: {
-          allowEventInvitations: true
-        },
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },
-          { profile: { nick: { contains: term, mode: 'insensitive' } } }
-        ]
+        id: { in: matchedUserIds }
       },
       select: {
         id: true,
@@ -1912,15 +1911,11 @@ export const searchMembersForEvent = async (req: Request, res: Response): Promis
         membership: { select: { type: true } },
         profile: { select: { avatar: true, nick: true } }
       },
-      take: 50
+      orderBy: { name: 'asc' },
+      take: 10
     });
 
     // Filtrar por tildes en JS: incluir si nombre o nick normalizados contienen el término normalizado
-    const users = candidates.filter(u =>
-      normalize(u.name).includes(normalizedTerm) ||
-      (u.profile?.nick ? normalize(u.profile.nick).includes(normalizedTerm) : false)
-    ).slice(0, 10);
-
     res.status(200).json({
       success: true,
       data: users.map(u => ({
@@ -2007,16 +2002,19 @@ export const addMemberToEvent = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    if (existing && existing.status === 'CANCELLED') {
-      await prisma.eventRegistration.update({
-        where: { id: existing.id },
-        data: { status: 'CONFIRMED' }
-      });
-    } else {
-      await prisma.eventRegistration.create({
-        data: { eventId: id, userId: targetUserId, status: 'CONFIRMED' }
-      });
-    }
+    await prisma.$transaction(async (tx) => {
+      if (existing && existing.status === 'CANCELLED') {
+        await tx.eventRegistration.update({
+          where: { id: existing.id },
+          data: { status: 'CONFIRMED' }
+        });
+      } else {
+        await tx.eventRegistration.create({
+          data: { eventId: id, userId: targetUserId, status: 'CONFIRMED' }
+        });
+      }
+      await syncRegistrationToLinkedEvent(tx, id, targetUserId, 'CONFIRMED');
+    });
 
     const { createNotification } = await import('../services/notificationService');
     await createNotification({
@@ -2634,8 +2632,7 @@ export const validateGameQr = async (req: Request, res: Response): Promise<void>
     // Calcular fin del día en que termina la partida
     const durationMinutes = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
     const eventEnd = new Date(eventStart.getTime() + durationMinutes * 60 * 1000);
-    const windowClose = new Date(eventEnd);
-    windowClose.setUTCHours(23, 59, 59, 999);
+    const windowClose = new Date(eventEnd.getTime() + 24 * 60 * 60 * 1000);
 
     if (now < windowOpen) {
       res.status(400).json({ success: false, message: 'La validación aún no está disponible (se abre 1 hora antes de la partida)' });

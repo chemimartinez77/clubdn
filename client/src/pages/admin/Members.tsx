@@ -462,7 +462,7 @@ export default function Members() {
                   type="text"
                   value={filters.search}
                   onChange={(e) => updateFilter('search', e.target.value)}
-                  placeholder="Buscar..."
+                  placeholder="Buscar por nombre, apellidos, nick o email..."
                   className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
                 />
               </div>

@@ -100,7 +100,7 @@ export default function InvitationHistory() {
                 type="text"
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Buscar por invitado o socio..."
+                placeholder="Buscar por invitado o por nombre, apellidos o nick del socio..."
                 className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent w-72"
               />
             </div>
