@@ -4,6 +4,30 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-19 (sesión 2)
+
+### IA con MCTS para Azul Local
+
+Se implementa un agente de inteligencia artificial basado en Monte Carlo Tree Search (MCTS) para el modo sandbox local de Azul (`/azul/local`). La IA actúa como el jugador 2 ("Beto") cuando el usuario activa el toggle correspondiente.
+
+**`client/src/logic/AzulMCTS.ts`** (nuevo): módulo de IA pura sin dependencias de UI.
+- `getLegalMoves(state, playerIndex)`: genera todos los movimientos legales para un jugador dado en la fase de oferta — itera fábricas y centro, filtra colores por compatibilidad con la línea de patrón (color existente, capacidad, columna de pared libre).
+- `evaluate(state, aiPlayerIndex)`: función de recompensa multi-factor: diferencia de puntuación respecto al rival con más puntos; bonus de adyacencia proporcional (usando `scoreAdjacency` del engine); penalización de suelo (usando `calculateFloorPenalty`); bonus de +3 por filas/columnas/colores al ≥80% de completarse (potencial de endgame); +0.5 si la IA tiene el marcador de primer jugador.
+- `simulate(state, aiPlayerIndex)`: playout aleatorio hasta el fin de la ronda actual (no de la partida, para limitar el coste de CPU), usando `structuredClone` para clonar estados de forma eficiente.
+- `MCTSNode` + `runMCTS(state, aiPlayerIndex, timeLimitMs)`: árbol UCT estándar (constante de exploración √2). El bucle corre durante `timeLimitMs` (1000ms por defecto) y devuelve el movimiento del hijo de la raíz con más visitas.
+
+**`client/src/workers/azulMCTS.worker.ts`** (nuevo): Web Worker preparado para uso futuro — recibe `{ state, aiPlayerIndex }` vía `postMessage` y responde con `{ move }`. Actualmente no está conectado a la UI (se usa la llamada inline por simplicidad de bundling).
+
+**`client/src/pages/azul/AzulLocal.tsx`** (modificado):
+- Nuevo estado `aiEnabled` (booleano) y `isAiThinking` (booleano).
+- Checkbox "IA J2" en el header, junto al selector de número de jugadores.
+- `useEffect` que se dispara cuando `gs.turnIndex === 1` (jugador 2, id `'player-1'`) y `aiEnabled` está activo: llama `runMCTS` tras un pequeño delay de 50ms (para que React pinte el spinner antes de que el cálculo bloquee el hilo) y luego ejecuta `dispatchMove` con el movimiento elegido.
+- Barra de estado: nuevo estado visual "La IA está pensando…" (azul, pulsante) que aparece durante el cálculo.
+- `disabled` incluye `isAiThinking` para bloquear la interacción del humano mientras la IA calcula.
+- `handleReset` limpia `isAiThinking` al reiniciar.
+
+---
+
 ## 2026-04-19 (sesión 1)
 
 ### Azul online: soporte 2-4 jugadores con lobby de espera

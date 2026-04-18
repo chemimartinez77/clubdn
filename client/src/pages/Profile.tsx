@@ -181,8 +181,12 @@ export default function Profile() {
         };
       });
     },
-    onError: () => {
-      showError('No se pudo marcar el logro como descubierto');
+    onError: (error: any) => {
+      const serverMessage = error?.response?.data?.message;
+      showError(serverMessage || 'No se pudo marcar el logro como descubierto');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['myBadges'] });
     }
   });
 

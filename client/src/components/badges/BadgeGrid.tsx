@@ -108,8 +108,12 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
           <Title theme={theme}>Logros y Badges</Title>
           <Stats theme={theme}>
             <StatItem>
-              <StatValue>{discoveredCount} / {totalBadges}</StatValue>
+              <StatValue>{unlockedCount} / {totalBadges}</StatValue>
               <StatLabel>desbloqueados</StatLabel>
+            </StatItem>
+            <StatItem>
+              <StatValue>{discoveredCount}</StatValue>
+              <StatLabel>descubiertos</StatLabel>
             </StatItem>
             {pendingDiscovery > 0 && (
               <StatItem>

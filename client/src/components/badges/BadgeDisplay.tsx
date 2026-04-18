@@ -36,7 +36,7 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
 
   const handleReveal = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isUnlocked) return;
+    if (!isUnlocked || peeling || revealed) return;
     setPeeling(true);
     setTimeout(() => {
       setLocalRevealed(true);

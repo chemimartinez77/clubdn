@@ -12,6 +12,7 @@ import {
   type TileOrNull,
   type MovePayload,
 } from '../../logic/AzulEngine';
+import { runMCTS } from '../../logic/AzulMCTS';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -526,6 +527,8 @@ export default function AzulLocal() {
   ]);
   const [winner, setWinner] = useState<string | null>(null);
   const [rivalModal, setRivalModal] = useState<number | null>(null);
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [isAiThinking, setIsAiThinking] = useState(false);
   const isMobile = useIsMobile();
 
   // Cola completa de eventos calculados al final de la fase de mosaico
@@ -686,6 +689,7 @@ export default function AzulLocal() {
     setGs(makeInitialState(n));
     setSelected(null);
     setWinner(null);
+    setIsAiThinking(false);
     setEventQueue([]);
     setCurrentEventIdx(-1);
     setLog([{ round: 1, player: '', text: `¡Partida nueva iniciada (${n}J)! Turno de ${PLAYER_NAMES[0]}.`, type: 'round' }]);
@@ -699,7 +703,32 @@ export default function AzulLocal() {
   // Limpieza al desmontar
   useEffect(() => () => { if (animTimerRef.current) clearTimeout(animTimerRef.current); }, []);
 
-  const disabled = !!winner || isAnimating;
+  // IA: disparar cuando es el turno del jugador 2 (índice 1, id 'player-1')
+  useEffect(() => {
+    if (!aiEnabled || winner || isAnimating || isAiThinking) return;
+    if (gs.phase !== 'OFFER') return;
+    const aiIndex = 1;
+    if (gs.turnIndex !== aiIndex) return;
+    if (gs.players[aiIndex]?.id !== 'player-1') return;
+
+    setIsAiThinking(true);
+
+    // Usar inline MCTS en un setTimeout para no bloquear el render
+    const timeoutId = setTimeout(() => {
+      try {
+        const move = runMCTS(gs, aiIndex, 1000);
+        setIsAiThinking(false);
+        dispatchMove(move);
+      } catch {
+        setIsAiThinking(false);
+      }
+    }, 50); // pequeño delay para que React pinte el spinner primero
+
+    return () => clearTimeout(timeoutId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gs.turnIndex, gs.phase, gs.round, aiEnabled, winner, isAnimating, isAiThinking]);
+
+  const disabled = !!winner || isAnimating || isAiThinking;
 
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4">
@@ -729,6 +758,15 @@ export default function AzulLocal() {
                 </button>
               ))}
             </div>
+            <label className="flex items-center gap-1.5 cursor-pointer select-none text-sm text-gray-600">
+              <input
+                type="checkbox"
+                checked={aiEnabled}
+                onChange={e => setAiEnabled(e.target.checked)}
+                className="accent-purple-600 w-4 h-4"
+              />
+              IA J2
+            </label>
             <button
               onClick={() => handleReset()}
               className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
@@ -763,6 +801,8 @@ export default function AzulLocal() {
             <div className="flex items-center gap-2">
               {isAnimating ? (
                 <span className="font-semibold text-purple-600 animate-pulse">Puntuando…</span>
+              ) : isAiThinking ? (
+                <span className="font-semibold text-blue-600 animate-pulse">La IA está pensando…</span>
               ) : (
                 <>
                   <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
