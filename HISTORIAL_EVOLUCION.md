@@ -1,7 +1,7 @@
 # Historial de Evolución — Club Dreadnought App
 
 Documento cronológico que narra cómo ha crecido la aplicación desde el primer commit hasta hoy.
-Generado el 2026-04-09. Total de commits: ~518.
+Generado el 2026-04-09. Actualizado el 2026-04-18. Total de commits: ~550+.
 
 ---
 
@@ -316,6 +316,152 @@ La aplicación nace como una herramienta interna para gestionar el Club Dreadnou
 - **Icono ⚠️** real en la previsión semanal (emoji nativo en lugar de carácter Unicode).
 - **Job automático de promoción**: cron diario a las 08:00 que promueve los miembros `EN_PRUEBAS` a `COLABORADOR` cuando llevan 60 días en el club, notificando a admins por campanita y email.
 
+### 10 de abril: ludoteca personal, módulo Mercadillo y mejoras de membresías
+
+#### Mi ludoteca (sesión del 14 de abril, diseñada el 10)
+- Nueva sección **Mi ludoteca** en el menú Juegos (la anterior "Ludoteca" pasa a llamarse "Ludoteca del club").
+- Cada socio puede gestionar su propia colección con pestañas Mi colección / Wishlist / Quiero jugar.
+- **Sincronización con BGG**: el socio introduce su nombre de usuario BGG, se compara y se muestra un modal de confirmación.
+- Ubicaciones personalizadas por usuario (`GameLocation`). "Casa" es el valor por defecto.
+- Soft delete de juegos (campo `status = 'deleted'`).
+- **Resultados de partidas**: modal para registrar puntuaciones y ganador por participante (socios e invitados).
+- Sync BGG pasa a ser **asíncrona con jobs** (`BggSyncJob`). El modelo `UserGame` referencia un catálogo compartido (`Game`).
+- **Cola de sync serializada**: posición en cola, tiempo estimado y botón de cancelación.
+- **Juegos "Lo tuve"**: se importan juegos marcados como `Previously Owned` en BGG con su propia pestaña.
+- **Protección de juegos manuales**: el sync BGG no elimina juegos añadidos manualmente (campo `bggSynced`).
+- **Filtro por ubicación** en Mi ludoteca; imágenes en `object-contain` para no recortar carátulas.
+
+#### Módulo Mercadillo
+- Sistema completo de **compraventa entre miembros** accesible desde menú Comunidad → Mercadillo.
+- Estados `PUBLICADO / RESERVADO / VENDIDO`, sistema de **ofertas** (proponer, aceptar, rechazar, contraoferta).
+- Aceptar una oferta reserva automáticamente el anuncio.
+- Upload de imágenes a Cloudinary (máx. 4 por anuncio).
+- **Mensajes no leídos** por conversación con globo de notificación.
+- Lightbox de imágenes y botón **Descargar PNG** del anuncio.
+- Contador de visitas por anuncio.
+- Panel de administración: listar, ocultar, cerrar y eliminar anuncios.
+
+#### Mejoras de membresías y pagos
+- Campo `trialStartDate` para controlar promoción de miembros reactivados.
+- Campo `notes` en membresía (observaciones internas para admins).
+- Se elimina columna `monthlyFee` de la BD; los precios se centralizan en `ClubConfig` via `membershipFeeService.ts`.
+- Campo `billingStartDate` para corregir deuda retroactiva al pasar de EN_PRUEBAS a COLABORADOR.
+- Visibilidad **"Solo socios"** en documentos del club (nuevo nivel `SOCIOS`).
+- Botón **Consolidar** en Gestión de Pagos para ajustar `billingStartDate` de miembros promovidos.
+- Importes financieros siempre positivos; la dirección del balance viene del tipo de categoría.
+- Edición y borrado de movimientos financieros desde la UI.
+- **Adjuntos en movimientos financieros** (hasta 3 imágenes o PDFs por movimiento, subidos a Cloudinary).
+- Categorías financieras editables; color derivado automáticamente del tipo (GASTO/INGRESO).
+- Corrección de estado de pago incorrecto ("Impagado") para miembros EN_PRUEBAS.
+- Tooltip/overlay unificado `InfoTooltip` para desktop y móvil.
+
+#### UX del detalle de evento
+- **Acciones secundarias agrupadas** en dropdown "Opciones" para reducir botones visibles.
+- Preferencia por usuario `eventButtonStyle`: dropdown o botones multicolor.
+- **Clonado de partidas**: botón en el detalle que prerrellena el formulario de creación.
+
+#### Otras mejoras del 10 de abril
+- Estado de eventos calculado en cliente (En curso / Completado) en tiempo real.
+- Formulario de resultados precarga asistentes confirmados e invitados; cálculo automático de ganador.
+- Preview de WhatsApp: imagen BGG comprimida con `sharp` para respetar el límite de ~300 KB.
+- RPGGeek: datos completos de juegos de rol (jugadores, tiempo, rating, categorías, mecánicas…).
+- Catálogo de **Juegos jugados**: la pantalla Juegos muestra solo juegos que han aparecido en partidas disputadas, con enlace a la partida más reciente. Menú renombrado de "Buscados" a "Jugados".
+- Búsqueda de la ludoteca filtrada solo por nombre de juego.
+
+---
+
+### 11 de abril: módulo Mercadillo completado
+
+- Correcciones de crash en lista de conversaciones del Mercadillo.
+- Bypass de onboarding durante impersonación de `SUPER_ADMIN`.
+- Globo de mensajes no leídos visible también para el comprador.
+- Dashboard: métrica `Juegos distintos` en lugar de `Eventos asistidos`; aforo visible en próximas partidas.
+- Corrección de estado de pago EN_PRUEBAS y bug en promoción automática.
+
+---
+
+### 12 de abril: mercadillo, pagos y otras mejoras
+
+- **Mensajes no leídos** en el Mercadillo (campo `lastReadAt` por participante, globo por conversación).
+- Nick clicable con `UserPopover` en todas las vistas del Mercadillo y en resultados de partidas.
+- Documentos: visibilidad "Solo socios" disponible en filtros, subida y edición.
+- Correcciones de UX: modal nativa de confirmación Consolidar, botón "Año completo" restringido a enero.
+- Componente `InfoTooltip` compartido para iconos de información en desktop y móvil.
+
+---
+
+### 13 de abril: catálogo, finanzas y correcciones
+
+- La pantalla Juegos pasa a ser el **catálogo de partidas disputadas** con enlace a la partida más reciente.
+- **Finanzas**: categorías editables, color automático por tipo, adjuntos en movimientos.
+- Dashboard: tarjeta `Juegos distintos` y aforo en próximas partidas.
+- Filtros plegables en el Directorio de Miembros.
+
+---
+
+### 14 de abril: Mi ludoteca avanzada + partidas con expansiones
+
+- **Importación de wishlist desde BGG** con prioridades (1-5) traducidas al español.
+- Lógica de flags corregida (Tengo / Wishlist / Quiero jugar no pueden coexistir de forma incorrecta).
+- Paginación en el grid de Mi ludoteca.
+- Usuario BGG precargado desde BD; botón "Guardar" independiente eliminado.
+- Sync BGG asíncrona con jobs y catálogo compartido (migraciones `BggSyncJob` y `UserGame → gameId`).
+- **Partidas con expansiones**: selector de expansiones desde BGG asociadas a una partida principal.
+- **Segunda partida enlazada**: un evento secundario que hereda asistentes de la partida principal automáticamente.
+- Correcciones de invitaciones: historial siempre visible; el creador del QR puede validar a su invitado.
+
+---
+
+### 15 de abril: mejoras de sync BGG y badges
+
+- **Sync BGG serializada en worker** con posición en cola, tiempo estimado y cancelación.
+- Cron de **mantenimiento de notificaciones**: limpia registros con más de 7 días a las 08:05.
+- **Hora estimada** de inicio en partidas enlazadas en todas las vistas (lista, calendario, detalle, dashboard).
+- Recalculo server-side del diff BGG al lanzar importación.
+- **Juegos "Lo tuve"**: importación de `Previously Owned` con pestaña propia y pill `Lo tuve`.
+- Corrección del logro **AUDITOR_LÚDICO** (solo confirmaciones manuales, no QR).
+- **Persistencia server-side de logros descubiertos** (`revealedAt` en `UserBadge`); ya no depende del localStorage.
+- Atenuación visual de días pasados en la vista mensual del calendario.
+
+---
+
+### 16 de abril: ludotecas, UX móvil y preferencias
+
+- **Sync BGG**: protección de juegos añadidos manualmente (campo `bggSynced`); aviso en modal.
+- **Bottom sheet** de opciones en móvil para el menú de EventDetail.
+- Tema "Negro" dark: colores lilas reemplazados por grises neutros para mejor contraste.
+- Nick con `UserPopover` en Mercadillo y resultados de partidas.
+- Layout móvil mejorado: Documentos, Mi Ludoteca (1 columna en móvil), menú de opciones.
+- Ludoteca del club: propietarios muestran nick en lugar de email; email del club agrupado como "Club Dreadnought".
+- **Consejo del día**: opción de desactivar permanentemente desde el modal o desde el perfil.
+- Notificaciones: navegación directa al anuncio del tablón, botón "Eliminar todas".
+- Carnet de socio: muestra todos los tipos de membresía (FAMILIAR, EN_PRUEBAS, BAJA).
+- Cacheo lazy de thumbnails para juegos no-ROL en la Ludoteca del club.
+- Filtro por ubicación en Mi ludoteca.
+
+---
+
+### 17 de abril: Ludotecas de jugadores + ¿Quién sabe jugar?
+
+- Nueva sección **Ludotecas de jugadores** (`/ludotecas-jugadores`): grid de usuarios con colección, búsqueda global de quién tiene un juego, vista de colección de un jugador concreto.
+- Campo `ludotecaPublica` en `UserProfile`: toggle en perfil para hacer la colección privada.
+- Estadísticas del club en la sección (ludotecas públicas/privadas, juegos únicos).
+- Tarjeta propia al inicio de la lista para el usuario autenticado.
+- **Comparador de ludotecas**: seleccionar hasta 5 jugadores y ver juegos comunes y exclusivos.
+- **Top 10 juegos más comunes** del club en la tab de lista de jugadores.
+- Nueva sección **¿Quién sabe jugar?** (`/quien-sabe-jugar`): busca propietarios, historial de partidas y asistentes a eventos para un juego dado.
+- Rediseño de "¿Quién sabe jugar?" con autocompletado (dropdown con thumbnails) y selección de juego exacto por ID.
+- Enlace "Ver en BGG" en tarjetas de juego de las colecciones.
+
+---
+
+### 18 de abril: búsqueda normalizada + ventana de partidas ampliada
+
+- **Búsqueda de personas normalizada** (`personSearch.ts`): busca por nombre, apellidos, nick y email ignorando tildes y mayúsculas, usando `unaccent` de PostgreSQL. Aplicado al Directorio de Miembros, historial de invitaciones y buscador de miembros en eventos.
+- **Ventana de validación y puntuaciones ampliada a 24h** desde el fin estimado de la partida (inicio + duración), evitando bloqueos en partidas que terminan tras medianoche.
+- `SUPER_ADMIN` puede editar puntuaciones en cualquier momento (bypass en servidor y cliente).
+- Fix: `addMemberToEvent` ahora sincroniza partidas enlazadas.
+
 ---
 
 ## Resumen estadístico
@@ -323,9 +469,9 @@ La aplicación nace como una herramienta interna para gestionar el Club Dreadnou
 | Métrica | Valor |
 |---|---|
 | Primer commit | 13 de diciembre de 2025 |
-| Último commit | 9 de abril de 2026 |
-| Duración del desarrollo | ~4 meses |
-| Total de commits | ~518 |
+| Último commit | 18 de abril de 2026 |
+| Duración del desarrollo | ~4,5 meses |
+| Total de commits | ~550+ |
 | Ramas principales | `main`, `staging` |
 | Plataforma de deploy | Railway |
 | BD | PostgreSQL (Prisma ORM) |
@@ -363,3 +509,11 @@ La aplicación nace como una herramienta interna para gestionar el Club Dreadnou
 | Cron de cierre automático de eventos | Abr 2026 |
 | Cron de promoción de EN_PRUEBAS | Abr 2026 |
 | Creación de usuarios desde admin | Abr 2026 |
+| Mi ludoteca personal (sync BGG, wishlist, ubicaciones) | Abr 2026 |
+| Módulo Mercadillo (compraventa entre miembros) | Abr 2026 |
+| Partidas con expansiones y segunda partida enlazada | Abr 2026 |
+| Ludotecas de jugadores y comparador | Abr 2026 |
+| ¿Quién sabe jugar? | Abr 2026 |
+| Clonado de partidas | Abr 2026 |
+| Resultados de partidas | Abr 2026 |
+| Búsqueda de personas normalizada (unaccent) | Abr 2026 |

@@ -44,10 +44,11 @@ export default function InviteValidation() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['invitation', token] });
-      success(data.message || 'Entrada confirmada');
+      success(data.message || 'Asistencia confirmada');
     },
     onError: (err: any) => {
-      showError(err.response?.data?.message || 'No se pudo validar la invitacion');
+      const serverMessage = err.response?.data?.message;
+      showError(serverMessage || 'No se pudo confirmar la asistencia del invitado');
     }
   });
 
@@ -134,6 +135,11 @@ export default function InviteValidation() {
             )}
 
             <div>
+              <p className="text-sm text-[var(--color-textSecondary)]">Quien debe validar</p>
+              <p className="text-[var(--color-text)]">Solo el socio invitador puede confirmar esta asistencia.</p>
+            </div>
+
+            <div>
               <p className="text-sm text-[var(--color-textSecondary)]">Valido para</p>
               <p className="text-[var(--color-text)]">{new Date(invitation.validDate).toLocaleDateString('es-ES')}</p>
             </div>
@@ -152,7 +158,7 @@ export default function InviteValidation() {
             {isPending ? (
               <>
                 <p className="text-[var(--color-textSecondary)]">
-                  Confirma la entrada solo cuando el invitado este en la puerta.
+                  Confirma esta asistencia solo si eres el socio que hizo la invitacion y el invitado ha acudido a la partida.
                 </p>
                 <Button
                   onClick={() => validateMutation.mutate()}
@@ -160,13 +166,13 @@ export default function InviteValidation() {
                   variant="primary"
                   className="w-full"
                 >
-                  {validateMutation.isPending ? 'Validando...' : 'Confirmar entrada'}
+                  {validateMutation.isPending ? 'Confirmando...' : 'Confirmar asistencia del invitado'}
                 </Button>
               </>
             ) : (
               <p className="text-[var(--color-textSecondary)]">
                 {invitation.status !== 'PENDING'
-                  ? `Esta invitacion no puede ser validada porque esta ${statusLabel.toLowerCase()}.`
+                  ? `Esta invitacion no puede confirmarse porque esta ${statusLabel.toLowerCase()}.`
                   : 'Esta invitacion no es valida hoy.'}
               </p>
             )}

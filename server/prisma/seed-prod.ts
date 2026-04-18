@@ -89,6 +89,14 @@ const badgeDefinitions = [
   { category: BadgeCategory.REPETIDOR, level: 4, name: 'Devoto del Tablero', requiredCount: 40 },
   { category: BadgeCategory.REPETIDOR, level: 5, name: 'El que no Necesita Novedades', requiredCount: 70 },
   { category: BadgeCategory.REPETIDOR, level: 6, name: 'Maestro de sus Obsesiones', requiredCount: 100 },
+
+  // INVITADOR
+  { category: BadgeCategory.INVITADOR, level: 1, name: 'Reclutador Novato', requiredCount: 5 },
+  { category: BadgeCategory.INVITADOR, level: 2, name: 'Invocador de Jugadores', requiredCount: 10 },
+  { category: BadgeCategory.INVITADOR, level: 3, name: 'Embajador Lúdico', requiredCount: 20 },
+  { category: BadgeCategory.INVITADOR, level: 4, name: 'Anfitrión Incomparable', requiredCount: 40 },
+  { category: BadgeCategory.INVITADOR, level: 5, name: 'Virtuoso de la Acogida', requiredCount: 70 },
+  { category: BadgeCategory.INVITADOR, level: 6, name: 'Leyenda de la Convocatoria', requiredCount: 100 },
 ];
 
 async function main() {

@@ -1,7 +1,7 @@
 // server/src/controllers/badgeController.ts
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
-import { BadgeCategory } from '@prisma/client';
+import { BadgeCategory, InvitationStatus } from '@prisma/client';
 
 /**
  * Obtener todos los badges del usuario autenticado
@@ -171,6 +171,25 @@ async function getCategoryCount(userId: string, category: BadgeCategory): Promis
       having: { gameName: { _count: { gte: 3 } } }
     });
     return groups.length;
+  }
+  if (category === BadgeCategory.INVITADOR) {
+    const invitadorStartBadge = await prisma.badgeDefinition.findFirst({
+      where: { category: BadgeCategory.INVITADOR },
+      select: { createdAt: true },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    if (!invitadorStartBadge) {
+      return 0;
+    }
+
+    return prisma.invitation.count({
+      where: {
+        memberId: userId,
+        status: InvitationStatus.USED,
+        usedAt: { gte: invitadorStartBadge.createdAt }
+      }
+    });
   }
   if (category === BadgeCategory.VALIDADOR) {
     // Solo cuenta el que fue escaneado (muestra su QR)
@@ -475,6 +494,7 @@ function getCategoryDisplayName(category: BadgeCategory): string {
     [BadgeCategory.CATALOGADOR]: 'Catalogador',
     [BadgeCategory.ORGANIZADOR]: 'Organizador',
     [BadgeCategory.REPETIDOR]: 'Repetidor',
+    [BadgeCategory.INVITADOR]: 'Invitador',
     [BadgeCategory.VALIDADOR]: 'Validador',
     [BadgeCategory.TESTIGO_MESA]: 'Testigo de Mesa',
     [BadgeCategory.AUDITOR_LUDICO]: 'Auditor Lúdico',

@@ -4,6 +4,36 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-18 (sesion 2)
+
+### Badge "Invitador" y validacion de invitaciones restringida al socio invitador
+
+**Nuevo badge `INVITADOR`** (`server/prisma/schema.prisma`, `server/prisma/migrations/20260418190000_add_invitador_badge/`, `server/prisma/seeds/badgeDefinitions.ts`, `server/prisma/seed-prod.ts`, `server/prisma/seed-badges-local.sql`): se añade una nueva categoria de logro ligada a invitaciones validadas por el propio socio invitador. Incluye 6 niveles con estos hitos: 5 `Reclutador Novato`, 10 `Invocador de Jugadores`, 20 `Embajador Ludico`, 40 `Anfitrion Incomparable`, 70 `Virtuoso de la Acogida` y 100 `Leyenda de la Convocatoria`. Se actualizan los seeds locales y de produccion y se crea migracion Prisma para el nuevo valor del enum.
+
+**Conteo no retroactivo del badge** (`server/src/controllers/badgeController.ts`): el progreso de `INVITADOR` cuenta invitaciones en estado `USED` cuyo `memberId` es el usuario, pero solo desde la fecha de creacion de las definiciones del badge `INVITADOR` en base de datos. Esto evita backfill historico y hace que el logro empiece a acumular solo desde el despliegue del badge.
+
+**Validacion de invitaciones restringida al invitador** (`server/src/controllers/invitationController.ts`): `POST /api/invitations/:token/validate` deja de ser una validacion generica de puerta y pasa a ser una confirmacion de asistencia realizada exclusivamente por el socio que creo la invitacion. Si otro usuario autenticado intenta validar, el backend devuelve `403`. Cuando la validacion tiene exito, la invitacion pasa a `USED`, mantiene `validatedByUserId` y `usedAt`, y ademas dispara `checkAndUnlockBadges(..., BadgeCategory.INVITADOR)`.
+
+**Actualizacion de cliente para el nuevo flujo** (`client/src/types/badge.ts`, `client/src/pages/InviteValidation.tsx`): se añade `INVITADOR` al tipado y metadatos del sistema de badges (nombre, descripcion, color e icono). La pantalla publica de invitacion se reorienta a "confirmar asistencia del invitado", muestra explicitamente que solo puede validar el socio invitador y adapta textos de exito/error al nuevo comportamiento.
+
+**Verificacion tecnica realizada:**
+- `npx.cmd prisma generate` en `server`
+- `npx.cmd tsc --noEmit` en `server`
+- `npm.cmd run build` en `client`
+
+**Archivos modificados/creados:**
+- `server/prisma/schema.prisma`
+- `server/prisma/migrations/20260418190000_add_invitador_badge/` (nuevo)
+- `server/prisma/seeds/badgeDefinitions.ts`
+- `server/prisma/seed-prod.ts`
+- `server/prisma/seed-badges-local.sql`
+- `server/src/controllers/badgeController.ts`
+- `server/src/controllers/invitationController.ts`
+- `client/src/types/badge.ts`
+- `client/src/pages/InviteValidation.tsx`
+
+---
+
 ## 2026-04-18 (sesion 1)
 
 ### Búsqueda de personas con soporte de tildes y nick + ventanas de partida a 24h + fix sincronización partidas enlazadas

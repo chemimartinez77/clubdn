@@ -1,8 +1,9 @@
 // server/src/controllers/invitationController.ts
 import { Request, Response } from 'express';
-import { InvitationStatus, UserRole } from '@prisma/client';
+import { BadgeCategory, InvitationStatus, UserRole } from '@prisma/client';
 import { prisma } from '../config/database';
 import { generateInvitationToken } from '../utils/invitationToken';
+import { checkAndUnlockBadges } from './badgeController';
 import {
   countInvitationsByPersonSearch,
   findInvitationIdsByPersonSearch,
@@ -510,6 +511,10 @@ export const validateInvitation = async (req: Request, res: Response): Promise<v
         return { error: { status: 404, message: 'Invitacion no encontrada' } };
       }
 
+      if (invitation.member?.id !== validatorId) {
+        return { error: { status: 403, message: 'Solo el socio invitador puede validar esta invitacion' }, invitation };
+      }
+
       if (invitation.status !== InvitationStatus.PENDING) {
         return { error: { status: 400, message: 'Invitacion ya usada o expirada' }, invitation };
       }
@@ -561,10 +566,12 @@ export const validateInvitation = async (req: Request, res: Response): Promise<v
       return;
     }
 
+    await checkAndUnlockBadges(result.invitation!.member.id, BadgeCategory.INVITADOR);
+
     res.status(200).json({
       success: true,
       data: mapInvitation(result.invitation),
-      message: 'Entrada confirmada'
+      message: 'Asistencia del invitado confirmada'
     });
   } catch (error) {
     console.error('[INVITATION] Error al validar invitacion:', error);
