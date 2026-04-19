@@ -642,6 +642,7 @@ model Game {
   events            Event[]  @relation("GameEvents")
   userGames         UserGame[]
   eventExpansions   EventExpansion[]
+  libraryItems      LibraryItem[]
 
   @@index([name])
   @@index([yearPublished])
@@ -711,7 +712,8 @@ model LibraryItem {
   id                String         @id @default(cuid())
 
   // Identificadores
-  bggId             String?        // BGG ID del juego (almacenado como referencia, puede no estar en la tabla Game)
+  bggId             String?        // FK opcional a Game.id (puede ser null si no está en BGG o no sincronizado aún)
+  game              Game?          @relation(fields: [bggId], references: [id], onDelete: SetNull)
   internalId        String         @unique // ID interno del club
 
   // Información del juego

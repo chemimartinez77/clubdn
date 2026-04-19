@@ -24,7 +24,20 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
     const where: any = {};
 
     if (search && typeof search === 'string') {
-      where.name = { contains: search, mode: 'insensitive' };
+      const term = search.trim();
+      const matchingBggIds = await prisma.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Game"
+        WHERE name ILIKE ${'%' + term + '%'}
+           OR EXISTS (
+             SELECT 1 FROM unnest("alternateNames") AS alt
+             WHERE alt ILIKE ${'%' + term + '%'}
+           )
+      `;
+      const bggIds = matchingBggIds.map((r) => r.id);
+      where.OR = [
+        { name: { contains: term, mode: 'insensitive' } },
+        { bggId: { in: bggIds } },
+      ];
     }
 
     if (gameType && typeof gameType === 'string') {

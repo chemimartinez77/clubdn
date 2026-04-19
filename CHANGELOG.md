@@ -4,6 +4,27 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-19 (sesión 4)
+
+### Búsqueda de juegos por nombre alternativo (multiidioma)
+
+La búsqueda de juegos en "¿Quién sabe jugar?", en la colección de un jugador y en la ludoteca del club ahora encuentra resultados tanto por el nombre principal en inglés (tal como viene de BGG) como por los nombres alternativos almacenados en `Game.alternateNames` (traducciones al español, francés, etc.). Antes solo se buscaba en `Game.name`, por lo que "Clanes de Caledonia" no encontraba "Clans of Caledonia".
+
+**Patrón aplicado:** como Prisma no soporta `contains` sobre columnas `String[]`, se usa `prisma.$queryRaw` con `unnest("alternateNames")` e `ILIKE` para obtener los IDs coincidentes, que luego se pasan al filtro principal.
+
+**`server/src/controllers/jugadoresLudotecaController.ts`** (modificado):
+- `searchGames`: reemplaza `name: { contains }` por una raw query que busca en `name` e `alternateNames`, filtrando el `where` principal por `id: { in: gameIds }`.
+- `getPlayerGames`: ídem, añadiendo `gameIdFilter` opcional antes del `where` de `UserGame`.
+
+**`server/src/controllers/ludotecaController.ts`** (modificado):
+- `getLibraryItems`: reemplaza `where.name = { contains }` por `where.OR` con la misma raw query, conservando también la búsqueda por `LibraryItem.name` (nombre libre del admin) para no romper ítems sin `bggId`.
+
+**`server/prisma/schema.prisma`** (modificado): añadida relación formal `LibraryItem.bggId → Game.id` (FK opcional, `onDelete: SetNull`) y su inversa `Game.libraryItems`. El campo `bggId` ya existía con el valor correcto pero sin constraint en BD.
+
+**`server/prisma/migrations/20260419120000_add_library_item_game_relation/migration.sql`** (nuevo): `ALTER TABLE "LibraryItem" ADD CONSTRAINT ... FOREIGN KEY ("bggId") REFERENCES "Game"("id") ON DELETE SET NULL`.
+
+---
+
 ## 2026-04-19 (sesión 3)
 
 ### Animaciones de puntuación incrementales, penalización de suelo animada, bonus endgame y niveles de IA

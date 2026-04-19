@@ -141,8 +141,19 @@ export const searchGames = async (req: Request, res: Response) => {
       userId: { not: currentUserId },
     };
 
+    // Buscar IDs que coinciden por nombre principal O por nombres alternativos (array de texto)
+    const matchingIds = await prisma.$queryRaw<{ id: string }[]>`
+      SELECT id FROM "Game"
+      WHERE name ILIKE ${'%' + term + '%'}
+         OR EXISTS (
+           SELECT 1 FROM unnest("alternateNames") AS alt
+           WHERE alt ILIKE ${'%' + term + '%'}
+         )
+    `;
+    const gameIds = matchingIds.map((r) => r.id);
+
     const where: Prisma.GameWhereInput = {
-      name: { contains: term, mode: 'insensitive' },
+      id: { in: gameIds },
       userGames: { some: ownerFilterBase },
     };
 
@@ -242,10 +253,23 @@ export const getPlayerGames = async (req: Request, res: Response) => {
     const skip = (safePage - 1) * safePageSize;
     const term = search.trim();
 
+    let gameIdFilter: { in: string[] } | undefined;
+    if (term) {
+      const matchingIds = await prisma.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Game"
+        WHERE name ILIKE ${'%' + term + '%'}
+           OR EXISTS (
+             SELECT 1 FROM unnest("alternateNames") AS alt
+             WHERE alt ILIKE ${'%' + term + '%'}
+           )
+      `;
+      gameIdFilter = { in: matchingIds.map((r) => r.id) };
+    }
+
     const where: Prisma.UserGameWhereInput = {
       userId,
       ...activeOwn,
-      ...(term && { game: { name: { contains: term, mode: 'insensitive' } } }),
+      ...(gameIdFilter && { gameId: gameIdFilter }),
     };
 
     const [games, total] = await Promise.all([
