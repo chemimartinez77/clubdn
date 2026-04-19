@@ -23,6 +23,18 @@ La búsqueda de juegos en "¿Quién sabe jugar?", en la colección de un jugador
 
 **`server/prisma/migrations/20260419120000_add_library_item_game_relation/migration.sql`** (nuevo): `ALTER TABLE "LibraryItem" ADD CONSTRAINT ... FOREIGN KEY ("bggId") REFERENCES "Game"("id") ON DELETE SET NULL`.
 
+### FK LibraryItem → Game: corrección de migración y script de sincronización ROL
+
+La migración `20260419120000_add_library_item_game_relation` fallaba en staging porque ~90 ítems ROL tenían `bggId` con IDs numéricos de RPGGeek que no existían en la tabla `Game` (que solo contenía juegos de BGG). Se corrigió y se creó un script de sincronización.
+
+**`server/prisma/migrations/20260419120000_add_library_item_game_relation/migration.sql`** (modificado): añadido `UPDATE "LibraryItem" SET "bggId" = NULL` para limpiar huérfanos antes de crear la FK, evitando el error `23503` de violación de foreign key.
+
+**`server/src/scripts/sync-rpggeek-to-game.ts`** (nuevo): script idempotente que:
+1. Consulta 101 IDs de RPGGeek obtenidos de producción e inserta los `Game` que falten llamando a `getRPGGeekItem()` (con delay de 1500ms para respetar el rate limit).
+2. Restaura el `bggId` en los `LibraryItem` ROL que quedaron a NULL tras la migración, enlazando por thumbnail cacheado.
+
+La restauración completa de `bggId` en staging (87 ítems) se realizó manualmente via script Node que cruzó los datos de producción usando `internalId` como clave estable. Los `bggId` en staging ahora usan el formato `rpgg-XXXX` (con prefijo) para coincidir con `Game.id`.
+
 ---
 
 ## 2026-04-19 (sesión 3)
