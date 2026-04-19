@@ -6,6 +6,18 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-19 (sesión 5)
 
+### feat: debounce en inputs de búsqueda de miembros
+
+Se añade un delay de 350ms antes de lanzar la petición HTTP en los dos buscadores de miembros del club, evitando una llamada a la API por cada tecla pulsada.
+
+**`client/src/hooks/useDebounce.ts`** (nuevo): hook genérico `useDebounce<T>(value, delayMs)` basado en `useState` + `useEffect` con `setTimeout`.
+
+**`client/src/pages/EventDetail.tsx`** (modificado): el input del modal "Apuntar miembro" ahora separa el estado visible (`memberSearchQuery`) del valor debounced (`debouncedMemberSearch`). La petición se dispara desde un `useEffect` con cancelación de peticiones en vuelo (`cancelled = true` en el cleanup), eliminando la función `handleMemberSearch`.
+
+**`client/src/pages/admin/Members.tsx`** (modificado): `filters.search` se debouncea antes de pasarlo a `useMembers`, de modo que TanStack Query no lanza una nueva query en cada pulsación.
+
+---
+
 ### Fix: búsqueda de miembros rota en producción (SELECT DISTINCT + ORDER BY)
 
 Todos los buscadores de miembros del club (modal "Apuntar miembro" en eventos y directorio de administración) devolvían error 500 silenciado desde el deploy del commit `18a23a0`. La causa era un bug SQL en `findUserIdsByPersonSearch`: la query usaba `SELECT DISTINCT u.id` pero ordenaba por `u."name"`, campo que no estaba en el SELECT. PostgreSQL error `42P10` — con DISTINCT, los campos del ORDER BY deben aparecer en el SELECT.

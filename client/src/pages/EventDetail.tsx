@@ -8,6 +8,7 @@ import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
 import InfoTooltip from '../components/ui/InfoTooltip';
 import { useToast } from '../hooks/useToast';
+import { useDebounce } from '../hooks/useDebounce';
 import { api } from '../api/axios';
 import { GameImage } from '../components/events/EventCard';
 import EventPhotoGallery from '../components/events/EventPhotoGallery';
@@ -83,6 +84,7 @@ export default function EventDetail() {
   // Estado modal apuntar miembro
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const debouncedMemberSearch = useDebounce(memberSearchQuery, 350);
   const [memberSearchResults, setMemberSearchResults] = useState<Array<{ id: string; name: string; nick: string | null; avatar: string | null; membershipType: string | null }>>([]);
   const [memberSearchLoading, setMemberSearchLoading] = useState(false);
 
@@ -354,22 +356,20 @@ export default function EventDetail() {
       showError(getErrorMessage(err, 'Error al eliminar partida'));
     }
   });
-  const handleMemberSearch = async (query: string) => {
-    setMemberSearchQuery(query);
-    if (query.trim().length < 2) {
+  useEffect(() => {
+    const q = debouncedMemberSearch.trim();
+    if (q.length < 2) {
       setMemberSearchResults([]);
       return;
     }
+    let cancelled = false;
     setMemberSearchLoading(true);
-    try {
-      const response = await api.get(`/api/events/members/search?q=${encodeURIComponent(query.trim())}`);
-      setMemberSearchResults(response.data.data || []);
-    } catch {
-      setMemberSearchResults([]);
-    } finally {
-      setMemberSearchLoading(false);
-    }
-  };
+    api.get(`/api/events/members/search?q=${encodeURIComponent(q)}`)
+      .then(res => { if (!cancelled) setMemberSearchResults(res.data.data || []); })
+      .catch(() => { if (!cancelled) setMemberSearchResults([]); })
+      .finally(() => { if (!cancelled) setMemberSearchLoading(false); });
+    return () => { cancelled = true; };
+  }, [debouncedMemberSearch]);
 
   const addMemberMutation = useMutation({
     mutationFn: async (userId: string) => {
@@ -2662,7 +2662,7 @@ export default function EventDetail() {
           <input
             type="text"
             value={memberSearchQuery}
-            onChange={(e) => handleMemberSearch(e.target.value)}
+            onChange={(e) => setMemberSearchQuery(e.target.value)}
             placeholder="Escribe nombre, apellidos o nick..."
             autoFocus
             className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"

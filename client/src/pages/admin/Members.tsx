@@ -8,6 +8,7 @@ import Modal from '../../components/ui/Modal';
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import { useMembers } from '../../hooks/useMembers';
 import { useToast } from '../../hooks/useToast';
+import { useDebounce } from '../../hooks/useDebounce';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../api/axios';
 import type { MemberData, MemberFilters, MemberProfileResponse } from '../../types/members';
@@ -111,7 +112,9 @@ export default function Members() {
   };
 
   // Fetch members data
-  const { data, isLoading, refetch, markAsBaja, isMarkingBaja, reactivateMember, isReactivating, exportCSV } = useMembers(filters);
+  const debouncedSearch = useDebounce(filters.search, 350);
+  const debouncedFilters = { ...filters, search: debouncedSearch };
+  const { data, isLoading, refetch, markAsBaja, isMarkingBaja, reactivateMember, isReactivating, exportCSV } = useMembers(debouncedFilters);
 
   const { data: memberProfile, isLoading: isProfileLoading, isError: isProfileError } = useQuery({
     queryKey: ['memberProfile', selectedMember?.id],
