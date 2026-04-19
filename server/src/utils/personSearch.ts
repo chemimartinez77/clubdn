@@ -115,7 +115,7 @@ export const findUserIdsByPersonSearch = async ({
   const limitSql = typeof limit === 'number' ? Prisma.sql` LIMIT ${limit}` : Prisma.empty;
 
   const rows = await prisma.$queryRaw<Array<{ id: string }>>(Prisma.sql`
-    SELECT DISTINCT u.id
+    SELECT DISTINCT u.id, u."name"
     FROM "User" u
     LEFT JOIN "UserProfile" up ON up."userId" = u.id
     LEFT JOIN "Membership" m ON m."userId" = u.id

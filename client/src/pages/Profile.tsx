@@ -931,7 +931,7 @@ export default function Profile() {
                   </div>
 
                   <div className="pt-4 border-t border-[var(--color-cardBorder)]">
-                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Pantalla de inicio</p>
+                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Pantalla al iniciar sesión</p>
                     <div className="flex gap-3">
                       {[
                         { value: 'home', label: 'Inicio' },

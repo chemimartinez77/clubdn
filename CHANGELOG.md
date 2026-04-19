@@ -4,6 +4,18 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-19 (sesión 5)
+
+### Fix: búsqueda de miembros rota en producción (SELECT DISTINCT + ORDER BY)
+
+Todos los buscadores de miembros del club (modal "Apuntar miembro" en eventos y directorio de administración) devolvían error 500 silenciado desde el deploy del commit `18a23a0`. La causa era un bug SQL en `findUserIdsByPersonSearch`: la query usaba `SELECT DISTINCT u.id` pero ordenaba por `u."name"`, campo que no estaba en el SELECT. PostgreSQL error `42P10` — con DISTINCT, los campos del ORDER BY deben aparecer en el SELECT.
+
+**`server/src/utils/personSearch.ts`** (modificado): `SELECT DISTINCT u.id` → `SELECT DISTINCT u.id, u."name"`.
+
+**`client/src/pages/Profile.tsx`** (modificado): renombrado "Pantalla de inicio" → "Pantalla al iniciar sesión" (copy menor).
+
+---
+
 ## 2026-04-19 (sesión 4)
 
 ### Búsqueda de juegos por nombre alternativo (multiidioma)
