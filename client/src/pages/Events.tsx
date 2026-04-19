@@ -1,5 +1,6 @@
 ﻿// client/src/pages/Events.tsx
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
@@ -30,6 +31,7 @@ export default function Events() {
   const { error: showError } = useToast();
   const { themeMode } = useTheme();
   const { shouldShow: showTour, dismissTour } = useTour('calendar');
+  const location = useLocation();
 
   const { data: profileData } = useQuery({
     queryKey: ['profile', 'me'],
@@ -43,6 +45,13 @@ export default function Events() {
 
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [calendarView, setCalendarView] = useState<CalendarView>('month');
+
+  useEffect(() => {
+    if ((location.state as { forceMonth?: boolean } | null)?.forceMonth) {
+      setCalendarView('month');
+    }
+  }, [location.state]);
+
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('RECOMMENDED');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('PARTIDA');
   const [capacityFilter, setCapacityFilter] = useState<CapacityFilter>('');

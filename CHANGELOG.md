@@ -4,6 +4,21 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-20 (sesión 1)
+
+### fix: aviso de categoría en CreatePartida + enlace Calendario vuelve a vista mes
+
+**Aviso de categoría sin seleccionar (`CreatePartida.tsx`):** Al investigar un bug reportado por un usuario (partidas de Nippon no contaban para el logro de Eurogames), se detectó que la causa era que el organizador creó los eventos sin seleccionar la categoría del juego. Como `processEventPlayHistory` ignora eventos con `gameCategory: null`, las partidas nunca se registraban en `GamePlayHistory`. Para evitarlo sin romper el logro Catalogador (que premia precisamente clasificar el juego), se sustituye el texto de ayuda genérico por un aviso en amarillo que aparece solo cuando el campo está vacío: *"Sin categoría, esta partida no contará para los logros de género ni para el logro Catalogador."* El aviso desaparece en cuanto se selecciona una categoría.
+
+**Enlace Calendario fuerza vista de mes (`Events.tsx`, `Header.tsx`):** Al estar en la vista de semana o día y pulsar el enlace "Calendario" del menú, React Router no re-montaba el componente (mismo path) y la vista no se reseteaba. Se pasa `state={{ forceMonth: true }}` en los dos enlaces del Header (desktop y móvil) y se añade un `useEffect` en `Events.tsx` que llama a `setCalendarView('month')` cuando detecta ese estado en `location`.
+
+**Archivos modificados:**
+- `client/src/pages/CreatePartida.tsx`: aviso amarillo cuando `gameCategory` está vacío
+- `client/src/pages/Events.tsx`: `useLocation` + `useEffect` para forzar vista mes
+- `client/src/components/layout/Header.tsx`: `state={{ forceMonth: true }}` en enlaces desktop y móvil
+
+---
+
 ## 2026-04-19 (sesión 5)
 
 ### feat: debounce en inputs de búsqueda de miembros

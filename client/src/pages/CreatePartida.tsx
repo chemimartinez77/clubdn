@@ -398,13 +398,17 @@ export default function CreatePartida() {
                   <option value="FILLERS_PARTY">{getCategoryIcon('FILLERS_PARTY')} {getCategoryDisplayName('FILLERS_PARTY')}</option>
                   <option value="CARTAS_LCG_TCG">{getCategoryIcon('CARTAS_LCG_TCG')} {getCategoryDisplayName('CARTAS_LCG_TCG')}</option>
                 </select>
-                <p className="text-xs text-[var(--color-textSecondary)] mt-1">
-                  {confirmedCategory
-                    ? 'Categoría fijada por la comunidad. Contacta con un admin para cambiarla.'
-                    : selectedCategory
-                      ? 'Categoría cargada automáticamente. Puedes cambiarla si es incorrecta.'
-                      : 'Ayuda a otros miembros a desbloquear badges automáticamente'}
-                </p>
+                {!selectedCategory && !confirmedCategory ? (
+                  <p className="text-xs mt-1 text-yellow-400">
+                    Sin categoría, esta partida no contará para los logros de género ni para el logro Catalogador.
+                  </p>
+                ) : (
+                  <p className="text-xs text-[var(--color-textSecondary)] mt-1">
+                    {confirmedCategory
+                      ? 'Categoría fijada por la comunidad. Contacta con un admin para cambiarla.'
+                      : 'Categoría cargada automáticamente. Puedes cambiarla si es incorrecta.'}
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] px-4 py-3">

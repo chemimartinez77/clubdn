@@ -112,6 +112,7 @@ export default function Header() {
             <Link
               id="nav-calendario"
               to="/events"
+              state={{ forceMonth: true }}
               className="text-[var(--color-textSecondary)] hover:text-primary transition-colors"
             >
               Calendario
@@ -520,6 +521,7 @@ export default function Header() {
               {/* Calendario */}
               <Link
                 to="/events"
+                state={{ forceMonth: true }}
                 className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                 onClick={closeAllMenus}
               >
