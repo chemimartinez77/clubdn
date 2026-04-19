@@ -73,7 +73,10 @@
       "Bash(node -e \"require\\(''nodemailer''\\)\")",
       "Bash(docker exec:*)",
       "Bash(npx.cmd prisma *)",
-      "Bash(npx.cmd tsc *)"
+      "Bash(npx.cmd tsc *)",
+      "Bash(npx prisma *)",
+      "Bash(npx dotenv *)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:fDCKIQJhnjHZUwJdfFmBSvAWSXNZbxYG@metro.proxy.rlwy.net:31715/railway\" npx prisma db execute --stdin)"
     ]
   }
 }
