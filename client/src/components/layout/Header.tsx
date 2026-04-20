@@ -361,6 +361,13 @@ export default function Header() {
                         Tablón de anuncios
                       </Link>
                       <Link
+                        to="/admin/prestamos"
+                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                        onClick={() => setIsAdminMenuOpen(false)}
+                      >
+                        Préstamos de ludoteca
+                      </Link>
+                      <Link
                         to="/admin/config"
                         className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                         onClick={() => setIsAdminMenuOpen(false)}
@@ -725,6 +732,13 @@ export default function Header() {
                     onClick={closeAllMenus}
                   >
                     Tablón de anuncios
+                  </Link>
+                  <Link
+                    to="/admin/prestamos"
+                    className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                    onClick={closeAllMenus}
+                  >
+                    Préstamos de ludoteca
                   </Link>
                   <Link
                     to="/admin/config"

@@ -32,6 +32,7 @@ import Members from './pages/admin/Members';
 import ClubConfig from './pages/admin/ClubConfig';
 import InvitationHistory from './pages/admin/InvitationHistory';
 import AdminAnnouncements from './pages/admin/Announcements';
+import LibraryLoansAdmin from './pages/admin/LibraryLoans';
 import Announcements from './pages/Announcements';
 import Games from './pages/Games';
 import Financiero from './pages/Financiero';
@@ -524,6 +525,15 @@ function App() {
             element={
               <AdminRoute>
                 <AdminAnnouncements />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/prestamos"
+            element={
+              <AdminRoute>
+                <LibraryLoansAdmin />
               </AdminRoute>
             }
           />

@@ -87,6 +87,9 @@ export default function ClubConfigPage() {
         inviteMaxActive: config.inviteMaxActive,
         inviteMaxMonthly: config.inviteMaxMonthly,
         inviteMaxGuestYear: config.inviteMaxGuestYear,
+        loanEnabled: config.loanEnabled,
+        loanDurationDays: config.loanDurationDays,
+        loanQueueNotifyHours: config.loanQueueNotifyHours,
       });
       setMembershipTypes(Array.isArray(config.membershipTypes) ? config.membershipTypes : []);
     }
@@ -363,6 +366,70 @@ export default function ClubConfigPage() {
                   />
                 ) : (
                   <p className="text-[var(--color-text)] py-2">{config?.inviteMaxGuestYear}</p>
+                )}
+              </div>
+
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Préstamos de Ludoteca */}
+        <Card>
+          <CardHeader><CardTitle>Préstamos de Ludoteca</CardTitle></CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              <div className="md:col-span-2">
+                <label className="flex items-center text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                  Sistema de préstamos activo
+                  <Tooltip text="Desactívalo para impedir temporalmente que los socios soliciten préstamos o se apunten a listas de espera. Los préstamos ya activos no se ven afectados." />
+                </label>
+                {isEditing ? (
+                  <label className="flex items-center gap-3 cursor-pointer mt-1">
+                    <input
+                      type="checkbox"
+                      checked={formData.loanEnabled ?? true}
+                      onChange={(e) => setFormData({ ...formData, loanEnabled: e.target.checked })}
+                      className="w-4 h-4 accent-[var(--color-primary)]"
+                    />
+                    <span className="text-sm text-[var(--color-text)]">{formData.loanEnabled ?? true ? 'Activado' : 'Desactivado'}</span>
+                  </label>
+                ) : (
+                  <p className="text-[var(--color-text)] py-2">{config?.loanEnabled ? 'Activado' : 'Desactivado'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="flex items-center text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                  Duración del préstamo (días)
+                  <Tooltip text="Número de días por defecto de cada préstamo. Se aplica al confirmar la entrega y al renovar. Cambiar este valor no afecta a los préstamos ya activos." />
+                </label>
+                {isEditing ? (
+                  <input
+                    type="number" min="1" max="90"
+                    value={formData.loanDurationDays ?? 14}
+                    onChange={(e) => setFormData({ ...formData, loanDurationDays: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  />
+                ) : (
+                  <p className="text-[var(--color-text)] py-2">{config?.loanDurationDays} días</p>
+                )}
+              </div>
+
+              <div>
+                <label className="flex items-center text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                  Ventana de reclamación en cola (horas)
+                  <Tooltip text="Horas que tiene el siguiente socio en lista de espera para solicitar el préstamo desde que se le notifica que el juego está disponible. Pendiente de implementar el cron de expiración." />
+                </label>
+                {isEditing ? (
+                  <input
+                    type="number" min="1" max="168"
+                    value={formData.loanQueueNotifyHours ?? 48}
+                    onChange={(e) => setFormData({ ...formData, loanQueueNotifyHours: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  />
+                ) : (
+                  <p className="text-[var(--color-text)] py-2">{config?.loanQueueNotifyHours} horas</p>
                 )}
               </div>
 

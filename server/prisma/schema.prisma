@@ -144,6 +144,10 @@ model User {
   bggSyncJobs              BggSyncJob[]
   eventResultsCreated      EventResult[]                  @relation("EventResultCreator")
   eventResults             EventResult[]
+  libraryLoans             LibraryLoan[]                  @relation("LibraryLoanUser")
+  libraryLoansLoaned       LibraryLoan[]                  @relation("LibraryLoanLoanedBy")
+  libraryLoansReturned     LibraryLoan[]                  @relation("LibraryLoanReturnedBy")
+  libraryQueue             LibraryQueue[]                 @relation("LibraryQueueUser")
 
   @@index([email])
   @@index([status])
@@ -685,6 +689,11 @@ model ClubConfig {
   // Analytics de navegación
   pageViewCollectionStartedAt DateTime? // Fecha desde la que se recogen datos de navegación
 
+  // Configuración de préstamos de ludoteca
+  loanEnabled          Boolean @default(true)  // Activar/desactivar el sistema de préstamos
+  loanDurationDays     Int     @default(14)    // Duración por defecto de un préstamo en días
+  loanQueueNotifyHours Int     @default(48)    // Horas que tiene el siguiente en cola para reclamar el ítem
+
   // Metadatos
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -707,40 +716,121 @@ enum GameCondition {
   MALO
 }
 
+enum LibraryItemLoanStatus {
+  AVAILABLE
+  REQUESTED    // socio ha solicitado, pendiente entrega física
+  ON_LOAN
+  BLOCKED
+  MAINTENANCE
+}
+
+enum LibraryLoanStatus {
+  REQUESTED    // socio solicitó, admin aún no ha entregado
+  ACTIVE       // entregado físicamente
+  RETURNED
+  CANCELLED
+}
+
+enum LibraryQueueStatus {
+  WAITING
+  NOTIFIED     // se le avisó de que está disponible
+  FULFILLED
+  CANCELLED
+}
+
 // Item físico en la ludoteca del club
 model LibraryItem {
-  id                String         @id @default(cuid())
+  id                String                @id @default(cuid())
 
   // Identificadores
-  bggId             String?        // FK opcional a Game.id (puede ser null si no está en BGG o no sincronizado aún)
-  game              Game?          @relation(fields: [bggId], references: [id], onDelete: SetNull)
-  internalId        String         @unique // ID interno del club
+  bggId             String?               // FK opcional a Game.id
+  game              Game?                 @relation(fields: [bggId], references: [id], onDelete: SetNull)
+  internalId        String                @unique // ID interno del club
 
   // Información del juego
   name              String
-  description       String?        @db.Text
-  notes             String?        @db.Text
-  thumbnail         String?        // URL de miniatura (BGG o RPGGeek, cacheada)
-  image             String?        // URL de imagen completa (BGG o RPGGeek, cacheada)
-  yearPublished     Int?           // Año de publicación (BGG o RPGGeek, cacheado)
+  description       String?               @db.Text
+  notes             String?               @db.Text
+  thumbnail         String?
+  image             String?
+  yearPublished     Int?
 
   // Clasificación
-  gameType          GameType       // wargame, mesa, cartas, mini, rol
-  condition         GameCondition  // Nuevo, Bueno, Regular, Malo
+  gameType          GameType
+  condition         GameCondition
 
   // Propiedad y adquisición
-  ownerEmail        String?        // Email del propietario (si no es del club)
-  acquisitionDate   DateTime?      // Fecha de adquisición
+  ownerEmail        String?
+  acquisitionDate   DateTime?
+
+  // Préstamos
+  loanStatus        LibraryItemLoanStatus @default(AVAILABLE)
+  isLoanable        Boolean               @default(false)
+  loans             LibraryLoan[]
+  queue             LibraryQueue[]
 
   // Metadatos
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 
   @@index([name])
   @@index([gameType])
   @@index([condition])
   @@index([ownerEmail])
   @@index([bggId])
+  @@index([loanStatus])
+}
+
+model LibraryLoan {
+  id               String            @id @default(cuid())
+
+  libraryItemId    String
+  libraryItem      LibraryItem       @relation(fields: [libraryItemId], references: [id])
+
+  userId           String
+  user             User              @relation("LibraryLoanUser", fields: [userId], references: [id])
+
+  loanedByUserId   String?           // admin que confirmó entrega física
+  loanedBy         User?             @relation("LibraryLoanLoanedBy", fields: [loanedByUserId], references: [id])
+
+  returnedByUserId String?           // admin que registró devolución
+  returnedBy       User?             @relation("LibraryLoanReturnedBy", fields: [returnedByUserId], references: [id])
+
+  status           LibraryLoanStatus
+  loanedAt         DateTime?         // cuando el admin confirma entrega física
+  dueAt            DateTime?
+  returnedAt       DateTime?
+  renewalCount     Int               @default(0)
+
+  conditionOut     GameCondition?    // opcional, default = LibraryItem.condition
+  conditionIn      GameCondition?
+  notesOut         String?           @db.Text
+  notesIn          String?           @db.Text
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([libraryItemId])
+  @@index([userId])
+  @@index([status])
+}
+
+model LibraryQueue {
+  id            String             @id @default(cuid())
+
+  libraryItemId String
+  libraryItem   LibraryItem        @relation(fields: [libraryItemId], references: [id])
+
+  userId        String
+  user          User               @relation("LibraryQueueUser", fields: [userId], references: [id])
+
+  status        LibraryQueueStatus @default(WAITING)
+  notifiedAt    DateTime?
+
+  createdAt     DateTime           @default(now())
+
+  @@unique([libraryItemId, userId])
+  @@index([libraryItemId, status])
 }
 
 // Visibilidad de documentos
@@ -958,6 +1048,11 @@ enum NotificationType {
   MARKETPLACE_OFFER_REJECTED   // Tu oferta fue rechazada
   MARKETPLACE_OFFER_COUNTERED  // El vendedor ha contraofertado
   MARKETPLACE_NEW_CONVERSATION // Alguien ha abierto un hilo sobre tu anuncio
+  LIBRARY_LOAN_REQUESTED       // Admin: socio ha solicitado un préstamo
+  LIBRARY_LOAN_CONFIRMED       // Socio: el admin ha confirmado la entrega
+  LIBRARY_LOAN_RETURNED        // Socio: devolución registrada
+  LIBRARY_LOAN_RENEWED         // Admin: socio ha renovado un préstamo
+  LIBRARY_QUEUE_AVAILABLE      // Socio: el juego que esperaba está disponible
 }
 
 // Notificaciones del sistema

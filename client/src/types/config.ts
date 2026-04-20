@@ -25,6 +25,9 @@ export interface ClubConfig {
   inviteMaxMonthly: number;
   inviteMaxGuestYear: number;
   inviteAllowSelfValidation: boolean;
+  loanEnabled: boolean;
+  loanDurationDays: number;
+  loanQueueNotifyHours: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -41,6 +44,9 @@ export interface ClubConfigUpdate {
   inviteMaxMonthly?: number;
   inviteMaxGuestYear?: number;
   inviteAllowSelfValidation?: boolean;
+  loanEnabled?: boolean;
+  loanDurationDays?: number;
+  loanQueueNotifyHours?: number;
 }
 
 export interface PublicConfig {

@@ -14,6 +14,7 @@ import type { UserProfile, UpdateProfileData } from '../types/profile';
 import { displayName, fullNameTooltip } from '../utils/displayName';
 import type { ApiResponse } from '../types/auth';
 import type { UserBadgesResponse } from '../types/badge';
+import type { LibraryLoan } from '../types/libraryLoans';
 
 function FieldRow({
   label,
@@ -148,6 +149,15 @@ export default function Profile() {
     queryFn: async () => {
       const response = await api.get<ApiResponse<{ profile: UserProfile }>>('/api/profile/me');
       return response.data.data?.profile;
+    }
+  });
+
+  // Fetch préstamos
+  const { data: loansData } = useQuery({
+    queryKey: ['myLoans'],
+    queryFn: async () => {
+      const res = await api.get<{ success: boolean; data: { active: LibraryLoan[]; history: LibraryLoan[] } }>('/api/library-loans/me');
+      return res.data.data;
     }
   });
 
@@ -1038,7 +1048,55 @@ export default function Profile() {
               </CardContent>
             </Card>
 
-            {/* Block 4: Logros y Badges */}
+            {/* Block 4: Préstamos de ludoteca */}
+            {loansData && (loansData.active.length > 0 || loansData.history.length > 0) && (
+              <Card>
+                <CardHeader><h2 className="text-xl font-bold text-[var(--color-text)]">Préstamos de ludoteca</h2></CardHeader>
+                <CardContent className="space-y-4">
+                  {loansData.active.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-2">Activos</h3>
+                      <ul className="space-y-2">
+                        {loansData.active.map(loan => {
+                          const overdue = loan.status === 'ACTIVE' && !!loan.dueAt && new Date(loan.dueAt) < new Date();
+                          return (
+                            <li key={loan.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-[var(--color-cardBorder)]">
+                              <div className="min-w-0">
+                                <p className="font-medium text-[var(--color-text)] truncate">{loan.libraryItem.name}</p>
+                                <p className="text-xs text-[var(--color-textSecondary)]">
+                                  {loan.status === 'REQUESTED' ? 'Pendiente de entrega' : `Vence: ${loan.dueAt ? new Date(loan.dueAt).toLocaleDateString('es-ES') : '—'}`}
+                                  {loan.renewalCount > 0 && ` · ${loan.renewalCount} renovación/es`}
+                                </p>
+                              </div>
+                              <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap ${loan.status === 'REQUESTED' ? 'bg-yellow-100 text-yellow-800' : overdue ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                                {loan.status === 'REQUESTED' ? 'Pendiente' : overdue ? 'Vencido' : 'En préstamo'}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                  {loansData.history.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-2">Historial</h3>
+                      <ul className="space-y-1">
+                        {loansData.history.map(loan => (
+                          <li key={loan.id} className="flex items-center justify-between gap-3 py-1.5 border-b border-[var(--color-cardBorder)] last:border-0">
+                            <p className="text-sm text-[var(--color-text)] truncate">{loan.libraryItem.name}</p>
+                            <p className="text-xs text-[var(--color-textSecondary)] whitespace-nowrap">
+                              {loan.returnedAt ? new Date(loan.returnedAt).toLocaleDateString('es-ES') : loan.status === 'CANCELLED' ? 'Cancelado' : '—'}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Block 5: Logros y Badges */}
             <Card>
               <CardContent>
                 {isLoadingBadges ? (

@@ -4,9 +4,13 @@ import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
 import { useToast } from '../contexts/ToastContext';
 import GameDetailModal from '../components/games/GameDetailModal';
+import { api } from '../api/axios';
+import { useAuth } from '../contexts/AuthContext';
 
 type GameType = 'WARGAME' | 'MESA' | 'CARTAS' | 'MINI' | 'ROL';
 type GameCondition = 'NUEVO' | 'BUENO' | 'REGULAR' | 'MALO';
+
+type LibraryItemLoanStatus = 'AVAILABLE' | 'REQUESTED' | 'ON_LOAN' | 'BLOCKED' | 'MAINTENANCE';
 
 interface LibraryItem {
   id: string;
@@ -22,6 +26,8 @@ interface LibraryItem {
   createdAt: string;
   updatedAt: string;
   gameThumbnail?: string | null;
+  loanStatus?: LibraryItemLoanStatus;
+  isLoanable?: boolean;
 }
 
 interface LibraryStats {
@@ -74,6 +80,22 @@ const conditionColors: Record<GameCondition, string> = {
   MALO: 'bg-red-100 text-red-800'
 };
 
+const loanStatusLabels: Record<LibraryItemLoanStatus, string> = {
+  AVAILABLE: 'Disponible',
+  REQUESTED: 'Solicitado',
+  ON_LOAN: 'Prestado',
+  BLOCKED: 'No disponible',
+  MAINTENANCE: 'En mantenimiento'
+};
+
+const loanStatusColors: Record<LibraryItemLoanStatus, string> = {
+  AVAILABLE: 'bg-green-100 text-green-800',
+  REQUESTED: 'bg-yellow-100 text-yellow-800',
+  ON_LOAN: 'bg-red-100 text-red-800',
+  BLOCKED: 'bg-gray-100 text-gray-600',
+  MAINTENANCE: 'bg-orange-100 text-orange-800'
+};
+
 // Helper para mostrar el nombre del propietario a partir del mapa email→displayName
 const getOwnerDisplayName = (ownerEmail: string | null, ownerMap?: Map<string, string>): string => {
   if (!ownerEmail || ownerEmail === 'club' || ownerEmail === 'clubdreadnought.vlc@gmail.com') {
@@ -84,6 +106,9 @@ const getOwnerDisplayName = (ownerEmail: string | null, ownerMap?: Map<string, s
 
 export default function Ludoteca() {
   const { error: showError } = useToast();
+  const { success: showSuccess } = useToast();
+  const { user } = useAuth();
+  const [loanActionLoading, setLoanActionLoading] = useState<string | null>(null);
   const [items, setItems] = useState<LibraryItem[]>([]);
   const [stats, setStats] = useState<LibraryStats | null>(null);
   const [filters, setFilters] = useState<Filters | null>(null);
@@ -242,6 +267,35 @@ export default function Ludoteca() {
     setSelectedCondition('all');
     setSelectedOwner('all');
     setCurrentPage(1);
+  };
+
+  const handleRequestLoan = async (item: LibraryItem) => {
+    if (!user) return;
+    setLoanActionLoading(item.id);
+    try {
+      await api.post('/api/library-loans', { libraryItemId: item.id });
+      showSuccess('Solicitud de préstamo enviada');
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, loanStatus: 'REQUESTED' } : i));
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      showError(msg ?? 'Error al solicitar el préstamo');
+    } finally {
+      setLoanActionLoading(null);
+    }
+  };
+
+  const handleJoinQueue = async (item: LibraryItem) => {
+    if (!user) return;
+    setLoanActionLoading(item.id);
+    try {
+      await api.post('/api/library-loans/queue', { libraryItemId: item.id });
+      showSuccess('Apuntado a la lista de espera');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      showError(msg ?? 'Error al apuntarse a la lista');
+    } finally {
+      setLoanActionLoading(null);
+    }
   };
 
   return (
@@ -594,6 +648,32 @@ export default function Ludoteca() {
                     {item.notes && (
                       <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
                         <strong>Nota:</strong> {item.notes}
+                      </div>
+                    )}
+
+                    {item.loanStatus && item.isLoanable && (
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${loanStatusColors[item.loanStatus]}`}>
+                          {loanStatusLabels[item.loanStatus]}
+                        </span>
+                        {user && item.loanStatus === 'AVAILABLE' && (
+                          <button
+                            onClick={() => handleRequestLoan(item)}
+                            disabled={loanActionLoading === item.id}
+                            className="text-xs px-3 py-1 rounded-full bg-[var(--color-primary)] text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+                          >
+                            {loanActionLoading === item.id ? 'Solicitando...' : 'Solicitar préstamo'}
+                          </button>
+                        )}
+                        {user && (item.loanStatus === 'ON_LOAN' || item.loanStatus === 'REQUESTED') && (
+                          <button
+                            onClick={() => handleJoinQueue(item)}
+                            disabled={loanActionLoading === item.id}
+                            className="text-xs px-3 py-1 rounded-full border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white disabled:opacity-50 transition-colors"
+                          >
+                            {loanActionLoading === item.id ? '...' : 'Apuntarme a la lista'}
+                          </button>
+                        )}
                       </div>
                     )}
 

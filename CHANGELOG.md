@@ -4,6 +4,37 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-20 (sesión 2)
+
+### feat: sistema de préstamos de ludoteca (MVP completo)
+
+Sistema end-to-end para gestionar el préstamo de juegos de la ludoteca del club, con autoservicio para socios, lista de espera, renovaciones y panel de administración.
+
+**Modelo de datos (`server/prisma/schema.prisma`):**
+- Nuevos enums: `LibraryItemLoanStatus` (AVAILABLE / REQUESTED / ON_LOAN / BLOCKED / MAINTENANCE), `LibraryLoanStatus` (REQUESTED / ACTIVE / RETURNED / CANCELLED), `LibraryQueueStatus` (WAITING / NOTIFIED / FULFILLED / CANCELLED)
+- Nuevos modelos: `LibraryLoan` (registro transaccional de préstamo con auditoría de entrega/devolución) y `LibraryQueue` (lista de espera por ítem, con `@@unique([libraryItemId, userId])`)
+- `LibraryItem` ampliado con `loanStatus` e `isLoanable`; los 135 ítems del club inicializados con `isLoanable = true` mediante script
+- `ClubConfig` ampliado con `loanEnabled`, `loanDurationDays` (14d) y `loanQueueNotifyHours` (48h) para configuración desde el panel de admin
+- 5 nuevos `NotificationType`: `LIBRARY_LOAN_REQUESTED`, `LIBRARY_LOAN_CONFIRMED`, `LIBRARY_LOAN_RETURNED`, `LIBRARY_LOAN_RENEWED`, `LIBRARY_QUEUE_AVAILABLE`
+
+**Backend:**
+- `server/src/config/libraryLoans.ts`: helper `getLoanConfig()` que lee `loanDurationDays`, `loanQueueNotifyHours` y `loanEnabled` desde `ClubConfig` (con fallback a constante `LOAN_DURATION_DAYS = 14`)
+- `server/src/controllers/libraryLoansController.ts`: 10 endpoints — búsqueda por `internalId`, solicitud de préstamo, confirmación de entrega, renovación, devolución, cancelación, préstamos activos, préstamos propios, gestión de cola. Todas las operaciones que modifican `LibraryItem.loanStatus` usan `prisma.$transaction`. `loanEnabled = false` devuelve 503 en solicitudes y entradas a cola. Al devolver un ítem con cola activa, notifica automáticamente al siguiente en espera.
+- `server/src/routes/libraryLoansRoutes.ts`: rutas bajo `/api/library-loans` con autenticación y `requireAdmin` donde corresponde
+- `server/src/index.ts`: registro de `libraryLoansRoutes`
+
+**Frontend:**
+- `client/src/types/libraryLoans.ts`: tipos `LibraryLoan`, `LibraryItemLoanStatus`, `LibraryLoanStatus`, `LibraryQueueStatus`, `ItemSearchResult`, `QueueEntry`
+- `client/src/types/config.ts`: añadidos `loanEnabled`, `loanDurationDays`, `loanQueueNotifyHours` a `ClubConfig` y `ClubConfigUpdate`
+- `client/src/pages/Ludoteca.tsx`: badge de disponibilidad (Disponible / Solicitado / Prestado) en cada ítem prestable; botones "Solicitar préstamo" y "Apuntarme a la lista" según estado; actualización optimista del estado local tras la acción
+- `client/src/pages/admin/LibraryLoans.tsx` (nuevo): panel admin con dos pestañas — "Buscar por ID" (búsqueda operativa por `internalId`, contexto completo del ítem, confirmación de entrega, formulario de devolución con condición/notas/estado final, vista de cola) y "Préstamos activos" (tabla de activos con indicador de vencidos y lista de pendientes de entrega)
+- `client/src/pages/Profile.tsx`: sección "Préstamos de ludoteca" con préstamos activos (con indicador de vencido) e historial de los últimos 20
+- `client/src/pages/admin/ClubConfig.tsx`: nueva sección "Préstamos de Ludoteca" con los tres parámetros configurables siguiendo el patrón visual existente
+- `client/src/App.tsx`: ruta `/admin/prestamos` con `AdminRoute`
+- `client/src/components/layout/Header.tsx`: enlace "Préstamos de ludoteca" en menú admin desktop y móvil
+
+---
+
 ## 2026-04-20 (sesión 1)
 
 ### fix: aviso de categoría en CreatePartida + enlace Calendario vuelve a vista mes
