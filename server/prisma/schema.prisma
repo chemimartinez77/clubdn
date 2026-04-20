@@ -623,6 +623,10 @@ model Game {
   mechanics         String[] // Hand Management, Set Collection, etc.
   families          String[] // Components, Themes, etc.
 
+  // Expansión
+  isExpansion       Boolean  @default(false) // true si es boardgameexpansion en BGG
+  parentBggId       String?                  // BGG ID del juego base (si es expansión)
+
   // Categoría para badges (asignada manualmente)
   badgeCategory     BadgeCategory?
 
@@ -690,7 +694,7 @@ model ClubConfig {
   pageViewCollectionStartedAt DateTime? // Fecha desde la que se recogen datos de navegación
 
   // Configuración de préstamos de ludoteca
-  loanEnabled          Boolean @default(true)  // Activar/desactivar el sistema de préstamos
+  loanEnabled          Boolean @default(false) // Activar/desactivar el sistema de préstamos
   loanDurationDays     Int     @default(14)    // Duración por defecto de un préstamo en días
   loanQueueNotifyHours Int     @default(48)    // Horas que tiene el siguiente en cola para reclamar el ítem
 

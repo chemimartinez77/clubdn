@@ -33,6 +33,32 @@ Sistema end-to-end para gestionar el préstamo de juegos de la ludoteca del club
 - `client/src/App.tsx`: ruta `/admin/prestamos` con `AdminRoute`
 - `client/src/components/layout/Header.tsx`: enlace "Préstamos de ludoteca" en menú admin desktop y móvil
 
+### fix: correcciones y mejoras al sistema de préstamos + datos de expansiones BGG
+
+**Bug: el socio podía ponerse en lista de espera teniendo ya un préstamo activo:**
+- `server/src/controllers/libraryLoansController.ts`: `joinQueue` ahora comprueba si el usuario ya tiene un `LibraryLoan` en estado `REQUESTED` o `ACTIVE` para ese ítem antes de permitir entrar en cola; devuelve 400 si existe.
+- `client/src/pages/Ludoteca.tsx`: al cargar la página se obtienen los préstamos activos del usuario (`/api/library-loans/me`) y se ocultan los botones de "Solicitar préstamo" y "Apuntarme a la lista" para los ítems que ya tiene. También se actualiza el set local tras una solicitud exitosa.
+
+**Toggle `loanEnabled` en config pública:**
+- `server/src/controllers/configController.ts`: `getPublicConfig` incluye ahora `loanEnabled` en la respuesta (sin autenticación), para que la ludoteca pública pueda ocultarlos sin llamadas adicionales.
+- `server/prisma/schema.prisma`: `loanEnabled` cambiado a `@default(false)` para que los nuevos despliegues arranquen con préstamos desactivados.
+- `server/src/config/libraryLoans.ts`: fallback de `getLoanConfig()` alineado a `false`.
+- `client/src/types/config.ts`: `loanEnabled` añadido a `PublicConfig`.
+- `client/src/pages/Ludoteca.tsx`: carga `loanEnabled` de `/api/config/public` al montar; condiciona ambos botones de préstamo/cola a `loanEnabled && ...`.
+
+**Datos de expansión en tabla `Game`:**
+- `server/prisma/schema.prisma`: nuevos campos `isExpansion Boolean @default(false)` y `parentBggId String?` en el modelo `Game`, para identificar si un juego es una expansión y conocer el BGG ID del juego base.
+- `server/src/scripts/sync-expansion-data.ts` (nuevo): script que consulta todos los juegos BGG de la tabla `Game` en lotes de 50 con 3 segundos de delay, llama a `https://boardgamegeek.com/xmlapi2/thing`, detecta expansiones por `item.$.type === 'boardgameexpansion'` y extrae el `parentBggId` del link con `inbound="true"`. ~4 minutos para los 4029 juegos actuales.
+
+**Archivos modificados:**
+- `server/src/controllers/libraryLoansController.ts`
+- `server/src/controllers/configController.ts`
+- `server/src/config/libraryLoans.ts`
+- `server/prisma/schema.prisma`
+- `client/src/pages/Ludoteca.tsx`
+- `client/src/types/config.ts`
+- `server/src/scripts/sync-expansion-data.ts` (nuevo)
+
 ---
 
 ## 2026-04-20 (sesión 1)

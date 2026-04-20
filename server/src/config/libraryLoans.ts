@@ -12,7 +12,7 @@ export async function getLoanConfig(): Promise<{
     select: { loanEnabled: true, loanDurationDays: true, loanQueueNotifyHours: true }
   });
   return {
-    loanEnabled: config?.loanEnabled ?? true,
+    loanEnabled: config?.loanEnabled ?? false,
     loanDurationDays: config?.loanDurationDays ?? LOAN_DURATION_DAYS,
     loanQueueNotifyHours: config?.loanQueueNotifyHours ?? 48,
   };

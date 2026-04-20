@@ -109,6 +109,8 @@ export default function Ludoteca() {
   const { success: showSuccess } = useToast();
   const { user } = useAuth();
   const [loanActionLoading, setLoanActionLoading] = useState<string | null>(null);
+  const [loanEnabled, setLoanEnabled] = useState(false);
+  const [myActiveItemIds, setMyActiveItemIds] = useState<Set<string>>(new Set());
   const [items, setItems] = useState<LibraryItem[]>([]);
   const [stats, setStats] = useState<LibraryStats | null>(null);
   const [filters, setFilters] = useState<Filters | null>(null);
@@ -246,11 +248,27 @@ export default function Ludoteca() {
     }
   }, [currentPage, itemsPerPage, debouncedSearchQuery, selectedType, selectedCondition, selectedOwner, showError, isMobile]);
 
+  // Cargar configuración pública (incluye loanEnabled)
+  useEffect(() => {
+    api.get('/api/config/public').then(res => {
+      setLoanEnabled(res.data.data?.loanEnabled ?? false);
+    }).catch(() => {});
+  }, []);
+
   // Cargar estadísticas y filtros
   useEffect(() => {
     loadStats();
     loadFilters();
   }, [loadStats, loadFilters]);
+
+  // Cargar préstamos activos del usuario para ocultar botones incorrectos
+  useEffect(() => {
+    if (!user) return;
+    api.get('/api/library-loans/me').then(res => {
+      const active: string[] = (res.data.data?.active ?? []).map((l: { libraryItem: { id: string } }) => l.libraryItem.id);
+      setMyActiveItemIds(new Set(active));
+    }).catch(() => {});
+  }, [user]);
 
   // Cargar items con filtros
   useEffect(() => {
@@ -276,6 +294,7 @@ export default function Ludoteca() {
       await api.post('/api/library-loans', { libraryItemId: item.id });
       showSuccess('Solicitud de préstamo enviada');
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, loanStatus: 'REQUESTED' } : i));
+      setMyActiveItemIds(prev => new Set(prev).add(item.id));
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       showError(msg ?? 'Error al solicitar el préstamo');
@@ -656,7 +675,7 @@ export default function Ludoteca() {
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${loanStatusColors[item.loanStatus]}`}>
                           {loanStatusLabels[item.loanStatus]}
                         </span>
-                        {user && item.loanStatus === 'AVAILABLE' && (
+                        {user && loanEnabled && item.loanStatus === 'AVAILABLE' && (
                           <button
                             onClick={() => handleRequestLoan(item)}
                             disabled={loanActionLoading === item.id}
@@ -665,7 +684,7 @@ export default function Ludoteca() {
                             {loanActionLoading === item.id ? 'Solicitando...' : 'Solicitar préstamo'}
                           </button>
                         )}
-                        {user && (item.loanStatus === 'ON_LOAN' || item.loanStatus === 'REQUESTED') && (
+                        {user && loanEnabled && (item.loanStatus === 'ON_LOAN' || item.loanStatus === 'REQUESTED') && !myActiveItemIds.has(item.id) && (
                           <button
                             onClick={() => handleJoinQueue(item)}
                             disabled={loanActionLoading === item.id}

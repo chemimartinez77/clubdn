@@ -91,13 +91,14 @@ export const getPublicConfig = async (_req: Request, res: Response) => {
   try {
     const config = await prisma.clubConfig.findUnique({
       where: { id: 'club_config' },
-      select: { loginParticleStyle: true }
+      select: { loginParticleStyle: true, loanEnabled: true }
     });
 
     return res.json({
       success: true,
       data: {
-        loginParticleStyle: config?.loginParticleStyle ?? 'white'
+        loginParticleStyle: config?.loginParticleStyle ?? 'white',
+        loanEnabled: config?.loanEnabled ?? false
       }
     });
   } catch (error) {

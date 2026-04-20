@@ -51,4 +51,5 @@ export interface ClubConfigUpdate {
 
 export interface PublicConfig {
   loginParticleStyle: LoginParticleStyle;
+  loanEnabled: boolean;
 }

@@ -437,6 +437,11 @@ export const joinQueue = async (req: Request, res: Response): Promise<void> => {
     if (!item.isLoanable) { res.status(400).json({ success: false, message: 'Este ítem no está disponible para préstamo' }); return; }
     if (item.loanStatus === 'AVAILABLE') { res.status(400).json({ success: false, message: 'El ítem está disponible: solicita el préstamo directamente' }); return; }
 
+    const activeLoan = await prisma.libraryLoan.findFirst({
+      where: { libraryItemId, userId, status: { in: ['REQUESTED', 'ACTIVE'] } }
+    });
+    if (activeLoan) { res.status(400).json({ success: false, message: 'Ya tienes un préstamo activo o pendiente de este juego' }); return; }
+
     // @@unique garantiza que no puede haber duplicado activo, pero el estado CANCELLED permite re-entrar
     const existing = await prisma.libraryQueue.findFirst({
       where: { libraryItemId, userId, status: { in: ['WAITING', 'NOTIFIED'] } }
