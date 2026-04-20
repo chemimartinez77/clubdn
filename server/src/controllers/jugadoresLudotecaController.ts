@@ -227,7 +227,8 @@ export const searchGames = async (req: Request, res: Response) => {
 export const getPlayerGames = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
-    const { search = '', page = '1', pageSize = '48' } = req.query as Record<string, string>;
+    const { search = '', page = '1', pageSize = '48', includeExpansions = 'false' } = req.query as Record<string, string>;
+    const showExpansions = includeExpansions === 'true';
 
     const player = await prisma.user.findUnique({
       where: { id: userId },
@@ -270,6 +271,7 @@ export const getPlayerGames = async (req: Request, res: Response) => {
       userId,
       ...activeOwn,
       ...(gameIdFilter && { gameId: gameIdFilter }),
+      ...(!showExpansions && { game: { isExpansion: false } }),
     };
 
     const [games, total] = await Promise.all([
@@ -280,11 +282,28 @@ export const getPlayerGames = async (req: Request, res: Response) => {
         take: safePageSize,
         select: {
           gameId: true,
-          game: { select: { id: true, name: true, yearPublished: true, thumbnail: true } },
+          game: { select: { id: true, name: true, yearPublished: true, thumbnail: true, isExpansion: true, parentBggId: true } },
         },
       }),
       prisma.userGame.count({ where }),
     ]);
+
+    // Para expansiones: obtener el nombre del juego base
+    const parentBggIds = games
+      .filter(g => g.game.isExpansion && g.game.parentBggId)
+      .map(g => g.game.parentBggId!);
+    const parentGames = parentBggIds.length > 0
+      ? await prisma.game.findMany({ where: { id: { in: parentBggIds } }, select: { id: true, name: true } })
+      : [];
+    const parentGameMap = new Map(parentGames.map(g => [g.id, g.name]));
+
+    const gamesWithExpansion = games.map(g => ({
+      ...g,
+      game: {
+        ...g.game,
+        parentGameName: g.game.parentBggId ? (parentGameMap.get(g.game.parentBggId) ?? null) : null,
+      },
+    }));
 
     return res.json({
       success: true,
@@ -296,7 +315,7 @@ export const getPlayerGames = async (req: Request, res: Response) => {
           gameCount: player._count.userGames,
           ludotecaPublica: player.profile?.ludotecaPublica ?? true,
         },
-        games,
+        games: gamesWithExpansion,
         pagination: {
           currentPage: safePage,
           pageSize: safePageSize,

@@ -28,10 +28,14 @@ interface LibraryItem {
   gameThumbnail?: string | null;
   loanStatus?: LibraryItemLoanStatus;
   isLoanable?: boolean;
+  isExpansion?: boolean;
+  parentBggId?: string | null;
+  parentGameName?: string | null;
 }
 
 interface LibraryStats {
   total: number;
+  expansions: number;
   clubItems: number;
   memberItems: number;
   byGameType: { type: GameType; count: number }[];
@@ -110,6 +114,7 @@ export default function Ludoteca() {
   const { user } = useAuth();
   const [loanActionLoading, setLoanActionLoading] = useState<string | null>(null);
   const [loanEnabled, setLoanEnabled] = useState(false);
+  const [showExpansions, setShowExpansions] = useState(false);
   const [myActiveItemIds, setMyActiveItemIds] = useState<Set<string>>(new Set());
   const [items, setItems] = useState<LibraryItem[]>([]);
   const [stats, setStats] = useState<LibraryStats | null>(null);
@@ -218,6 +223,7 @@ export default function Ludoteca() {
       if (selectedType !== 'all') params.append('gameType', selectedType);
       if (selectedCondition !== 'all') params.append('condition', selectedCondition);
       if (selectedOwner !== 'all') params.append('ownerEmail', selectedOwner);
+      if (showExpansions) params.append('includeExpansions', 'true');
 
       const response = await fetch(`${API_URL}/api/ludoteca?${params}`, {
         headers: {
@@ -246,7 +252,7 @@ export default function Ludoteca() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, debouncedSearchQuery, selectedType, selectedCondition, selectedOwner, showError, isMobile]);
+  }, [currentPage, itemsPerPage, debouncedSearchQuery, selectedType, selectedCondition, selectedOwner, showExpansions, showError, isMobile]);
 
   // Cargar configuración pública (incluye loanEnabled)
   useEffect(() => {
@@ -316,6 +322,32 @@ export default function Ludoteca() {
       setLoanActionLoading(null);
     }
   };
+
+  // Agrupación: expansiones aparecen justo después de su juego base
+  const groupedItems = useMemo(() => {
+    if (!showExpansions) return items;
+    const baseItemBggIds = new Set(
+      items.filter(i => !i.isExpansion && i.bggId).map(i => i.bggId!)
+    );
+    const expansionsByParent = new Map<string, LibraryItem[]>();
+    items.forEach(item => {
+      if (item.isExpansion && item.parentBggId && baseItemBggIds.has(item.parentBggId)) {
+        const list = expansionsByParent.get(item.parentBggId) ?? [];
+        list.push(item);
+        expansionsByParent.set(item.parentBggId, list);
+      }
+    });
+    const result: LibraryItem[] = [];
+    items.forEach(item => {
+      if (item.isExpansion && item.parentBggId && baseItemBggIds.has(item.parentBggId)) return;
+      result.push(item);
+      if (!item.isExpansion && item.bggId) {
+        const exps = expansionsByParent.get(item.bggId);
+        if (exps) result.push(...exps);
+      }
+    });
+    return result;
+  }, [items, showExpansions]);
 
   return (
     <Layout>
@@ -506,6 +538,19 @@ export default function Ludoteca() {
                 </select>
               </div>
 
+              {/* Toggle expansiones */}
+              <div className="flex items-center gap-2 pt-1">
+                <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-[var(--color-textSecondary)]">
+                  <input
+                    type="checkbox"
+                    checked={showExpansions}
+                    onChange={(e) => { setShowExpansions(e.target.checked); setCurrentPage(1); }}
+                    className="w-4 h-4 accent-[var(--color-primary)]"
+                  />
+                  Incluir expansiones
+                </label>
+              </div>
+
               {/* Selector de items por página */}
               <div className="flex items-center justify-between pt-4 border-t border-[var(--color-cardBorder)]">
                 <div className="flex items-center gap-2">
@@ -626,9 +671,12 @@ export default function Ludoteca() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {items.map(item => (
-                <Card key={item.id} className="hover:shadow-lg transition-shadow">
+              {groupedItems.map(item => (
+                <Card key={item.id} className={`hover:shadow-lg transition-shadow ${item.isExpansion ? 'border-l-4 border-l-amber-500' : ''}`}>
                   <CardContent className="p-6">
+                    {item.isExpansion && item.parentGameName && (
+                      <p className="text-xs text-amber-600 font-medium mb-2">Expansión para {item.parentGameName}</p>
+                    )}
                     <div className="flex gap-4 mb-3">
                       {/* Miniatura del juego */}
                       <div className="flex-shrink-0">
@@ -652,9 +700,14 @@ export default function Ludoteca() {
                             <p className="text-xs text-[var(--color-textSecondary)]">{item.internalId}</p>
                             <p className="text-xs text-[var(--color-textSecondary)]">{gameTypeLabels[item.gameType]}</p>
                           </div>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${conditionColors[item.condition]}`}>
-                            {conditionLabels[item.condition]}
-                          </span>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            {item.isExpansion && (
+                              <span className="px-2 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-700">EXP</span>
+                            )}
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${conditionColors[item.condition]}`}>
+                              {conditionLabels[item.condition]}
+                            </span>
+                          </div>
                         </div>
                         <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2 line-clamp-2">{item.name}</h3>
                       </div>

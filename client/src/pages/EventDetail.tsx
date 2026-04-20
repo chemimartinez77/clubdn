@@ -85,7 +85,7 @@ export default function EventDetail() {
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const debouncedMemberSearch = useDebounce(memberSearchQuery, 350);
-  const [memberSearchResults, setMemberSearchResults] = useState<Array<{ id: string; name: string; nick: string | null; avatar: string | null; membershipType: string | null }>>([]);
+  const [memberSearchResults, setMemberSearchResults] = useState<Array<{ id: string; name: string; nick: string | null; avatar: string | null; membershipType: string | null; email: string | null }>>([]);
   const [memberSearchLoading, setMemberSearchLoading] = useState(false);
 
   // Estado dropdown opciones
@@ -2663,7 +2663,7 @@ export default function EventDetail() {
             type="text"
             value={memberSearchQuery}
             onChange={(e) => setMemberSearchQuery(e.target.value)}
-            placeholder="Escribe nombre, apellidos o nick..."
+            placeholder="Escribe nombre, apellidos, nick o email..."
             autoFocus
             className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
           />
@@ -2689,14 +2689,19 @@ export default function EventDetail() {
                       )}
                     </div>
                     <div>
-                      <span className="text-sm font-medium text-[var(--color-text)]">{member.name}</span>
-                      {member.nick && (
-                        <span className="ml-1 text-sm text-[var(--color-textSecondary)]">({member.nick})</span>
-                      )}
-                      {member.membershipType && (
-                        <span className="ml-2 text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
-                          {member.membershipType}
-                        </span>
+                      <div className="flex items-center flex-wrap gap-x-1">
+                        <span className="text-sm font-medium text-[var(--color-text)]">{member.name}</span>
+                        {member.nick && (
+                          <span className="text-sm text-[var(--color-textSecondary)]">({member.nick})</span>
+                        )}
+                        {member.membershipType && (
+                          <span className="text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
+                            {member.membershipType}
+                          </span>
+                        )}
+                      </div>
+                      {member.email && (
+                        <p className="text-xs text-[var(--color-textSecondary)] mt-0.5">Encontrado por email: {member.email}</p>
                       )}
                     </div>
                   </button>

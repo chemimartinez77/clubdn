@@ -18,9 +18,10 @@ import { parseStringPromise } from 'xml2js';
 import { prisma } from '../config/database';
 
 const BGG_API = 'https://boardgamegeek.com/xmlapi2';
-const BATCH_SIZE = 50;
+const BATCH_SIZE = 20;
 const DELAY_MS = 3000;
-const USER_AGENT = 'ClubDN Sync/1.0 (+https://clubdreadnought.org)';
+const USER_AGENT = process.env.BGG_USER_AGENT ?? 'ClubDN Sync/1.0 (+https://clubdreadnought.org)';
+const BEARER_TOKEN = process.env.BGG_API_BEARER_TOKEN?.trim();
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -39,10 +40,10 @@ interface ExpansionInfo {
 
 async function fetchBatch(ids: string[]): Promise<ExpansionInfo[]> {
   const url = `${BGG_API}/thing?id=${ids.join(',')}&type=boardgame,boardgameexpansion`;
-  const response = await axios.get(url, {
-    headers: { 'User-Agent': USER_AGENT },
-    timeout: 30000,
-  });
+  const headers: Record<string, string> = { 'User-Agent': USER_AGENT };
+  if (BEARER_TOKEN) headers.Authorization = `Bearer ${BEARER_TOKEN}`;
+
+  const response = await axios.get(url, { headers, timeout: 30000 });
 
   const parsed = await parseStringPromise(response.data);
   const rawItems = normalizeItems(parsed?.items?.item);
@@ -99,9 +100,10 @@ async function main() {
 
       processed += batch.length;
       console.log(`[${batchIndex}/${batches.length}] ${processed}/${ids.length} procesados — ${expansions} expansiones detectadas`);
-    } catch (err) {
+    } catch (err: any) {
       errors++;
-      console.error(`[${batchIndex}/${batches.length}] Error en lote:`, (err as Error).message);
+      const detail = err?.response?.data ? String(err.response.data).substring(0, 200) : '';
+      console.error(`[${batchIndex}/${batches.length}] Error en lote:`, (err as Error).message, detail);
     }
 
     if (batchIndex < batches.length) {

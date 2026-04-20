@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
@@ -18,6 +18,9 @@ interface GameEntry {
     name: string;
     yearPublished: number | null;
     thumbnail: string | null;
+    isExpansion: boolean;
+    parentBggId: string | null;
+    parentGameName: string | null;
   };
 }
 
@@ -73,6 +76,7 @@ export default function JugadorDetalle() {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [showExpansions, setShowExpansions] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -83,11 +87,11 @@ export default function JugadorDetalle() {
   }, [searchInput]);
 
   const { data, isLoading, isError } = useQuery<PlayerGamesResponse>({
-    queryKey: ['jugadorGames', userId, search, page],
+    queryKey: ['jugadorGames', userId, search, page, showExpansions],
     queryFn: () =>
       api
         .get(`/api/jugadores-ludoteca/${userId}/games`, {
-          params: { search, page, pageSize: 48 },
+          params: { search, page, pageSize: 48, includeExpansions: showExpansions },
         })
         .then((r) => r.data.data),
     enabled: !!userId,
@@ -97,6 +101,29 @@ export default function JugadorDetalle() {
   const player = data?.player;
   const games = data?.games ?? [];
   const pagination = data?.pagination;
+
+  const groupedGames = useMemo(() => {
+    if (!showExpansions) return games;
+    const baseGameBggIds = new Set(games.filter(g => !g.game.isExpansion && g.game.id).map(g => g.game.id));
+    const expansionsByParent = new Map<string, GameEntry[]>();
+    games.forEach(entry => {
+      if (entry.game.isExpansion && entry.game.parentBggId && baseGameBggIds.has(entry.game.parentBggId)) {
+        const list = expansionsByParent.get(entry.game.parentBggId) ?? [];
+        list.push(entry);
+        expansionsByParent.set(entry.game.parentBggId, list);
+      }
+    });
+    const result: GameEntry[] = [];
+    games.forEach(entry => {
+      if (entry.game.isExpansion && entry.game.parentBggId && baseGameBggIds.has(entry.game.parentBggId)) return;
+      result.push(entry);
+      if (!entry.game.isExpansion) {
+        const exps = expansionsByParent.get(entry.game.id);
+        if (exps) result.push(...exps);
+      }
+    });
+    return result;
+  }, [games, showExpansions]);
 
   return (
     <Layout>
@@ -140,7 +167,7 @@ export default function JugadorDetalle() {
         </div>
 
         {/* Buscador */}
-        <div className="mb-6">
+        <div className="flex flex-wrap items-center gap-4 mb-6">
           <input
             type="text"
             value={searchInput}
@@ -148,6 +175,15 @@ export default function JugadorDetalle() {
             placeholder="Buscar en su colección..."
             className="w-full md:w-80 px-4 py-2 rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] text-[var(--color-text)] placeholder-[var(--color-textSecondary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
           />
+          <label className="flex items-center gap-2 text-sm text-[var(--color-textSecondary)] cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showExpansions}
+              onChange={(e) => { setShowExpansions(e.target.checked); setPage(1); }}
+              className="w-4 h-4 rounded accent-[var(--color-primary)]"
+            />
+            Incluir expansiones
+          </label>
         </div>
 
         {/* Estado de carga / error */}
@@ -174,10 +210,10 @@ export default function JugadorDetalle() {
               <>
                 <Paginador pagination={pagination} page={page} setPage={setPage} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6">
-                  {games.map(({ gameId, game }) => (
+                  {groupedGames.map(({ gameId, game }) => (
                     <div
                       key={gameId}
-                      className="flex overflow-hidden rounded-xl border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)]"
+                      className={`flex overflow-hidden rounded-xl border bg-[var(--color-cardBackground)] ${game.isExpansion ? 'border-l-4 border-l-amber-500 border-[var(--color-cardBorder)]' : 'border-[var(--color-cardBorder)]'}`}
                     >
                       {game.thumbnail ? (
                         <img
@@ -191,7 +227,15 @@ export default function JugadorDetalle() {
                         </div>
                       )}
                       <div className="min-w-0 flex flex-col justify-center px-4">
-                        <p className="font-semibold text-[var(--color-text)] leading-tight line-clamp-3">{game.name}</p>
+                        <div className="flex items-start gap-2">
+                          <p className="font-semibold text-[var(--color-text)] leading-tight line-clamp-3">{game.name}</p>
+                          {game.isExpansion && (
+                            <span className="flex-shrink-0 text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-400 rounded px-1 py-0.5 mt-0.5">EXP</span>
+                          )}
+                        </div>
+                        {game.isExpansion && game.parentGameName && (
+                          <p className="text-xs text-amber-600 mt-1">Expansión para {game.parentGameName}</p>
+                        )}
                         {game.yearPublished && (
                           <p className="text-xs text-[var(--color-textSecondary)] mt-1">{game.yearPublished}</p>
                         )}

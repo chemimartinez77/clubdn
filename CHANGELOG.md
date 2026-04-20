@@ -4,6 +4,46 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-21 (sesión 1)
+
+### feat: UI de expansiones en ludoteca del club y ludotecas de jugadores
+
+Se implementa la distinción visual entre juegos base y expansiones en los dos contextos donde se muestran colecciones. Las expansiones están ocultas por defecto y se activan mediante un toggle.
+
+**Backend:**
+- `server/src/controllers/ludotecaController.ts`: nuevo parámetro query `includeExpansions` (default `false`). Cuando está desactivado, filtra ítems con `game.isExpansion = true`. Cuando está activado, añade `isExpansion`, `parentBggId` y `parentGameName` (nombre del juego base, obtenido con un segundo query) a cada ítem de la respuesta. `getLibraryStats` ahora incluye el campo `expansions` (count de ítems con `game.isExpansion = true`).
+- `server/src/controllers/jugadoresLudotecaController.ts`: mismo parámetro `includeExpansions` en `getPlayerGames`. Filtro con `{ game: { isExpansion: false } }` cuando está desactivado. Devuelve `isExpansion`, `parentBggId` y `parentGameName` por cada juego.
+
+**Frontend — Ludoteca del club (`client/src/pages/Ludoteca.tsx`):**
+- Interfaces `LibraryItem` y `LibraryStats` ampliadas con los nuevos campos.
+- Estado `showExpansions` (default `false`), incluido en los parámetros de la petición y en las dependencias del `useEffect`.
+- Toggle "Incluir expansiones" en la barra lateral de filtros.
+- `groupedItems` (useMemo): las expansiones cuyo juego base está en la misma página aparecen inmediatamente debajo de él; las que no tienen su base en la página se renderizan igualmente con la etiqueta.
+- Tarjeta de expansión: borde izquierdo ámbar (`border-l-4 border-l-amber-500`), texto "Expansión para [nombre]" en ámbar encima del título, badge **EXP** naranja junto al badge de condición.
+
+**Frontend — Ludoteca de jugador (`client/src/pages/JugadorDetalle.tsx`):**
+- `useMemo` importado. Interfaz `GameEntry.game` ampliada con `isExpansion`, `parentBggId`, `parentGameName`.
+- Estado `showExpansions`, incluido en la `queryKey` y en el parámetro `includeExpansions` de la llamada a la API.
+- Toggle "Incluir expansiones" en la barra de búsqueda.
+- `groupedGames` useMemo con la misma lógica de agrupación.
+- Tarjeta de expansión: borde ámbar, badge **EXP**, texto "Expansión para [nombre]".
+
+### fix: búsqueda de miembros por email en "Apuntar miembro" de eventos
+
+Al buscar un miembro en el modal de añadir a partida, si el único campo que coincide con el término de búsqueda es el email (no el nombre ni el nick), el resultado aparecía sin explicación. Ahora:
+- `server/src/controllers/eventController.ts`: `searchMembersForEvent` pasa a `includeEmail: true` y devuelve el campo `email` en la respuesta, pero solo cuando el nombre y el nick no contienen el término buscado (si el nombre ya coincide, `email: null` para no añadir ruido).
+- `client/src/pages/EventDetail.tsx`: placeholder actualizado a "nombre, apellidos, nick o email". En los resultados, cuando el campo `email` viene relleno se muestra "Encontrado por email: xxx@dominio.com" bajo el nombre para que quede claro el motivo del resultado.
+
+**Archivos modificados:**
+- `server/src/controllers/ludotecaController.ts`
+- `server/src/controllers/jugadoresLudotecaController.ts`
+- `server/src/controllers/eventController.ts`
+- `client/src/pages/Ludoteca.tsx`
+- `client/src/pages/JugadorDetalle.tsx`
+- `client/src/pages/EventDetail.tsx`
+
+---
+
 ## 2026-04-20 (sesión 2)
 
 ### feat: sistema de préstamos de ludoteca (MVP completo)

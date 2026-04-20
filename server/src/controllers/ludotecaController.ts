@@ -17,8 +17,11 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
       page = '1',
       limit = '50',
       sortBy = 'name',
-      sortOrder = 'asc'
+      sortOrder = 'asc',
+      includeExpansions = 'false'
     } = req.query;
+
+    const showExpansions = includeExpansions === 'true';
 
     // Construir filtros
     const where: any = {};
@@ -60,6 +63,12 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
       }
     }
 
+    // Filtrar expansiones si no se solicitan explícitamente
+    if (!showExpansions) {
+      const noExpansion = { OR: [{ bggId: null }, { game: { isExpansion: false } }] };
+      where.AND = where.AND ? [...where.AND, noExpansion] : [noExpansion];
+    }
+
     // Paginación
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
@@ -79,15 +88,30 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
         where,
         orderBy,
         skip,
-        take: limitNum
+        take: limitNum,
+        include: { game: { select: { isExpansion: true, parentBggId: true } } }
       }),
       prisma.libraryItem.count({ where })
     ]);
+
+    // Para expansiones: obtener el nombre del juego base
+    const parentBggIds = items
+      .filter(i => i.game?.isExpansion && i.game?.parentBggId)
+      .map(i => i.game!.parentBggId!);
+    const parentGames = parentBggIds.length > 0
+      ? await prisma.game.findMany({ where: { id: { in: parentBggIds } }, select: { id: true, name: true } })
+      : [];
+    const parentGameMap = new Map(parentGames.map(g => [g.id, g.name]));
 
     // Para cada item ROL sin thumbnail cacheado, consultar RPGGeek y guardarlo.
     // Para el resto, el thumbnail ya viene en el propio item (campo de BD).
     const itemsWithThumbnails = await Promise.all(
       items.map(async (item) => {
+        const { game, ...itemWithoutGame } = item;
+        const isExpansion = game?.isExpansion ?? false;
+        const parentBggId = game?.parentBggId ?? null;
+        const parentGameName = parentBggId ? (parentGameMap.get(parentBggId) ?? null) : null;
+
         if (item.gameType === 'ROL' && item.bggId && !item.thumbnail) {
           const rpggItem = await getRPGGeekItem(item.bggId);
           const thumbnail = rpggItem?.thumbnail || null;
@@ -99,7 +123,7 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
               data: { thumbnail, image, yearPublished }
             });
           }
-          return { ...item, gameThumbnail: thumbnail };
+          return { ...itemWithoutGame, gameThumbnail: thumbnail, isExpansion, parentBggId, parentGameName };
         }
         // Para juegos no-ROL sin thumbnail cacheado, buscar en tabla Game (sin llamada externa)
         if (item.gameType !== 'ROL' && item.bggId && !item.thumbnail) {
@@ -116,10 +140,10 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
                 yearPublished: gameData.yearPublished ?? undefined
               }
             });
-            return { ...item, gameThumbnail: gameData.thumbnail };
+            return { ...itemWithoutGame, gameThumbnail: gameData.thumbnail, isExpansion, parentBggId, parentGameName };
           }
         }
-        return { ...item, gameThumbnail: item.thumbnail || null };
+        return { ...itemWithoutGame, gameThumbnail: item.thumbnail || null, isExpansion, parentBggId, parentGameName };
       })
     );
 
@@ -184,6 +208,11 @@ export const getLibraryStats = async (_req: Request, res: Response): Promise<voi
     // Total de items
     const total = await prisma.libraryItem.count();
 
+    // Expansiones
+    const expansions = await prisma.libraryItem.count({
+      where: { game: { isExpansion: true } }
+    });
+
     // Por tipo de juego
     const byGameType = await prisma.libraryItem.groupBy({
       by: ['gameType'],
@@ -232,6 +261,7 @@ export const getLibraryStats = async (_req: Request, res: Response): Promise<voi
       success: true,
       data: {
         total,
+        expansions,
         clubItems,
         memberItems,
         byGameType: byGameType.map(item => ({

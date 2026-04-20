@@ -1897,7 +1897,7 @@ export const searchMembersForEvent = async (req: Request, res: Response): Promis
         Prisma.sql`up."allowEventInvitations" = true`,
       ],
       includeNick: true,
-      includeEmail: false,
+      includeEmail: true,
       limit: 50,
     });
 
@@ -1908,6 +1908,7 @@ export const searchMembersForEvent = async (req: Request, res: Response): Promis
       select: {
         id: true,
         name: true,
+        email: true,
         membership: { select: { type: true } },
         profile: { select: { avatar: true, nick: true } }
       },
@@ -1915,16 +1916,21 @@ export const searchMembersForEvent = async (req: Request, res: Response): Promis
       take: 10
     });
 
-    // Filtrar por tildes en JS: incluir si nombre o nick normalizados contienen el término normalizado
+    const normalizedTerm = term.toLowerCase();
     res.status(200).json({
       success: true,
-      data: users.map(u => ({
-        id: u.id,
-        name: u.name,
-        nick: u.profile?.nick ?? null,
-        avatar: u.profile?.avatar ?? null,
-        membershipType: u.membership?.type ?? null
-      }))
+      data: users.map(u => {
+        const nameMatches = u.name.toLowerCase().includes(normalizedTerm)
+          || (u.profile?.nick ?? '').toLowerCase().includes(normalizedTerm);
+        return {
+          id: u.id,
+          name: u.name,
+          nick: u.profile?.nick ?? null,
+          avatar: u.profile?.avatar ?? null,
+          membershipType: u.membership?.type ?? null,
+          email: nameMatches ? null : u.email,
+        };
+      })
     });
   } catch (error) {
     console.error('Error buscando miembros:', error);
