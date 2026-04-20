@@ -21,7 +21,7 @@ export const getPlayers = async (req: Request, res: Response) => {
       select: {
         id: true,
         name: true,
-        profile: { select: { nick: true, avatar: true } },
+        profile: { select: { nick: true, avatar: true, sharedLudotecaGroupId: true } },
         _count: { select: { userGames: { where: activeOwn } } },
       },
       orderBy: { name: 'asc' },
@@ -32,19 +32,6 @@ export const getPlayers = async (req: Request, res: Response) => {
         profile: { ludotecaPublica: false },
         userGames: { some: activeOwn },
       },
-    });
-
-    const totalGamesPublicPromise = prisma.userGame.count({
-      where: {
-        ...activeOwn,
-        user: { profile: { ludotecaPublica: true } },
-      },
-    });
-
-    const uniqueGamesPromise = prisma.userGame.findMany({
-      where: { ...activeOwn },
-      select: { gameId: true },
-      distinct: ['gameId'],
     });
 
     const publicCountPromise = prisma.user.count({
@@ -63,15 +50,48 @@ export const getPlayers = async (req: Request, res: Response) => {
       take: 10,
     });
 
-    const [publicUsers, privateCount, totalGamesPublic, uniqueGamesRows, publicCount, top10Group] =
+    // Juegos únicos (todos los usuarios, no solo públicos)
+    const uniqueGamesPromise = prisma.userGame.findMany({
+      where: { ...activeOwn, game: { isExpansion: false } },
+      select: { gameId: true },
+      distinct: ['gameId'],
+    });
+    const uniqueExpansionsPromise = prisma.userGame.findMany({
+      where: { ...activeOwn, game: { isExpansion: true } },
+      select: { gameId: true },
+      distinct: ['gameId'],
+    });
+
+    const [publicUsers, privateCount, publicCount, top10Group, uniqueGamesRows, uniqueExpansionRows] =
       await Promise.all([
         publicUsersPromise,
         privateCountPromise,
-        totalGamesPublicPromise,
-        uniqueGamesPromise,
         publicCountPromise,
         top10GroupPromise,
+        uniqueGamesPromise,
+        uniqueExpansionsPromise,
       ]);
+
+    // Juegos públicos con deduplicación para colecciones compartidas
+    const allPublicGames = await prisma.userGame.findMany({
+      where: { ...activeOwn, user: { profile: { ludotecaPublica: true } } },
+      select: { userId: true, gameId: true, game: { select: { isExpansion: true } } },
+    });
+    const groupKeyByUserId = new Map(
+      publicUsers.map((u) => [u.id, u.profile?.sharedLudotecaGroupId ?? u.id])
+    );
+    const dedupedPublic = new Map<string, boolean>(); // key: `groupKey:gameId`, value: isExpansion
+    for (const ug of allPublicGames) {
+      const groupKey = groupKeyByUserId.get(ug.userId) ?? ug.userId;
+      const key = `${groupKey}:${ug.gameId}`;
+      if (!dedupedPublic.has(key)) dedupedPublic.set(key, ug.game.isExpansion);
+    }
+    let totalGamesPublic = 0;
+    let totalExpansionsPublic = 0;
+    for (const isExpansion of dedupedPublic.values()) {
+      if (isExpansion) totalExpansionsPublic++;
+      else totalGamesPublic++;
+    }
 
     const top10GameIds = top10Group.map((g) => g.gameId);
     const top10Games = await prisma.game.findMany({
@@ -93,12 +113,33 @@ export const getPlayers = async (req: Request, res: Response) => {
       })
       .filter(Boolean);
 
-    const players = publicUsers.map((u) => ({
-      userId: u.id,
-      displayName: displayName(u),
-      avatar: u.profile?.avatar ?? null,
-      gameCount: u._count.userGames,
-    }));
+    // Mapa para resolver nombre del compañero de colección compartida
+    const userDisplayNameMap = new Map(publicUsers.map((u) => [u.id, displayName(u)]));
+    const groupIdToUserIds = new Map<string, string[]>();
+    for (const u of publicUsers) {
+      const gid = u.profile?.sharedLudotecaGroupId;
+      if (gid) {
+        const list = groupIdToUserIds.get(gid) ?? [];
+        list.push(u.id);
+        groupIdToUserIds.set(gid, list);
+      }
+    }
+
+    const players = publicUsers.map((u) => {
+      const gid = u.profile?.sharedLudotecaGroupId;
+      let sharedWith: string | null = null;
+      if (gid) {
+        const partnerId = (groupIdToUserIds.get(gid) ?? []).find((id) => id !== u.id);
+        if (partnerId) sharedWith = userDisplayNameMap.get(partnerId) ?? null;
+      }
+      return {
+        userId: u.id,
+        displayName: displayName(u),
+        avatar: u.profile?.avatar ?? null,
+        gameCount: u._count.userGames,
+        sharedWith,
+      };
+    });
 
     return res.json({
       success: true,
@@ -108,7 +149,9 @@ export const getPlayers = async (req: Request, res: Response) => {
           publicCount,
           privateCount,
           totalGamesPublic,
+          totalExpansionsPublic,
           uniqueGamesTotal: uniqueGamesRows.length,
+          uniqueExpansionsTotal: uniqueExpansionRows.length,
         },
         top10,
       },
@@ -230,15 +273,18 @@ export const getPlayerGames = async (req: Request, res: Response) => {
     const { search = '', page = '1', pageSize = '48', includeExpansions = 'false' } = req.query as Record<string, string>;
     const showExpansions = includeExpansions === 'true';
 
-    const player = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        profile: { select: { nick: true, avatar: true, ludotecaPublica: true } },
-        _count: { select: { userGames: { where: activeOwn } } },
-      },
-    });
+    const [player, baseGameCount, expansionCount] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          profile: { select: { nick: true, avatar: true, ludotecaPublica: true } },
+        },
+      }),
+      prisma.userGame.count({ where: { userId, ...activeOwn, game: { isExpansion: false } } }),
+      prisma.userGame.count({ where: { userId, ...activeOwn, game: { isExpansion: true } } }),
+    ]);
 
     if (!player) {
       return res.status(404).json({ success: false, message: 'Jugador no encontrado' });
@@ -312,7 +358,8 @@ export const getPlayerGames = async (req: Request, res: Response) => {
           userId: player.id,
           displayName: displayName(player),
           avatar: player.profile?.avatar ?? null,
-          gameCount: player._count.userGames,
+          gameCount: baseGameCount,
+          expansionCount,
           ludotecaPublica: player.profile?.ludotecaPublica ?? true,
         },
         games: gamesWithExpansion,

@@ -215,7 +215,8 @@ model UserProfile {
   createPartidaTourDismissed Boolean  @default(false)  // true = no volver a mostrar el tour de crear partida
 
   // Ludoteca
-  ludotecaPublica Boolean  @default(true)  // true = visible en "Ludotecas de jugadores"
+  ludotecaPublica        Boolean  @default(true)   // true = visible en "Ludotecas de jugadores"
+  sharedLudotecaGroupId  String?                   // misma clave = ludoteca compartida entre miembros
 
   // BGG (BoardGameGeek)
   bggUsername     String?

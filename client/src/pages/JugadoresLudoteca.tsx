@@ -11,13 +11,16 @@ interface Player {
   displayName: string;
   avatar: string | null;
   gameCount: number;
+  sharedWith: string | null;
 }
 
 interface Stats {
   publicCount: number;
   privateCount: number;
   totalGamesPublic: number;
+  totalExpansionsPublic: number;
   uniqueGamesTotal: number;
+  uniqueExpansionsTotal: number;
 }
 
 interface Top10Entry {
@@ -172,7 +175,7 @@ export default function JugadoresLudoteca() {
 
   const setTab = (t: Tab) => setSearchParams({ tab: t });
 
-  const { data: myGamesData } = useQuery<{ player: { gameCount: number } }>({
+  const { data: myGamesData } = useQuery<{ player: { gameCount: number; expansionCount: number } }>({
     queryKey: ['jugadorGames', user?.id, '', 1],
     queryFn: () => api.get(`/api/jugadores-ludoteca/${user!.id}/games`, { params: { pageSize: 1 } }).then((r) => r.data.data),
     enabled: !!user?.id && tab === 'players',
@@ -252,8 +255,16 @@ export default function JugadoresLudoteca() {
                 <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-[var(--color-textSecondary)]">
                   <span><span className="font-semibold text-[var(--color-text)]">{stats.publicCount}</span> ludoteca{stats.publicCount !== 1 ? 's' : ''} pública{stats.publicCount !== 1 ? 's' : ''}</span>
                   {stats.privateCount > 0 && <span><span className="font-semibold text-[var(--color-text)]">{stats.privateCount}</span> privada{stats.privateCount !== 1 ? 's' : ''}</span>}
-                  <span><span className="font-semibold text-[var(--color-text)]">{stats.totalGamesPublic}</span> juegos en colecciones públicas</span>
-                  <span><span className="font-semibold text-[var(--color-text)]">{stats.uniqueGamesTotal}</span> juegos únicos en el club</span>
+                  <span>
+                    <span className="font-semibold text-[var(--color-text)]">{stats.totalGamesPublic}</span> juegos
+                    {stats.totalExpansionsPublic > 0 && <> y <span className="font-semibold text-[var(--color-text)]">{stats.totalExpansionsPublic}</span> expansiones</>}
+                    {' '}en colecciones públicas
+                  </span>
+                  <span>
+                    <span className="font-semibold text-[var(--color-text)]">{stats.uniqueGamesTotal}</span> juegos únicos
+                    {stats.uniqueExpansionsTotal > 0 && <> y <span className="font-semibold text-[var(--color-text)]">{stats.uniqueExpansionsTotal}</span> expansiones únicas</>}
+                    {' '}en el club
+                  </span>
                 </div>
               </div>
             )}
@@ -301,7 +312,9 @@ export default function JugadoresLudoteca() {
                         <span className="ml-2 text-xs font-normal text-[var(--color-primary)]">tú</span>
                       </p>
                       <p className="text-sm text-[var(--color-textSecondary)]">
-                        {myGamesData ? `${myGamesData.player.gameCount} juegos` : 'Mi ludoteca'}
+                        {myGamesData
+                          ? `${myGamesData.player.gameCount} juegos${myGamesData.player.expansionCount > 0 ? ` y ${myGamesData.player.expansionCount} expansiones` : ''}`
+                          : 'Mi ludoteca'}
                       </p>
                     </div>
                     <svg className="w-4 h-4 text-[var(--color-primary)] ml-auto flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -318,7 +331,20 @@ export default function JugadoresLudoteca() {
                     <PlayerAvatar displayName={player.displayName} avatar={player.avatar} />
                     <div className="min-w-0">
                       <p className="font-semibold text-[var(--color-text)] truncate">{player.displayName}</p>
-                      <p className="text-sm text-[var(--color-textSecondary)]">{player.gameCount} juegos</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm text-[var(--color-textSecondary)]">{player.gameCount} juegos</p>
+                        {player.sharedWith && (
+                          <span
+                            title={`Colección compartida con ${player.sharedWith}`}
+                            className="inline-flex items-center gap-1 text-xs text-[var(--color-textSecondary)] cursor-help"
+                          >
+                            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m4-4a4 4 0 110-8 4 4 0 010 8zm6 4a3 3 0 100-6 3 3 0 000 6z" />
+                            </svg>
+                            Compartida
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <svg className="w-4 h-4 text-[var(--color-textSecondary)] ml-auto flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

@@ -9,6 +9,7 @@ interface PlayerInfo {
   displayName: string;
   avatar: string | null;
   gameCount: number;
+  expansionCount: number;
 }
 
 interface GameEntry {
@@ -160,7 +161,9 @@ export default function JugadorDetalle() {
               )}
               <div>
                 <h1 className="text-xl font-bold text-[var(--color-text)]">{player.displayName}</h1>
-                <p className="text-sm text-[var(--color-textSecondary)]">{player.gameCount} juegos en su colección</p>
+                <p className="text-sm text-[var(--color-textSecondary)]">
+                  {player.gameCount} juegos{player.expansionCount > 0 ? ` y ${player.expansionCount} expansiones` : ''} en su colección
+                </p>
               </div>
             </div>
           ) : null}
