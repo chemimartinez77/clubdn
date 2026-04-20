@@ -126,7 +126,10 @@ export const updateClubConfig = async (req: Request, res: Response) => {
       inviteMaxMonthly,
       inviteMaxGuestYear,
       inviteAllowSelfValidation,
-      loginParticleStyle
+      loginParticleStyle,
+      loanEnabled,
+      loanDurationDays,
+      loanQueueNotifyHours
     } = req.body;
 
     const config = await prisma.clubConfig.upsert({
@@ -142,7 +145,10 @@ export const updateClubConfig = async (req: Request, res: Response) => {
         ...(inviteMaxMonthly !== undefined && { inviteMaxMonthly }),
         ...(inviteMaxGuestYear !== undefined && { inviteMaxGuestYear }),
         ...(inviteAllowSelfValidation !== undefined && { inviteAllowSelfValidation }),
-        ...(loginParticleStyle !== undefined && { loginParticleStyle })
+        ...(loginParticleStyle !== undefined && { loginParticleStyle }),
+        ...(loanEnabled !== undefined && { loanEnabled }),
+        ...(loanDurationDays !== undefined && { loanDurationDays }),
+        ...(loanQueueNotifyHours !== undefined && { loanQueueNotifyHours })
       },
       create: {
         id: 'club_config',
