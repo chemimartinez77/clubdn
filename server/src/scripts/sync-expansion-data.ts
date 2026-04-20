@@ -69,21 +69,22 @@ async function main() {
     where: { id: { not: { startsWith: 'rpgg-' } } },
   });
 
-  const ids = allGames.map(g => g.id);
+  const ids: string[] = allGames.map(g => g.id);
   console.log(`Total de juegos BGG a procesar: ${ids.length}`);
 
   const batches: string[][] = [];
   for (let i = 0; i < ids.length; i += BATCH_SIZE) {
-    batches.push(ids.slice(i, i + BATCH_SIZE));
+    batches.push(ids.slice(i, i + BATCH_SIZE) as string[]);
   }
   console.log(`Lotes de ${BATCH_SIZE}: ${batches.length} lotes (~${Math.round(batches.length * DELAY_MS / 1000)}s)`);
 
   let processed = 0;
   let expansions = 0;
   let errors = 0;
+  let batchIndex = 0;
 
-  for (let i = 0; i < batches.length; i++) {
-    const batch = batches[i];
+  for (const batch of batches) {
+    batchIndex++;
     try {
       const results = await fetchBatch(batch);
 
@@ -97,13 +98,13 @@ async function main() {
       }
 
       processed += batch.length;
-      console.log(`[${i + 1}/${batches.length}] ${processed}/${ids.length} procesados — ${expansions} expansiones detectadas`);
+      console.log(`[${batchIndex}/${batches.length}] ${processed}/${ids.length} procesados — ${expansions} expansiones detectadas`);
     } catch (err) {
       errors++;
-      console.error(`[${i + 1}/${batches.length}] Error en lote:`, (err as Error).message);
+      console.error(`[${batchIndex}/${batches.length}] Error en lote:`, (err as Error).message);
     }
 
-    if (i < batches.length - 1) {
+    if (batchIndex < batches.length) {
       await sleep(DELAY_MS);
     }
   }
