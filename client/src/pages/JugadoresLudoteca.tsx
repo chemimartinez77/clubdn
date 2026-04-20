@@ -219,7 +219,7 @@ export default function JugadoresLudoteca() {
   // Todos los jugadores seleccionables en el comparador (propios + lista pública)
   const allSelectablePlayers: (Player & { isSelf?: boolean })[] = user
     ? [
-        { userId: user.id, displayName: user.profile?.nick ?? user.name, avatar: user.profile?.avatar ?? null, gameCount: myGamesData?.player.gameCount ?? 0, isSelf: true },
+        { userId: user.id, displayName: user.profile?.nick ?? user.name, avatar: user.profile?.avatar ?? null, gameCount: myGamesData?.player.gameCount ?? 0, sharedWith: null, isSelf: true },
         ...players,
       ]
     : players;
