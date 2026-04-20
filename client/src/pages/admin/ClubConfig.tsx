@@ -388,11 +388,11 @@ export default function ClubConfigPage() {
                   <label className="flex items-center gap-3 cursor-pointer mt-1">
                     <input
                       type="checkbox"
-                      checked={formData.loanEnabled ?? true}
+                      checked={formData.loanEnabled ?? false}
                       onChange={(e) => setFormData({ ...formData, loanEnabled: e.target.checked })}
                       className="w-4 h-4 accent-[var(--color-primary)]"
                     />
-                    <span className="text-sm text-[var(--color-text)]">{formData.loanEnabled ?? true ? 'Activado' : 'Desactivado'}</span>
+                    <span className="text-sm text-[var(--color-text)]">{formData.loanEnabled ?? false ? 'Activado' : 'Desactivado'}</span>
                   </label>
                 ) : (
                   <p className="text-[var(--color-text)] py-2">{config?.loanEnabled ? 'Activado' : 'Desactivado'}</p>
