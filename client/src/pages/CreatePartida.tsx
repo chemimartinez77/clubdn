@@ -399,7 +399,7 @@ export default function CreatePartida() {
                   <option value="CARTAS_LCG_TCG">{getCategoryIcon('CARTAS_LCG_TCG')} {getCategoryDisplayName('CARTAS_LCG_TCG')}</option>
                 </select>
                 {!selectedCategory && !confirmedCategory ? (
-                  <p className="text-xs mt-1 text-yellow-400">
+                  <p className="text-xs mt-1 text-amber-600">
                     Sin categoría, esta partida no contará para los logros de género ni para el logro Catalogador.
                   </p>
                 ) : (
