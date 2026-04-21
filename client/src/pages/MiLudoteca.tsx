@@ -701,11 +701,18 @@ export default function MiLudoteca() {
                 {(() => {
                   const baseGames = syncData.toImport.length - syncData.toImportExpansions;
                   const exps = syncData.toImportExpansions;
-                  const parts = [
-                    baseGames > 0 ? `${baseGames} juego${baseGames !== 1 ? 's' : ''}` : null,
-                    exps > 0 ? `${exps} expansión${exps !== 1 ? 'es' : ''}` : null,
-                  ].filter(Boolean).join(' y ');
-                  return <>Se van a <span className="text-green-600 font-medium">importar {parts}</span></>;
+                  const total = syncData.toImport.length;
+                  let importText: string;
+                  if (total === 0) {
+                    importText = '0 juegos';
+                  } else if (exps === 0) {
+                    importText = `${baseGames} juego${baseGames !== 1 ? 's' : ''}`;
+                  } else if (baseGames === 0) {
+                    importText = `${exps} expansión${exps !== 1 ? 'es' : ''}`;
+                  } else {
+                    importText = `${baseGames} juego${baseGames !== 1 ? 's' : ''} y ${exps} expansión${exps !== 1 ? 'es' : ''}`;
+                  }
+                  return <>Se van a <span className="text-green-600 font-medium">importar {importText}</span></>;
                 })()}
                 {(syncData.toImportOwned > 0 || syncData.toImportWishlist > 0 || syncData.toImportPreviouslyOwned > 0) && (
                   <span className="text-[var(--color-textSecondary)]">
