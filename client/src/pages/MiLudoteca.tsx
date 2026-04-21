@@ -708,9 +708,9 @@ export default function MiLudoteca() {
                   } else if (exps === 0) {
                     importText = `${baseGames} juego${baseGames !== 1 ? 's' : ''}`;
                   } else if (baseGames === 0) {
-                    importText = `${exps} expansión${exps !== 1 ? 'es' : ''}`;
+                    importText = `${exps} ${exps === 1 ? 'expansión' : 'expansiones'}`;
                   } else {
-                    importText = `${baseGames} juego${baseGames !== 1 ? 's' : ''} y ${exps} expansión${exps !== 1 ? 'es' : ''}`;
+                    importText = `${baseGames} juego${baseGames !== 1 ? 's' : ''} y ${exps} ${exps === 1 ? 'expansión' : 'expansiones'}`;
                   }
                   return <>Se van a <span className="text-green-600 font-medium">importar {importText}</span></>;
                 })()}
