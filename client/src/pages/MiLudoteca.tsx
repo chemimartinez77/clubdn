@@ -34,6 +34,7 @@ interface UserGame {
   locationId: string | null;
   location: GameLocation | null;
   status: string;
+  clubOwnerCount?: number;
 }
 
 interface MyGamesResponse {
@@ -115,13 +116,15 @@ interface BggSyncJob {
 }
 
 const BGG_SYNC_DISMISSED_JOB_KEY = 'bggSyncDismissedJobId';
-type Tab = 'own' | 'wishlist' | 'previouslyOwned' | 'wantToPlay';
+type Tab = 'own' | 'wishlist' | 'previouslyOwned' | 'wantToPlay' | 'exclusive' | 'popular';
 
 const TAB_LABELS: Record<Tab, string> = {
   own: 'Mi colección',
   wishlist: 'Wishlist',
   previouslyOwned: 'Lo tuve',
   wantToPlay: 'Quiero jugar',
+  exclusive: 'Solo yo',
+  popular: 'Popular en el club',
 };
 
 function formatEta(seconds: number) {
@@ -601,12 +604,12 @@ export default function MiLudoteca() {
         </Card>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="flex border border-[var(--color-cardBorder)] rounded-lg overflow-hidden">
+          <div className="flex flex-wrap border border-[var(--color-cardBorder)] rounded-lg overflow-hidden">
             {(Object.keys(TAB_LABELS) as Tab[]).map((currentTab) => (
               <button
                 key={currentTab}
                 onClick={() => { setTab(currentTab); setPage(1); }}
-                className={`px-4 py-2 text-sm transition-colors ${tab === currentTab ? 'bg-[var(--color-primary)] text-white' : 'text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)]'}`}
+                className={`px-4 py-2 text-sm whitespace-nowrap transition-colors ${tab === currentTab ? 'bg-[var(--color-primary)] text-white' : 'text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)]'}`}
               >
                 {TAB_LABELS[currentTab]}
               </button>
@@ -651,6 +654,8 @@ export default function MiLudoteca() {
                 {tab === 'wishlist' && 'Tu wishlist está vacía.'}
                 {tab === 'previouslyOwned' && 'No tienes juegos marcados como "Lo tuve".'}
                 {tab === 'wantToPlay' && 'No tienes juegos marcados como "Quiero jugar".'}
+                {tab === 'exclusive' && 'No tienes juegos exclusivos en tu ludoteca.'}
+                {tab === 'popular' && 'No hay juegos compartidos con otros miembros.'}
               </p>
             </CardContent>
           </Card>
@@ -662,6 +667,7 @@ export default function MiLudoteca() {
                   key={game.id}
                   game={game}
                   locations={locations}
+                  insight={tab === 'exclusive' || tab === 'popular' ? tab : undefined}
                   onUpdate={(payload) => updateMutation.mutate({ gameId: game.gameId, data: payload })}
                   onLocationChange={(value) => handleLocationChange(game.gameId, value)}
                   onRemove={() => setPendingRemovalGame(game)}
@@ -901,12 +907,13 @@ export default function MiLudoteca() {
 interface GameCardProps {
   game: UserGame;
   locations: GameLocation[];
+  insight?: 'exclusive' | 'popular';
   onUpdate: (data: Partial<Pick<UserGame, 'own' | 'wishlist' | 'previouslyOwned' | 'wantToPlay' | 'wishlistPriority' | 'locationId'>>) => void;
   onLocationChange: (value: string) => void;
   onRemove: () => void;
 }
 
-function GameCard({ game, locations, onUpdate, onLocationChange, onRemove }: GameCardProps) {
+function GameCard({ game, locations, insight, onUpdate, onLocationChange, onRemove }: GameCardProps) {
   const imageUrl = game.game.image ?? game.game.thumbnail;
 
   const handleOwnClick = () => {
@@ -983,6 +990,13 @@ function GameCard({ game, locations, onUpdate, onLocationChange, onRemove }: Gam
           <FlagChip label="Lo tuve" active={game.previouslyOwned} onClick={handlePreviouslyOwnedClick} />
           <FlagChip label="Quiero jugar" active={game.wantToPlay} onClick={handleWantToPlayClick} />
         </div>
+        {insight && (
+          <p className="text-[10px] text-[var(--color-textSecondary)] leading-tight">
+            {insight === 'exclusive'
+              ? 'Solo en tu ludoteca'
+              : `Lo tienen ${game.clubOwnerCount ?? 1} miembros`}
+          </p>
+        )}
         {game.wishlist && (
           <select
             value={game.wishlistPriority ?? ''}

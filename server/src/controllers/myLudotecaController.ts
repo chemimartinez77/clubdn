@@ -106,7 +106,7 @@ async function getQueueInfo(job: { id: string; status: string; requestedAt: Date
 /**
  * GET /api/my-ludoteca
  * Devuelve los juegos activos del usuario autenticado.
- * Query params: tab (own|wishlist|previouslyOwned|wantToPlay|all), search, page, pageSize
+ * Query params: tab (own|wishlist|previouslyOwned|wantToPlay|exclusive|popular|all), search, page, pageSize
  */
 export const getMyGames = async (req: Request, res: Response) => {
   try {
@@ -118,23 +118,101 @@ export const getMyGames = async (req: Request, res: Response) => {
     const skip = (safePage - 1) * safePageSize;
     const normalizedSearch = normalizeSearch(search);
 
-    const where: Prisma.UserGameWhereInput = {
-      userId,
-      status: 'active',
-      ...(normalizedSearch && {
-        game: {
+    const gameNameFilter: Prisma.GameWhereInput = normalizedSearch
+      ? {
           name: {
             contains: normalizedSearch,
             mode: 'insensitive',
           },
-        },
+        }
+      : {};
+
+    const where: Prisma.UserGameWhereInput = {
+      userId,
+      status: 'active',
+      ...(normalizedSearch && {
+        game: gameNameFilter,
       }),
     };
+
+    if (tab === 'popular') {
+      const popularWhere: Prisma.UserGameWhereInput = {
+        ...where,
+        own: true,
+        game: {
+          ...gameNameFilter,
+          isExpansion: false,
+        },
+      };
+
+      if (locationId === '__casa__') popularWhere.locationId = null;
+      else if (locationId) popularWhere.locationId = locationId;
+
+      const userGames = await prisma.userGame.findMany({
+        where: popularWhere,
+        include: {
+          game: true,
+          location: true,
+        },
+      });
+
+      const gameIds = userGames.map((game) => game.gameId);
+      const ownerCounts = gameIds.length > 0
+        ? await prisma.userGame.groupBy({
+            by: ['gameId'],
+            where: {
+              gameId: { in: gameIds },
+              own: true,
+              status: 'active',
+            },
+            _count: { gameId: true },
+          })
+        : [];
+      const ownerCountByGameId = new Map(ownerCounts.map((count) => [count.gameId, count._count.gameId]));
+
+      const games = userGames
+        .map((game) => ({
+          ...game,
+          clubOwnerCount: ownerCountByGameId.get(game.gameId) ?? 1,
+        }))
+        .filter((game) => game.clubOwnerCount > 1)
+        .sort((a, b) => {
+          if (b.clubOwnerCount !== a.clubOwnerCount) return b.clubOwnerCount - a.clubOwnerCount;
+          return a.game.name.localeCompare(b.game.name, 'es');
+        })
+        .slice(0, 10);
+
+      return res.json({
+        success: true,
+        data: {
+          games,
+          pagination: {
+            currentPage: 1,
+            pageSize: 10,
+            total: games.length,
+            totalPages: games.length > 0 ? 1 : 0,
+          },
+        },
+      });
+    }
 
     if (tab === 'own') where.own = true;
     else if (tab === 'wishlist') where.wishlist = true;
     else if (tab === 'previouslyOwned') where.previouslyOwned = true;
     else if (tab === 'wantToPlay') where.wantToPlay = true;
+    else if (tab === 'exclusive') {
+      where.own = true;
+      where.game = {
+        ...gameNameFilter,
+        userGames: {
+          none: {
+            userId: { not: userId },
+            own: true,
+            status: 'active',
+          },
+        },
+      };
+    }
 
     if (locationId === '__casa__') where.locationId = null;
     else if (locationId) where.locationId = locationId;

@@ -4,6 +4,32 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-21 (sesión 3)
+
+### feat: filtros de juegos exclusivos y populares en Mi Ludoteca
+
+Se añaden dos nuevas vistas comparativas a la página "Mi Ludoteca" para ayudar a detectar juegos propios únicos y juegos compartidos por más miembros del club.
+
+**Backend:**
+- `server/src/controllers/myLudotecaController.ts`: `GET /api/my-ludoteca` acepta ahora `tab=exclusive`, que devuelve juegos y expansiones propios (`own=true`) que ningún otro usuario tiene activos.
+- `server/src/controllers/myLudotecaController.ts`: `GET /api/my-ludoteca` acepta ahora `tab=popular`, que devuelve un top 10 de juegos base propios ordenados por número total de propietarios del club.
+- La respuesta puede incluir `clubOwnerCount` como dato agregado, sin exponer nombres de propietarios ni detalles de ludotecas privadas.
+
+**Frontend:**
+- `client/src/pages/MiLudoteca.tsx`: nuevas pestañas "Solo yo" y "Popular en el club" junto a las vistas existentes.
+- Las tarjetas muestran una etiqueta contextual: "Solo en tu ludoteca" o "Lo tienen N miembros".
+- Se añaden mensajes vacíos específicos para ambas vistas y la barra de pestañas permite salto de línea para evitar desbordes en pantallas estrechas.
+
+**Validación:**
+- `client`: `npm.cmd run build`
+- `server`: `npx.cmd tsc --noEmit`
+
+**Archivos modificados:**
+- `server/src/controllers/myLudotecaController.ts`
+- `client/src/pages/MiLudoteca.tsx`
+
+---
+
 ## 2026-04-21 (sesión 2)
 
 ### fix: correcciones al sistema de préstamos + expansiones en Mi Ludoteca
