@@ -14,7 +14,7 @@ import type { UserProfile, UpdateProfileData } from '../types/profile';
 import { displayName, fullNameTooltip } from '../utils/displayName';
 import type { ApiResponse } from '../types/auth';
 import type { UserBadgesResponse } from '../types/badge';
-import type { LibraryLoan } from '../types/libraryLoans';
+import type { LibraryLoan, MyQueueEntry } from '../types/libraryLoans';
 
 function FieldRow({
   label,
@@ -156,9 +156,27 @@ export default function Profile() {
   const { data: loansData } = useQuery({
     queryKey: ['myLoans'],
     queryFn: async () => {
-      const res = await api.get<{ success: boolean; data: { active: LibraryLoan[]; history: LibraryLoan[] } }>('/api/library-loans/me');
+      const res = await api.get<{ success: boolean; data: { active: LibraryLoan[]; history: LibraryLoan[]; queue: MyQueueEntry[] } }>('/api/library-loans/me');
       return res.data.data;
     }
+  });
+
+  const renewLoanMutation = useMutation({
+    mutationFn: (loanId: string) => api.post(`/api/library-loans/${loanId}/renew`),
+    onSuccess: () => { success('Préstamo renovado'); queryClient.invalidateQueries({ queryKey: ['myLoans'] }); },
+    onError: (err: unknown) => { const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message; showError(msg ?? 'No se pudo renovar el préstamo'); },
+  });
+
+  const cancelLoanMutation = useMutation({
+    mutationFn: (loanId: string) => api.post(`/api/library-loans/${loanId}/cancel`),
+    onSuccess: () => { success('Solicitud cancelada'); queryClient.invalidateQueries({ queryKey: ['myLoans'] }); },
+    onError: (err: unknown) => { const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message; showError(msg ?? 'No se pudo cancelar la solicitud'); },
+  });
+
+  const leaveQueueMutation = useMutation({
+    mutationFn: (itemId: string) => api.delete(`/api/library-loans/queue/${itemId}`),
+    onSuccess: () => { success('Saliste de la lista de espera'); queryClient.invalidateQueries({ queryKey: ['myLoans'] }); },
+    onError: (err: unknown) => { const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message; showError(msg ?? 'No se pudo salir de la lista'); },
   });
 
   // Fetch badges
@@ -1049,7 +1067,7 @@ export default function Profile() {
             </Card>
 
             {/* Block 4: Préstamos de ludoteca */}
-            {loansData && (loansData.active.length > 0 || loansData.history.length > 0) && (
+            {loansData && (loansData.active.length > 0 || loansData.history.length > 0 || loansData.queue.length > 0) && (
               <Card>
                 <CardHeader><h2 className="text-xl font-bold text-[var(--color-text)]">Préstamos de ludoteca</h2></CardHeader>
                 <CardContent className="space-y-4">
@@ -1060,13 +1078,33 @@ export default function Profile() {
                         {loansData.active.map(loan => {
                           const overdue = loan.status === 'ACTIVE' && !!loan.dueAt && new Date(loan.dueAt) < new Date();
                           return (
-                            <li key={loan.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-[var(--color-cardBorder)]">
-                              <div className="min-w-0">
+                            <li key={loan.id} className="flex items-start justify-between gap-3 p-3 rounded-lg border border-[var(--color-cardBorder)]">
+                              <div className="min-w-0 flex-1">
                                 <p className="font-medium text-[var(--color-text)] truncate">{loan.libraryItem.name}</p>
                                 <p className="text-xs text-[var(--color-textSecondary)]">
                                   {loan.status === 'REQUESTED' ? 'Pendiente de entrega' : `Vence: ${loan.dueAt ? new Date(loan.dueAt).toLocaleDateString('es-ES') : '—'}`}
                                   {loan.renewalCount > 0 && ` · ${loan.renewalCount} renovación/es`}
                                 </p>
+                                <div className="flex gap-2 mt-2">
+                                  {loan.status === 'ACTIVE' && (
+                                    <button
+                                      onClick={() => renewLoanMutation.mutate(loan.id)}
+                                      disabled={renewLoanMutation.isPending}
+                                      className="text-xs px-2 py-1 rounded border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white transition-colors disabled:opacity-50"
+                                    >
+                                      Renovar
+                                    </button>
+                                  )}
+                                  {loan.status === 'REQUESTED' && (
+                                    <button
+                                      onClick={() => cancelLoanMutation.mutate(loan.id)}
+                                      disabled={cancelLoanMutation.isPending}
+                                      className="text-xs px-2 py-1 rounded border border-red-400 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                                    >
+                                      Cancelar solicitud
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                               <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap ${loan.status === 'REQUESTED' ? 'bg-yellow-100 text-yellow-800' : overdue ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                                 {loan.status === 'REQUESTED' ? 'Pendiente' : overdue ? 'Vencido' : 'En préstamo'}
@@ -1077,6 +1115,37 @@ export default function Profile() {
                       </ul>
                     </div>
                   )}
+
+                  {loansData.queue.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-2">Lista de espera</h3>
+                      <ul className="space-y-2">
+                        {loansData.queue.map(entry => (
+                          <li key={entry.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-[var(--color-cardBorder)]">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-[var(--color-text)] truncate">{entry.libraryItem.name}</p>
+                              <p className="text-xs text-[var(--color-textSecondary)]">
+                                {entry.status === 'NOTIFIED' ? 'Disponible para ti ahora' : `En espera desde ${new Date(entry.createdAt).toLocaleDateString('es-ES')}`}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${entry.status === 'NOTIFIED' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>
+                                {entry.status === 'NOTIFIED' ? 'Notificado' : 'En espera'}
+                              </span>
+                              <button
+                                onClick={() => leaveQueueMutation.mutate(entry.libraryItem.id)}
+                                disabled={leaveQueueMutation.isPending}
+                                className="text-xs px-2 py-1 rounded border border-red-300 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                              >
+                                Salir
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   {loansData.history.length > 0 && (
                     <div>
                       <h3 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-2">Historial</h3>

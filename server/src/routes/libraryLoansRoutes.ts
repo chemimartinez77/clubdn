@@ -12,6 +12,7 @@ import {
   getItemQueue,
   joinQueue,
   leaveQueue,
+  toggleLoanable,
 } from '../controllers/libraryLoansController';
 
 const router = Router();
@@ -29,5 +30,7 @@ router.post('/:loanId/cancel', authenticate, cancelLoan);
 
 router.post('/queue', authenticate, joinQueue);
 router.delete('/queue/:itemId', authenticate, leaveQueue);
+
+router.patch('/items/:itemId/loanable', authenticate, requireAdmin, toggleLoanable);
 
 export default router;

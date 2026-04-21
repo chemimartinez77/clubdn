@@ -40,6 +40,7 @@ function mapBggGameToGameData(bggGame: NonNullable<Awaited<ReturnType<typeof get
     designers: bggGame.designers,
     artists: bggGame.artists,
     publishers: bggGame.publishers,
+    isExpansion: bggGame.isExpansion,
     lastSyncedAt: new Date(),
   };
 }

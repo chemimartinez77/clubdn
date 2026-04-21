@@ -19,6 +19,7 @@ interface CatalogGame {
   yearPublished: number | null;
   minPlayers: number | null;
   maxPlayers: number | null;
+  isExpansion: boolean;
 }
 
 interface UserGame {
@@ -70,6 +71,7 @@ interface BggCollectionItem {
   wishlist: boolean;
   previouslyOwned: boolean;
   wishlistPriority: number | null;
+  isExpansion: boolean;
 }
 
 interface SyncCheckResponse {
@@ -79,6 +81,7 @@ interface SyncCheckResponse {
   toImportOwned: number;
   toImportWishlist: number;
   toImportPreviouslyOwned: number;
+  toImportExpansions: number;
   toDelete: { gameId: string; title: string }[];
   estimatedSeconds: number;
   newCatalogItems: number;
@@ -695,7 +698,15 @@ export default function MiLudoteca() {
             <div className="relative bg-[var(--color-cardBackground)] rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
               <h2 className="text-lg font-bold text-[var(--color-text)]">Sincronización con BGG</h2>
               <p className="text-sm text-[var(--color-textSecondary)]">
-                Se van a <span className="text-green-600 font-medium">importar {syncData.toImport.length} juegos</span>
+                {(() => {
+                  const baseGames = syncData.toImport.length - syncData.toImportExpansions;
+                  const exps = syncData.toImportExpansions;
+                  const parts = [
+                    baseGames > 0 ? `${baseGames} juego${baseGames !== 1 ? 's' : ''}` : null,
+                    exps > 0 ? `${exps} expansión${exps !== 1 ? 'es' : ''}` : null,
+                  ].filter(Boolean).join(' y ');
+                  return <>Se van a <span className="text-green-600 font-medium">importar {parts}</span></>;
+                })()}
                 {(syncData.toImportOwned > 0 || syncData.toImportWishlist > 0 || syncData.toImportPreviouslyOwned > 0) && (
                   <span className="text-[var(--color-textSecondary)]">
                     {' '}(
@@ -735,7 +746,7 @@ export default function MiLudoteca() {
                       <span className="text-[var(--color-text)]">{game.title}</span>
                       <span className="text-[10px] text-[var(--color-textSecondary)]">
                         {[
-                          game.own ? 'Tengo' : null,
+                          game.own ? 'Lo tengo' : null,
                           game.wishlist ? 'Wishlist' : null,
                           game.previouslyOwned ? 'Lo tuve' : null,
                         ].filter(Boolean).join(' · ')}
@@ -948,15 +959,22 @@ function GameCard({ game, locations, onUpdate, onLocationChange, onRemove }: Gam
 
       <div className="p-2 flex flex-col gap-1 flex-1 min-w-0">
         <p className="text-xs font-medium text-[var(--color-text)] leading-tight line-clamp-2">{game.game.name}</p>
-        {game.game.yearPublished && (
-          <p className="text-[10px] text-[var(--color-textSecondary)]">{game.game.yearPublished}</p>
-        )}
+        <div className="flex items-center gap-1 flex-wrap">
+          {game.game.isExpansion && (
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-300 dark:border-amber-700 font-medium leading-none">
+              Expansión
+            </span>
+          )}
+          {game.game.yearPublished && (
+            <p className="text-[10px] text-[var(--color-textSecondary)]">{game.game.yearPublished}</p>
+          )}
+        </div>
 
         <div className="flex flex-wrap gap-1 mt-1">
-          <FlagChip label="Tengo" active={game.own} onClick={handleOwnClick} />
+          <FlagChip label="Lo tengo" active={game.own} onClick={handleOwnClick} />
           <FlagChip label="Wishlist" active={game.wishlist} onClick={handleWishlistClick} />
           <FlagChip label="Lo tuve" active={game.previouslyOwned} onClick={handlePreviouslyOwnedClick} />
-          <FlagChip label="Jugar" active={game.wantToPlay} onClick={handleWantToPlayClick} />
+          <FlagChip label="Quiero jugar" active={game.wantToPlay} onClick={handleWantToPlayClick} />
         </div>
         {game.wishlist && (
           <select

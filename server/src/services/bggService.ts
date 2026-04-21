@@ -131,6 +131,7 @@ export interface BGGGame {
 export interface BGGGameFull {
   id: string;
   name: string;
+  isExpansion: boolean;
   alternateNames: string[];
   description: string;
   yearPublished: number | null;
@@ -356,6 +357,7 @@ export async function getBGGGameFull(gameId: string): Promise<BGGGameFull | null
     return {
       id: item.$.id,
       name: extractPrimaryName(item),
+      isExpansion: item?.$?.type === 'boardgameexpansion',
       alternateNames,
       description: item.description?.[0] || '',
       yearPublished: item.yearpublished?.[0]?.$.value ? parseInt(item.yearpublished[0].$.value) : null,
@@ -580,6 +582,7 @@ export interface BGGCollectionItem {
   wishlist: boolean;
   previouslyOwned: boolean;
   wishlistPriority: number | null;
+  isExpansion: boolean;
 }
 
 function mapCollectionItem(item: any, own: boolean, wishlist: boolean, previouslyOwned: boolean): BGGCollectionItem {
@@ -597,6 +600,7 @@ function mapCollectionItem(item: any, own: boolean, wishlist: boolean, previousl
     wishlist,
     previouslyOwned,
     wishlistPriority,
+    isExpansion: item?.$?.subtype === 'boardgameexpansion',
   };
 }
 

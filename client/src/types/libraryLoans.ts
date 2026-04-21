@@ -58,3 +58,16 @@ export interface ItemSearchResult {
   loans: LibraryLoan[];
   queue: QueueEntry[];
 }
+
+export interface MyQueueEntry {
+  id: string;
+  status: LibraryQueueStatus;
+  notifiedAt: string | null;
+  createdAt: string;
+  libraryItem: {
+    id: string;
+    name: string;
+    thumbnail: string | null;
+    loanStatus: LibraryItemLoanStatus;
+  };
+}

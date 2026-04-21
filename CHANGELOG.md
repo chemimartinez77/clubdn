@@ -4,6 +4,71 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-21 (sesión 2)
+
+### fix: correcciones al sistema de préstamos + expansiones en Mi Ludoteca
+
+Dos bloques de cambios independientes: correcciones de bugs e incompletos en el sistema de préstamos, y mejoras visuales/funcionales en la página "Mi Ludoteca".
+
+#### Sistema de préstamos — correcciones y funcionalidad pendiente
+
+**Migración SQL documentada:**
+- `server/prisma/migrations/20260421000000_add_loan_system/migration.sql` (nuevo): documenta la DDL completa que el esquema requería pero no tenía migración asociada (tablas `LibraryLoan` y `LibraryQueue`, enums `LibraryItemLoanStatus/LibraryLoanStatus/LibraryQueueStatus`, columnas `loanStatus`/`isLoanable` en `LibraryItem`, y `loanEnabled/loanDurationDays/loanQueueNotifyHours` en `ClubConfig`). Válido para despliegues limpios; incluye nota sobre DBs ya migradas por `db push`.
+
+**Bug: race condition en `requestLoan`:**
+- `server/src/controllers/libraryLoansController.ts`: el check `loanStatus === AVAILABLE` se hacía fuera de la transacción, permitiendo que dos solicitudes simultáneas pasaran la guardia. Ahora la transacción usa `updateMany` con `where: { loanStatus: AVAILABLE }` y comprueba `count === 0` para rechazar atómicamente si el ítem ya fue reclamado. Se elimina la comprobación redundante de préstamo existente.
+
+**Bug: cola incoherente tras solicitar préstamo:**
+- `server/src/controllers/libraryLoansController.ts`: cuando un usuario con entrada `WAITING` o `NOTIFIED` en cola solicitaba el préstamo directamente, su registro de cola quedaba activo indefinidamente bloqueando renovaciones. Ahora, dentro de la misma transacción de `requestLoan`, se marcan como `FULFILLED` todas las entradas de cola activas del usuario para ese ítem.
+
+**Bug: `loanQueueNotifyHours` configurado pero sin efecto:**
+- `server/src/jobs/libraryLoanJob.ts` (nuevo): job que corre cada 15 minutos, consulta `loanQueueNotifyHours` desde `ClubConfig`, busca entradas de cola en estado `NOTIFIED` con `notifiedAt` vencido, las marca `CANCELLED` y notifica al siguiente en espera (`WAITING → NOTIFIED`).
+- `server/src/index.ts`: importa y llama a `startLibraryLoanJob()` al arrancar el servidor.
+
+**Bug: `nextLoanStatus` sin validación en `returnLoan`:**
+- `server/src/controllers/libraryLoansController.ts`: `returnLoan` aceptaba cualquier valor de `LibraryItemLoanStatus` vía body, incluyendo `REQUESTED` u `ON_LOAN`, dejando el ítem en estado inconsistente. Ahora valida que el valor sea uno de los estados finales válidos: `AVAILABLE`, `MAINTENANCE` o `BLOCKED`.
+
+**Funcionalidad: activar/desactivar ítems prestables (admin):**
+- `server/src/controllers/libraryLoansController.ts`: nuevo endpoint `toggleLoanable` que actualiza `isLoanable` de un `LibraryItem`, con validación de tipo booleano.
+- `server/src/routes/libraryLoansRoutes.ts`: ruta `PATCH /api/library-loans/items/:itemId/loanable` con `requireAdmin`.
+- `client/src/pages/admin/LibraryLoans.tsx`: botón "Prestable / No prestable" en el panel de búsqueda por ID, con color verde/gris según estado. Usa `loanableMutation` que invalida la query del ítem al completar.
+
+**Funcionalidad: renovar, cancelar y salir de cola desde el perfil del socio:**
+- `server/src/controllers/libraryLoansController.ts`: `getMyLoans` ahora devuelve también las entradas de cola activas del usuario (`WAITING` y `NOTIFIED`) con datos del ítem.
+- `client/src/types/libraryLoans.ts`: nuevo tipo `MyQueueEntry` con `id`, `status`, `notifiedAt`, `createdAt` y `libraryItem` (id, name, thumbnail, loanStatus).
+- `client/src/pages/Profile.tsx`:
+  - `useQuery` de préstamos actualizado para recibir `{ active, history, queue }`.
+  - Nuevas mutations: `renewLoanMutation` (POST `/:loanId/renew`), `cancelLoanMutation` (POST `/:loanId/cancel`), `leaveQueueMutation` (DELETE `/queue/:itemId`).
+  - Botón "Renovar" en préstamos activos; botón "Cancelar solicitud" en préstamos pendientes de entrega.
+  - Nueva sección "Lista de espera" con badge de estado (Notificado / En espera) y botón "Salir".
+
+**Archivos modificados:**
+- `server/prisma/migrations/20260421000000_add_loan_system/migration.sql` (nuevo)
+- `server/src/jobs/libraryLoanJob.ts` (nuevo)
+- `server/src/controllers/libraryLoansController.ts`
+- `server/src/routes/libraryLoansRoutes.ts`
+- `server/src/index.ts`
+- `client/src/types/libraryLoans.ts`
+- `client/src/pages/Profile.tsx`
+- `client/src/pages/admin/LibraryLoans.tsx`
+
+#### Mi Ludoteca — expansiones y texto
+
+**Expansiones visibles con badge:**
+- `server/src/services/bggService.ts`: `isExpansion` añadido a `BGGGameFull` (detectado por `item.$.type === 'boardgameexpansion'`) y a `BGGCollectionItem` (por `subtype === 'boardgameexpansion'`).
+- `server/src/services/gameCatalogService.ts`: `mapBggGameToGameData` incluye `isExpansion` para que se persista en la tabla `Game` al sincronizar.
+- `server/src/controllers/myLudotecaController.ts`: `buildBggSyncDiff` calcula y expone `toImportExpansions` (count de expansiones en el lote de importación).
+- `client/src/pages/MiLudoteca.tsx`: interfaz `CatalogGame` y `BggCollectionItem` con `isExpansion`; `SyncCheckResponse` con `toImportExpansions`; badge ámbar "Expansión" en `GameCard`; el resumen del modal de sincronización desglosa "X juegos y Y expansiones".
+- **Texto:** `FlagChip "Tengo" → "Lo tengo"`, `FlagChip "Jugar" → "Quiero jugar"`, mismo cambio en el listado de detalle del modal de sync.
+
+**Archivos modificados:**
+- `server/src/services/bggService.ts`
+- `server/src/services/gameCatalogService.ts`
+- `server/src/controllers/myLudotecaController.ts`
+- `client/src/pages/MiLudoteca.tsx`
+
+---
+
 ## 2026-04-21 (sesión 1)
 
 ### feat: UI de expansiones en ludoteca del club y ludotecas de jugadores

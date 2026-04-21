@@ -105,22 +105,44 @@ export const requestLoan = async (req: Request, res: Response): Promise<void> =>
 
     if (!item) { res.status(404).json({ success: false, message: 'Ítem no encontrado' }); return; }
     if (!item.isLoanable) { res.status(400).json({ success: false, message: 'Este ítem no está disponible para préstamo' }); return; }
-    if (item.loanStatus !== 'AVAILABLE') { res.status(400).json({ success: false, message: 'El ítem no está disponible actualmente' }); return; }
 
-    // Verificar que no tiene ya un préstamo activo o solicitado
-    const existing = await prisma.libraryLoan.findFirst({
-      where: { libraryItemId: item.id, status: { in: ['REQUESTED', 'ACTIVE'] } }
-    });
-    if (existing) { res.status(400).json({ success: false, message: 'El ítem ya está prestado o tiene una solicitud pendiente' }); return; }
+    // Atomically claim the item inside the transaction to prevent race conditions:
+    // updateMany with loanStatus=AVAILABLE guard ensures only one concurrent request wins.
+    let loan;
+    try {
+      loan = await prisma.$transaction(async (tx) => {
+        const claimed = await tx.libraryItem.updateMany({
+          where: { id: item.id, loanStatus: LibraryItemLoanStatus.AVAILABLE },
+          data: { loanStatus: LibraryItemLoanStatus.REQUESTED },
+        });
+        if (claimed.count === 0) {
+          throw Object.assign(new Error('ITEM_NOT_AVAILABLE'), { code: 'ITEM_NOT_AVAILABLE' });
+        }
 
-    const loan = await prisma.$transaction(async (tx) => {
-      const newLoan = await tx.libraryLoan.create({
-        data: { libraryItemId: item.id, userId, status: LibraryLoanStatus.REQUESTED },
-        select: LOAN_SELECT
+        const newLoan = await tx.libraryLoan.create({
+          data: { libraryItemId: item.id, userId, status: LibraryLoanStatus.REQUESTED },
+          select: LOAN_SELECT,
+        });
+
+        // Mark any active queue entry for this user as FULFILLED
+        await tx.libraryQueue.updateMany({
+          where: {
+            libraryItemId: item.id,
+            userId,
+            status: { in: [LibraryQueueStatus.WAITING, LibraryQueueStatus.NOTIFIED] },
+          },
+          data: { status: LibraryQueueStatus.FULFILLED },
+        });
+
+        return newLoan;
       });
-      await tx.libraryItem.update({ where: { id: item.id }, data: { loanStatus: LibraryItemLoanStatus.REQUESTED } });
-      return newLoan;
-    });
+    } catch (err) {
+      if ((err as { code?: string }).code === 'ITEM_NOT_AVAILABLE') {
+        res.status(400).json({ success: false, message: 'El ítem no está disponible actualmente' });
+        return;
+      }
+      throw err;
+    }
 
     const requester = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
     await notifyAdmins(
@@ -257,6 +279,16 @@ export const returnLoan = async (req: Request, res: Response): Promise<void> => 
     if (!loan) { res.status(404).json({ success: false, message: 'Préstamo no encontrado' }); return; }
     if (loan.status !== 'ACTIVE') { res.status(400).json({ success: false, message: 'Solo se pueden devolver préstamos activos' }); return; }
 
+    const validFinalStatuses: LibraryItemLoanStatus[] = [
+      LibraryItemLoanStatus.AVAILABLE,
+      LibraryItemLoanStatus.MAINTENANCE,
+      LibraryItemLoanStatus.BLOCKED,
+    ];
+    if (nextLoanStatus && !validFinalStatuses.includes(nextLoanStatus)) {
+      res.status(400).json({ success: false, message: 'Estado final del ítem no válido' });
+      return;
+    }
+
     const now = new Date();
     const finalItemStatus: LibraryItemLoanStatus = nextLoanStatus ?? LibraryItemLoanStatus.AVAILABLE;
 
@@ -354,7 +386,7 @@ export const getMyLoans = async (req: Request, res: Response): Promise<void> => 
     const userId = req.user?.userId;
     if (!userId) { res.status(401).json({ success: false, message: 'No autenticado' }); return; }
 
-    const [active, history] = await Promise.all([
+    const [active, history, queue] = await Promise.all([
       prisma.libraryLoan.findMany({
         where: { userId, status: { in: ['REQUESTED', 'ACTIVE'] } },
         select: LOAN_SELECT,
@@ -365,10 +397,18 @@ export const getMyLoans = async (req: Request, res: Response): Promise<void> => 
         select: LOAN_SELECT,
         orderBy: { createdAt: 'desc' },
         take: 20
-      })
+      }),
+      prisma.libraryQueue.findMany({
+        where: { userId, status: { in: [LibraryQueueStatus.WAITING, LibraryQueueStatus.NOTIFIED] } },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true, status: true, notifiedAt: true, createdAt: true,
+          libraryItem: { select: { id: true, name: true, thumbnail: true, loanStatus: true } },
+        },
+      }),
     ]);
 
-    res.json({ success: true, data: { active, history } });
+    res.json({ success: true, data: { active, history, queue } });
   } catch (error) {
     console.error('Error en getMyLoans:', error);
     res.status(500).json({ success: false, message: 'Error al obtener los préstamos' });
@@ -486,5 +526,32 @@ export const leaveQueue = async (req: Request, res: Response): Promise<void> => 
   } catch (error) {
     console.error('Error en leaveQueue:', error);
     res.status(500).json({ success: false, message: 'Error al salir de la lista' });
+  }
+};
+
+/**
+ * PATCH /api/library-loans/items/:itemId/loanable
+ * Admin: activa o desactiva el préstamo de un ítem.
+ */
+export const toggleLoanable = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { itemId } = req.params;
+    const { isLoanable } = req.body;
+
+    if (typeof isLoanable !== 'boolean') {
+      res.status(400).json({ success: false, message: 'isLoanable debe ser un booleano' });
+      return;
+    }
+
+    const item = await prisma.libraryItem.update({
+      where: { id: itemId },
+      data: { isLoanable },
+      select: { id: true, name: true, internalId: true, isLoanable: true, loanStatus: true },
+    });
+
+    res.json({ success: true, data: item });
+  } catch (error) {
+    console.error('Error en toggleLoanable:', error);
+    res.status(500).json({ success: false, message: 'Error al actualizar el ítem' });
   }
 };

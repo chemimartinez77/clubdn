@@ -72,6 +72,7 @@ async function buildBggSyncDiff(userId: string, bggUsername: string) {
     toImportOwned: toImport.filter((item) => item.own).length,
     toImportWishlist: toImport.filter((item) => item.wishlist).length,
     toImportPreviouslyOwned: toImport.filter((item) => item.previouslyOwned).length,
+    toImportExpansions: toImport.filter((item) => item.isExpansion).length,
   };
 }
 
@@ -365,6 +366,7 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
       toImportOwned,
       toImportWishlist,
       toImportPreviouslyOwned,
+      toImportExpansions,
     } = await buildBggSyncDiff(userId, bggUsername);
 
     return res.json({
@@ -376,6 +378,7 @@ export const getBggSyncCheck = async (req: Request, res: Response) => {
         toImportOwned,
         toImportWishlist,
         toImportPreviouslyOwned,
+        toImportExpansions,
         toDelete,
         estimatedSeconds,
         newCatalogItems,

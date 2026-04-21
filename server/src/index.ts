@@ -38,6 +38,7 @@ import { startEventCompletionJob } from './jobs/eventCompletionJob';
 import { startMemberPromotionJob } from './jobs/memberPromotionJob';
 import { startNotificationCleanupJob } from './jobs/notificationCleanupJob';
 import { startBggSyncJobWorker } from './jobs/bggSyncJob';
+import { startLibraryLoanJob } from './jobs/libraryLoanJob';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -180,6 +181,7 @@ if (process.env.NODE_ENV !== 'test') {
     startMemberPromotionJob();
     startNotificationCleanupJob();
     void startBggSyncJobWorker();
+    startLibraryLoanJob();
   });
 
   // Manejo de cierre graceful

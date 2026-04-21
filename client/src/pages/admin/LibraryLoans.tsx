@@ -43,6 +43,13 @@ function SearchPanel() {
 
   const [returnForm, setReturnForm] = useState<{ loanId: string; conditionIn: GameCondition; notesIn: string; nextLoanStatus: LibraryItemLoanStatus } | null>(null);
 
+  const loanableMutation = useMutation({
+    mutationFn: ({ itemId, isLoanable }: { itemId: string; isLoanable: boolean }) =>
+      api.patch(`/api/library-loans/items/${itemId}/loanable`, { isLoanable }),
+    onSuccess: () => { showSuccess('Ítem actualizado'); queryClient.invalidateQueries({ queryKey: ['library-item-search', searched] }); },
+    onError: (err: unknown) => { const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message; showError(msg ?? 'Error al actualizar'); }
+  });
+
   const returnMutation = useMutation({
     mutationFn: (form: { loanId: string; conditionIn: GameCondition; notesIn: string; nextLoanStatus: LibraryItemLoanStatus }) =>
       api.post(`/api/library-loans/${form.loanId}/return`, { conditionIn: form.conditionIn, notesIn: form.notesIn || undefined, nextLoanStatus: form.nextLoanStatus }),
@@ -89,9 +96,18 @@ function SearchPanel() {
                 {data.ownerEmail && <p className="text-xs text-[var(--color-textSecondary)]">Propietario: {data.ownerEmail}</p>}
                 {data.notes && <p className="text-xs text-yellow-600 mt-1">{data.notes}</p>}
               </div>
-              <span className={`ml-auto px-2 py-1 text-xs font-medium rounded-full ${data.loanStatus === 'AVAILABLE' ? 'bg-green-100 text-green-800' : data.loanStatus === 'ON_LOAN' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                {data.loanStatus === 'AVAILABLE' ? 'Disponible' : data.loanStatus === 'ON_LOAN' ? 'Prestado' : data.loanStatus === 'REQUESTED' ? 'Solicitado' : data.loanStatus}
-              </span>
+              <div className="ml-auto flex flex-col items-end gap-2">
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${data.loanStatus === 'AVAILABLE' ? 'bg-green-100 text-green-800' : data.loanStatus === 'ON_LOAN' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                  {data.loanStatus === 'AVAILABLE' ? 'Disponible' : data.loanStatus === 'ON_LOAN' ? 'Prestado' : data.loanStatus === 'REQUESTED' ? 'Solicitado' : data.loanStatus}
+                </span>
+                <button
+                  onClick={() => loanableMutation.mutate({ itemId: data.id, isLoanable: !data.isLoanable })}
+                  disabled={loanableMutation.isPending}
+                  className={`text-xs px-2 py-1 rounded-full border font-medium transition-colors disabled:opacity-50 ${data.isLoanable ? 'bg-green-100 border-green-400 text-green-800 hover:bg-green-200' : 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200'}`}
+                >
+                  {data.isLoanable ? 'Prestable' : 'No prestable'}
+                </button>
+              </div>
             </div>
 
             {activeLoan && (
