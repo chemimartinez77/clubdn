@@ -56,13 +56,20 @@ async function buildBggSyncDiff(userId: string, bggUsername: string) {
   const existingCatalogGames = importIds.length > 0
     ? await prisma.game.findMany({
         where: { id: { in: importIds } },
-        select: { id: true },
+        select: { id: true, isExpansion: true },
       })
     : [];
 
   const existingCatalogIds = new Set(existingCatalogGames.map((game) => game.id));
+  const catalogExpansionIds = new Set(existingCatalogGames.filter((g) => g.isExpansion).map((g) => g.id));
   const newCatalogItems = toImport.filter((item) => !existingCatalogIds.has(item.bggId)).length;
   const estimatedSeconds = estimateBggSyncSeconds(newCatalogItems, toImport.length + toDelete.length);
+
+  // Para juegos ya en el catálogo usamos isExpansion de la DB (fiable).
+  // Para juegos nuevos (aún no en DB) usamos el subtype de BGG como fallback.
+  const toImportExpansions = toImport.filter((item) =>
+    existingCatalogIds.has(item.bggId) ? catalogExpansionIds.has(item.bggId) : item.isExpansion
+  ).length;
 
   return {
     toImport,
@@ -72,7 +79,7 @@ async function buildBggSyncDiff(userId: string, bggUsername: string) {
     toImportOwned: toImport.filter((item) => item.own).length,
     toImportWishlist: toImport.filter((item) => item.wishlist).length,
     toImportPreviouslyOwned: toImport.filter((item) => item.previouslyOwned).length,
-    toImportExpansions: toImport.filter((item) => item.isExpansion).length,
+    toImportExpansions,
   };
 }
 
