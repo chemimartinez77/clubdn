@@ -252,7 +252,7 @@ export default function MiLudoteca() {
   }, [activeJobId, latestSyncJob]);
 
   const locations: GameLocation[] = locationsData ?? [];
-  const games = data?.games ?? [];
+  const games = useMemo(() => data?.games ?? [], [data?.games]);
   const pagination = data?.pagination;
   const displayedSyncJob = activeSyncJob ?? latestSyncJob ?? null;
   const syncRunning = displayedSyncJob?.status === 'QUEUED' || displayedSyncJob?.status === 'PENDING' || displayedSyncJob?.status === 'PROCESSING';
