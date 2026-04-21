@@ -1,5 +1,6 @@
 // client/src/pages/Ludoteca.tsx
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import Toggle from '../components/ui/Toggle';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
 import { useToast } from '../contexts/ToastContext';
@@ -539,16 +540,12 @@ export default function Ludoteca() {
               </div>
 
               {/* Toggle expansiones */}
-              <div className="flex items-center gap-2 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-[var(--color-textSecondary)]">
-                  <input
-                    type="checkbox"
-                    checked={showExpansions}
-                    onChange={(e) => { setShowExpansions(e.target.checked); setCurrentPage(1); }}
-                    className="w-4 h-4 accent-[var(--color-primary)]"
-                  />
-                  Incluir expansiones
-                </label>
+              <div className="pt-1">
+                <Toggle
+                  checked={showExpansions}
+                  onChange={(v) => { setShowExpansions(v); setCurrentPage(1); }}
+                  label="Incluir expansiones"
+                />
               </div>
 
               {/* Selector de items por página */}

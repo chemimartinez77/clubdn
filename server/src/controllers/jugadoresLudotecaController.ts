@@ -22,7 +22,6 @@ export const getPlayers = async (req: Request, res: Response) => {
         id: true,
         name: true,
         profile: { select: { nick: true, avatar: true, sharedLudotecaGroupId: true } },
-        _count: { select: { userGames: { where: activeOwn } } },
       },
       orderBy: { name: 'asc' },
     });
@@ -113,6 +112,15 @@ export const getPlayers = async (req: Request, res: Response) => {
       })
       .filter(Boolean);
 
+    // Contar juegos y expansiones por usuario a partir de allPublicGames (ya cargado)
+    const countsByUser = new Map<string, { games: number; expansions: number }>();
+    for (const ug of allPublicGames) {
+      const c = countsByUser.get(ug.userId) ?? { games: 0, expansions: 0 };
+      if (ug.game.isExpansion) c.expansions++;
+      else c.games++;
+      countsByUser.set(ug.userId, c);
+    }
+
     // Mapa para resolver nombre del compañero de colección compartida
     const userDisplayNameMap = new Map(publicUsers.map((u) => [u.id, displayName(u)]));
     const groupIdToUserIds = new Map<string, string[]>();
@@ -132,11 +140,13 @@ export const getPlayers = async (req: Request, res: Response) => {
         const partnerId = (groupIdToUserIds.get(gid) ?? []).find((id) => id !== u.id);
         if (partnerId) sharedWith = userDisplayNameMap.get(partnerId) ?? null;
       }
+      const counts = countsByUser.get(u.id) ?? { games: 0, expansions: 0 };
       return {
         userId: u.id,
         displayName: displayName(u),
         avatar: u.profile?.avatar ?? null,
-        gameCount: u._count.userGames,
+        gameCount: counts.games,
+        expansionCount: counts.expansions,
         sharedWith,
       };
     });

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import Toggle from '../components/ui/Toggle';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
@@ -178,15 +179,11 @@ export default function JugadorDetalle() {
             placeholder="Buscar en su colección..."
             className="w-full md:w-80 px-4 py-2 rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] text-[var(--color-text)] placeholder-[var(--color-textSecondary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
           />
-          <label className="flex items-center gap-2 text-sm text-[var(--color-textSecondary)] cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={showExpansions}
-              onChange={(e) => { setShowExpansions(e.target.checked); setPage(1); }}
-              className="w-4 h-4 rounded accent-[var(--color-primary)]"
-            />
-            Incluir expansiones
-          </label>
+          <Toggle
+            checked={showExpansions}
+            onChange={(v) => { setShowExpansions(v); setPage(1); }}
+            label="Incluir expansiones"
+          />
         </div>
 
         {/* Estado de carga / error */}

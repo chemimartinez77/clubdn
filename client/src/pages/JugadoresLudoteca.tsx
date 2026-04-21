@@ -11,6 +11,7 @@ interface Player {
   displayName: string;
   avatar: string | null;
   gameCount: number;
+  expansionCount: number;
   sharedWith: string | null;
 }
 
@@ -219,7 +220,7 @@ export default function JugadoresLudoteca() {
   // Todos los jugadores seleccionables en el comparador (propios + lista pública)
   const allSelectablePlayers: (Player & { isSelf?: boolean })[] = user
     ? [
-        { userId: user.id, displayName: user.profile?.nick ?? user.name, avatar: user.profile?.avatar ?? null, gameCount: myGamesData?.player.gameCount ?? 0, sharedWith: null, isSelf: true },
+        { userId: user.id, displayName: user.profile?.nick ?? user.name, avatar: user.profile?.avatar ?? null, gameCount: myGamesData?.player.gameCount ?? 0, expansionCount: myGamesData?.player.expansionCount ?? 0, sharedWith: null, isSelf: true },
         ...players,
       ]
     : players;
@@ -332,7 +333,9 @@ export default function JugadoresLudoteca() {
                     <div className="min-w-0">
                       <p className="font-semibold text-[var(--color-text)] truncate">{player.displayName}</p>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm text-[var(--color-textSecondary)]">{player.gameCount} juegos</p>
+                        <p className="text-sm text-[var(--color-textSecondary)]">
+                        {player.gameCount} juegos{player.expansionCount > 0 ? ` y ${player.expansionCount} expansiones` : ''}
+                      </p>
                         {player.sharedWith && (
                           <span
                             title={`Colección compartida con ${player.sharedWith}`}
@@ -490,7 +493,9 @@ export default function JugadoresLudoteca() {
                           {player.displayName}
                           {'isSelf' in player && player.isSelf && <span className="ml-1 text-xs text-[var(--color-primary)]">tú</span>}
                         </p>
-                        <p className="text-xs text-[var(--color-textSecondary)]">{player.gameCount} juegos</p>
+                        <p className="text-xs text-[var(--color-textSecondary)]">
+                          {player.gameCount} juegos{player.expansionCount > 0 ? ` y ${player.expansionCount} exp.` : ''}
+                        </p>
                       </div>
                       {selected && (
                         <svg className="w-5 h-5 text-[var(--color-primary)] ml-auto flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
