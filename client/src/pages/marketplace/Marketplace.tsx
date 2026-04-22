@@ -1,8 +1,9 @@
 // client/src/pages/marketplace/Marketplace.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
+import Button from '../../components/ui/Button';
 import { api } from '../../api/axios';
 import UserPopover from '../../components/ui/UserPopover';
 import { displayName } from '../../utils/displayName';
@@ -30,16 +31,8 @@ const SORT_OPTIONS: { label: string; sortBy: MarketplaceFilters['sortBy']; sortD
 
 export default function Marketplace() {
   const [filters, setFilters] = useState<MarketplaceFilters>(EMPTY_FILTERS);
-  const [inputQ, setInputQ] = useState('');
+  const [draftFilters, setDraftFilters] = useState<MarketplaceFilters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setFilters(f => ({ ...f, q: inputQ }));
-      setPage(1);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [inputQ]);
 
   const params = new URLSearchParams();
   if (filters.q) params.set('q', filters.q);
@@ -64,12 +57,22 @@ export default function Marketplace() {
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const opt = SORT_OPTIONS[parseInt(e.target.value)];
-    if (opt) setFilters(f => ({ ...f, sortBy: opt.sortBy, sortDir: opt.sortDir }));
+    if (opt) setDraftFilters(f => ({ ...f, sortBy: opt.sortBy, sortDir: opt.sortDir }));
+  };
+
+  const handleSearch = (event?: React.FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
+    setFilters({
+      ...draftFilters,
+      q: draftFilters.q.trim(),
+      minPrice: draftFilters.minPrice.trim(),
+      maxPrice: draftFilters.maxPrice.trim(),
+    });
     setPage(1);
   };
 
   const currentSortIndex = SORT_OPTIONS.findIndex(
-    o => o.sortBy === filters.sortBy && o.sortDir === filters.sortDir
+    o => o.sortBy === draftFilters.sortBy && o.sortDir === draftFilters.sortDir
   );
 
   return (
@@ -106,17 +109,20 @@ export default function Marketplace() {
         </div>
 
         {/* Filtros */}
-        <div className="bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-xl p-4 mb-6 flex flex-col md:flex-row gap-3">
+        <form
+          onSubmit={handleSearch}
+          className="bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-xl p-4 mb-6 flex flex-col md:flex-row gap-3"
+        >
           <input
             type="text"
             placeholder="Buscar anuncios..."
-            value={inputQ}
-            onChange={e => setInputQ(e.target.value)}
+            value={draftFilters.q}
+            onChange={e => setDraftFilters(f => ({ ...f, q: e.target.value }))}
             className="flex-1 px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-cardBackground)] text-[var(--color-text)] text-sm"
           />
           <select
-            value={filters.category}
-            onChange={e => { setFilters(f => ({ ...f, category: e.target.value })); setPage(1); }}
+            value={draftFilters.category}
+            onChange={e => setDraftFilters(f => ({ ...f, category: e.target.value }))}
             className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-cardBackground)] text-[var(--color-text)] text-sm"
           >
             <option value="">Todas las categorías</option>
@@ -128,15 +134,15 @@ export default function Marketplace() {
             <input
               type="number"
               placeholder="Precio mín."
-              value={filters.minPrice}
-              onChange={e => { setFilters(f => ({ ...f, minPrice: e.target.value })); setPage(1); }}
+              value={draftFilters.minPrice}
+              onChange={e => setDraftFilters(f => ({ ...f, minPrice: e.target.value }))}
               className="w-28 px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-cardBackground)] text-[var(--color-text)] text-sm"
             />
             <input
               type="number"
               placeholder="Precio máx."
-              value={filters.maxPrice}
-              onChange={e => { setFilters(f => ({ ...f, maxPrice: e.target.value })); setPage(1); }}
+              value={draftFilters.maxPrice}
+              onChange={e => setDraftFilters(f => ({ ...f, maxPrice: e.target.value }))}
               className="w-28 px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-cardBackground)] text-[var(--color-text)] text-sm"
             />
           </div>
@@ -147,7 +153,10 @@ export default function Marketplace() {
           >
             {SORT_OPTIONS.map((o, i) => <option key={i} value={i}>{o.label}</option>)}
           </select>
-        </div>
+          <Button type="submit" variant="primary" size="sm" className="md:px-5">
+            Buscar
+          </Button>
+        </form>
 
         {/* Listado */}
         {isLoading ? (

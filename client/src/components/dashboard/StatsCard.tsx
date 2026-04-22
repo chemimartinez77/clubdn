@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from '../ui/Card';
+import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import InfoTooltip from '../ui/InfoTooltip';
 import { api } from '../../api/axios';
@@ -324,6 +325,18 @@ export default function StatsCard() {
       </CardContent>
 
       {/* Modales */}
+      <div className="px-6 pb-4">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => navigate('/estadisticas')}
+          className="w-full"
+        >
+          Ver estadisticas completas
+        </Button>
+      </div>
+
       <Modal
         isOpen={openModal === 'eventsAttended'}
         onClose={() => setOpenModal(null)}

@@ -15,6 +15,7 @@ const upload = multer({
 // Rutas de perfil (requieren autenticación)
 router.get('/me', authenticate, getMyProfile);
 router.put('/me', authenticate, updateMyProfile);
+router.patch('/me', authenticate, updateMyProfile);
 router.post('/me/avatar', authenticate, upload.single('avatar'), uploadAvatar);
 router.patch('/me/tour-dismiss', authenticate, dismissTour);
 router.patch('/me/onboarding', authenticate, completeOnboarding);

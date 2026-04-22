@@ -18,6 +18,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
+import PersonalStats from './pages/PersonalStats';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
 import CreatePartida from './pages/CreatePartida';
@@ -247,6 +248,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/estadisticas"
+            element={
+              <ProtectedRoute>
+                <PersonalStats />
               </ProtectedRoute>
             }
           />

@@ -15,6 +15,45 @@ import { CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS } from '../../types/marke
 import type { MarketplaceListing, MarketplaceConversationSummary } from '../../types/marketplace';
 import type { ApiResponse } from '../../types/auth';
 
+const imageUrlToDataUrl = async (url: string): Promise<string> => {
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+
+  const response = await fetch(url, {
+    mode: 'cors',
+    credentials: 'omit',
+    cache: 'force-cache',
+  });
+
+  if (!response.ok) {
+    throw new Error(`No se pudo cargar la imagen (${response.status})`);
+  }
+
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+};
+
+const waitForImagesToDecode = async (container: HTMLElement): Promise<void> => {
+  const images = Array.from(container.querySelectorAll('img'));
+
+  await Promise.all(images.map((image) => {
+    if (image.complete && image.naturalWidth > 0) {
+      return image.decode?.().catch(() => undefined) ?? Promise.resolve();
+    }
+
+    return new Promise<void>((resolve) => {
+      image.onload = () => {
+        image.decode?.().finally(resolve) ?? resolve();
+      };
+      image.onerror = () => resolve();
+    });
+  }));
+};
+
 export default function MarketplaceListingPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -26,6 +65,8 @@ export default function MarketplaceListingPage() {
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const [includeExtraImages, setIncludeExtraImages] = useState(false);
   const [isDownloadingPng, setIsDownloadingPng] = useState(false);
+  const [isPreparingShareImages, setIsPreparingShareImages] = useState(false);
+  const [shareCardImages, setShareCardImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const recordedViewForIdRef = useRef<string | null>(null);
   const shareCardRef = useRef<HTMLDivElement | null>(null);
@@ -130,8 +171,45 @@ export default function MarketplaceListingPage() {
   const handleOpenDownloadModal = () => {
     if (!listing) return;
     setIncludeExtraImages(false);
+    setShareCardImages([]);
     setIsDownloadModalOpen(true);
   };
+
+  useEffect(() => {
+    if (!isDownloadModalOpen || !listing) return;
+
+    let cancelled = false;
+
+    const prepareImages = async () => {
+      setIsPreparingShareImages(true);
+      const imagesToEmbed = includeExtraImages ? listing.images : listing.images.slice(0, 1);
+
+      try {
+        const embeddedImages = await Promise.all(imagesToEmbed.map(async (imageSrc) => {
+          try {
+            return await imageUrlToDataUrl(imageSrc);
+          } catch (error) {
+            console.warn('No se pudo embeber una imagen del anuncio para el PNG:', error);
+            return imageSrc;
+          }
+        }));
+
+        if (!cancelled) {
+          setShareCardImages(embeddedImages);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsPreparingShareImages(false);
+        }
+      }
+    };
+
+    prepareImages();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [includeExtraImages, isDownloadModalOpen, listing]);
 
   const handleDownloadPng = async () => {
     if (!listing) return;
@@ -139,6 +217,7 @@ export default function MarketplaceListingPage() {
 
     try {
       setIsDownloadingPng(true);
+      await waitForImagesToDecode(shareCardRef.current);
       const safeBaseName = listing.title
         .toLowerCase()
         .normalize('NFD')
@@ -209,6 +288,10 @@ export default function MarketplaceListingPage() {
 
   const thumb = listing.images[imageIndex];
   const lightboxImage = lightboxIndex !== null ? listing.images[lightboxIndex] : null;
+  const shareCardListing = {
+    ...listing,
+    images: shareCardImages.length > 0 ? shareCardImages : listing.images,
+  };
   const downloadPngHelpText = `Comparte tu anuncio bajándote la imagen y subiéndola a las redes que quieras.
 
 Se generará una ficha visual con la imagen principal del anuncio, el precio, el estado, la descripción completa y el contacto adicional si lo has añadido.
@@ -514,7 +597,7 @@ Si tu anuncio tiene más fotos, podrás decidir en la siguiente ventana si quier
               <div className="flex justify-center">
                 <div ref={shareCardRef}>
                   <MarketplaceListingShareCard
-                    listing={listing}
+                    listing={shareCardListing}
                     includeExtraImages={includeExtraImages}
                   />
                 </div>
@@ -531,7 +614,8 @@ Si tu anuncio tiene más fotos, podrás decidir en la siguiente ventana si quier
               <Button
                 variant="primary"
                 onClick={handleDownloadPng}
-                isLoading={isDownloadingPng}
+                isLoading={isPreparingShareImages || isDownloadingPng}
+                disabled={isPreparingShareImages}
               >
                 Descargar PNG
               </Button>

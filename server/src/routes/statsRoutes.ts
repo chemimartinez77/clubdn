@@ -3,6 +3,7 @@ import { Router } from 'express';
 import {
   getAdminStats,
   getUserStats,
+  getUserDetailedStats,
   getClubStats,
   getUserEventsAttended,
   getUserGamesPlayed,
@@ -17,6 +18,7 @@ router.get('/admin', authenticate, requireAdmin, getAdminStats);
 
 // Estadísticas del usuario autenticado
 router.get('/user', authenticate, getUserStats);
+router.get('/user/detailed', authenticate, getUserDetailedStats);
 
 // Estadísticas globales del club (públicas para usuarios autenticados)
 router.get('/club', authenticate, getClubStats);

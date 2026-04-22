@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { api } from '../../api/axios';
 import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '../../contexts/ToastContext';
 import type { Tip } from '../../data/tips';
 import { getRandomTipExcluding, markTipShown } from '../../data/tips';
 
@@ -14,6 +15,7 @@ export default function TipOfTheDayModal({ tip, onClose }: TipOfTheDayModalProps
   const [current, setCurrent] = useState<Tip>(tip);
   const [disabling, setDisabling] = useState(false);
   const queryClient = useQueryClient();
+  const { error: showError } = useToast();
 
   const handleClose = () => {
     markTipShown();
@@ -27,13 +29,18 @@ export default function TipOfTheDayModal({ tip, onClose }: TipOfTheDayModalProps
   const handleDisable = async () => {
     setDisabling(true);
     try {
-      await api.patch('/api/profile/me', { showTipOfTheDay: false });
-      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      const response = await api.put('/api/profile/me', { showTipOfTheDay: false });
+      const updatedProfile = response.data?.data?.profile;
+      if (updatedProfile) {
+        queryClient.setQueryData(['myProfile'], updatedProfile);
+      }
+      await queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      markTipShown();
+      onClose();
     } catch {
-      // Si falla, cerramos igualmente
+      showError('No se pudo desactivar el consejo del día. Inténtalo de nuevo.');
+      setDisabling(false);
     }
-    markTipShown();
-    onClose();
   };
 
   return (
@@ -104,7 +111,7 @@ export default function TipOfTheDayModal({ tip, onClose }: TipOfTheDayModalProps
                 disabled={disabling}
                 className="text-xs text-[var(--color-textSecondary)] hover:text-red-500 transition-colors underline underline-offset-2 text-left disabled:opacity-50"
               >
-                No volver a mostrar
+                {disabling ? 'Guardando...' : 'No volver a mostrar'}
               </button>
             </div>
             <button

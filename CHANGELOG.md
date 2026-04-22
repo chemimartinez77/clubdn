@@ -4,6 +4,68 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-22
+
+### feat/fix: estadísticas personales y correcciones de UX reportadas
+
+Se atienden varios reportes de usuarios relacionados con preferencias personales, Mercadillo y consulta de estadísticas.
+
+#### Estadísticas personales completas
+
+Se añade una pantalla dedicada `/estadisticas` para consultar estadísticas personales de partidas completadas.
+
+**Backend:**
+- `server/src/controllers/statsController.ts`: nuevo endpoint `GET /api/stats/user/detailed` que agrega partidas jugadas totales, partidas como creador, partidas creadas por otros, juegos distintos, compañeros distintos, actividad por año, mes y día, distribución por día de la semana, franjas horarias, ranking completo por juego y ranking completo por compañero.
+- `server/src/routes/statsRoutes.ts`: nueva ruta autenticada `/user/detailed`.
+
+**Frontend:**
+- `client/src/pages/PersonalStats.tsx` (nuevo): pantalla de estadísticas personales con resumen, barras por año/mes/franja/día, heatmap del último año, ranking completo de juegos y buscador de compañeros.
+- `client/src/App.tsx`: nueva ruta protegida `/estadisticas`.
+- `client/src/types/stats.ts`: tipos para la respuesta detallada.
+- `client/src/components/dashboard/StatsCard.tsx`: botón "Ver estadisticas completas" desde la home.
+- `client/src/components/layout/Header.tsx`: acceso a "Mis estadisticas" desde el menú de usuario en desktop y móvil.
+
+#### Consejo del día: "No volver a mostrar" no persistía
+
+El modal cerraba aunque la petición fallara, por lo que el usuario pensaba que había desactivado el consejo pero no se guardaba.
+
+**Cambios:**
+- `client/src/components/tips/TipOfTheDayModal.tsx`: usa el endpoint correcto para actualizar perfil, actualiza la cache `myProfile`, muestra error si no se puede guardar y no cierra silenciosamente.
+- `server/src/routes/profileRoutes.ts`: añade `PATCH /api/profile/me` como compatibilidad para actualizaciones parciales.
+
+#### Mercadillo: descarga PNG sin imágenes
+
+La previsualización mostraba imágenes, pero el PNG descargado podía generarse con huecos grises porque `html-to-image` capturaba imágenes remotas no embebidas/decodificadas.
+
+**Cambios:**
+- `client/src/pages/marketplace/MarketplaceListing.tsx`: al abrir la descarga, convierte las imágenes incluidas a `data:image/...`, espera a que estén decodificadas antes de llamar a `toPng` y bloquea el botón mientras se preparan.
+
+#### Mercadillo: búsqueda manual
+
+La búsqueda del Mercadillo estaba con debounce para el texto y disparaba peticiones al cambiar filtros. Se cambia a un flujo explícito con botón.
+
+**Cambios:**
+- `client/src/pages/marketplace/Marketplace.tsx`: separa filtros en edición (`draftFilters`) de filtros aplicados, añade botón "Buscar" y solo consulta al enviar el formulario.
+
+**Validación:**
+- `client`: `npm.cmd run build`
+- `server`: `npx.cmd tsc --noEmit`
+
+**Archivos modificados:**
+- `server/src/controllers/statsController.ts`
+- `server/src/routes/statsRoutes.ts`
+- `server/src/routes/profileRoutes.ts`
+- `client/src/App.tsx`
+- `client/src/components/dashboard/StatsCard.tsx`
+- `client/src/components/layout/Header.tsx`
+- `client/src/components/tips/TipOfTheDayModal.tsx`
+- `client/src/pages/PersonalStats.tsx` (nuevo)
+- `client/src/pages/marketplace/Marketplace.tsx`
+- `client/src/pages/marketplace/MarketplaceListing.tsx`
+- `client/src/types/stats.ts`
+
+---
+
 ## 2026-04-21 (sesión 3)
 
 ### feat: filtros de juegos exclusivos y populares en Mi Ludoteca
@@ -3673,6 +3735,3 @@ Incluye:
 ---
 
 **Última actualización:** 10 de Marzo de 2026
-
-
-

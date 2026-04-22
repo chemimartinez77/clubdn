@@ -5,6 +5,29 @@ import { RegistrationStatus, EventStatus, BadgeCategory } from '@prisma/client';
 import { checkAndUnlockBadges } from './badgeController';
 import { notifyEventDisputeConfirmation } from '../services/notificationService';
 
+const formatMonthKey = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  return `${year}-${month}`;
+};
+
+const formatDateKey = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const monthLabel = (year: number, month: number): string => (
+  new Intl.DateTimeFormat('es-ES', { month: 'short', year: 'numeric' })
+    .format(new Date(year, month - 1, 1))
+);
+
+const displayUserName = (name: string, nick?: string | null): string => {
+  const cleanNick = nick?.trim();
+  return cleanNick || name;
+};
+
 /**
  * Marca como COMPLETED todos los eventos/partidas cuya fecha ya ha pasado
  * y crea los registros de GamePlayHistory para los participantes confirmados.
@@ -475,6 +498,219 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
     res.status(500).json({
       success: false,
       message: 'Error al obtener estadísticas'
+    });
+  }
+};
+
+/**
+ * Obtener estadisticas personales completas del usuario.
+ */
+export const getUserDetailedStats = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'No autorizado' });
+      return;
+    }
+
+    await completePassedEvents();
+
+    const registrations = await prisma.eventRegistration.findMany({
+      where: {
+        userId,
+        status: RegistrationStatus.CONFIRMED,
+        event: {
+          type: 'PARTIDA',
+          status: EventStatus.COMPLETED
+        }
+      },
+      select: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            date: true,
+            startHour: true,
+            startMinute: true,
+            createdBy: true,
+            gameName: true,
+            gameImage: true,
+            game: {
+              select: {
+                thumbnail: true,
+                image: true
+              }
+            },
+            registrations: {
+              where: {
+                status: RegistrationStatus.CONFIRMED
+              },
+              select: {
+                userId: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    profile: {
+                      select: {
+                        nick: true,
+                        avatar: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        event: {
+          date: 'desc'
+        }
+      }
+    });
+
+    const byYear = new Map<number, number>();
+    const byMonth = new Map<string, { year: number; month: number; label: string; count: number }>();
+    const activityByDate = new Map<string, number>();
+    const games = new Map<string, { name: string; count: number; image: string | null; latestEventId: string; latestDate: Date }>();
+    const players = new Map<string, { userId: string; name: string; avatar: string | null; count: number; latestEventId: string; latestDate: Date }>();
+    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+    const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+    const timeRangeCounts: Record<'morning' | 'afternoon' | 'evening' | 'night' | 'unknown', number> = {
+      morning: 0,
+      afternoon: 0,
+      evening: 0,
+      night: 0,
+      unknown: 0
+    };
+
+    let organizedGames = 0;
+
+    for (const { event } of registrations) {
+      const eventDate = event.date;
+      const year = eventDate.getFullYear();
+      const month = eventDate.getMonth() + 1;
+      const monthKey = formatMonthKey(eventDate);
+      const dateKey = formatDateKey(eventDate);
+
+      byYear.set(year, (byYear.get(year) ?? 0) + 1);
+      const monthEntry = byMonth.get(monthKey) ?? { year, month, label: monthLabel(year, month), count: 0 };
+      monthEntry.count += 1;
+      byMonth.set(monthKey, monthEntry);
+      activityByDate.set(dateKey, (activityByDate.get(dateKey) ?? 0) + 1);
+
+      const day = eventDate.getDay();
+      if (dayCounts[day] !== undefined) dayCounts[day]++;
+
+      const hour = event.startHour;
+      if (hour === null || hour === undefined) {
+        timeRangeCounts.unknown++;
+      } else if (hour >= 8 && hour < 14) {
+        timeRangeCounts.morning++;
+      } else if (hour >= 14 && hour < 20) {
+        timeRangeCounts.afternoon++;
+      } else if (hour >= 20 && hour < 24) {
+        timeRangeCounts.evening++;
+      } else {
+        timeRangeCounts.night++;
+      }
+
+      if (event.createdBy === userId) organizedGames++;
+
+      const gameName = event.gameName || event.title;
+      const existingGame = games.get(gameName);
+      if (!existingGame) {
+        games.set(gameName, {
+          name: gameName,
+          count: 1,
+          image: event.game?.image || event.game?.thumbnail || event.gameImage || null,
+          latestEventId: event.id,
+          latestDate: eventDate
+        });
+      } else {
+        existingGame.count++;
+        if (eventDate > existingGame.latestDate) {
+          existingGame.latestEventId = event.id;
+          existingGame.latestDate = eventDate;
+          existingGame.image = event.game?.image || event.game?.thumbnail || event.gameImage || existingGame.image;
+        }
+      }
+
+      for (const registration of event.registrations) {
+        if (registration.userId === userId) continue;
+        const existingPlayer = players.get(registration.userId);
+        const playerName = displayUserName(registration.user.name, registration.user.profile?.nick);
+        if (!existingPlayer) {
+          players.set(registration.userId, {
+            userId: registration.userId,
+            name: playerName,
+            avatar: registration.user.profile?.avatar ?? null,
+            count: 1,
+            latestEventId: event.id,
+            latestDate: eventDate
+          });
+        } else {
+          existingPlayer.count++;
+          if (eventDate > existingPlayer.latestDate) {
+            existingPlayer.latestEventId = event.id;
+            existingPlayer.latestDate = eventDate;
+          }
+        }
+      }
+    }
+
+    const gamesPlayed = registrations.length;
+    const byMonthList = Array.from(byMonth.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => ({ key, ...value }));
+
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          gamesPlayed,
+          organizedGames,
+          joinedGames: gamesPlayed - organizedGames,
+          uniqueGames: games.size,
+          uniquePlayers: players.size
+        },
+        byYear: Array.from(byYear.entries())
+          .sort(([a], [b]) => a - b)
+          .map(([year, count]) => ({ year, count })),
+        byMonth: byMonthList,
+        activityByDate: Array.from(activityByDate.entries())
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([date, count]) => ({ date, count })),
+        dayOfWeek: dayCounts.map((count, index) => ({ day: dayNames[index], count })),
+        timeRanges: [
+          { key: 'morning', label: 'Manana (8-14h)', count: timeRangeCounts.morning },
+          { key: 'afternoon', label: 'Tarde (14-20h)', count: timeRangeCounts.afternoon },
+          { key: 'evening', label: 'Noche (20-24h)', count: timeRangeCounts.evening },
+          { key: 'night', label: 'Madrugada (0-8h)', count: timeRangeCounts.night },
+          { key: 'unknown', label: 'Sin hora', count: timeRangeCounts.unknown }
+        ],
+        games: Array.from(games.values())
+          .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'es'))
+          .map(game => ({
+            ...game,
+            latestDate: game.latestDate.toISOString()
+          })),
+        players: Array.from(players.values())
+          .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'es'))
+          .map(player => ({
+            ...player,
+            latestDate: player.latestDate.toISOString()
+          }))
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener estadisticas personales detalladas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener estadisticas personales'
     });
   }
 };
