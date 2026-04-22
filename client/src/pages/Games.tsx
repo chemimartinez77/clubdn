@@ -224,14 +224,13 @@ export default function Games() {
                     </div>
 
                     {game.complexityRating && (
-                      <div className="mt-2" title={`Peso BGG ${game.complexityRating.toFixed(2)}/5`}>
+                      <div className="mt-3" title={`Dificultad ${game.complexityRating.toFixed(2)}/5`}>
                         <div className="flex items-center justify-between text-[10px] text-[var(--color-textSecondary)] mb-1">
-                          <span>Peso BGG</span>
-                          <span>{game.complexityRating.toFixed(1)}/5</span>
+                          <span>Dificultad</span>
                         </div>
                         <div
                           className="flex items-center gap-1"
-                          aria-label={`Peso BGG ${game.complexityRating.toFixed(2)} de 5`}
+                          aria-label={`Dificultad ${game.complexityRating.toFixed(2)} de 5`}
                         >
                           {[1, 2, 3, 4, 5].map((level) => (
                             <div
