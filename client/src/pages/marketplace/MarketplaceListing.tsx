@@ -21,7 +21,7 @@ const imageUrlToDataUrl = async (url: string): Promise<string> => {
   const response = await fetch(url, {
     mode: 'cors',
     credentials: 'omit',
-    cache: 'force-cache',
+    cache: 'no-cache',
   });
 
   if (!response.ok) {
