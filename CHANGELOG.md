@@ -6,6 +6,14 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-22
 
+### fix: mejora del indicador de peso BGG en juegos
+
+Se ajusta la tarjeta de juegos jugados para representar mejor la complejidad importada de BoardGameGeek.
+
+**Frontend:**
+- `client/src/pages/Games.tsx`: muestra la etiqueta "Peso BGG", el valor numérico y un `title` descriptivo.
+- `client/src/pages/Games.tsx`: cambia la barra de complejidad para rellenar cada tramo de forma proporcional y añade `aria-label` para accesibilidad.
+
 ### feat: flujo avanzado de prestamos de ludoteca
 
 Se completa el flujo acordado para operar los prestamos con pegatinas en las cajas usando el `internalId` como referencia interna.

@@ -224,17 +224,27 @@ export default function Games() {
                     </div>
 
                     {game.complexityRating && (
-                      <div className="mt-2">
-                        <div className="flex items-center gap-1">
+                      <div className="mt-2" title={`Peso BGG ${game.complexityRating.toFixed(2)}/5`}>
+                        <div className="flex items-center justify-between text-[10px] text-[var(--color-textSecondary)] mb-1">
+                          <span>Peso BGG</span>
+                          <span>{game.complexityRating.toFixed(1)}/5</span>
+                        </div>
+                        <div
+                          className="flex items-center gap-1"
+                          aria-label={`Peso BGG ${game.complexityRating.toFixed(2)} de 5`}
+                        >
                           {[1, 2, 3, 4, 5].map((level) => (
                             <div
                               key={level}
-                              className={`h-1 flex-1 rounded ${
-                                level <= Math.round(game.complexityRating!)
-                                  ? 'bg-[var(--color-primary)]'
-                                  : 'bg-[var(--color-cardBorder)]'
-                              }`}
-                            />
+                              className="h-1 flex-1 rounded bg-[var(--color-cardBorder)] overflow-hidden"
+                            >
+                              <div
+                                className="h-full rounded bg-[var(--color-primary)]"
+                                style={{
+                                  width: `${Math.max(0, Math.min(1, game.complexityRating! - (level - 1))) * 100}%`
+                                }}
+                              />
+                            </div>
                           ))}
                         </div>
                       </div>
