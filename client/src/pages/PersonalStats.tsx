@@ -7,7 +7,6 @@ import Button from '../components/ui/Button';
 import { GameImage } from '../components/events/EventCard';
 import { api } from '../api/axios';
 import type {
-  DetailedActivityDay,
   DetailedMonthStat,
   DetailedPlayerStat,
   DetailedTimeRange,
@@ -150,13 +149,15 @@ function MonthChart({ months }: { months: DetailedMonthStat[] }) {
 }
 
 function CumulativeLineChart({ months }: { months: DetailedMonthStat[] }) {
-  const series = buildMonthlySeries(months);
-  let runningTotal = 0;
-  const cumulative = series.map(month => {
-    runningTotal += month.count;
-    return { ...month, total: runningTotal };
-  });
-  const max = Math.max(1, runningTotal);
+  const series = useMemo(() => buildMonthlySeries(months), [months]);
+  const { cumulative, max, total } = useMemo(() => {
+    const cum = series.reduce<({ count: number; total: number } & (typeof series)[number])[]>((acc, month) => {
+      const prev = acc.at(-1)?.total ?? 0;
+      return [...acc, { ...month, total: prev + month.count }];
+    }, []);
+    const finalTotal = cum.at(-1)?.total ?? 0;
+    return { cumulative: cum, max: Math.max(1, finalTotal), total: finalTotal };
+  }, [series]);
   const width = 720;
   const height = 220;
   const padding = 28;
@@ -192,7 +193,7 @@ function CumulativeLineChart({ months }: { months: DetailedMonthStat[] }) {
           </g>
         ))}
         <text x={width - padding} y={padding - 8} textAnchor="end" className="fill-[var(--color-text)] text-sm font-semibold">
-          {runningTotal} partidas
+          {total} partidas
         </text>
       </svg>
     </div>
@@ -343,48 +344,72 @@ function TimeClockChart({ ranges }: { ranges: DetailedTimeRange[] }) {
   );
 }
 
-function ActivityHeatmap({ activity }: { activity: DetailedActivityDay[] }) {
-  const activityMap = useMemo(() => new Map(activity.map(day => [day.date, day.count])), [activity]);
-  const max = Math.max(1, ...activity.map(day => day.count));
-  const today = new Date();
-  const start = new Date(today);
-  start.setDate(start.getDate() - 364);
+const MONTH_LABELS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-  const cells = Array.from({ length: 365 }, (_, index) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    const key = toDateKey(date);
-    const count = activityMap.get(key) ?? 0;
-    return { key, count };
-  });
+function ActivityHeatmap({ activity }: { activity: DetailedMonthStat[] }) {
+  const max = useMemo(() => Math.max(1, ...activity.map(m => m.count)), [activity]);
 
-  const levelFor = (count: number) => {
-    if (count === 0) return 'bg-[var(--color-tableRowHover)]';
-    if (count >= max) return 'bg-[var(--color-primary)]';
-    if (count / max >= 0.66) return 'bg-emerald-500';
-    if (count / max >= 0.33) return 'bg-emerald-400';
-    return 'bg-emerald-200';
+  const years = useMemo(() => {
+    const set = new Set(activity.map(m => m.year));
+    return Array.from(set).sort((a, b) => a - b);
+  }, [activity]);
+
+  const dataMap = useMemo(() =>
+    new Map(activity.map(m => [`${m.year}-${m.month}`, m.count])),
+    [activity]
+  );
+
+  const colorFor = (count: number) => {
+    if (count === 0) return 'bg-[var(--color-tableRowHover)] text-transparent';
+    if (count / max >= 0.75) return 'bg-[var(--color-primary)] text-white';
+    if (count / max >= 0.5) return 'bg-sky-500 text-white';
+    if (count / max >= 0.25) return 'bg-sky-300 text-sky-900';
+    return 'bg-sky-100 text-sky-900';
   };
+
+  if (years.length === 0) return (
+    <p className="text-sm text-[var(--color-textSecondary)]">Sin datos de actividad.</p>
+  );
 
   return (
     <div className="overflow-x-auto">
-      <div className="grid grid-flow-col grid-rows-7 gap-1 w-max">
-        {cells.map(cell => (
-          <div
-            key={cell.key}
-            className={`w-3 h-3 rounded-sm ${levelFor(cell.count)}`}
-            title={`${cell.key}: ${cell.count} ${cell.count === 1 ? 'partida' : 'partidas'}`}
-          />
-        ))}
-      </div>
+      <table className="border-separate border-spacing-1 w-full">
+        <thead>
+          <tr>
+            <th className="w-12" />
+            {MONTH_LABELS.map(m => (
+              <th key={m} className="text-xs font-normal text-[var(--color-textSecondary)] text-center pb-1">{m}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {years.map(year => (
+            <tr key={year}>
+              <td className="text-xs text-[var(--color-textSecondary)] pr-2 text-right align-middle">{year}</td>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(month => {
+                const count = dataMap.get(`${year}-${month}`) ?? 0;
+                return (
+                  <td key={month} className="p-0">
+                    <div
+                      className={`flex items-center justify-center rounded text-[11px] font-medium h-8 ${colorFor(count)}`}
+                      title={`${MONTH_LABELS[month - 1]} ${year}: ${count} ${count === 1 ? 'partida' : 'partidas'}`}
+                    >
+                      {count > 0 ? count : ''}
+                    </div>
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
       <div className="flex items-center gap-2 mt-3 text-xs text-[var(--color-textSecondary)]">
-        <span>Menos</span>
-        <span className="w-3 h-3 rounded-sm bg-[var(--color-tableRowHover)]" />
-        <span className="w-3 h-3 rounded-sm bg-emerald-200" />
-        <span className="w-3 h-3 rounded-sm bg-emerald-400" />
-        <span className="w-3 h-3 rounded-sm bg-emerald-500" />
-        <span className="w-3 h-3 rounded-sm bg-[var(--color-primary)]" />
-        <span>Más</span>
+        <span>0</span>
+        <span className="w-6 h-4 rounded bg-sky-100" />
+        <span className="w-6 h-4 rounded bg-sky-300" />
+        <span className="w-6 h-4 rounded bg-sky-500" />
+        <span className="w-6 h-4 rounded bg-[var(--color-primary)]" />
+        <span>{max}</span>
       </div>
     </div>
   );
@@ -570,7 +595,7 @@ export default function PersonalStats() {
             <h2 className="font-semibold text-[var(--color-text)]">Actividad del último año</h2>
           </CardHeader>
           <CardContent>
-            <ActivityHeatmap activity={data.activityByDate} />
+            <ActivityHeatmap activity={data.byMonth} />
           </CardContent>
         </Card>
 
