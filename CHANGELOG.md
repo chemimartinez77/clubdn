@@ -4,6 +4,19 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-23
+
+### chore: railway.json por servicio para fix de build en monorepo
+
+Se investiga un fallo de build en Railway (`cd: server: No such file or directory`) coincidiendo con una incidencia de degradación en Railway Metal (22 abril 2026). Se concluye que el `railway.json` raíz puede colisionar con la configuración "Root Directory" de cada servicio en el dashboard de Railway, por lo que se crean ficheros específicos por subdirectorio como solución robusta.
+
+**Infraestructura:**
+- `server/railway.json` (nuevo): buildCommand `npm install --omit=dev && npm run build:railway`, startCommand `npm start`, sin `cd server` (ya innecesario cuando el contexto es `/server`).
+- `client/railway.json` (nuevo): buildCommand `npm install && npm run build`, startCommand `node server.js`.
+- `railway.json` (raíz): se revierte el cambio de Codex (condicionales `if [ -d server ]` innecesarios) y se mantiene el comando original como fallback.
+
+---
+
 ## 2026-04-22
 
 ### fix: mejora del indicador de peso BGG en juegos
