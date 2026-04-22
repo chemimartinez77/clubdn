@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
-import { GameCondition, LibraryItemLoanStatus, LibraryLoanStatus, LibraryQueueStatus } from '@prisma/client';
+import { GameCondition, LibraryItemLoanStatus, LibraryLoanPolicy, LibraryLoanStatus, LibraryQueueStatus } from '@prisma/client';
 import { getLoanConfig } from '../config/libraryLoans';
 
 const LOAN_SELECT = {
@@ -23,7 +23,7 @@ const LOAN_SELECT = {
   returnedBy: { select: { id: true, name: true } },
 };
 
-async function notifyAdmins(title: string, message: string, type: 'LIBRARY_LOAN_REQUESTED' | 'LIBRARY_LOAN_RENEWED', metadata: object) {
+async function notifyAdmins(title: string, message: string, type: 'LIBRARY_LOAN_REQUESTED' | 'LIBRARY_LOAN_CONSULT_REQUESTED' | 'LIBRARY_LOAN_RENEWED', metadata: object) {
   const admins = await prisma.user.findMany({
     where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] }, status: 'APPROVED' },
     select: { id: true }
@@ -36,6 +36,29 @@ async function notifyAdmins(title: string, message: string, type: 'LIBRARY_LOAN_
 
 async function notifyUser(userId: string, type: 'LIBRARY_LOAN_CONFIRMED' | 'LIBRARY_LOAN_RETURNED' | 'LIBRARY_QUEUE_AVAILABLE', title: string, message: string, metadata: object) {
   await prisma.notification.create({ data: { userId, type, title, message, metadata } });
+}
+
+async function notifyNextInQueue(libraryItemId: string, itemName: string) {
+  const nextInQueue = await prisma.libraryQueue.findFirst({
+    where: { libraryItemId, status: LibraryQueueStatus.WAITING },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, userId: true }
+  });
+
+  if (!nextInQueue) return;
+
+  const now = new Date();
+  await prisma.libraryQueue.update({
+    where: { id: nextInQueue.id },
+    data: { status: LibraryQueueStatus.NOTIFIED, notifiedAt: now }
+  });
+  await notifyUser(
+    nextInQueue.userId,
+    'LIBRARY_QUEUE_AVAILABLE',
+    'Juego disponible',
+    `"${itemName}" ya está disponible. ¡Solicita tu préstamo antes de que lo haga otro socio!`,
+    { itemId: libraryItemId, itemName }
+  );
 }
 
 /**
@@ -54,7 +77,7 @@ export const searchItem = async (req: Request, res: Response): Promise<void> => 
       where: { internalId },
       select: {
         id: true, internalId: true, name: true, gameType: true, condition: true,
-        thumbnail: true, loanStatus: true, isLoanable: true, notes: true, ownerEmail: true,
+        thumbnail: true, loanStatus: true, isLoanable: true, loanPolicy: true, notes: true, ownerEmail: true,
         loans: {
           where: { status: { in: ['REQUESTED', 'ACTIVE'] } },
           select: LOAN_SELECT,
@@ -95,16 +118,27 @@ export const requestLoan = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    const { loanEnabled } = await getLoanConfig();
+    const { loanEnabled, loanMaxActivePerUser } = await getLoanConfig();
     if (!loanEnabled) { res.status(503).json({ success: false, message: 'El sistema de préstamos está temporalmente desactivado' }); return; }
 
     const item = await prisma.libraryItem.findUnique({
       where: internalId ? { internalId } : { id: libraryItemId },
-      select: { id: true, internalId: true, name: true, loanStatus: true, isLoanable: true }
+      select: { id: true, internalId: true, name: true, loanStatus: true, isLoanable: true, loanPolicy: true }
     });
 
     if (!item) { res.status(404).json({ success: false, message: 'Ítem no encontrado' }); return; }
     if (!item.isLoanable) { res.status(400).json({ success: false, message: 'Este ítem no está disponible para préstamo' }); return; }
+
+    if (item.loanPolicy !== LibraryLoanPolicy.LOANABLE) { res.status(400).json({ success: false, message: 'Este item no esta disponible para prestamo' }); return; }
+    if (loanMaxActivePerUser > 0) {
+      const activeCount = await prisma.libraryLoan.count({
+        where: { userId, status: { in: [LibraryLoanStatus.REQUESTED, LibraryLoanStatus.ACTIVE] } }
+      });
+      if (activeCount >= loanMaxActivePerUser) {
+        res.status(400).json({ success: false, message: `Has alcanzado el maximo de ${loanMaxActivePerUser} prestamo(s) activos o pendientes` });
+        return;
+      }
+    }
 
     // Atomically claim the item inside the transaction to prevent race conditions:
     // updateMany with loanStatus=AVAILABLE guard ensures only one concurrent request wins.
@@ -356,7 +390,7 @@ export const cancelLoan = async (req: Request, res: Response): Promise<void> => 
 
     const loan = await prisma.libraryLoan.findUnique({
       where: { id: loanId },
-      select: { id: true, status: true, userId: true, libraryItemId: true }
+      select: { id: true, status: true, userId: true, libraryItemId: true, libraryItem: { select: { name: true } } }
     });
 
     if (!loan) { res.status(404).json({ success: false, message: 'Préstamo no encontrado' }); return; }
@@ -369,6 +403,8 @@ export const cancelLoan = async (req: Request, res: Response): Promise<void> => 
       await tx.libraryLoan.update({ where: { id: loanId }, data: { status: LibraryLoanStatus.CANCELLED } });
       await tx.libraryItem.update({ where: { id: loan.libraryItemId }, data: { loanStatus: LibraryItemLoanStatus.AVAILABLE } });
     });
+
+    await notifyNextInQueue(loan.libraryItemId, loan.libraryItem.name);
 
     res.json({ success: true, message: 'Solicitud cancelada' });
   } catch (error) {
@@ -470,12 +506,14 @@ export const joinQueue = async (req: Request, res: Response): Promise<void> => {
 
     const item = await prisma.libraryItem.findUnique({
       where: { id: libraryItemId },
-      select: { id: true, name: true, loanStatus: true, isLoanable: true }
+      select: { id: true, name: true, loanStatus: true, isLoanable: true, loanPolicy: true }
     });
 
     if (!item) { res.status(404).json({ success: false, message: 'Ítem no encontrado' }); return; }
     if (!item.isLoanable) { res.status(400).json({ success: false, message: 'Este ítem no está disponible para préstamo' }); return; }
     if (item.loanStatus === 'AVAILABLE') { res.status(400).json({ success: false, message: 'El ítem está disponible: solicita el préstamo directamente' }); return; }
+
+    if (item.loanPolicy !== LibraryLoanPolicy.LOANABLE) { res.status(400).json({ success: false, message: 'Este item no esta disponible para prestamo' }); return; }
 
     const activeLoan = await prisma.libraryLoan.findFirst({
       where: { libraryItemId, userId, status: { in: ['REQUESTED', 'ACTIVE'] } }
@@ -545,13 +583,88 @@ export const toggleLoanable = async (req: Request, res: Response): Promise<void>
 
     const item = await prisma.libraryItem.update({
       where: { id: itemId },
-      data: { isLoanable },
-      select: { id: true, name: true, internalId: true, isLoanable: true, loanStatus: true },
+      data: { isLoanable, loanPolicy: isLoanable ? LibraryLoanPolicy.LOANABLE : LibraryLoanPolicy.NOT_LOANABLE },
+      select: { id: true, name: true, internalId: true, isLoanable: true, loanPolicy: true, loanStatus: true },
     });
 
     res.json({ success: true, data: item });
   } catch (error) {
     console.error('Error en toggleLoanable:', error);
     res.status(500).json({ success: false, message: 'Error al actualizar el ítem' });
+  }
+};
+
+/**
+ * PATCH /api/library-loans/items/:itemId/loan-policy
+ * Admin: define si un item es prestable, consultable o no prestable.
+ */
+export const updateLoanPolicy = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { itemId } = req.params;
+    const { loanPolicy } = req.body as { loanPolicy?: LibraryLoanPolicy };
+
+    const validPolicies = [
+      LibraryLoanPolicy.NOT_LOANABLE,
+      LibraryLoanPolicy.CONSULT,
+      LibraryLoanPolicy.LOANABLE,
+    ];
+    if (!loanPolicy || !validPolicies.includes(loanPolicy)) {
+      res.status(400).json({ success: false, message: 'loanPolicy no valido' });
+      return;
+    }
+
+    const item = await prisma.libraryItem.update({
+      where: { id: itemId },
+      data: {
+        loanPolicy,
+        isLoanable: loanPolicy === LibraryLoanPolicy.LOANABLE,
+      },
+      select: { id: true, name: true, internalId: true, isLoanable: true, loanPolicy: true, loanStatus: true },
+    });
+
+    res.json({ success: true, data: item });
+  } catch (error) {
+    console.error('Error en updateLoanPolicy:', error);
+    res.status(500).json({ success: false, message: 'Error al actualizar el item' });
+  }
+};
+
+/**
+ * POST /api/library-loans/consult
+ * Socio: consulta a admins por un item marcado como CONSULT.
+ */
+export const consultLoan = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) { res.status(401).json({ success: false, message: 'No autenticado' }); return; }
+
+    const { libraryItemId } = req.body;
+    if (!libraryItemId) { res.status(400).json({ success: false, message: 'libraryItemId es obligatorio' }); return; }
+
+    const { loanEnabled } = await getLoanConfig();
+    if (!loanEnabled) { res.status(503).json({ success: false, message: 'El sistema de prestamos esta temporalmente desactivado' }); return; }
+
+    const item = await prisma.libraryItem.findUnique({
+      where: { id: libraryItemId },
+      select: { id: true, internalId: true, name: true, loanPolicy: true }
+    });
+    if (!item) { res.status(404).json({ success: false, message: 'Item no encontrado' }); return; }
+    if (item.loanPolicy !== LibraryLoanPolicy.CONSULT) {
+      res.status(400).json({ success: false, message: 'Este item no requiere consulta de prestamo' });
+      return;
+    }
+
+    const requester = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+    await notifyAdmins(
+      'Consulta de prestamo',
+      `${requester?.name ?? 'Un socio'} quiere consultar el prestamo de "${item.name}" (ID: ${item.internalId})`,
+      'LIBRARY_LOAN_CONSULT_REQUESTED',
+      { itemId: item.id, itemName: item.name, internalId: item.internalId, requesterId: userId }
+    );
+
+    res.status(201).json({ success: true, message: 'Consulta enviada a administracion' });
+  } catch (error) {
+    console.error('Error en consultLoan:', error);
+    res.status(500).json({ success: false, message: 'Error al enviar la consulta' });
   }
 };

@@ -1,5 +1,6 @@
 // client/src/components/layout/Header.tsx
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
@@ -8,7 +9,9 @@ import NotificationBell from '../notifications/NotificationBell';
 import TipOfTheDayModal from '../tips/TipOfTheDayModal';
 import { displayName, fullNameTooltip } from '../../utils/displayName';
 import { getRandomTip } from '../../data/tips';
+import { api } from '../../api/axios';
 import type { Tip } from '../../data/tips';
+import type { PublicConfig } from '../../types/config';
 
 export default function Header() {
   const { user, logout, isAdmin, impersonating, stopImpersonating } = useAuth();
@@ -22,6 +25,17 @@ export default function Header() {
   const [isIdModalOpen, setIsIdModalOpen] = useState(false);
   const [now, setNow] = useState(new Date());
   const [manualTip, setManualTip] = useState<Tip | null>(null);
+
+  const { data: publicConfig } = useQuery({
+    queryKey: ['publicConfig'],
+    queryFn: async () => {
+      const response = await api.get<{ success: boolean; data: PublicConfig }>('/api/config/public');
+      return response.data.data;
+    },
+    staleTime: 5 * 60 * 1000
+  });
+
+  const personalStatsEnabled = publicConfig?.personalStatsEnabled ?? true;
 
   useEffect(() => {
     if (!isIdModalOpen) return;
@@ -456,16 +470,18 @@ export default function Header() {
                       Perfil
                     </Link>
 
-                    <Link
-                      to="/estadisticas"
-                      className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors flex items-center gap-2"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3v18m4-14v14m4-10v10M7 13v8M3 17v4" />
-                      </svg>
-                      Mis estadisticas
-                    </Link>
+                    {personalStatsEnabled && (
+                      <Link
+                        to="/estadisticas"
+                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors flex items-center gap-2"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3v18m4-14v14m4-10v10M7 13v8M3 17v4" />
+                        </svg>
+                        Mis estadísticas
+                      </Link>
+                    )}
 
                     <button
                       onClick={handleLogout}
@@ -786,16 +802,18 @@ export default function Header() {
                 Perfil
               </Link>
 
-              <Link
-                to="/estadisticas"
-                className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors flex items-center gap-2"
-                onClick={closeAllMenus}
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3v18m4-14v14m4-10v10M7 13v8M3 17v4" />
-                </svg>
-                Mis estadisticas
-              </Link>
+              {personalStatsEnabled && (
+                <Link
+                  to="/estadisticas"
+                  className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors flex items-center gap-2"
+                  onClick={closeAllMenus}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3v18m4-14v14m4-10v10M7 13v8M3 17v4" />
+                  </svg>
+                  Mis estadísticas
+                </Link>
+              )}
 
               {/* Cerrar sesión */}
               <button

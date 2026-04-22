@@ -514,6 +514,19 @@ export const getUserDetailedStats = async (req: Request, res: Response): Promise
       return;
     }
 
+    const config = await prisma.clubConfig.findUnique({
+      where: { id: 'club_config' },
+      select: { personalStatsEnabled: true }
+    });
+
+    if (config?.personalStatsEnabled === false) {
+      res.status(403).json({
+        success: false,
+        message: 'Las estadísticas personales están desactivadas temporalmente'
+      });
+      return;
+    }
+
     await completePassedEvents();
 
     const registrations = await prisma.eventRegistration.findMany({

@@ -60,7 +60,8 @@ export const getClubConfig = async (_req: Request, res: Response) => {
           inviteMaxActive: 5,
           inviteMaxMonthly: 10,
           inviteMaxGuestYear: 5,
-          inviteAllowSelfValidation: false
+          inviteAllowSelfValidation: false,
+          personalStatsEnabled: true
         }
       });
     }
@@ -91,14 +92,15 @@ export const getPublicConfig = async (_req: Request, res: Response) => {
   try {
     const config = await prisma.clubConfig.findUnique({
       where: { id: 'club_config' },
-      select: { loginParticleStyle: true, loanEnabled: true }
+      select: { loginParticleStyle: true, loanEnabled: true, personalStatsEnabled: true }
     });
 
     return res.json({
       success: true,
       data: {
         loginParticleStyle: config?.loginParticleStyle ?? 'white',
-        loanEnabled: config?.loanEnabled ?? false
+        loanEnabled: config?.loanEnabled ?? false,
+        personalStatsEnabled: config?.personalStatsEnabled ?? true
       }
     });
   } catch (error) {
@@ -129,7 +131,9 @@ export const updateClubConfig = async (req: Request, res: Response) => {
       loginParticleStyle,
       loanEnabled,
       loanDurationDays,
-      loanQueueNotifyHours
+      loanQueueNotifyHours,
+      loanMaxActivePerUser,
+      personalStatsEnabled
     } = req.body;
 
     const config = await prisma.clubConfig.upsert({
@@ -148,7 +152,9 @@ export const updateClubConfig = async (req: Request, res: Response) => {
         ...(loginParticleStyle !== undefined && { loginParticleStyle }),
         ...(loanEnabled !== undefined && { loanEnabled }),
         ...(loanDurationDays !== undefined && { loanDurationDays }),
-        ...(loanQueueNotifyHours !== undefined && { loanQueueNotifyHours })
+        ...(loanQueueNotifyHours !== undefined && { loanQueueNotifyHours }),
+        ...(loanMaxActivePerUser !== undefined && { loanMaxActivePerUser }),
+        ...(personalStatsEnabled !== undefined && { personalStatsEnabled })
       },
       create: {
         id: 'club_config',
@@ -162,7 +168,12 @@ export const updateClubConfig = async (req: Request, res: Response) => {
         inviteMaxMonthly: inviteMaxMonthly ?? 10,
         inviteMaxGuestYear: inviteMaxGuestYear ?? 5,
         inviteAllowSelfValidation: inviteAllowSelfValidation ?? false,
-        loginParticleStyle: loginParticleStyle ?? 'white'
+        loginParticleStyle: loginParticleStyle ?? 'white',
+        loanEnabled: loanEnabled ?? false,
+        loanDurationDays: loanDurationDays ?? 14,
+        loanQueueNotifyHours: loanQueueNotifyHours ?? 48,
+        loanMaxActivePerUser: loanMaxActivePerUser ?? 0,
+        personalStatsEnabled: personalStatsEnabled ?? true
       }
     });
 

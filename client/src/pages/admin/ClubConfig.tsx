@@ -58,6 +58,46 @@ function Tooltip({ text }: { text: string }) {
   );
 }
 
+function ToggleSwitch({
+  checked,
+  onChange,
+  disabled = false,
+  labelOn = 'Activado',
+  labelOff = 'Desactivado'
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+  labelOn?: string;
+  labelOff?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`inline-flex items-center gap-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+        checked ? 'text-[var(--color-primary)]' : 'text-[var(--color-textSecondary)]'
+      }`}
+    >
+      <span
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+          checked ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-tableRowHover)] border border-[var(--color-cardBorder)]'
+        }`}
+      >
+        <span
+          className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+            checked ? 'translate-x-5' : 'translate-x-0.5'
+          }`}
+        />
+      </span>
+      <span className="text-sm font-medium">{checked ? labelOn : labelOff}</span>
+    </button>
+  );
+}
+
 export default function ClubConfigPage() {
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
@@ -90,6 +130,8 @@ export default function ClubConfigPage() {
         loanEnabled: config.loanEnabled,
         loanDurationDays: config.loanDurationDays,
         loanQueueNotifyHours: config.loanQueueNotifyHours,
+        loanMaxActivePerUser: config.loanMaxActivePerUser ?? 0,
+        personalStatsEnabled: config.personalStatsEnabled ?? true,
       });
       setMembershipTypes(Array.isArray(config.membershipTypes) ? config.membershipTypes : []);
     }
@@ -311,6 +353,29 @@ export default function ClubConfigPage() {
           </CardContent>
         </Card>
 
+        {/* Funcionalidades */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Funcionalidades</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div>
+              <label className="flex items-center text-sm font-medium text-[var(--color-textSecondary)] mb-2">
+                Estadísticas personales
+                <Tooltip text="Actívalo para mostrar el acceso a 'Mis estadísticas' y permitir la consulta de estadísticas personales detalladas. Si está desactivado, el endpoint queda bloqueado y el menú no aparece." />
+              </label>
+              {isEditing ? (
+                <ToggleSwitch
+                  checked={formData.personalStatsEnabled ?? true}
+                  onChange={(checked) => setFormData({ ...formData, personalStatsEnabled: checked })}
+                />
+              ) : (
+                <p className="text-[var(--color-text)] py-2">{config?.personalStatsEnabled ?? true ? 'Activadas' : 'Desactivadas'}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Límites de Invitaciones */}
         <Card>
           <CardHeader>
@@ -385,15 +450,10 @@ export default function ClubConfigPage() {
                   <Tooltip text="Desactívalo para impedir temporalmente que los socios soliciten préstamos o se apunten a listas de espera. Los préstamos ya activos no se ven afectados." />
                 </label>
                 {isEditing ? (
-                  <label className="flex items-center gap-3 cursor-pointer mt-1">
-                    <input
-                      type="checkbox"
-                      checked={formData.loanEnabled ?? false}
-                      onChange={(e) => setFormData({ ...formData, loanEnabled: e.target.checked })}
-                      className="w-4 h-4 accent-[var(--color-primary)]"
-                    />
-                    <span className="text-sm text-[var(--color-text)]">{formData.loanEnabled ?? false ? 'Activado' : 'Desactivado'}</span>
-                  </label>
+                  <ToggleSwitch
+                    checked={formData.loanEnabled ?? false}
+                    onChange={(checked) => setFormData({ ...formData, loanEnabled: checked })}
+                  />
                 ) : (
                   <p className="text-[var(--color-text)] py-2">{config?.loanEnabled ? 'Activado' : 'Desactivado'}</p>
                 )}
@@ -430,6 +490,25 @@ export default function ClubConfigPage() {
                   />
                 ) : (
                   <p className="text-[var(--color-text)] py-2">{config?.loanQueueNotifyHours} horas</p>
+                )}
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="flex items-center text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                  MÃ¡ximo de prÃ©stamos activos o pendientes por usuario
+                  <Tooltip text="Usa 0 para no aplicar limite. Cuenta solicitudes pendientes de entrega y prestamos activos." />
+                </label>
+                {isEditing ? (
+                  <input
+                    type="number" min="0" max="50"
+                    value={formData.loanMaxActivePerUser ?? 0}
+                    onChange={(e) => setFormData({ ...formData, loanMaxActivePerUser: parseInt(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  />
+                ) : (
+                  <p className="text-[var(--color-text)] py-2">
+                    {(config?.loanMaxActivePerUser ?? 0) > 0 ? config?.loanMaxActivePerUser : 'Sin limite'}
+                  </p>
                 )}
               </div>
 

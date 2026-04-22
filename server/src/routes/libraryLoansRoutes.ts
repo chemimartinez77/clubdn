@@ -13,6 +13,8 @@ import {
   joinQueue,
   leaveQueue,
   toggleLoanable,
+  updateLoanPolicy,
+  consultLoan,
 } from '../controllers/libraryLoansController';
 
 const router = Router();
@@ -23,6 +25,7 @@ router.get('/me', authenticate, getMyLoans);
 router.get('/queue/:itemId', authenticate, requireAdmin, getItemQueue);
 
 router.post('/', authenticate, requestLoan);
+router.post('/consult', authenticate, consultLoan);
 router.patch('/:loanId/confirm-delivery', authenticate, requireAdmin, confirmDelivery);
 router.post('/:loanId/renew', authenticate, renewLoan);
 router.post('/:loanId/return', authenticate, requireAdmin, returnLoan);
@@ -32,5 +35,6 @@ router.post('/queue', authenticate, joinQueue);
 router.delete('/queue/:itemId', authenticate, leaveQueue);
 
 router.patch('/items/:itemId/loanable', authenticate, requireAdmin, toggleLoanable);
+router.patch('/items/:itemId/loan-policy', authenticate, requireAdmin, updateLoanPolicy);
 
 export default router;

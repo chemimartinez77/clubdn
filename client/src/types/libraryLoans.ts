@@ -1,4 +1,5 @@
 export type LibraryItemLoanStatus = 'AVAILABLE' | 'REQUESTED' | 'ON_LOAN' | 'BLOCKED' | 'MAINTENANCE';
+export type LibraryLoanPolicy = 'NOT_LOANABLE' | 'CONSULT' | 'LOANABLE';
 export type LibraryLoanStatus = 'REQUESTED' | 'ACTIVE' | 'RETURNED' | 'CANCELLED';
 export type LibraryQueueStatus = 'WAITING' | 'NOTIFIED' | 'FULFILLED' | 'CANCELLED';
 export type GameCondition = 'NUEVO' | 'BUENO' | 'REGULAR' | 'MALO';
@@ -16,6 +17,7 @@ export interface LoanItem {
   condition: GameCondition;
   thumbnail: string | null;
   loanStatus: LibraryItemLoanStatus;
+  loanPolicy: LibraryLoanPolicy;
 }
 
 export interface LibraryLoan {
@@ -53,6 +55,7 @@ export interface ItemSearchResult {
   thumbnail: string | null;
   loanStatus: LibraryItemLoanStatus;
   isLoanable: boolean;
+  loanPolicy: LibraryLoanPolicy;
   notes: string | null;
   ownerEmail: string | null;
   loans: LibraryLoan[];

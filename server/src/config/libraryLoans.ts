@@ -6,14 +6,16 @@ export async function getLoanConfig(): Promise<{
   loanEnabled: boolean;
   loanDurationDays: number;
   loanQueueNotifyHours: number;
+  loanMaxActivePerUser: number;
 }> {
   const config = await prisma.clubConfig.findUnique({
     where: { id: 'club_config' },
-    select: { loanEnabled: true, loanDurationDays: true, loanQueueNotifyHours: true }
+    select: { loanEnabled: true, loanDurationDays: true, loanQueueNotifyHours: true, loanMaxActivePerUser: true }
   });
   return {
     loanEnabled: config?.loanEnabled ?? false,
     loanDurationDays: config?.loanDurationDays ?? LOAN_DURATION_DAYS,
     loanQueueNotifyHours: config?.loanQueueNotifyHours ?? 48,
+    loanMaxActivePerUser: config?.loanMaxActivePerUser ?? 0,
   };
 }

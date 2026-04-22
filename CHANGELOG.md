@@ -6,6 +6,28 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-22
 
+### feat: flujo avanzado de prestamos de ludoteca
+
+Se completa el flujo acordado para operar los prestamos con pegatinas en las cajas usando el `internalId` como referencia interna.
+
+**Backend y datos:**
+- `server/prisma/migrations/20260422010000_add_loan_policy_limits/migration.sql` (nuevo): añade `LibraryLoanPolicy`, `LibraryItem.loanPolicy`, `ClubConfig.loanMaxActivePerUser` y el tipo de notificacion `LIBRARY_LOAN_CONSULT_REQUESTED`.
+- `server/src/controllers/libraryLoansController.ts`: añade politica de prestamo con tres estados (`Prestable`, `Consultar`, `No prestable`), consulta de prestamo con aviso a admins y validacion del maximo de prestamos activos/pendientes por usuario.
+- `server/src/controllers/libraryLoansController.ts`: permite a administracion cancelar solicitudes pendientes y libera el juego para que pueda volver a solicitarse o avisar a la cola.
+- `server/src/jobs/libraryLoanJob.ts`: cancela automaticamente solicitudes pendientes de entrega tras 48 horas y devuelve el juego a disponible.
+- `server/src/controllers/configController.ts` y `server/src/config/libraryLoans.ts`: exponen y aplican `loanMaxActivePerUser` (`0` = sin limite).
+- `server/src/routes/libraryLoansRoutes.ts`: nuevas rutas para consultar prestamo y actualizar la politica de prestamo de un item.
+
+**Frontend:**
+- `client/src/pages/Ludoteca.tsx`: muestra los estados `Prestable`, `Consultar` y `No prestable`; añade boton "Consultar prestamo" y modal de confirmacion al solicitar prestamo con aviso de recogida en 48h.
+- `client/src/pages/admin/LibraryLoans.tsx`: cambia el control binario de prestabilidad por un selector de tres estados y añade boton admin para cancelar solicitudes pendientes.
+- `client/src/pages/admin/ClubConfig.tsx`: añade el ajuste "Maximo de prestamos activos o pendientes por usuario" en configuracion del club.
+- `client/src/types/libraryLoans.ts` y `client/src/types/config.ts`: tipos actualizados para `loanPolicy` y `loanMaxActivePerUser`.
+
+**Validacion:**
+- `server`: `npx.cmd prisma generate`, `npx.cmd prisma validate`, `npx.cmd tsc --noEmit`
+- `client`: `npm.cmd run build`
+
 ### feat/fix: estadísticas personales y correcciones de UX reportadas
 
 Se atienden varios reportes de usuarios relacionados con preferencias personales, Mercadillo y consulta de estadísticas.
@@ -15,15 +37,22 @@ Se atienden varios reportes de usuarios relacionados con preferencias personales
 Se añade una pantalla dedicada `/estadisticas` para consultar estadísticas personales de partidas completadas.
 
 **Backend:**
+- `server/prisma/migrations/20260422000000_add_personal_stats_toggle/migration.sql` (nuevo): añade `ClubConfig.personalStatsEnabled Boolean @default(true)` para activar/desactivar el acceso a estadísticas personales.
 - `server/src/controllers/statsController.ts`: nuevo endpoint `GET /api/stats/user/detailed` que agrega partidas jugadas totales, partidas como creador, partidas creadas por otros, juegos distintos, compañeros distintos, actividad por año, mes y día, distribución por día de la semana, franjas horarias, ranking completo por juego y ranking completo por compañero.
+- `server/src/controllers/statsController.ts`: el endpoint detallado devuelve `403` si `personalStatsEnabled` está desactivado.
+- `server/src/controllers/configController.ts`: la configuración pública y de administración expone `personalStatsEnabled`.
 - `server/src/routes/statsRoutes.ts`: nueva ruta autenticada `/user/detailed`.
 
 **Frontend:**
 - `client/src/pages/PersonalStats.tsx` (nuevo): pantalla de estadísticas personales con resumen, barras por año/mes/franja/día, heatmap del último año, ranking completo de juegos y buscador de compañeros.
+- Se añaden visualizaciones adicionales: gráfica acumulada de partidas, mini-barras mensuales por año, radar semanal, reloj circular de horarios y tarjetas de rachas/hitos mensuales.
+- `client/src/pages/PersonalStats.tsx`: se corrigen textos con tildes, acentos y `ñ`.
 - `client/src/App.tsx`: nueva ruta protegida `/estadisticas`.
 - `client/src/types/stats.ts`: tipos para la respuesta detallada.
 - `client/src/components/dashboard/StatsCard.tsx`: botón "Ver estadisticas completas" desde la home.
-- `client/src/components/layout/Header.tsx`: acceso a "Mis estadisticas" desde el menú de usuario en desktop y móvil.
+- `client/src/components/layout/Header.tsx`: acceso a "Mis estadísticas" desde el menú de usuario en desktop y móvil, oculto si la configuración lo desactiva.
+- `client/src/pages/admin/ClubConfig.tsx`: nuevo toggle "Estadísticas personales" en Administración > Configuración del Club.
+- `client/src/pages/admin/ClubConfig.tsx`: el control de "Sistema de préstamos activo" pasa de checkbox a toggle.
 
 #### Consejo del día: "No volver a mostrar" no persistía
 
@@ -53,15 +82,20 @@ La búsqueda del Mercadillo estaba con debounce para el texto y disparaba petici
 
 **Archivos modificados:**
 - `server/src/controllers/statsController.ts`
+- `server/src/controllers/configController.ts`
 - `server/src/routes/statsRoutes.ts`
 - `server/src/routes/profileRoutes.ts`
+- `server/prisma/schema.prisma`
+- `server/prisma/migrations/20260422000000_add_personal_stats_toggle/migration.sql` (nuevo)
 - `client/src/App.tsx`
 - `client/src/components/dashboard/StatsCard.tsx`
 - `client/src/components/layout/Header.tsx`
 - `client/src/components/tips/TipOfTheDayModal.tsx`
+- `client/src/pages/admin/ClubConfig.tsx`
 - `client/src/pages/PersonalStats.tsx` (nuevo)
 - `client/src/pages/marketplace/Marketplace.tsx`
 - `client/src/pages/marketplace/MarketplaceListing.tsx`
+- `client/src/types/config.ts`
 - `client/src/types/stats.ts`
 
 ---

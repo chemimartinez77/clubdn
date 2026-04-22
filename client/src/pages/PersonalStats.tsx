@@ -10,9 +10,13 @@ import type {
   DetailedActivityDay,
   DetailedMonthStat,
   DetailedPlayerStat,
+  DetailedTimeRange,
+  DetailedYearStat,
+  TopDay,
   UserDetailedStats,
   UserDetailedStatsResponse,
 } from '../types/stats';
+import type { PublicConfig } from '../types/config';
 
 const formatDate = (value: string) => (
   new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value))
@@ -23,6 +27,72 @@ const toDateKey = (date: Date) => {
   const month = `${date.getMonth() + 1}`.padStart(2, '0');
   const day = `${date.getDate()}`.padStart(2, '0');
   return `${year}-${month}-${day}`;
+};
+
+const MONTH_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+const polarPoint = (index: number, total: number, radius: number, center = 90) => {
+  const angle = (Math.PI * 2 * index) / total - Math.PI / 2;
+  return {
+    x: center + Math.cos(angle) * radius,
+    y: center + Math.sin(angle) * radius,
+  };
+};
+
+const buildMonthlySeries = (months: DetailedMonthStat[]) => {
+  if (months.length === 0) return [];
+
+  const first = months[0]!;
+  const last = months[months.length - 1]!;
+  const counts = new Map(months.map(month => [month.key, month.count]));
+  const series: DetailedMonthStat[] = [];
+  let year = first.year;
+  let month = first.month;
+
+  while (year < last.year || (year === last.year && month <= last.month)) {
+    const key = `${year}-${`${month}`.padStart(2, '0')}`;
+    series.push({
+      key,
+      year,
+      month,
+      label: `${MONTH_SHORT[month - 1]} ${year}`,
+      count: counts.get(key) ?? 0,
+    });
+
+    month += 1;
+    if (month > 12) {
+      month = 1;
+      year += 1;
+    }
+  }
+
+  return series;
+};
+
+const buildStreaks = (months: DetailedMonthStat[]) => {
+  const series = buildMonthlySeries(months);
+  let current = 0;
+  let best = 0;
+  let active = 0;
+  let bestMonth: DetailedMonthStat | null = null;
+
+  for (const month of series) {
+    if (!bestMonth || month.count > bestMonth.count) bestMonth = month;
+    if (month.count > 0) {
+      active += 1;
+      current += 1;
+      best = Math.max(best, current);
+    } else {
+      current = 0;
+    }
+  }
+
+  return {
+    activeMonths: active,
+    bestMonthlyStreak: best,
+    currentMonthlyStreak: current,
+    bestMonth,
+  };
 };
 
 function StatTile({ label, value }: { label: string; value: number | string }) {
@@ -56,7 +126,7 @@ function MonthChart({ months }: { months: DetailedMonthStat[] }) {
   const max = Math.max(1, ...recentMonths.map(month => month.count));
 
   if (recentMonths.length === 0) {
-    return <p className="text-sm text-[var(--color-textSecondary)]">Todavia no hay partidas completadas.</p>;
+    return <p className="text-sm text-[var(--color-textSecondary)]">Todavía no hay partidas completadas.</p>;
   }
 
   return (
@@ -75,6 +145,200 @@ function MonthChart({ months }: { months: DetailedMonthStat[] }) {
           </span>
         </div>
       ))}
+    </div>
+  );
+}
+
+function CumulativeLineChart({ months }: { months: DetailedMonthStat[] }) {
+  const series = buildMonthlySeries(months);
+  let runningTotal = 0;
+  const cumulative = series.map(month => {
+    runningTotal += month.count;
+    return { ...month, total: runningTotal };
+  });
+  const max = Math.max(1, runningTotal);
+  const width = 720;
+  const height = 220;
+  const padding = 28;
+  const chartWidth = width - padding * 2;
+  const chartHeight = height - padding * 2;
+  const points = cumulative.map((month, index) => {
+    const x = padding + (cumulative.length <= 1 ? chartWidth : (index / (cumulative.length - 1)) * chartWidth);
+    const y = padding + chartHeight - (month.total / max) * chartHeight;
+    return { ...month, x, y };
+  });
+  const path = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+
+  if (points.length === 0) {
+    return <p className="text-sm text-[var(--color-textSecondary)]">Todavía no hay partidas completadas.</p>;
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[560px] w-full h-64">
+        <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="var(--color-cardBorder)" />
+        <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="var(--color-cardBorder)" />
+        <path d={path} fill="none" stroke="var(--color-primary)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+        {points.map((point, index) => (
+          <g key={point.key}>
+            <circle cx={point.x} cy={point.y} r="4" fill="var(--color-primary)">
+              <title>{`${point.label}: ${point.total} acumuladas`}</title>
+            </circle>
+            {(index === 0 || index === points.length - 1 || point.month === 1) && (
+              <text x={point.x} y={height - 8} textAnchor="middle" className="fill-[var(--color-textSecondary)] text-[11px]">
+                {point.key.slice(2)}
+              </text>
+            )}
+          </g>
+        ))}
+        <text x={width - padding} y={padding - 8} textAnchor="end" className="fill-[var(--color-text)] text-sm font-semibold">
+          {runningTotal} partidas
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+function YearSmallMultiples({ months, years }: { months: DetailedMonthStat[]; years: DetailedYearStat[] }) {
+  const counts = new Map(months.map(month => [month.key, month.count]));
+  const max = Math.max(1, ...months.map(month => month.count));
+
+  if (years.length === 0) {
+    return <p className="text-sm text-[var(--color-textSecondary)]">Todavía no hay partidas completadas.</p>;
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {years.map(year => (
+        <div key={year.year} className="rounded-lg border border-[var(--color-cardBorder)] p-3">
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-semibold text-[var(--color-text)]">{year.year}</span>
+            <span className="text-sm text-[var(--color-textSecondary)]">{year.count} partidas</span>
+          </div>
+          <div className="grid grid-cols-12 gap-1 items-end h-24">
+            {Array.from({ length: 12 }, (_, index) => {
+              const month = index + 1;
+              const key = `${year.year}-${`${month}`.padStart(2, '0')}`;
+              const count = counts.get(key) ?? 0;
+              return (
+                <div key={key} className="flex flex-col items-center gap-1">
+                  <div className="h-16 flex items-end">
+                    <div
+                      className={`w-full min-w-3 rounded-t ${count > 0 ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-tableRowHover)]'}`}
+                      style={{ height: `${count > 0 ? Math.max(6, (count / max) * 64) : 4}px` }}
+                      title={`${MONTH_SHORT[index]}: ${count}`}
+                    />
+                  </div>
+                  <span className="text-[10px] text-[var(--color-textSecondary)]">{MONTH_SHORT[index]?.charAt(0)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function WeekdayRadar({ days }: { days: TopDay[] }) {
+  const max = Math.max(1, ...days.map(day => day.count));
+  const points = days.map((day, index) => {
+    const radius = 18 + (day.count / max) * 66;
+    return { ...day, ...polarPoint(index, days.length, radius) };
+  });
+  const polygon = points.map(point => `${point.x},${point.y}`).join(' ');
+
+  return (
+    <div className="flex flex-col md:flex-row items-center gap-5">
+      <svg viewBox="0 0 180 180" className="w-64 h-64 shrink-0">
+        {[24, 46, 68, 90].map(radius => (
+          <polygon
+            key={radius}
+            points={days.map((_, index) => {
+              const point = polarPoint(index, days.length, radius);
+              return `${point.x},${point.y}`;
+            }).join(' ')}
+            fill="none"
+            stroke="var(--color-cardBorder)"
+          />
+        ))}
+        {days.map((day, index) => {
+          const label = polarPoint(index, days.length, 78);
+          return (
+            <text key={day.day} x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="fill-[var(--color-textSecondary)] text-[10px]">
+              {day.day.slice(0, 3)}
+            </text>
+          );
+        })}
+        <polygon points={polygon} fill="var(--color-primary)" fillOpacity="0.25" stroke="var(--color-primary)" strokeWidth="3" />
+        {points.map(point => (
+          <circle key={point.day} cx={point.x} cy={point.y} r="4" fill="var(--color-primary)">
+            <title>{`${point.day}: ${point.count}`}</title>
+          </circle>
+        ))}
+      </svg>
+      <div className="space-y-2 w-full">
+        {days.map(day => (
+          <BarRow key={day.day} label={day.day} count={day.count} max={max} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TimeClockChart({ ranges }: { ranges: DetailedTimeRange[] }) {
+  const knownRanges = ranges.filter(range => range.key !== 'unknown');
+  const max = Math.max(1, ...knownRanges.map(range => range.count));
+  const arcs = [
+    { key: 'night', label: '0-8', start: 0, hours: 8 },
+    { key: 'morning', label: '8-14', start: 8, hours: 6 },
+    { key: 'afternoon', label: '14-20', start: 14, hours: 6 },
+    { key: 'evening', label: '20-24', start: 20, hours: 4 },
+  ] as const;
+  const countFor = (key: DetailedTimeRange['key']) => ranges.find(range => range.key === key)?.count ?? 0;
+
+  return (
+    <div className="flex flex-col md:flex-row items-center gap-5">
+      <svg viewBox="0 0 200 200" className="w-64 h-64 shrink-0">
+        <circle cx="100" cy="100" r="78" fill="none" stroke="var(--color-cardBorder)" strokeWidth="2" />
+        {arcs.map(arc => {
+          const count = countFor(arc.key);
+          const radius = 42 + (count / max) * 44;
+          const start = ((arc.start / 24) * Math.PI * 2) - Math.PI / 2;
+          const end = (((arc.start + arc.hours) / 24) * Math.PI * 2) - Math.PI / 2;
+          const largeArc = arc.hours > 12 ? 1 : 0;
+          const x1 = 100 + Math.cos(start) * radius;
+          const y1 = 100 + Math.sin(start) * radius;
+          const x2 = 100 + Math.cos(end) * radius;
+          const y2 = 100 + Math.sin(end) * radius;
+          const labelPoint = polarPoint(arc.start + arc.hours / 2, 24, 76, 100);
+          return (
+            <g key={arc.key}>
+              <path
+                d={`M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`}
+                fill="none"
+                stroke="var(--color-primary)"
+                strokeWidth={Math.max(8, 10 + (count / max) * 18)}
+                strokeLinecap="round"
+                opacity={count > 0 ? 0.9 : 0.18}
+              >
+                <title>{`${arc.label}: ${count}`}</title>
+              </path>
+              <text x={labelPoint.x} y={labelPoint.y} textAnchor="middle" dominantBaseline="middle" className="fill-[var(--color-text)] text-xs font-semibold">
+                {arc.label}
+              </text>
+            </g>
+          );
+        })}
+        <circle cx="100" cy="100" r="28" fill="var(--color-cardBackground)" stroke="var(--color-cardBorder)" />
+        <text x="100" y="96" textAnchor="middle" className="fill-[var(--color-text)] text-sm font-bold">24h</text>
+        <text x="100" y="112" textAnchor="middle" className="fill-[var(--color-textSecondary)] text-[10px]">inicio</text>
+      </svg>
+      <div className="space-y-3 w-full">
+        {ranges.map(range => (
+          <BarRow key={range.key} label={range.label} count={range.count} max={Math.max(max, range.count)} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -120,7 +384,7 @@ function ActivityHeatmap({ activity }: { activity: DetailedActivityDay[] }) {
         <span className="w-3 h-3 rounded-sm bg-emerald-400" />
         <span className="w-3 h-3 rounded-sm bg-emerald-500" />
         <span className="w-3 h-3 rounded-sm bg-[var(--color-primary)]" />
-        <span>Mas</span>
+        <span>Más</span>
       </div>
     </div>
   );
@@ -142,7 +406,7 @@ function PlayerRow({ player }: { player: DetailedPlayerStat }) {
         )}
         <div className="min-w-0">
           <p className="font-medium text-[var(--color-text)] truncate">{player.name}</p>
-          <p className="text-xs text-[var(--color-textSecondary)]">Ultima partida: {formatDate(player.latestDate)}</p>
+          <p className="text-xs text-[var(--color-textSecondary)]">Última partida: {formatDate(player.latestDate)}</p>
         </div>
       </div>
       <span className="text-sm font-semibold text-[var(--color-text)] whitespace-nowrap">
@@ -156,12 +420,22 @@ export default function PersonalStats() {
   const navigate = useNavigate();
   const [playerSearch, setPlayerSearch] = useState('');
 
+  const { data: publicConfig, isLoading: isLoadingPublicConfig } = useQuery({
+    queryKey: ['publicConfig'],
+    queryFn: async () => {
+      const response = await api.get<{ success: boolean; data: PublicConfig }>('/api/config/public');
+      return response.data.data;
+    },
+    staleTime: 5 * 60 * 1000
+  });
+
   const { data, isLoading, isError } = useQuery<UserDetailedStats>({
     queryKey: ['userDetailedStats'],
     queryFn: async () => {
       const response = await api.get<UserDetailedStatsResponse>('/api/stats/user/detailed');
       return response.data.data;
     },
+    enabled: publicConfig?.personalStatsEnabled !== false,
   });
 
   const filteredPlayers = useMemo(() => {
@@ -171,11 +445,26 @@ export default function PersonalStats() {
     return data.players.filter(player => player.name.toLowerCase().includes(query));
   }, [data, playerSearch]);
 
-  if (isLoading) {
+  if (isLoadingPublicConfig || isLoading) {
     return (
       <Layout>
         <div className="min-h-[50vh] flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (publicConfig?.personalStatsEnabled === false) {
+    return (
+      <Layout>
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <Card>
+            <CardContent>
+              <h1 className="text-xl font-semibold text-[var(--color-text)] mb-2">Estadísticas desactivadas</h1>
+              <p className="text-[var(--color-textSecondary)]">La consulta de estadísticas personales está desactivada temporalmente por la administración del club.</p>
+            </CardContent>
+          </Card>
         </div>
       </Layout>
     );
@@ -187,7 +476,7 @@ export default function PersonalStats() {
         <div className="max-w-5xl mx-auto px-4 py-8">
           <Card>
             <CardContent>
-              <p className="text-red-600">No se pudieron cargar tus estadisticas.</p>
+              <p className="text-red-600">No se pudieron cargar tus estadísticas.</p>
             </CardContent>
           </Card>
         </div>
@@ -198,13 +487,16 @@ export default function PersonalStats() {
   const maxYear = Math.max(1, ...data.byYear.map(year => year.count));
   const maxDay = Math.max(1, ...data.dayOfWeek.map(day => day.count));
   const maxTimeRange = Math.max(1, ...data.timeRanges.map(range => range.count));
+  const streaks = buildStreaks(data.byMonth);
+  const currentMonthKey = toDateKey(new Date()).slice(0, 7);
+  const currentMonthCount = data.byMonth.find(month => month.key === currentMonthKey)?.count ?? 0;
 
   return (
     <Layout>
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-[var(--color-text)]">Mis estadisticas</h1>
+            <h1 className="text-2xl font-bold text-[var(--color-text)]">Mis estadísticas</h1>
             <p className="text-sm text-[var(--color-textSecondary)] mt-1">
               Historial personal de partidas completadas en el club.
             </p>
@@ -219,7 +511,14 @@ export default function PersonalStats() {
           <StatTile label="Como creador" value={data.summary.organizedGames} />
           <StatTile label="De otros" value={data.summary.joinedGames} />
           <StatTile label="Juegos distintos" value={data.summary.uniqueGames} />
-          <StatTile label="Companeros" value={data.summary.uniquePlayers} />
+          <StatTile label="Compañeros" value={data.summary.uniquePlayers} />
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatTile label="Este mes" value={currentMonthCount} />
+          <StatTile label="Mejor mes" value={streaks.bestMonth ? `${streaks.bestMonth.count} (${streaks.bestMonth.key})` : '-'} />
+          <StatTile label="Mejor racha mensual" value={streaks.bestMonthlyStreak} />
+          <StatTile label="Racha actual" value={streaks.currentMonthlyStreak} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -234,14 +533,14 @@ export default function PersonalStats() {
 
           <Card>
             <CardHeader>
-              <h2 className="font-semibold text-[var(--color-text)]">Partidas por ano</h2>
+              <h2 className="font-semibold text-[var(--color-text)]">Partidas por año</h2>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {data.byYear.length > 0 ? data.byYear.map(year => (
                   <BarRow key={year.year} label={String(year.year)} count={year.count} max={maxYear} />
                 )) : (
-                  <p className="text-sm text-[var(--color-textSecondary)]">Todavia no hay partidas completadas.</p>
+                  <p className="text-sm text-[var(--color-textSecondary)]">Todavía no hay partidas completadas.</p>
                 )}
               </div>
             </CardContent>
@@ -250,7 +549,25 @@ export default function PersonalStats() {
 
         <Card>
           <CardHeader>
-            <h2 className="font-semibold text-[var(--color-text)]">Actividad del ultimo ano</h2>
+            <h2 className="font-semibold text-[var(--color-text)]">Progreso acumulado</h2>
+          </CardHeader>
+          <CardContent>
+            <CumulativeLineChart months={data.byMonth} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <h2 className="font-semibold text-[var(--color-text)]">Meses por año</h2>
+          </CardHeader>
+          <CardContent>
+            <YearSmallMultiples months={data.byMonth} years={data.byYear} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <h2 className="font-semibold text-[var(--color-text)]">Actividad del último año</h2>
           </CardHeader>
           <CardContent>
             <ActivityHeatmap activity={data.activityByDate} />
@@ -260,7 +577,7 @@ export default function PersonalStats() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <h2 className="font-semibold text-[var(--color-text)]">Dias de juego</h2>
+              <h2 className="font-semibold text-[var(--color-text)]">Días de juego</h2>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -288,6 +605,26 @@ export default function PersonalStats() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
+              <h2 className="font-semibold text-[var(--color-text)]">Radar semanal</h2>
+            </CardHeader>
+            <CardContent>
+              <WeekdayRadar days={data.dayOfWeek} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <h2 className="font-semibold text-[var(--color-text)]">Reloj de juego</h2>
+            </CardHeader>
+            <CardContent>
+              <TimeClockChart ranges={data.timeRanges} />
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
               <h2 className="font-semibold text-[var(--color-text)]">Partidas por juego</h2>
             </CardHeader>
             <CardContent>
@@ -303,7 +640,7 @@ export default function PersonalStats() {
                       <GameImage src={game.image} alt={game.name} size="sm" />
                       <div className="min-w-0">
                         <p className="font-medium text-[var(--color-text)] truncate">{game.name}</p>
-                        <p className="text-xs text-[var(--color-textSecondary)]">Ultima partida: {formatDate(game.latestDate)}</p>
+                        <p className="text-xs text-[var(--color-textSecondary)]">Última partida: {formatDate(game.latestDate)}</p>
                       </div>
                     </div>
                     <span className="text-sm font-semibold text-[var(--color-text)] whitespace-nowrap">
@@ -311,7 +648,7 @@ export default function PersonalStats() {
                     </span>
                   </button>
                 )) : (
-                  <p className="text-sm text-[var(--color-textSecondary)]">Todavia no hay juegos jugados.</p>
+                  <p className="text-sm text-[var(--color-textSecondary)]">Todavía no hay juegos jugados.</p>
                 )}
               </div>
             </CardContent>
@@ -335,7 +672,7 @@ export default function PersonalStats() {
                 {filteredPlayers.length > 0 ? filteredPlayers.map(player => (
                   <PlayerRow key={player.userId} player={player} />
                 )) : (
-                  <p className="text-sm text-[var(--color-textSecondary)]">No hay companeros para esa busqueda.</p>
+                  <p className="text-sm text-[var(--color-textSecondary)]">No hay compañeros para esa búsqueda.</p>
                 )}
               </div>
             </CardContent>

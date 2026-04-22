@@ -698,6 +698,8 @@ model ClubConfig {
   loanEnabled          Boolean @default(false) // Activar/desactivar el sistema de préstamos
   loanDurationDays     Int     @default(14)    // Duración por defecto de un préstamo en días
   loanQueueNotifyHours Int     @default(48)    // Horas que tiene el siguiente en cola para reclamar el ítem
+  loanMaxActivePerUser Int     @default(0)     // 0 = sin limite de prestamos activos/pendientes por usuario
+  personalStatsEnabled Boolean @default(true)  // Mostrar acceso a estadísticas personales
 
   // Metadatos
   createdAt      DateTime @default(now())
@@ -727,6 +729,12 @@ enum LibraryItemLoanStatus {
   ON_LOAN
   BLOCKED
   MAINTENANCE
+}
+
+enum LibraryLoanPolicy {
+  NOT_LOANABLE
+  CONSULT
+  LOANABLE
 }
 
 enum LibraryLoanStatus {
@@ -771,6 +779,7 @@ model LibraryItem {
   // Préstamos
   loanStatus        LibraryItemLoanStatus @default(AVAILABLE)
   isLoanable        Boolean               @default(false)
+  loanPolicy        LibraryLoanPolicy     @default(NOT_LOANABLE)
   loans             LibraryLoan[]
   queue             LibraryQueue[]
 
@@ -1054,6 +1063,7 @@ enum NotificationType {
   MARKETPLACE_OFFER_COUNTERED  // El vendedor ha contraofertado
   MARKETPLACE_NEW_CONVERSATION // Alguien ha abierto un hilo sobre tu anuncio
   LIBRARY_LOAN_REQUESTED       // Admin: socio ha solicitado un préstamo
+  LIBRARY_LOAN_CONSULT_REQUESTED // Admin: socio consulta un prestamo
   LIBRARY_LOAN_CONFIRMED       // Socio: el admin ha confirmado la entrega
   LIBRARY_LOAN_RETURNED        // Socio: devolución registrada
   LIBRARY_LOAN_RENEWED         // Admin: socio ha renovado un préstamo

@@ -9,6 +9,7 @@ import InfoTooltip from '../ui/InfoTooltip';
 import { api } from '../../api/axios';
 import { GameImage } from '../events/EventCard';
 import type { UserStatsResponse, ClubStatsResponse, EventDetail } from '../../types/stats';
+import type { PublicConfig } from '../../types/config';
 
 interface StatItem {
   label: string;
@@ -30,6 +31,17 @@ type ModalType = 'eventsAttended' | 'uniqueGames' | 'gamesPlayed' | 'upcomingEve
 export default function StatsCard() {
   const [openModal, setOpenModal] = useState<ModalType>(null);
   const navigate = useNavigate();
+
+  const { data: publicConfig } = useQuery({
+    queryKey: ['publicConfig'],
+    queryFn: async () => {
+      const response = await api.get<{ success: boolean; data: PublicConfig }>('/api/config/public');
+      return response.data.data;
+    },
+    staleTime: 5 * 60 * 1000
+  });
+
+  const personalStatsEnabled = publicConfig?.personalStatsEnabled ?? true;
 
   // Obtener estadísticas del usuario
   const { data: userStats, isLoading: isLoadingUser } = useQuery({
@@ -325,17 +337,19 @@ export default function StatsCard() {
       </CardContent>
 
       {/* Modales */}
-      <div className="px-6 pb-4">
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={() => navigate('/estadisticas')}
-          className="w-full"
-        >
-          Ver estadisticas completas
-        </Button>
-      </div>
+      {personalStatsEnabled && (
+        <div className="px-6 pb-4">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => navigate('/estadisticas')}
+            className="w-full"
+          >
+            Ver estadísticas completas
+          </Button>
+        </div>
+      )}
 
       <Modal
         isOpen={openModal === 'eventsAttended'}

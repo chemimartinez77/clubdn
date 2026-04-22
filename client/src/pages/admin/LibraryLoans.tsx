@@ -4,10 +4,15 @@ import Layout from '../../components/layout/Layout';
 import { Card, CardContent } from '../../components/ui/Card';
 import { useToast } from '../../contexts/ToastContext';
 import { api } from '../../api/axios';
-import type { LibraryLoan, ItemSearchResult, GameCondition, LibraryItemLoanStatus } from '../../types/libraryLoans';
+import type { LibraryLoan, ItemSearchResult, GameCondition, LibraryItemLoanStatus, LibraryLoanPolicy } from '../../types/libraryLoans';
 
 const conditionLabels: Record<GameCondition, string> = { NUEVO: 'Nuevo', BUENO: 'Bueno', REGULAR: 'Regular', MALO: 'Malo' };
 const conditionOptions: GameCondition[] = ['NUEVO', 'BUENO', 'REGULAR', 'MALO'];
+const loanPolicyLabels: Record<LibraryLoanPolicy, string> = {
+  LOANABLE: 'Prestable',
+  CONSULT: 'Consultar',
+  NOT_LOANABLE: 'No prestable'
+};
 
 function isOverdue(loan: LibraryLoan): boolean {
   return loan.status === 'ACTIVE' && !!loan.dueAt && new Date(loan.dueAt) < new Date();
@@ -43,11 +48,17 @@ function SearchPanel() {
 
   const [returnForm, setReturnForm] = useState<{ loanId: string; conditionIn: GameCondition; notesIn: string; nextLoanStatus: LibraryItemLoanStatus } | null>(null);
 
-  const loanableMutation = useMutation({
-    mutationFn: ({ itemId, isLoanable }: { itemId: string; isLoanable: boolean }) =>
-      api.patch(`/api/library-loans/items/${itemId}/loanable`, { isLoanable }),
+  const policyMutation = useMutation({
+    mutationFn: ({ itemId, loanPolicy }: { itemId: string; loanPolicy: LibraryLoanPolicy }) =>
+      api.patch(`/api/library-loans/items/${itemId}/loan-policy`, { loanPolicy }),
     onSuccess: () => { showSuccess('Ítem actualizado'); queryClient.invalidateQueries({ queryKey: ['library-item-search', searched] }); },
     onError: (err: unknown) => { const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message; showError(msg ?? 'Error al actualizar'); }
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: (loanId: string) => api.post(`/api/library-loans/${loanId}/cancel`),
+    onSuccess: () => { showSuccess('Solicitud cancelada'); queryClient.invalidateQueries({ queryKey: ['library-item-search', searched] }); queryClient.invalidateQueries({ queryKey: ['library-loans-active'] }); },
+    onError: (err: unknown) => { const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message; showError(msg ?? 'Error al cancelar la solicitud'); }
   });
 
   const returnMutation = useMutation({
@@ -100,13 +111,16 @@ function SearchPanel() {
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${data.loanStatus === 'AVAILABLE' ? 'bg-green-100 text-green-800' : data.loanStatus === 'ON_LOAN' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
                   {data.loanStatus === 'AVAILABLE' ? 'Disponible' : data.loanStatus === 'ON_LOAN' ? 'Prestado' : data.loanStatus === 'REQUESTED' ? 'Solicitado' : data.loanStatus}
                 </span>
-                <button
-                  onClick={() => loanableMutation.mutate({ itemId: data.id, isLoanable: !data.isLoanable })}
-                  disabled={loanableMutation.isPending}
-                  className={`text-xs px-2 py-1 rounded-full border font-medium transition-colors disabled:opacity-50 ${data.isLoanable ? 'bg-green-100 border-green-400 text-green-800 hover:bg-green-200' : 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200'}`}
+                <select
+                  value={data.loanPolicy ?? (data.isLoanable ? 'LOANABLE' : 'NOT_LOANABLE')}
+                  onChange={(e) => policyMutation.mutate({ itemId: data.id, loanPolicy: e.target.value as LibraryLoanPolicy })}
+                  disabled={policyMutation.isPending}
+                  className="text-xs px-2 py-1 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)] disabled:opacity-50"
                 >
-                  {data.isLoanable ? 'Prestable' : 'No prestable'}
-                </button>
+                  {(['LOANABLE', 'CONSULT', 'NOT_LOANABLE'] as LibraryLoanPolicy[]).map(policy => (
+                    <option key={policy} value={policy}>{loanPolicyLabels[policy]}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -126,13 +140,22 @@ function SearchPanel() {
 
                 <div className="flex gap-2 pt-2">
                   {activeLoan.status === 'REQUESTED' && (
-                    <button
-                      onClick={() => confirmMutation.mutate(activeLoan.id)}
-                      disabled={confirmMutation.isPending}
-                      className="px-3 py-1.5 text-sm rounded-lg bg-[var(--color-primary)] text-white disabled:opacity-50"
-                    >
-                      Confirmar entrega
-                    </button>
+                    <>
+                      <button
+                        onClick={() => confirmMutation.mutate(activeLoan.id)}
+                        disabled={confirmMutation.isPending}
+                        className="px-3 py-1.5 text-sm rounded-lg bg-[var(--color-primary)] text-white disabled:opacity-50"
+                      >
+                        Confirmar entrega
+                      </button>
+                      <button
+                        onClick={() => cancelMutation.mutate(activeLoan.id)}
+                        disabled={cancelMutation.isPending}
+                        className="px-3 py-1.5 text-sm rounded-lg border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        Cancelar solicitud
+                      </button>
+                    </>
                   )}
                   {activeLoan.status === 'ACTIVE' && !returnForm && (
                     <button
@@ -224,6 +247,12 @@ function ActiveLoansList() {
     onError: (err: unknown) => { const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message; showError(msg ?? 'Error'); }
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: (loanId: string) => api.post(`/api/library-loans/${loanId}/cancel`),
+    onSuccess: () => { showSuccess('Solicitud cancelada'); queryClient.invalidateQueries({ queryKey: ['library-loans-active'] }); },
+    onError: (err: unknown) => { const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message; showError(msg ?? 'Error al cancelar'); }
+  });
+
   if (isLoading) return <p className="text-sm text-[var(--color-textSecondary)]">Cargando...</p>;
   if (!data || data.length === 0) return <p className="text-sm text-[var(--color-textSecondary)]">No hay préstamos activos.</p>;
 
@@ -243,10 +272,16 @@ function ActiveLoansList() {
                   <p className="text-xs text-[var(--color-textSecondary)]">Solicitado por <strong>{loan.user.name}</strong> · {formatDate(loan.createdAt)}</p>
                   <p className="text-xs text-[var(--color-textSecondary)]">ID: {loan.libraryItem.internalId}</p>
                 </div>
-                <button onClick={() => confirmMutation.mutate(loan.id)} disabled={confirmMutation.isPending}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-[var(--color-primary)] text-white disabled:opacity-50 whitespace-nowrap">
-                  Confirmar entrega
-                </button>
+                <div className="flex gap-2">
+                  <button onClick={() => confirmMutation.mutate(loan.id)} disabled={confirmMutation.isPending}
+                    className="px-3 py-1.5 text-xs rounded-lg bg-[var(--color-primary)] text-white disabled:opacity-50 whitespace-nowrap">
+                    Confirmar entrega
+                  </button>
+                  <button onClick={() => cancelMutation.mutate(loan.id)} disabled={cancelMutation.isPending}
+                    className="px-3 py-1.5 text-xs rounded-lg border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50 whitespace-nowrap">
+                    Cancelar solicitud
+                  </button>
+                </div>
               </div>
             ))}
           </div>

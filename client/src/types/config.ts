@@ -28,6 +28,8 @@ export interface ClubConfig {
   loanEnabled: boolean;
   loanDurationDays: number;
   loanQueueNotifyHours: number;
+  loanMaxActivePerUser: number;
+  personalStatsEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -47,9 +49,12 @@ export interface ClubConfigUpdate {
   loanEnabled?: boolean;
   loanDurationDays?: number;
   loanQueueNotifyHours?: number;
+  loanMaxActivePerUser?: number;
+  personalStatsEnabled?: boolean;
 }
 
 export interface PublicConfig {
   loginParticleStyle: LoginParticleStyle;
   loanEnabled: boolean;
+  personalStatsEnabled: boolean;
 }

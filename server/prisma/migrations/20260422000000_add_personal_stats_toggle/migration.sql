@@ -1,0 +1,1 @@
+ALTER TABLE "ClubConfig" ADD COLUMN IF NOT EXISTS "personalStatsEnabled" BOOLEAN NOT NULL DEFAULT true;

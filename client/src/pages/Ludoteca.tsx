@@ -12,6 +12,7 @@ type GameType = 'WARGAME' | 'MESA' | 'CARTAS' | 'MINI' | 'ROL';
 type GameCondition = 'NUEVO' | 'BUENO' | 'REGULAR' | 'MALO';
 
 type LibraryItemLoanStatus = 'AVAILABLE' | 'REQUESTED' | 'ON_LOAN' | 'BLOCKED' | 'MAINTENANCE';
+type LibraryLoanPolicy = 'NOT_LOANABLE' | 'CONSULT' | 'LOANABLE';
 
 interface LibraryItem {
   id: string;
@@ -29,6 +30,7 @@ interface LibraryItem {
   gameThumbnail?: string | null;
   loanStatus?: LibraryItemLoanStatus;
   isLoanable?: boolean;
+  loanPolicy?: LibraryLoanPolicy;
   isExpansion?: boolean;
   parentBggId?: string | null;
   parentGameName?: string | null;
@@ -114,6 +116,7 @@ export default function Ludoteca() {
   const { success: showSuccess } = useToast();
   const { user } = useAuth();
   const [loanActionLoading, setLoanActionLoading] = useState<string | null>(null);
+  const [pendingLoanRequest, setPendingLoanRequest] = useState<LibraryItem | null>(null);
   const [loanEnabled, setLoanEnabled] = useState(false);
   const [showExpansions, setShowExpansions] = useState(false);
   const [myActiveItemIds, setMyActiveItemIds] = useState<Set<string>>(new Set());
@@ -294,7 +297,7 @@ export default function Ludoteca() {
     setCurrentPage(1);
   };
 
-  const handleRequestLoan = async (item: LibraryItem) => {
+  const submitLoanRequest = async (item: LibraryItem) => {
     if (!user) return;
     setLoanActionLoading(item.id);
     try {
@@ -302,12 +305,18 @@ export default function Ludoteca() {
       showSuccess('Solicitud de préstamo enviada');
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, loanStatus: 'REQUESTED' } : i));
       setMyActiveItemIds(prev => new Set(prev).add(item.id));
+      setPendingLoanRequest(null);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       showError(msg ?? 'Error al solicitar el préstamo');
     } finally {
       setLoanActionLoading(null);
     }
+  };
+
+  const handleRequestLoan = (item: LibraryItem) => {
+    if (!user) return;
+    setPendingLoanRequest(item);
   };
 
   const handleJoinQueue = async (item: LibraryItem) => {
@@ -319,6 +328,20 @@ export default function Ludoteca() {
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       showError(msg ?? 'Error al apuntarse a la lista');
+    } finally {
+      setLoanActionLoading(null);
+    }
+  };
+
+  const handleConsultLoan = async (item: LibraryItem) => {
+    if (!user) return;
+    setLoanActionLoading(item.id);
+    try {
+      await api.post('/api/library-loans/consult', { libraryItemId: item.id });
+      showSuccess('Consulta enviada a administracion');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      showError(msg ?? 'Error al enviar la consulta');
     } finally {
       setLoanActionLoading(null);
     }
@@ -720,12 +743,12 @@ export default function Ludoteca() {
                       </div>
                     )}
 
-                    {item.loanStatus && item.isLoanable && (
+                    {item.loanStatus && (item.loanPolicy ?? (item.isLoanable ? 'LOANABLE' : 'NOT_LOANABLE')) !== 'NOT_LOANABLE' && (
                       <div className="mb-3 flex items-center justify-between gap-2">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${loanStatusColors[item.loanStatus]}`}>
-                          {loanStatusLabels[item.loanStatus]}
+                          {(item.loanPolicy ?? (item.isLoanable ? 'LOANABLE' : 'NOT_LOANABLE')) === 'CONSULT' ? 'Consultar' : loanStatusLabels[item.loanStatus]}
                         </span>
-                        {user && loanEnabled && item.loanStatus === 'AVAILABLE' && (
+                        {user && loanEnabled && (item.loanPolicy ?? (item.isLoanable ? 'LOANABLE' : 'NOT_LOANABLE')) === 'LOANABLE' && item.loanStatus === 'AVAILABLE' && (
                           <button
                             onClick={() => handleRequestLoan(item)}
                             disabled={loanActionLoading === item.id}
@@ -734,13 +757,22 @@ export default function Ludoteca() {
                             {loanActionLoading === item.id ? 'Solicitando...' : 'Solicitar préstamo'}
                           </button>
                         )}
-                        {user && loanEnabled && (item.loanStatus === 'ON_LOAN' || item.loanStatus === 'REQUESTED') && !myActiveItemIds.has(item.id) && (
+                        {user && loanEnabled && (item.loanPolicy ?? (item.isLoanable ? 'LOANABLE' : 'NOT_LOANABLE')) === 'LOANABLE' && (item.loanStatus === 'ON_LOAN' || item.loanStatus === 'REQUESTED') && !myActiveItemIds.has(item.id) && (
                           <button
                             onClick={() => handleJoinQueue(item)}
                             disabled={loanActionLoading === item.id}
                             className="text-xs px-3 py-1 rounded-full border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white disabled:opacity-50 transition-colors"
                           >
                             {loanActionLoading === item.id ? '...' : 'Apuntarme a la lista'}
+                          </button>
+                        )}
+                        {user && loanEnabled && (item.loanPolicy ?? (item.isLoanable ? 'LOANABLE' : 'NOT_LOANABLE')) === 'CONSULT' && (
+                          <button
+                            onClick={() => handleConsultLoan(item)}
+                            disabled={loanActionLoading === item.id}
+                            className="text-xs px-3 py-1 rounded-full border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white disabled:opacity-50 transition-colors"
+                          >
+                            {loanActionLoading === item.id ? '...' : 'Consultar prestamo'}
                           </button>
                         )}
                       </div>
@@ -844,6 +876,42 @@ export default function Ludoteca() {
           isOpen={!!selectedGameId}
           onClose={() => setSelectedGameId(null)}
         />
+      )}
+
+      {pendingLoanRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-lg bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] shadow-xl">
+            <div className="p-5 border-b border-[var(--color-cardBorder)]">
+              <h3 className="text-lg font-semibold text-[var(--color-text)]">Solicitar prestamo</h3>
+              <p className="mt-1 text-sm text-[var(--color-textSecondary)]">{pendingLoanRequest.name}</p>
+            </div>
+            <div className="p-5 space-y-3">
+              <p className="text-sm text-[var(--color-text)]">
+                Al enviar la solicitud, el juego quedara reservado para ti durante 48 horas. Si no se confirma la entrega en ese plazo, la solicitud se cancelara automaticamente.
+              </p>
+              <p className="text-xs text-[var(--color-textSecondary)]">
+                El prestamo empieza a contar cuando administracion confirme la entrega fisica.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 p-5 border-t border-[var(--color-cardBorder)]">
+              <button
+                type="button"
+                onClick={() => setPendingLoanRequest(null)}
+                className="px-4 py-2 rounded-lg border border-[var(--color-cardBorder)] text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => submitLoanRequest(pendingLoanRequest)}
+                disabled={loanActionLoading === pendingLoanRequest.id}
+                className="px-4 py-2 rounded-lg bg-[var(--color-primary)] text-white disabled:opacity-50"
+              >
+                {loanActionLoading === pendingLoanRequest.id ? 'Enviando...' : 'Confirmar solicitud'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </Layout>
   );
