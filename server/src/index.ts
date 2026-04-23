@@ -56,7 +56,10 @@ const PORT = process.env.PORT || 5000;
 app.set('trust proxy', 1);
 
 // Security headers
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false, // Desactivado para permitir la conexión desde el emulador
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
 // Rate limiting global
 const globalLimiter = rateLimit({
@@ -76,9 +79,7 @@ const authLimiter = rateLimit({
   message: { success: false, message: 'Demasiados intentos de autenticación, intenta de nuevo en 15 minutos' }
 });
 
-app.use(globalLimiter);
-
-// Middleware CORS
+// Middleware CORS - Configurado para Capacitor
 const allowedOrigins = [
   'https://clubdn-web-production.up.railway.app',
   'https://clubdn-web-staging.up.railway.app',
@@ -93,18 +94,20 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Permitir requests sin origin (como mobile apps o curl)
     if (!origin) return callback(null, true);
-
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // <--- RESALTADO: Añadido para evitar el 404 en preflight
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // <--- RESALTADO: Cabeceras permitidas
   optionsSuccessStatus: 200
 }));
+
+app.use(globalLimiter);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
