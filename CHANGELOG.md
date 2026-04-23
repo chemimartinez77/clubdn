@@ -4,6 +4,21 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-24
+
+### feat: UI de administración para enviar notificaciones push
+
+Se añade una sección "Enviar notificación push" al final del panel de administración, permitiendo al admin enviar notificaciones FCM directamente desde la web sin necesidad de usar curl u otras herramientas externas.
+
+**Backend:**
+- `server/src/controllers/pushController.ts`: nueva función `sendPushToUserById` que llama al servicio `sendPushToUser` existente y expone el envío a un usuario concreto por su `userId`.
+- `server/src/routes/pushRoutes.ts`: nueva ruta `POST /api/push/send-to-user` protegida con `authenticate` y `requireAdmin`.
+
+**Frontend:**
+- `client/src/pages/admin/Dashboard.tsx`: nueva sección al final del dashboard con radio buttons para elegir entre "Todos los usuarios" o "Usuario concreto", autocompletado de usuario con debounce (reutilizando `GET /api/admin/members`), campos de título (máx. 50 chars) y mensaje (máx. 100 chars) con contador de caracteres, botón deshabilitado si faltan datos, y resultado inline tras el envío.
+
+---
+
 ## 2026-04-23
 
 ### feat: preparación de la app Android con Capacitor

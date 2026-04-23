@@ -77,6 +77,17 @@ export default function AdminDashboard() {
   const searchRef = useRef<HTMLDivElement>(null);
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
+  // Push notifications
+  const [pushMode, setPushMode] = useState<'all' | 'user'>('all');
+  const [pushUserQuery, setPushUserQuery] = useState('');
+  const [pushDebouncedQuery, setPushDebouncedQuery] = useState('');
+  const [pushSelectedUser, setPushSelectedUser] = useState<{ id: string; name: string } | null>(null);
+  const [showPushSuggestions, setShowPushSuggestions] = useState(false);
+  const pushSearchRef = useRef<HTMLDivElement>(null);
+  const [pushTitle, setPushTitle] = useState('');
+  const [pushBody, setPushBody] = useState('');
+  const [pushResult, setPushResult] = useState<string | null>(null);
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(userSearchQuery), 300);
     return () => clearTimeout(timer);
@@ -86,6 +97,21 @@ export default function AdminDashboard() {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setPushDebouncedQuery(pushUserQuery), 300);
+    return () => clearTimeout(timer);
+  }, [pushUserQuery]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (pushSearchRef.current && !pushSearchRef.current.contains(e.target as Node)) {
+        setShowPushSuggestions(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -119,6 +145,17 @@ export default function AdminDashboard() {
     enabled: debouncedQuery.length >= 2
   });
 
+  const { data: pushUserSuggestions } = useQuery({
+    queryKey: ['pushMemberSearch', pushDebouncedQuery],
+    queryFn: async () => {
+      const response = await api.get<{ success: boolean; data: { members: Array<{ id: string; name: string; email: string; profile?: { nick?: string | null } | null }> } }>(
+        `/api/admin/members?search=${encodeURIComponent(pushDebouncedQuery)}&pageSize=8`
+      );
+      return response.data.data.members;
+    },
+    enabled: pushDebouncedQuery.length >= 2
+  });
+
   const { data: userViews } = useQuery({
     queryKey: ['userPageViews', searchedUserId],
     queryFn: async () => {
@@ -126,6 +163,36 @@ export default function AdminDashboard() {
       return response.data.data;
     },
     enabled: !!searchedUserId
+  });
+
+  const pushMutation = useMutation({
+    mutationFn: async () => {
+      if (pushMode === 'all') {
+        const res = await api.post<{ success: boolean; sent: number; failed: number }>('/api/push/send', { title: pushTitle, body: pushBody });
+        return res.data;
+      } else {
+        await api.post('/api/push/send-to-user', { userId: pushSelectedUser!.id, title: pushTitle, body: pushBody });
+        return null;
+      }
+    },
+    onSuccess: (data) => {
+      if (pushMode === 'all' && data) {
+        setPushResult(`Enviada a ${data.sent} dispositivo(s). Fallidos: ${data.failed}.`);
+        success(`Notificación enviada a ${data.sent} dispositivo(s)`);
+      } else {
+        setPushResult(`Enviada al usuario seleccionado.`);
+        success('Notificación enviada');
+      }
+      setPushTitle('');
+      setPushBody('');
+      setPushSelectedUser(null);
+      setPushUserQuery('');
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message ?? 'Error al enviar la notificación';
+      setPushResult(null);
+      error(msg);
+    }
   });
 
   const archiveMutation = useMutation({
@@ -563,6 +630,128 @@ export default function AdminDashboard() {
             </>
           )}
         </div>
+
+        {/* ── ENVIAR NOTIFICACIÓN PUSH ── */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-[var(--color-text)]">Enviar notificación push</h2>
+          <Card>
+            <CardContent>
+              <div className="space-y-4 max-w-lg">
+                {/* Selector destinatario */}
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="pushMode"
+                      value="all"
+                      checked={pushMode === 'all'}
+                      onChange={() => { setPushMode('all'); setPushSelectedUser(null); setPushUserQuery(''); setPushResult(null); }}
+                      className="accent-[var(--color-primary)]"
+                    />
+                    <span className="text-sm text-[var(--color-text)]">Todos los usuarios</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="pushMode"
+                      value="user"
+                      checked={pushMode === 'user'}
+                      onChange={() => { setPushMode('user'); setPushResult(null); }}
+                      className="accent-[var(--color-primary)]"
+                    />
+                    <span className="text-sm text-[var(--color-text)]">Usuario concreto</span>
+                  </label>
+                </div>
+
+                {/* Autocompletado de usuario */}
+                {pushMode === 'user' && (
+                  <div className="relative" ref={pushSearchRef}>
+                    <input
+                      type="text"
+                      placeholder="Buscar usuario..."
+                      value={pushSelectedUser ? pushSelectedUser.name : pushUserQuery}
+                      onChange={(e) => { setPushUserQuery(e.target.value); setPushSelectedUser(null); setShowPushSuggestions(true); setPushResult(null); }}
+                      onFocus={() => setShowPushSuggestions(true)}
+                      className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-inputBg)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    />
+                    {showPushSuggestions && pushUserSuggestions && pushUserSuggestions.length > 0 && !pushSelectedUser && (
+                      <div className="absolute z-10 w-full mt-1 bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {pushUserSuggestions.map(member => (
+                          <button
+                            key={member.id}
+                            className="w-full text-left px-3 py-2 hover:bg-[var(--color-tableRowHover)] text-sm"
+                            onClick={() => { setPushSelectedUser({ id: member.id, name: member.name }); setPushUserQuery(''); setShowPushSuggestions(false); }}
+                          >
+                            <span className="font-medium text-[var(--color-text)]">{member.name}</span>
+                            {member.profile?.nick && <span className="text-[var(--color-textSecondary)] ml-1">({member.profile.nick})</span>}
+                            <span className="text-[var(--color-textSecondary)] ml-2 text-xs">{member.email}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {pushSelectedUser && (
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="text-sm text-[var(--color-primary)] font-medium">{pushSelectedUser.name}</span>
+                        <button onClick={() => { setPushSelectedUser(null); setPushUserQuery(''); }} className="text-xs text-[var(--color-textSecondary)] hover:text-[var(--color-text)]">cambiar</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Título */}
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <label className="text-sm font-medium text-[var(--color-text)]">Título</label>
+                    <span className="text-xs text-[var(--color-textSecondary)]">{pushTitle.length}/50</span>
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={50}
+                    placeholder="Título de la notificación"
+                    value={pushTitle}
+                    onChange={(e) => { setPushTitle(e.target.value); setPushResult(null); }}
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-inputBg)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  />
+                </div>
+
+                {/* Mensaje */}
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <label className="text-sm font-medium text-[var(--color-text)]">Mensaje</label>
+                    <span className="text-xs text-[var(--color-textSecondary)]">{pushBody.length}/100</span>
+                  </div>
+                  <textarea
+                    maxLength={100}
+                    rows={3}
+                    placeholder="Texto de la notificación"
+                    value={pushBody}
+                    onChange={(e) => { setPushBody(e.target.value); setPushResult(null); }}
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-inputBg)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none"
+                  />
+                </div>
+
+                {/* Botón y resultado */}
+                <div className="flex items-center gap-4">
+                  <Button
+                    onClick={() => pushMutation.mutate()}
+                    disabled={
+                      !pushTitle.trim() ||
+                      !pushBody.trim() ||
+                      pushMutation.isPending ||
+                      (pushMode === 'user' && !pushSelectedUser)
+                    }
+                  >
+                    {pushMutation.isPending ? 'Enviando...' : 'Enviar notificación'}
+                  </Button>
+                  {pushResult && (
+                    <span className="text-sm text-green-600">{pushResult}</span>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
       </div>
     </Layout>
   );
