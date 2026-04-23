@@ -84,6 +84,9 @@ const allowedOrigins = [
   'https://clubdn-web-staging.up.railway.app',
   'https://app.clubdreadnought.org',
   'https://staging.clubdreadnought.org',
+  'capacitor://localhost',
+  'https://localhost',
+  'http://localhost',
   'http://localhost:5173',
   'http://localhost:5174'
 ];

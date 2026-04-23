@@ -6,6 +6,21 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-23
 
+### feat: preparación de la app Android con Capacitor
+
+Se añade la base nativa Android para empaquetar el cliente de Club Dreadnought como aplicación móvil mediante Capacitor.
+
+**Android y frontend:**
+- `client/android/` (nuevo): proyecto Android generado con Gradle, actividad principal, manifiesto, recursos de icono y pantalla de carga.
+- `client/capacitor.config.ts` (nuevo): configura la app `es.clubdreadnought.app`, el nombre "Club Dreadnought", `webDir: dist` y el esquema Android `https`.
+- `client/package.json` y `client/package-lock.json`: añaden Capacitor (`@capacitor/core`, `@capacitor/android`, `@capacitor/cli`) y el plugin `@capacitor/camera`.
+- `client/package.json`: añade los scripts `build:android`, `android:sync`, `android:open` y `android:run`.
+- `client/.gitignore`: ignora variables locales específicas para Android e iOS.
+- `client/README_ANDROID.md` (nuevo): documenta requisitos, variables de entorno y comandos habituales para compilar, sincronizar y abrir la app Android.
+
+**Backend:**
+- `server/src/index.ts`: permite los orígenes `capacitor://localhost`, `https://localhost` y `http://localhost` en CORS para el entorno móvil local.
+
 ### chore: railway.json por servicio para fix de build en monorepo
 
 Se investiga un fallo de build en Railway (`cd: server: No such file or directory`) coincidiendo con una incidencia de degradación en Railway Metal (22 abril 2026). Se concluye que el `railway.json` raíz puede colisionar con la configuración "Root Directory" de cada servicio en el dashboard de Railway, por lo que se crean ficheros específicos por subdirectorio como solución robusta.
