@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { usePageTracking } from './hooks/usePageTracking';
+import { usePushNotifications } from './hooks/usePushNotifications';
 import { ToastProvider } from './contexts/ToastContext';
 import { useQuery } from '@tanstack/react-query';
 import { api } from './api/axios';
@@ -150,6 +151,12 @@ function PageTracker() {
   return null;
 }
 
+function PushManager() {
+  const { isAuthenticated } = useAuth();
+  usePushNotifications(isAuthenticated);
+  return null;
+}
+
 const NO_TIP_PATHS = ['/reset-password', '/login', '/register', '/verify-email', '/forgot-password'];
 
 function TipController() {
@@ -206,6 +213,7 @@ function App() {
         <ToastProvider position="top-right">
           <AuthProvider>
             <PageTracker />
+            <PushManager />
             <TipController />
             <Routes>
           {/* Rutas públicas */}

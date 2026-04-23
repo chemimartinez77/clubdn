@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "188824603254",
+    "project_id": "clubdreadnought-43744",
+    "storage_bucket": "clubdreadnought-43744.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:188824603254:android:72367c9412b230e3d9ad57",
+        "android_client_info": {
+          "package_name": "es.clubdreadnought.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9UzRZ97WPu58pUX-1qlf1CKTcodttYpM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

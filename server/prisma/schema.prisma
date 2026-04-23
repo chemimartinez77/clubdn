@@ -148,6 +148,7 @@ model User {
   libraryLoansLoaned       LibraryLoan[]                  @relation("LibraryLoanLoanedBy")
   libraryLoansReturned     LibraryLoan[]                  @relation("LibraryLoanReturnedBy")
   libraryQueue             LibraryQueue[]                 @relation("LibraryQueueUser")
+  pushDevices              PushDevice[]
 
   @@index([email])
   @@index([status])
@@ -1572,6 +1573,20 @@ model BggSyncJob {
 
   @@index([userId, requestedAt])
   @@index([status, requestedAt])
+}
+
+// ==================== PUSH NOTIFICATIONS ====================
+
+model PushDevice {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String   @default("android") // "android" | "ios" | "web"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // ==================== RESULTADOS DE PARTIDAS ====================

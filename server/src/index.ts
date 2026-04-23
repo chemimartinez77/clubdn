@@ -31,6 +31,7 @@ import announcementRoutes from './routes/announcementRoutes';
 import marketplaceRoutes from './routes/marketplaceRoutes';
 import libraryLoansRoutes from './routes/libraryLoansRoutes';
 import previewRoutes from './routes/previewRoutes';
+import pushRoutes from './routes/pushRoutes';
 import myLudotecaRoutes from './routes/myLudotecaRoutes';
 import jugadoresLudotecaRoutes from './routes/jugadoresLudotecaRoutes';
 import quienSabeJugarRoutes from './routes/quienSabeJugarRoutes';
@@ -183,6 +184,7 @@ app.use('/api/announcements', announcementRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/library-loans', libraryLoansRoutes);
 app.use('/preview', previewRoutes);
+app.use('/api/push', pushRoutes);
 
 // Ruta 404
 app.use((_req, res) => {
