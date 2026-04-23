@@ -68,10 +68,31 @@ const allowedOrigins = [
   'http://localhost:5174'
 ];
 
+function isAllowedCorsOrigin(origin?: string): boolean {
+  return !origin || allowedOrigins.includes(origin);
+}
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (typeof origin === 'string' && isAllowedCorsOrigin(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Vary', 'Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With');
+  }
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(isAllowedCorsOrigin(typeof origin === 'string' ? origin : undefined) ? 200 : 403);
+  }
+
+  return next();
+});
+
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
+    if (isAllowedCorsOrigin(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
