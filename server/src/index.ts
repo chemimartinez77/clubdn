@@ -55,10 +55,41 @@ const PORT = process.env.PORT || 5000;
 // Necesario para que express-rate-limit funcione correctamente detrás del proxy de Railway
 app.set('trust proxy', 1);
 
+// Middleware CORS - Configurado para Capacitor
+const allowedOrigins = [
+  'https://clubdn-web-production.up.railway.app',
+  'https://clubdn-web-staging.up.railway.app',
+  'https://app.clubdreadnought.org',
+  'https://staging.clubdreadnought.org',
+  'capacitor://localhost',
+  'https://localhost',
+  'http://localhost',
+  'http://localhost:5173',
+  'http://localhost:5174'
+];
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
 // Security headers
 app.use(helmet({
-  contentSecurityPolicy: false, // Desactivado para permitir la conexión desde el emulador
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
 // Rate limiting global
@@ -78,34 +109,6 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { success: false, message: 'Demasiados intentos de autenticación, intenta de nuevo en 15 minutos' }
 });
-
-// Middleware CORS - Configurado para Capacitor
-const allowedOrigins = [
-  'https://clubdn-web-production.up.railway.app',
-  'https://clubdn-web-staging.up.railway.app',
-  'https://app.clubdreadnought.org',
-  'https://staging.clubdreadnought.org',
-  'capacitor://localhost',
-  'https://localhost',
-  'http://localhost',
-  'http://localhost:5173',
-  'http://localhost:5174'
-];
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // <--- RESALTADO: Añadido para evitar el 404 en preflight
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // <--- RESALTADO: Cabeceras permitidas
-  optionsSuccessStatus: 200
-}));
 
 app.use(globalLimiter);
 

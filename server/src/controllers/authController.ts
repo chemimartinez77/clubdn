@@ -50,6 +50,34 @@ async function verifyHcaptcha(token: string): Promise<boolean> {
   });
 }
 
+function isLocalOrigin(origin?: string): boolean {
+  if (!origin) return false;
+  return origin === 'capacitor://localhost'
+    || origin === 'http://localhost'
+    || origin === 'https://localhost'
+    || origin.startsWith('http://localhost:')
+    || origin.startsWith('https://localhost:');
+}
+
+function isDevelopmentOrStagingEnvironment(): boolean {
+  const environmentNames = [
+    process.env.NODE_ENV,
+    process.env.RAILWAY_ENVIRONMENT,
+    process.env.RAILWAY_ENVIRONMENT_NAME,
+  ].filter(Boolean).map((value) => value!.toLowerCase());
+
+  return environmentNames.some((environment) => (
+    environment === 'development'
+    || environment === 'dev'
+    || environment === 'staging'
+    || environment === 'test'
+  ));
+}
+
+function shouldBypassHcaptcha(req: Request): boolean {
+  return isLocalOrigin(req.get('origin')) || isDevelopmentOrStagingEnvironment();
+}
+
 /**
  * Registro de nuevo usuario
  * POST /api/auth/register
@@ -218,14 +246,19 @@ export const verifyEmail = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password, hcaptchaToken } = req.body;
+    const bypassHcaptcha = shouldBypassHcaptcha(req);
 
     // Verificar hCaptcha
-    if (!hcaptchaToken) {
+    if (!bypassHcaptcha && !hcaptchaToken) {
       return res.status(400).json({ success: false, message: 'Verificación de seguridad requerida' });
     }
-    const captchaOk = await verifyHcaptcha(hcaptchaToken);
-    if (!captchaOk) {
-      return res.status(400).json({ success: false, message: 'Verificación de seguridad fallida. Inténtalo de nuevo.' });
+    if (!bypassHcaptcha) {
+      const captchaOk = await verifyHcaptcha(hcaptchaToken);
+      if (!captchaOk) {
+        return res.status(400).json({ success: false, message: 'Verificación de seguridad fallida. Inténtalo de nuevo.' });
+      }
+    } else {
+      console.warn('[hCaptcha] Verificación omitida temporalmente para login móvil/local');
     }
 
     // Comprobar rate limit antes de cualquier consulta de credenciales
