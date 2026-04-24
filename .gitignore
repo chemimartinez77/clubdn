@@ -4,3 +4,5 @@
 
 tmp*
 .claude/
+client/android/app/google-services.json
+client/android/app/google-services.old.json
