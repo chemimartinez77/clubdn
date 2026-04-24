@@ -23,6 +23,20 @@ type LinkedNextInput = {
   durationMinutes?: number;
 };
 
+const eventExpansionInclude = {
+  include: {
+    game: {
+      select: {
+        id: true,
+        name: true,
+        image: true,
+        thumbnail: true,
+      }
+    }
+  },
+  orderBy: { position: 'asc' as const },
+};
+
 const eventDetailInclude = {
   organizer: {
     select: {
@@ -103,19 +117,7 @@ const eventDetailInclude = {
       mechanics: true
     }
   },
-  expansions: {
-    include: {
-      game: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          thumbnail: true,
-        }
-      }
-    },
-    orderBy: { position: 'asc' as const },
-  },
+  expansions: eventExpansionInclude,
   linkedNextEvent: {
     select: {
       id: true,
@@ -145,6 +147,25 @@ const eventDetailInclude = {
     }
   }
 } satisfies Prisma.EventInclude;
+
+const serializeEventExpansions = (
+  expansions: Array<{
+    id: string;
+    gameId: string;
+    game: {
+      id: string;
+      name: string;
+      image: string | null;
+      thumbnail: string | null;
+    };
+  }>
+) => expansions.map((expansion) => ({
+  id: expansion.id,
+  gameId: expansion.gameId,
+  name: expansion.game.name,
+  image: expansion.game.image,
+  thumbnail: expansion.game.thumbnail,
+}));
 
 async function getGameSnapshot(gameId: string) {
   const game = await prisma.game.findUnique({
@@ -491,6 +512,7 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
             image: true
           }
         },
+        expansions: eventExpansionInclude,
         linkedPreviousEvent: {
           select: {
             id: true,
@@ -553,6 +575,7 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
 
         return {
           ...event,
+          expansions: serializeEventExpansions(event.expansions),
           registrations: undefined, // No exponer lista completa en el listado
           eventGuests: undefined,
           invitations: undefined,
@@ -622,13 +645,7 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       data: {
           event: {
             ...event,
-            expansions: event.expansions.map((expansion) => ({
-              id: expansion.id,
-              gameId: expansion.gameId,
-              name: expansion.game.name,
-              image: expansion.game.image,
-              thumbnail: expansion.game.thumbnail,
-            })),
+            expansions: serializeEventExpansions(event.expansions),
             eventGuests: undefined,
             invitations: event.invitations.map(invitation => ({
               id: invitation.id,

@@ -28,6 +28,80 @@ const displayUserName = (name: string, nick?: string | null): string => {
   return cleanNick || name;
 };
 
+const statsEventExpansionSelect = {
+  id: true,
+  gameId: true,
+  game: {
+    select: {
+      name: true,
+      image: true,
+      thumbnail: true
+    }
+  }
+};
+
+const serializeStatsEventExpansions = (
+  expansions: Array<{
+    id: string;
+    gameId: string;
+    game: {
+      name: string;
+      image: string | null;
+      thumbnail: string | null;
+    };
+  }>
+) => expansions.map((expansion) => ({
+  id: expansion.id,
+  gameId: expansion.gameId,
+  name: expansion.game.name,
+  image: expansion.game.image,
+  thumbnail: expansion.game.thumbnail
+}));
+
+const getWeekStart = (date: Date): Date => {
+  const weekStart = new Date(date);
+  weekStart.setHours(0, 0, 0, 0);
+  const day = weekStart.getDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  weekStart.setDate(weekStart.getDate() + diffToMonday);
+  return weekStart;
+};
+
+const countCurrentWeeklyStreak = (weekStarts: Set<number>, currentWeekStartMs: number): number => {
+  if (!weekStarts.has(currentWeekStartMs)) return 0;
+
+  let streak = 0;
+  let pointer = currentWeekStartMs;
+
+  while (weekStarts.has(pointer)) {
+    streak += 1;
+    pointer -= 7 * 24 * 60 * 60 * 1000;
+  }
+
+  return streak;
+};
+
+const countBestWeeklyStreak = (weekStartsMs: number[]): number => {
+  if (weekStartsMs.length === 0) return 0;
+
+  let best = 1;
+  let current = 1;
+
+  for (let index = 1; index < weekStartsMs.length; index += 1) {
+    const previous = weekStartsMs[index - 1]!;
+    const currentWeek = weekStartsMs[index]!;
+
+    if (currentWeek - previous === 7 * 24 * 60 * 60 * 1000) {
+      current += 1;
+      best = Math.max(best, current);
+    } else {
+      current = 1;
+    }
+  }
+
+  return best;
+};
+
 /**
  * Marca como COMPLETED todos los eventos/partidas cuya fecha ya ha pasado
  * y crea los registros de GamePlayHistory para los participantes confirmados.
@@ -535,7 +609,8 @@ export const getUserDetailedStats = async (req: Request, res: Response): Promise
         status: RegistrationStatus.CONFIRMED,
         event: {
           type: 'PARTIDA',
-          status: EventStatus.COMPLETED
+          status: EventStatus.COMPLETED,
+          disputeResult: true
         }
       },
       select: {
@@ -599,6 +674,7 @@ export const getUserDetailedStats = async (req: Request, res: Response): Promise
       night: 0,
       unknown: 0
     };
+    const playedWeekStarts = new Set<number>();
 
     let organizedGames = 0;
 
@@ -608,12 +684,14 @@ export const getUserDetailedStats = async (req: Request, res: Response): Promise
       const month = eventDate.getMonth() + 1;
       const monthKey = formatMonthKey(eventDate);
       const dateKey = formatDateKey(eventDate);
+      const weekStartMs = getWeekStart(eventDate).getTime();
 
       byYear.set(year, (byYear.get(year) ?? 0) + 1);
       const monthEntry = byMonth.get(monthKey) ?? { year, month, label: monthLabel(year, month), count: 0 };
       monthEntry.count += 1;
       byMonth.set(monthKey, monthEntry);
       activityByDate.set(dateKey, (activityByDate.get(dateKey) ?? 0) + 1);
+      playedWeekStarts.add(weekStartMs);
 
       const day = eventDate.getDay();
       if (dayCounts[day] !== undefined) dayCounts[day]++;
@@ -676,6 +754,8 @@ export const getUserDetailedStats = async (req: Request, res: Response): Promise
     }
 
     const gamesPlayed = registrations.length;
+    const sortedWeekStarts = Array.from(playedWeekStarts).sort((a, b) => a - b);
+    const currentWeekStartMs = getWeekStart(new Date()).getTime();
     const byMonthList = Array.from(byMonth.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, value]) => ({ key, ...value }));
@@ -689,6 +769,10 @@ export const getUserDetailedStats = async (req: Request, res: Response): Promise
           joinedGames: gamesPlayed - organizedGames,
           uniqueGames: games.size,
           uniquePlayers: players.size
+        },
+        weeklyStats: {
+          bestWeeklyStreak: countBestWeeklyStreak(sortedWeekStarts),
+          currentWeeklyStreak: countCurrentWeeklyStreak(playedWeekStarts, currentWeekStartMs)
         },
         byYear: Array.from(byYear.entries())
           .sort(([a], [b]) => a - b)
@@ -789,6 +873,10 @@ export const getUserEventsAttended = async (req: Request, res: Response): Promis
                 thumbnail: true,
                 image: true
               }
+            },
+            expansions: {
+              select: statsEventExpansionSelect,
+              orderBy: { position: 'asc' }
             }
           }
         }
@@ -802,7 +890,10 @@ export const getUserEventsAttended = async (req: Request, res: Response): Promis
 
     res.json({
       success: true,
-      data: events.map(e => e.event)
+      data: events.map(({ event }) => ({
+        ...event,
+        expansions: serializeStatsEventExpansions(event.expansions)
+      }))
     });
 
   } catch (error) {
@@ -876,6 +967,10 @@ export const getUserGamesPlayed = async (req: Request, res: Response): Promise<v
                 thumbnail: true,
                 image: true
               }
+            },
+            expansions: {
+              select: statsEventExpansionSelect,
+              orderBy: { position: 'asc' }
             }
           }
         }
@@ -889,7 +984,10 @@ export const getUserGamesPlayed = async (req: Request, res: Response): Promise<v
 
     res.json({
       success: true,
-      data: games.map(g => g.event)
+      data: games.map(({ event }) => ({
+        ...event,
+        expansions: serializeStatsEventExpansions(event.expansions)
+      }))
     });
 
   } catch (error) {
@@ -971,6 +1069,10 @@ export const getUserUpcomingEvents = async (req: Request, res: Response): Promis
                 image: true
               }
             },
+            expansions: {
+              select: statsEventExpansionSelect,
+              orderBy: { position: 'asc' }
+            },
             linkedPreviousEvent: {
               select: {
                 id: true,
@@ -1000,6 +1102,7 @@ export const getUserUpcomingEvents = async (req: Request, res: Response): Promis
     const events = registrations
       .map(r => ({
         ...r.event,
+        expansions: serializeStatsEventExpansions(r.event.expansions),
         registeredCount: r.event.registrations.length + r.event.invitations.length
       }))
       .filter(event => {

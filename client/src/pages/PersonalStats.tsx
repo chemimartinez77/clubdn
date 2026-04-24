@@ -68,30 +68,15 @@ const buildMonthlySeries = (months: DetailedMonthStat[]) => {
   return series;
 };
 
-const buildStreaks = (months: DetailedMonthStat[]) => {
+const getBestMonth = (months: DetailedMonthStat[]) => {
   const series = buildMonthlySeries(months);
-  let current = 0;
-  let best = 0;
-  let active = 0;
   let bestMonth: DetailedMonthStat | null = null;
 
   for (const month of series) {
     if (!bestMonth || month.count > bestMonth.count) bestMonth = month;
-    if (month.count > 0) {
-      active += 1;
-      current += 1;
-      best = Math.max(best, current);
-    } else {
-      current = 0;
-    }
   }
 
-  return {
-    activeMonths: active,
-    bestMonthlyStreak: best,
-    currentMonthlyStreak: current,
-    bestMonth,
-  };
+  return bestMonth;
 };
 
 function StatTile({ label, value }: { label: string; value: number | string }) {
@@ -512,7 +497,7 @@ export default function PersonalStats() {
   const maxYear = Math.max(1, ...data.byYear.map(year => year.count));
   const maxDay = Math.max(1, ...data.dayOfWeek.map(day => day.count));
   const maxTimeRange = Math.max(1, ...data.timeRanges.map(range => range.count));
-  const streaks = buildStreaks(data.byMonth);
+  const bestMonth = getBestMonth(data.byMonth);
   const currentMonthKey = toDateKey(new Date()).slice(0, 7);
   const currentMonthCount = data.byMonth.find(month => month.key === currentMonthKey)?.count ?? 0;
 
@@ -533,17 +518,17 @@ export default function PersonalStats() {
 
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           <StatTile label="Partidas jugadas" value={data.summary.gamesPlayed} />
-          <StatTile label="Como creador" value={data.summary.organizedGames} />
-          <StatTile label="De otros" value={data.summary.joinedGames} />
+          <StatTile label="Partidas organizadas" value={data.summary.organizedGames} />
+          <StatTile label="Partidas como asistente" value={data.summary.joinedGames} />
           <StatTile label="Juegos distintos" value={data.summary.uniqueGames} />
-          <StatTile label="Compañeros" value={data.summary.uniquePlayers} />
+          <StatTile label="Compañeros diferentes" value={data.summary.uniquePlayers} />
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatTile label="Este mes" value={currentMonthCount} />
-          <StatTile label="Mejor mes" value={streaks.bestMonth ? `${streaks.bestMonth.count} (${streaks.bestMonth.key})` : '-'} />
-          <StatTile label="Mejor racha mensual" value={streaks.bestMonthlyStreak} />
-          <StatTile label="Racha actual" value={streaks.currentMonthlyStreak} />
+          <StatTile label="Partidas este mes" value={currentMonthCount} />
+          <StatTile label="Mes con más partidas" value={bestMonth ? `${bestMonth.count} (${bestMonth.label})` : '-'} />
+          <StatTile label="Mejor racha semanal" value={data.weeklyStats.bestWeeklyStreak} />
+          <StatTile label="Racha actual (semanas seguidas jugando)" value={data.weeklyStats.currentWeeklyStreak} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -682,7 +667,7 @@ export default function PersonalStats() {
           <Card>
             <CardHeader>
               <div className="flex flex-col gap-3">
-                <h2 className="font-semibold text-[var(--color-text)]">Partidas con otras personas</h2>
+                <h2 className="font-semibold text-[var(--color-text)]">Partidas con compañeros diferentes</h2>
                 <input
                   type="search"
                   value={playerSearch}

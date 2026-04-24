@@ -3820,3 +3820,25 @@ Incluye:
 ---
 
 **Última actualización:** 10 de Marzo de 2026
+## 2026-04-24
+
+### feat/fix: expansiones clicables en eventos y ajuste de estadísticas personales
+
+Se mejora la experiencia de eventos para tratar las expansiones como juegos consultables y se corrigen las estadísticas personales para contar solo partidas realmente jugadas, con rachas semanales y nueva terminología en la interfaz.
+
+**Eventos y juegos:**
+- `client/src/components/events/EventExpansions.tsx` (nuevo): componente reutilizable para mostrar expansiones en formato compacto, de tarjetas o mínimo, con apertura de ficha de juego.
+- `client/src/pages/EventDetail.tsx`: las expansiones pasan a ser clicables y el detalle del juego principal se unifica con `GameDetailModal`, reutilizando la misma modal para juego base y expansiones.
+- `client/src/components/dashboard/UpcomingEventsCard.tsx`: muestra expansiones en las próximas partidas/eventos y permite abrir su ficha sin navegar accidentalmente al evento.
+- `client/src/components/events/EventCard.tsx`, `EventCalendarDay.tsx` y `EventCalendarWeek.tsx`: añaden visualización adaptativa de expansiones según el espacio disponible y apertura de ficha desde cada superficie.
+- `server/src/controllers/eventController.ts`: el listado general de eventos serializa `expansions` con `id`, `gameId`, `name`, `image` y `thumbnail`, ordenadas por `position`.
+
+**Estadísticas personales:**
+- `server/src/controllers/statsController.ts`: las estadísticas detalladas ahora cuentan solo partidas `PARTIDA` completadas con `disputeResult = true`, excluyendo canceladas, no disputadas o pendientes de confirmación.
+- `server/src/controllers/statsController.ts`: añade `weeklyStats` con mejor racha semanal y racha actual por semanas naturales, y expone también expansiones en endpoints detallados de eventos/partidas y próximas partidas.
+- `client/src/types/stats.ts`: amplía los tipos con `weeklyStats` y `expansions` en `EventDetail`.
+- `client/src/pages/PersonalStats.tsx`: cambia las etiquetas a “Partidas organizadas”, “Partidas como asistente”, “Partidas este mes”, “Mes con más partidas”, “Mejor racha semanal”, “Racha actual (semanas seguidas jugando)” y “Compañeros diferentes”.
+
+**Validación:**
+- `client`: `npm.cmd run build`
+- `server`: `npx.cmd tsc --noEmit`

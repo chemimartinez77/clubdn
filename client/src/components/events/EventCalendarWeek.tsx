@@ -1,6 +1,8 @@
 // client/src/components/events/EventCalendarWeek.tsx
-import { useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import EventExpansions from './EventExpansions';
+import GameDetailModal from '../games/GameDetailModal';
 import type { Event } from '../../types/event';
 
 function calcLinkedStartTime(prev: NonNullable<Event['linkedPreviousEvent']>): string | null {
@@ -22,32 +24,30 @@ interface EventCalendarWeekProps {
 
 export default function EventCalendarWeek({ events, currentMonth }: EventCalendarWeekProps) {
   const navigate = useNavigate();
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [selectedGameSource, setSelectedGameSource] = useState<'bgg' | 'rpggeek'>('bgg');
 
   const { weekDays, weekName } = useMemo(() => {
-    // Obtener el inicio de la semana (lunes) que contiene currentMonth
     const date = new Date(currentMonth);
     const dayOfWeek = date.getDay();
-    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Ajustar para que lunes sea inicio
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     const weekStart = new Date(date);
     weekStart.setDate(date.getDate() + diff);
     weekStart.setHours(0, 0, 0, 0);
 
-    // Generar 7 días de la semana
-    const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const generatedWeekDays = Array.from({ length: 7 }, (_, i) => {
       const day = new Date(weekStart);
       day.setDate(weekStart.getDate() + i);
       return day;
     });
 
-    // Nombre de la semana
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
-    const weekName = `${weekStart.getDate()} ${new Intl.DateTimeFormat('es-ES', { month: 'short' }).format(weekStart)} - ${weekEnd.getDate()} ${new Intl.DateTimeFormat('es-ES', { month: 'short', year: 'numeric' }).format(weekEnd)}`;
+    const normalizedWeekName = `${weekStart.getDate()} ${new Intl.DateTimeFormat('es-ES', { month: 'short' }).format(weekStart)} - ${weekEnd.getDate()} ${new Intl.DateTimeFormat('es-ES', { month: 'short', year: 'numeric' }).format(weekEnd)}`;
 
-    return { weekDays, weekStart, weekName };
+    return { weekDays: generatedWeekDays, weekStart, weekName: normalizedWeekName };
   }, [currentMonth]);
 
-  // Agrupar eventos por día
   const eventsByDay = useMemo(() => {
     const grouped: Record<string, Event[]> = {};
 
@@ -63,6 +63,11 @@ export default function EventCalendarWeek({ events, currentMonth }: EventCalenda
 
     return grouped;
   }, [events]);
+
+  const openGameDetails = (gameId: string) => {
+    setSelectedGameSource(gameId.startsWith('rpgg-') ? 'rpggeek' : 'bgg');
+    setSelectedGameId(gameId.startsWith('rpgg-') ? gameId.replace('rpgg-', '') : gameId);
+  };
 
   const renderDay = (day: Date) => {
     const dateKey = day.toDateString();
@@ -119,11 +124,13 @@ export default function EventCalendarWeek({ events, currentMonth }: EventCalenda
               const isFull = registeredCount >= event.maxAttendees;
 
               return (
-                <Link
+                <div
                   key={event.id}
-                  to={`/events/${event.id}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className={`block text-sm p-2 rounded ${
+                  onClick={(eventClick) => {
+                    eventClick.stopPropagation();
+                    navigate(`/events/${event.id}`);
+                  }}
+                  className={`block text-sm p-2 rounded cursor-pointer ${
                     isFull
                       ? 'bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)] hover:bg-[var(--color-cardBorder)]'
                       : 'bg-[var(--color-primary-100)] text-[var(--color-primary-900)] hover:bg-[var(--color-primary-200)]'
@@ -136,7 +143,14 @@ export default function EventCalendarWeek({ events, currentMonth }: EventCalenda
                       {registeredCount}/{event.maxAttendees}
                     </span>
                   </div>
-                </Link>
+                  <EventExpansions
+                    expansions={event.expansions}
+                    onOpenGame={openGameDetails}
+                    stopPropagation
+                    maxVisible={1}
+                    variant="minimal"
+                  />
+                </div>
               );
             })}
           </div>
@@ -146,41 +160,46 @@ export default function EventCalendarWeek({ events, currentMonth }: EventCalenda
   };
 
   return (
-    <div className="bg-[var(--color-cardBackground)] rounded-lg border border-[var(--color-cardBorder)] p-4">
-      {/* Header */}
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-[var(--color-text)]">
-          {weekName}
-        </h3>
+    <>
+      <div className="bg-[var(--color-cardBackground)] rounded-lg border border-[var(--color-cardBorder)] p-4">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-[var(--color-text)]">
+            {weekName}
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2">
+          {weekDays.map(day => renderDay(day))}
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-[var(--color-textSecondary)]">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded bg-[var(--color-primary-100)]"></div>
+            <span>Con plazas</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded bg-[var(--color-tableRowHover)]"></div>
+            <span>Completo</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded bg-[var(--color-primary-50)] border border-[var(--color-primary-300)]"></div>
+            <span>Hoy</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg className="w-3 h-3 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+            </svg>
+            <span>Clic en un día para organizar partida</span>
+          </div>
+        </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2">
-        {weekDays.map(day => renderDay(day))}
-      </div>
-
-      {/* Legend */}
-      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-[var(--color-textSecondary)]">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-[var(--color-primary-100)]"></div>
-          <span>Con plazas</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-[var(--color-tableRowHover)]"></div>
-          <span>Completo</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-[var(--color-primary-50)] border border-[var(--color-primary-300)]"></div>
-          <span>Hoy</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <svg className="w-3 h-3 text-[var(--color-textSecondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-          </svg>
-          <span>Clic en un día para organizar partida</span>
-        </div>
-      </div>
-    </div>
+      <GameDetailModal
+        gameId={selectedGameId}
+        isOpen={selectedGameId !== null}
+        onClose={() => setSelectedGameId(null)}
+        source={selectedGameSource}
+      />
+    </>
   );
 }
-

@@ -88,6 +88,10 @@ export interface UserDetailedStats {
     uniqueGames: number;
     uniquePlayers: number;
   };
+  weeklyStats: {
+    bestWeeklyStreak: number;
+    currentWeeklyStreak: number;
+  };
   byYear: DetailedYearStat[];
   byMonth: DetailedMonthStat[];
   activityByDate: DetailedActivityDay[];
@@ -125,6 +129,13 @@ export interface EventDetail {
     thumbnail: string | null;
     image: string | null;
   } | null;
+  expansions?: Array<{
+    id: string;
+    gameId: string;
+    name: string;
+    image: string | null;
+    thumbnail: string | null;
+  }>;
   linkedPreviousEvent?: {
     id: string;
     title: string;

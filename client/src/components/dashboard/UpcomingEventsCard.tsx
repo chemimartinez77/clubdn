@@ -1,9 +1,12 @@
 // client/src/components/dashboard/UpcomingEventsCard.tsx
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { api } from '../../api/axios';
 import { GameImage } from '../events/EventCard';
+import EventExpansions from '../events/EventExpansions';
+import GameDetailModal from '../games/GameDetailModal';
 import type { EventDetail } from '../../types/stats';
 
 const statusLabel = (status: string) => {
@@ -36,6 +39,8 @@ function calcLinkedStartTime(prev: NonNullable<EventDetail['linkedPreviousEvent'
 
 export default function UpcomingEventsCard() {
   const navigate = useNavigate();
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [selectedGameSource, setSelectedGameSource] = useState<'bgg' | 'rpggeek'>('bgg');
 
   const { data: upcomingEvents, isLoading } = useQuery({
     queryKey: ['upcomingEvents'],
@@ -62,7 +67,6 @@ export default function UpcomingEventsCard() {
       return { hour: event.startHour, minute: event.startMinute ?? 0 };
     }
 
-    // Fallback: usar la hora embebida en `date` si no está en campos startHour/startMinute.
     const parsed = new Date(event.date);
     const fallbackHour = parsed.getHours();
     const fallbackMinute = parsed.getMinutes();
@@ -131,65 +135,114 @@ export default function UpcomingEventsCard() {
     return event.status;
   };
 
-  return (
-    <Card id="dashboard-upcoming-events">
-      <CardHeader>
-        <h3 className="text-lg font-semibold text-[var(--color-text)]">Tus próximas partidas y eventos</h3>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-primary)]"></div>
-          </div>
-        ) : upcomingEvents && upcomingEvents.length > 0 ? (
-          <div className="space-y-2">
-            {upcomingEvents.slice(0, 16).map((event) => {
-              const scheduleText = formatTimeWithDuration(event);
-              const effectiveStatus = getEffectiveStatus(event);
-              const capacityText = formatCapacityText(event.registeredCount, event.maxAttendees);
+  const openGameDetails = (gameId: string) => {
+    setSelectedGameSource(gameId.startsWith('rpgg-') ? 'rpggeek' : 'bgg');
+    setSelectedGameId(gameId.startsWith('rpgg-') ? gameId.replace('rpgg-', '') : gameId);
+  };
 
-              return (
-                <div
-                  key={event.id}
-                  className="p-3 border border-[var(--color-cardBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer hover:shadow-md"
-                  onClick={() => navigate(`/events/${event.id}`)}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="shrink-0">
-                      <GameImage
-                        src={event.game?.image || event.game?.thumbnail || event.gameImage || null}
-                        alt={event.gameName || event.title}
-                        size="sm"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h5 className="font-semibold text-[var(--color-text)] truncate">{event.title}</h5>
-                      <div className="mt-1">
-                        <p className="text-sm text-[var(--color-textSecondary)]">{formatDate(event.date)}</p>
-                        {scheduleText && (
-                          <p className="text-sm text-[var(--color-textSecondary)]">
-                            {scheduleText}
-                          </p>
-                        )}
-                        {capacityText && (
-                          <p className="text-sm text-[var(--color-textSecondary)]">
-                            {capacityText}
-                          </p>
-                        )}
+  return (
+    <>
+      <Card id="dashboard-upcoming-events">
+        <CardHeader>
+          <h3 className="text-lg font-semibold text-[var(--color-text)]">Tus próximas partidas y eventos</h3>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-primary)]"></div>
+            </div>
+          ) : upcomingEvents && upcomingEvents.length > 0 ? (
+            <div className="space-y-2">
+              {upcomingEvents.slice(0, 16).map((event) => {
+                const scheduleText = formatTimeWithDuration(event);
+                const effectiveStatus = getEffectiveStatus(event);
+                const capacityText = formatCapacityText(event.registeredCount, event.maxAttendees);
+                const canOpenBaseGame = !!event.bggId;
+
+                return (
+                  <div
+                    key={event.id}
+                    className="p-3 border border-[var(--color-cardBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer hover:shadow-md"
+                    onClick={() => navigate(`/events/${event.id}`)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="shrink-0">
+                        <div
+                          role={canOpenBaseGame ? 'button' : undefined}
+                          tabIndex={canOpenBaseGame ? 0 : -1}
+                          onClick={(mouseEvent) => {
+                            if (!event.bggId) return;
+                            mouseEvent.stopPropagation();
+                            openGameDetails(event.bggId);
+                          }}
+                          onKeyDown={(keyboardEvent) => {
+                            if (!event.bggId) return;
+                            if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+                              keyboardEvent.preventDefault();
+                              keyboardEvent.stopPropagation();
+                              openGameDetails(event.bggId);
+                            }
+                          }}
+                          className={canOpenBaseGame ? 'cursor-pointer rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]' : ''}
+                        >
+                          <GameImage
+                            src={event.game?.image || event.game?.thumbnail || event.gameImage || null}
+                            alt={event.gameName || event.title}
+                            size="sm"
+                          />
+                        </div>
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <h5
+                          className={`font-semibold text-[var(--color-text)] truncate ${canOpenBaseGame ? 'cursor-pointer hover:underline' : ''}`}
+                          onClick={(mouseEvent) => {
+                            if (!event.bggId) return;
+                            mouseEvent.stopPropagation();
+                            openGameDetails(event.bggId);
+                          }}
+                        >
+                          {event.title}
+                        </h5>
+                        <div className="mt-1">
+                          <p className="text-sm text-[var(--color-textSecondary)]">{formatDate(event.date)}</p>
+                          {scheduleText && (
+                            <p className="text-sm text-[var(--color-textSecondary)]">
+                              {scheduleText}
+                            </p>
+                          )}
+                          {capacityText && (
+                            <p className="text-sm text-[var(--color-textSecondary)]">
+                              {capacityText}
+                            </p>
+                          )}
+                        </div>
+                        <EventExpansions
+                          expansions={event.expansions}
+                          onOpenGame={openGameDetails}
+                          stopPropagation
+                          maxVisible={2}
+                        />
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusClass(effectiveStatus)}`}>
+                        {statusLabel(effectiveStatus)}
+                      </span>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusClass(effectiveStatus)}`}>
-                      {statusLabel(effectiveStatus)}
-                    </span>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-center text-[var(--color-textSecondary)] py-4">No tienes próximos eventos programados</p>
-        )}
-      </CardContent>
-    </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-center text-[var(--color-textSecondary)] py-4">No tienes próximos eventos programados</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <GameDetailModal
+        gameId={selectedGameId}
+        isOpen={selectedGameId !== null}
+        onClose={() => setSelectedGameId(null)}
+        source={selectedGameSource}
+      />
+    </>
   );
 }

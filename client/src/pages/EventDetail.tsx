@@ -11,8 +11,10 @@ import { useToast } from '../hooks/useToast';
 import { useDebounce } from '../hooks/useDebounce';
 import { api } from '../api/axios';
 import { GameImage } from '../components/events/EventCard';
+import EventExpansions from '../components/events/EventExpansions';
 import EventPhotoGallery from '../components/events/EventPhotoGallery';
 import GameSearchModal from '../components/events/GameSearchModal';
+import GameDetailModal from '../components/games/GameDetailModal';
 import { useAuth } from '../contexts/AuthContext';
 import type { Event, BGGGame, UpdateEventData, PendingInvitation, CreatePartidaCloneState } from '../types/event';
 import type { ApiResponse } from '../types/auth';
@@ -71,7 +73,8 @@ export default function EventDetail() {
   const [isExceptional, setIsExceptional] = useState(false);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [expandedInviteId, setExpandedInviteId] = useState<string | null>(null);
-  const [isGameModalOpen, setIsGameModalOpen] = useState(false);
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [selectedGameSource, setSelectedGameSource] = useState<'bgg' | 'rpggeek'>('bgg');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isUnregisterModalOpen, setIsUnregisterModalOpen] = useState(false);
   const [isCloseCapacityModalOpen, setIsCloseCapacityModalOpen] = useState(false);
@@ -721,21 +724,6 @@ export default function EventDetail() {
 
     return durationText ? `${startText}-${endText} (${durationText})` : `${startText}-${endText}`;
   };
-  const formatNumber = (value?: number | null, digits = 2) =>
-    typeof value === 'number' ? value.toFixed(digits) : '—';
-  const formatRange = (min?: number | null, max?: number | null, suffix = '') => {
-    if (typeof min === 'number' && typeof max === 'number') {
-      return `${min}-${max}${suffix}`;
-    }
-    if (typeof min === 'number') {
-      return `${min}${suffix}`;
-    }
-    if (typeof max === 'number') {
-      return `${max}${suffix}`;
-    }
-    return '—';
-  };
-
   const statusColors = {
     SCHEDULED: 'bg-blue-100 text-blue-800',
     ONGOING: 'bg-green-100 text-green-800',
@@ -842,20 +830,8 @@ export default function EventDetail() {
 
   // Obtener imagen del juego: primero de BD (game.image o game.thumbnail), luego de gameImage (BGG)
   const gameImageUrl = event.game?.image || event.game?.thumbnail || event.gameImage || null;
-  const canShowGameDetails = isPartida && !!event.game;
-  const gameTitle = event.gameName || event.title;
+  const canShowGameDetails = isPartida && !!event.bggId;
   const expansionsLabel = (event.expansions ?? []).map((expansion) => expansion.name).join(', ');
-  const gameDescription = event.game?.description
-    ? event.game.description.replace(/<[^>]*>/g, '').trim()
-    : null;
-  const playersText = formatRange(event.game?.minPlayers, event.game?.maxPlayers);
-  const timeText = event.game?.minPlaytime || event.game?.maxPlaytime
-    ? formatRange(event.game?.minPlaytime, event.game?.maxPlaytime, ' min')
-    : event.game?.playingTime
-      ? `${event.game.playingTime} min`
-      : '—';
-  const minAgeText = typeof event.game?.minAge === 'number' ? `${event.game.minAge}+` : '—';
-  const yearText = typeof event.game?.yearPublished === 'number' ? event.game.yearPublished : '—';
   const qrImageUrl = qrUrl
     ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrUrl)}`
     : null;
@@ -921,8 +897,14 @@ export default function EventDetail() {
   };
 
   const handleOpenGameModal = () => {
-    if (!canShowGameDetails) return;
-    setIsGameModalOpen(true);
+    if (!event?.bggId) return;
+    setSelectedGameSource(event.bggId.startsWith('rpgg-') ? 'rpggeek' : 'bgg');
+    setSelectedGameId(event.bggId.startsWith('rpgg-') ? event.bggId.replace('rpgg-', '') : event.bggId);
+  };
+
+  const handleOpenExpansionModal = (gameId: string) => {
+    setSelectedGameSource(gameId.startsWith('rpgg-') ? 'rpggeek' : 'bgg');
+    setSelectedGameId(gameId.startsWith('rpgg-') ? gameId.replace('rpgg-', '') : gameId);
   };
 
   const handleAddToCalendar = () => {
@@ -1622,21 +1604,12 @@ export default function EventDetail() {
             {!!event.expansions?.length && (
               <div>
                 <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Expansiones</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {event.expansions.map((expansion) => (
-                    <div key={expansion.id} className="flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] p-3">
-                      <GameImage
-                        src={expansion.image || expansion.thumbnail}
-                        alt={expansion.name}
-                        size="sm"
-                      />
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-[var(--color-text)]">{expansion.name}</p>
-                        <p className="text-xs text-amber-600">Expansión</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <EventExpansions
+                  expansions={event.expansions}
+                  onOpenGame={handleOpenExpansionModal}
+                  variant="cards"
+                  className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:flex xl:flex-wrap"
+                />
 
                 {inheritsRegistrationsFromPrevious && (
                   <p className="mt-3 text-sm text-[var(--color-textSecondary)]">
@@ -2329,131 +2302,12 @@ export default function EventDetail() {
         </div>
       </Modal>
 
-      <Modal
-        isOpen={isGameModalOpen}
-        onClose={() => setIsGameModalOpen(false)}
-        title={gameTitle}
-        size="lg"
-      >
-        <div className="space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row">
-            {gameImageUrl && (
-              <img
-                src={gameImageUrl}
-                alt={gameTitle}
-                className="w-full sm:w-48 rounded-lg object-contain bg-[var(--color-tableRowHover)]"
-              />
-            )}
-            <div className="grid grid-cols-2 gap-3 text-sm text-[var(--color-textSecondary)]">
-              <div>
-                <p className="text-xs text-[var(--color-textSecondary)]">Nota BGG</p>
-                <p className="font-semibold">{formatNumber(event.game?.averageRating)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-[var(--color-textSecondary)]">Bayes</p>
-                <p className="font-semibold">{formatNumber(event.game?.bayesAverage)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-[var(--color-textSecondary)]">Peso</p>
-                <p className="font-semibold">{formatNumber(event.game?.complexityRating)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-[var(--color-textSecondary)]">Ranking</p>
-                <p className="font-semibold">{event.game?.rank ?? '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-[var(--color-textSecondary)]">Jugadores</p>
-                <p className="font-semibold">{playersText}</p>
-              </div>
-              <div>
-                <p className="text-xs text-[var(--color-textSecondary)]">Duracion</p>
-                <p className="font-semibold">{timeText}</p>
-              </div>
-              <div>
-                <p className="text-xs text-[var(--color-textSecondary)]">Edad</p>
-                <p className="font-semibold">{minAgeText}</p>
-              </div>
-              <div>
-                <p className="text-xs text-[var(--color-textSecondary)]">Año</p>
-                <p className="font-semibold">{yearText}</p>
-              </div>
-            </div>
-          </div>
-
-          {gameDescription && (
-            <div>
-              <h4 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-2">Descripcion</h4>
-              <p className="text-sm text-[var(--color-textSecondary)] whitespace-pre-line">{gameDescription}</p>
-            </div>
-          )}
-
-          {(event.game?.categories?.length || event.game?.mechanics?.length) && (
-            <div className="space-y-2 text-sm text-[var(--color-textSecondary)]">
-              {event.game?.categories?.length ? (
-                <div>
-                  <p className="text-xs text-[var(--color-textSecondary)] mb-1">Categorias</p>
-                  <p>{event.game.categories.join(', ')}</p>
-                </div>
-              ) : null}
-              {event.game?.mechanics?.length ? (
-                <div>
-                  <p className="text-xs text-[var(--color-textSecondary)] mb-1">Mecanicas</p>
-                  <p>{event.game.mechanics.join(', ')}</p>
-                </div>
-              ) : null}
-            </div>
-          )}
-
-          {(event.game?.designers?.length || event.game?.publishers?.length) && (
-            <div className="space-y-2 text-sm text-[var(--color-textSecondary)]">
-              {event.game?.designers?.length ? (
-                <div>
-                  <p className="text-xs text-[var(--color-textSecondary)] mb-1">Diseñadores</p>
-                  <p>{event.game.designers.join(', ')}</p>
-                </div>
-              ) : null}
-              {event.game?.publishers?.length ? (
-                <div>
-                  <p className="text-xs text-[var(--color-textSecondary)] mb-1">Editoriales</p>
-                  <p>{event.game.publishers.join(', ')}</p>
-                </div>
-              ) : null}
-            </div>
-          )}
-
-          {event.bggId && (() => {
-            const isRpgg = event.bggId.startsWith('rpgg-');
-            const numericId = isRpgg ? event.bggId.replace('rpgg-', '') : event.bggId;
-            const externalUrl = isRpgg
-              ? `https://rpggeek.com/rpgitem/${numericId}`
-              : `https://boardgamegeek.com/boardgame/${numericId}`;
-            return (
-              <div className="flex items-center justify-between pt-2 border-t border-[var(--color-cardBorder)]">
-                <a
-                  href={externalUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-[var(--color-primary)] hover:underline"
-                >
-                  {isRpgg ? 'Ver en RPGGeek' : 'Ver en BoardGameGeek'}
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </a>
-                {!isRpgg && (
-                  <a
-                    href={externalUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img src="/bgg.powered.webp" alt="Powered by BGG" className="h-6" style={{ mixBlendMode: 'screen' }} />
-                  </a>
-                )}
-              </div>
-            );
-          })()}
-        </div>
-      </Modal>
+      <GameDetailModal
+        gameId={selectedGameId}
+        isOpen={selectedGameId !== null}
+        onClose={() => setSelectedGameId(null)}
+        source={selectedGameSource}
+      />
 
       <Modal
         isOpen={isInviteModalOpen}
