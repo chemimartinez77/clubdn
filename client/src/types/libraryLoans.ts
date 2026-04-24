@@ -54,7 +54,6 @@ export interface ItemSearchResult {
   condition: GameCondition;
   thumbnail: string | null;
   loanStatus: LibraryItemLoanStatus;
-  isLoanable: boolean;
   loanPolicy: LibraryLoanPolicy;
   notes: string | null;
   ownerEmail: string | null;

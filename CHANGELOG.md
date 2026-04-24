@@ -6,6 +6,52 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-24
 
+### feat: simplificar políticas de préstamo y mejorar la búsqueda admin de ludoteca
+
+Se simplifica el sistema de préstamos para que `loanPolicy` sea la única fuente de verdad, se elimina `isLoanable` y se rehace la búsqueda administrativa de ludoteca para trabajar con resultados múltiples y cambio de política desde modal.
+
+**Préstamos y modelo de datos:**
+- `server/prisma/schema.prisma`: elimina el campo `isLoanable` de `LibraryItem`.
+- `server/prisma/migrations/20260424120000_remove_is_loanable_and_normalize_loan_policy/migration.sql` (nuevo): normaliza `loanPolicy` según el propietario y elimina la columna `isLoanable`.
+- `server/src/controllers/libraryLoansController.ts`: la búsqueda admin acepta `internalId` y `name`, devuelve listas y toda la lógica de préstamo, cola y consulta pasa a depender solo de `loanPolicy`.
+- `server/src/routes/libraryLoansRoutes.ts`: elimina el endpoint legado `/items/:itemId/loanable`.
+- `server/src/scripts/seed-ludoteca-rol.ts`: los ítems de rol del club se crean con `loanPolicy = LOANABLE`.
+
+**Interfaz administrativa y cliente:**
+- `client/src/pages/admin/LibraryLoans.tsx`: renombra la pestaña a `Buscar`, añade campos para ID interno y nombre, muestra resultados en lista y permite cambiar `loanPolicy` desde una modal.
+- `client/src/types/libraryLoans.ts`: elimina `isLoanable` de los contratos del cliente.
+- `client/src/pages/Ludoteca.tsx`: elimina los fallbacks a `isLoanable` y usa solo `loanPolicy` para mostrar acciones de préstamo, cola o consulta.
+
+**Validación:**
+- `client`: `npm.cmd run build`
+- `server`: `npx.cmd tsc --noEmit`
+- `server`: `npx.cmd prisma generate`
+
+### feat/fix: expansiones clicables en eventos y ajuste de estadísticas personales
+
+Se mejora la experiencia de eventos para tratar las expansiones como juegos consultables y se corrigen las estadísticas personales para contar solo partidas realmente jugadas, con rachas semanales y nueva terminología en la interfaz.
+
+**Eventos y juegos:**
+- `client/src/components/events/EventExpansions.tsx` (nuevo): componente reutilizable para mostrar expansiones en formato compacto, de tarjetas o mínimo, con apertura de ficha de juego.
+- `client/src/pages/EventDetail.tsx`: las expansiones pasan a ser clicables y el detalle del juego principal se unifica con `GameDetailModal`, reutilizando la misma modal para juego base y expansiones.
+- `client/src/components/dashboard/UpcomingEventsCard.tsx`: muestra expansiones en las próximas partidas/eventos y permite abrir su ficha sin navegar accidentalmente al evento.
+- `client/src/components/events/EventCard.tsx`, `EventCalendarDay.tsx` y `EventCalendarWeek.tsx`: añaden visualización adaptativa de expansiones según el espacio disponible y apertura de ficha desde cada superficie.
+- `server/src/controllers/eventController.ts`: el listado general de eventos serializa `expansions` con `id`, `gameId`, `name`, `image` y `thumbnail`, ordenadas por `position`.
+
+**Estadísticas personales:**
+- `server/src/controllers/statsController.ts`: las estadísticas detalladas ahora cuentan solo partidas `PARTIDA` completadas con `disputeResult = true`, excluyendo canceladas, no disputadas o pendientes de confirmación.
+- `server/src/controllers/statsController.ts`: añade `weeklyStats` con mejor racha semanal y racha actual por semanas naturales, y expone también expansiones en endpoints detallados de eventos/partidas y próximas partidas.
+- `client/src/types/stats.ts`: amplía los tipos con `weeklyStats` y `expansions` en `EventDetail`.
+- `client/src/pages/PersonalStats.tsx`: cambia las etiquetas a “Partidas organizadas”, “Partidas como asistente”, “Partidas este mes”, “Mes con más partidas”, “Mejor racha semanal”, “Racha actual (semanas seguidas jugando)” y “Compañeros diferentes”.
+
+**Validación:**
+- `client`: `npm.cmd run build`
+- `server`: `npx.cmd tsc --noEmit`
+
+---
+
+## 2026-04-24
+
 ### feat: UI de administración para enviar notificaciones push
 
 Se añade una sección "Enviar notificación push" al final del panel de administración, permitiendo al admin enviar notificaciones FCM directamente desde la web sin necesidad de usar curl u otras herramientas externas.
@@ -3027,6 +3073,45 @@ Si por cualquier motivo un evento tenía `disputeAsked: true` pero seguía en es
 - `server/prisma/schema.prisma` — campo `loginParticleStyle String @default("white")` en `ClubConfig`
 - `server/prisma/migrations/20260323000000_add_login_particle_style/migration.sql` — migración aplicada
 
+
+---
+
+## 2026-03-14
+
+### 🔒 Seguridad
+
+#### Cabeceras HTTP seguras con Helmet
+- Se añade `helmet` como middleware global para configurar automáticamente cabeceras HTTP de seguridad: `X-Content-Type-Options`, `X-Frame-Options`, `Strict-Transport-Security`, `Content-Security-Policy`, etc.
+
+**Archivos modificados:**
+- `server/src/index.ts` - `app.use(helmet())`
+
+#### Rate limiting global y específico para autenticación
+- Rate limiter global: máximo 300 peticiones por IP cada 15 minutos
+- Rate limiter estricto en `/api/auth`: máximo 20 peticiones por IP cada 15 minutos para proteger contra ataques de fuerza bruta
+
+**Archivos modificados:**
+- `server/src/index.ts` - `globalLimiter` y `authLimiter` con `express-rate-limit`
+
+#### JWT_SECRET obligatorio al arrancar el servidor
+- Si `JWT_SECRET` no está definido en las variables de entorno, el servidor termina inmediatamente con un error fatal en lugar de usar el fallback `'default-secret-key'`
+- Se elimina el fallback inseguro del controlador de autenticación
+
+**Archivos modificados:**
+- `server/src/index.ts` - validación `process.exit(1)` si `JWT_SECRET` no está definido
+- `server/src/controllers/authController.ts` - eliminado `|| 'default-secret-key'`
+
+### 🌱 Seed de producción
+
+#### Script `seed-prod.ts` seguro para producción
+- Nuevo script que inicializa datos esenciales en la base de datos de producción sin borrar ni sobreescribir datos existentes
+- Crea `ClubConfig` (tipos de membresía, moneda) y las 60 `BadgeDefinition` de todas las categorías usando `upsert` idempotente
+- Seguro de re-ejecutar en cualquier momento
+
+**Archivos creados:**
+- `server/prisma/seed-prod.ts` - seed idempotente con upsert por `category_level`
+
+
 ---
 
 ## 2026-03-13
@@ -3093,42 +3178,6 @@ Si por cualquier motivo un evento tenía `disputeAsked: true` pero seguía en es
 - `client/src/pages/JoinViaShareLink.tsx` - formulario usa `phone` en lugar de `dni`; payload envía `guestPhone`
 - `client/src/pages/InviteValidation.tsx` - muestra `guestPhoneMasked` en lugar de `guestDniMasked`
 
----
-
-## 2026-03-14
-
-### 🔒 Seguridad
-
-#### Cabeceras HTTP seguras con Helmet
-- Se añade `helmet` como middleware global para configurar automáticamente cabeceras HTTP de seguridad: `X-Content-Type-Options`, `X-Frame-Options`, `Strict-Transport-Security`, `Content-Security-Policy`, etc.
-
-**Archivos modificados:**
-- `server/src/index.ts` - `app.use(helmet())`
-
-#### Rate limiting global y específico para autenticación
-- Rate limiter global: máximo 300 peticiones por IP cada 15 minutos
-- Rate limiter estricto en `/api/auth`: máximo 20 peticiones por IP cada 15 minutos para proteger contra ataques de fuerza bruta
-
-**Archivos modificados:**
-- `server/src/index.ts` - `globalLimiter` y `authLimiter` con `express-rate-limit`
-
-#### JWT_SECRET obligatorio al arrancar el servidor
-- Si `JWT_SECRET` no está definido en las variables de entorno, el servidor termina inmediatamente con un error fatal en lugar de usar el fallback `'default-secret-key'`
-- Se elimina el fallback inseguro del controlador de autenticación
-
-**Archivos modificados:**
-- `server/src/index.ts` - validación `process.exit(1)` si `JWT_SECRET` no está definido
-- `server/src/controllers/authController.ts` - eliminado `|| 'default-secret-key'`
-
-### 🌱 Seed de producción
-
-#### Script `seed-prod.ts` seguro para producción
-- Nuevo script que inicializa datos esenciales en la base de datos de producción sin borrar ni sobreescribir datos existentes
-- Crea `ClubConfig` (tipos de membresía, moneda) y las 60 `BadgeDefinition` de todas las categorías usando `upsert` idempotente
-- Seguro de re-ejecutar en cualquier momento
-
-**Archivos creados:**
-- `server/prisma/seed-prod.ts` - seed idempotente con upsert por `category_level`
 
 ---
 
@@ -3816,29 +3865,3 @@ Incluye:
 - Los emails utilizan templates HTML responsive
 - El sistema de threading soporta escalado horizontal (ordenamiento por timestamp)
 - Este proyecto usa despliegue continuo: cada cambio documentado aquí está en producción
-
----
-
-**Última actualización:** 10 de Marzo de 2026
-## 2026-04-24
-
-### feat/fix: expansiones clicables en eventos y ajuste de estadísticas personales
-
-Se mejora la experiencia de eventos para tratar las expansiones como juegos consultables y se corrigen las estadísticas personales para contar solo partidas realmente jugadas, con rachas semanales y nueva terminología en la interfaz.
-
-**Eventos y juegos:**
-- `client/src/components/events/EventExpansions.tsx` (nuevo): componente reutilizable para mostrar expansiones en formato compacto, de tarjetas o mínimo, con apertura de ficha de juego.
-- `client/src/pages/EventDetail.tsx`: las expansiones pasan a ser clicables y el detalle del juego principal se unifica con `GameDetailModal`, reutilizando la misma modal para juego base y expansiones.
-- `client/src/components/dashboard/UpcomingEventsCard.tsx`: muestra expansiones en las próximas partidas/eventos y permite abrir su ficha sin navegar accidentalmente al evento.
-- `client/src/components/events/EventCard.tsx`, `EventCalendarDay.tsx` y `EventCalendarWeek.tsx`: añaden visualización adaptativa de expansiones según el espacio disponible y apertura de ficha desde cada superficie.
-- `server/src/controllers/eventController.ts`: el listado general de eventos serializa `expansions` con `id`, `gameId`, `name`, `image` y `thumbnail`, ordenadas por `position`.
-
-**Estadísticas personales:**
-- `server/src/controllers/statsController.ts`: las estadísticas detalladas ahora cuentan solo partidas `PARTIDA` completadas con `disputeResult = true`, excluyendo canceladas, no disputadas o pendientes de confirmación.
-- `server/src/controllers/statsController.ts`: añade `weeklyStats` con mejor racha semanal y racha actual por semanas naturales, y expone también expansiones en endpoints detallados de eventos/partidas y próximas partidas.
-- `client/src/types/stats.ts`: amplía los tipos con `weeklyStats` y `expansions` en `EventDetail`.
-- `client/src/pages/PersonalStats.tsx`: cambia las etiquetas a “Partidas organizadas”, “Partidas como asistente”, “Partidas este mes”, “Mes con más partidas”, “Mejor racha semanal”, “Racha actual (semanas seguidas jugando)” y “Compañeros diferentes”.
-
-**Validación:**
-- `client`: `npm.cmd run build`
-- `server`: `npx.cmd tsc --noEmit`

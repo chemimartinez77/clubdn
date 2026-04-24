@@ -12,7 +12,6 @@ import {
   getItemQueue,
   joinQueue,
   leaveQueue,
-  toggleLoanable,
   updateLoanPolicy,
   consultLoan,
 } from '../controllers/libraryLoansController';
@@ -34,7 +33,6 @@ router.post('/:loanId/cancel', authenticate, cancelLoan);
 router.post('/queue', authenticate, joinQueue);
 router.delete('/queue/:itemId', authenticate, leaveQueue);
 
-router.patch('/items/:itemId/loanable', authenticate, requireAdmin, toggleLoanable);
 router.patch('/items/:itemId/loan-policy', authenticate, requireAdmin, updateLoanPolicy);
 
 export default router;

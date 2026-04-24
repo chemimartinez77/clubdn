@@ -186,6 +186,7 @@ async function main() {
         condition: 'BUENO',
         notes: entry.notes,
         ownerEmail: null,
+        loanPolicy: 'LOANABLE',
       }
     });
 

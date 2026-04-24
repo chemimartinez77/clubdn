@@ -779,7 +779,6 @@ model LibraryItem {
 
   // Préstamos
   loanStatus        LibraryItemLoanStatus @default(AVAILABLE)
-  isLoanable        Boolean               @default(false)
   loanPolicy        LibraryLoanPolicy     @default(NOT_LOANABLE)
   loans             LibraryLoan[]
   queue             LibraryQueue[]

@@ -29,8 +29,7 @@ interface LibraryItem {
   updatedAt: string;
   gameThumbnail?: string | null;
   loanStatus?: LibraryItemLoanStatus;
-  isLoanable?: boolean;
-  loanPolicy?: LibraryLoanPolicy;
+  loanPolicy: LibraryLoanPolicy;
   isExpansion?: boolean;
   parentBggId?: string | null;
   parentGameName?: string | null;
@@ -743,12 +742,12 @@ export default function Ludoteca() {
                       </div>
                     )}
 
-                    {item.loanStatus && (item.loanPolicy ?? (item.isLoanable ? 'LOANABLE' : 'NOT_LOANABLE')) !== 'NOT_LOANABLE' && (
+                    {item.loanStatus && item.loanPolicy !== 'NOT_LOANABLE' && (
                       <div className="mb-3 flex items-center justify-between gap-2">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${loanStatusColors[item.loanStatus]}`}>
-                          {(item.loanPolicy ?? (item.isLoanable ? 'LOANABLE' : 'NOT_LOANABLE')) === 'CONSULT' ? 'Consultar' : loanStatusLabels[item.loanStatus]}
+                          {item.loanPolicy === 'CONSULT' ? 'Consultar' : loanStatusLabels[item.loanStatus]}
                         </span>
-                        {user && loanEnabled && (item.loanPolicy ?? (item.isLoanable ? 'LOANABLE' : 'NOT_LOANABLE')) === 'LOANABLE' && item.loanStatus === 'AVAILABLE' && (
+                        {user && loanEnabled && item.loanPolicy === 'LOANABLE' && item.loanStatus === 'AVAILABLE' && (
                           <button
                             onClick={() => handleRequestLoan(item)}
                             disabled={loanActionLoading === item.id}
@@ -757,7 +756,7 @@ export default function Ludoteca() {
                             {loanActionLoading === item.id ? 'Solicitando...' : 'Solicitar préstamo'}
                           </button>
                         )}
-                        {user && loanEnabled && (item.loanPolicy ?? (item.isLoanable ? 'LOANABLE' : 'NOT_LOANABLE')) === 'LOANABLE' && (item.loanStatus === 'ON_LOAN' || item.loanStatus === 'REQUESTED') && !myActiveItemIds.has(item.id) && (
+                        {user && loanEnabled && item.loanPolicy === 'LOANABLE' && (item.loanStatus === 'ON_LOAN' || item.loanStatus === 'REQUESTED') && !myActiveItemIds.has(item.id) && (
                           <button
                             onClick={() => handleJoinQueue(item)}
                             disabled={loanActionLoading === item.id}
@@ -766,7 +765,7 @@ export default function Ludoteca() {
                             {loanActionLoading === item.id ? '...' : 'Apuntarme a la lista'}
                           </button>
                         )}
-                        {user && loanEnabled && (item.loanPolicy ?? (item.isLoanable ? 'LOANABLE' : 'NOT_LOANABLE')) === 'CONSULT' && (
+                        {user && loanEnabled && item.loanPolicy === 'CONSULT' && (
                           <button
                             onClick={() => handleConsultLoan(item)}
                             disabled={loanActionLoading === item.id}

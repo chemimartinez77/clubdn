@@ -23,6 +23,29 @@ const LOAN_SELECT = {
   returnedBy: { select: { id: true, name: true } },
 };
 
+const ITEM_SEARCH_SELECT = {
+  id: true,
+  internalId: true,
+  name: true,
+  gameType: true,
+  condition: true,
+  thumbnail: true,
+  loanStatus: true,
+  loanPolicy: true,
+  notes: true,
+  ownerEmail: true,
+  loans: {
+    where: { status: { in: [LibraryLoanStatus.REQUESTED, LibraryLoanStatus.ACTIVE] } },
+    select: LOAN_SELECT,
+    take: 1
+  },
+  queue: {
+    where: { status: { in: [LibraryQueueStatus.WAITING, LibraryQueueStatus.NOTIFIED] } },
+    orderBy: { createdAt: 'asc' as const },
+    select: { id: true, status: true, createdAt: true, user: { select: { id: true, name: true } } }
+  }
+};
+
 async function notifyAdmins(title: string, message: string, type: 'LIBRARY_LOAN_REQUESTED' | 'LIBRARY_LOAN_CONSULT_REQUESTED' | 'LIBRARY_LOAN_RENEWED', metadata: object) {
   const admins = await prisma.user.findMany({
     where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] }, status: 'APPROVED' },
@@ -62,44 +85,44 @@ async function notifyNextInQueue(libraryItemId: string, itemName: string) {
 }
 
 /**
- * GET /api/library-loans/search-item?internalId=...
- * Admin: busca un ítem por internalId con contexto operativo completo.
+ * GET /api/library-loans/search-item?internalId=...&name=...
+ * Admin: busca ítems por ID interno y/o nombre con contexto operativo completo.
  */
 export const searchItem = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { internalId } = req.query;
-    if (!internalId || typeof internalId !== 'string') {
-      res.status(400).json({ success: false, message: 'internalId es obligatorio' });
+    const internalId = typeof req.query.internalId === 'string' ? req.query.internalId.trim() : '';
+    const name = typeof req.query.name === 'string' ? req.query.name.trim() : '';
+
+    if (!internalId && !name) {
+      res.status(400).json({ success: false, message: 'Debes indicar un ID interno o un nombre' });
       return;
     }
 
-    const item = await prisma.libraryItem.findUnique({
-      where: { internalId },
-      select: {
-        id: true, internalId: true, name: true, gameType: true, condition: true,
-        thumbnail: true, loanStatus: true, isLoanable: true, loanPolicy: true, notes: true, ownerEmail: true,
-        loans: {
-          where: { status: { in: ['REQUESTED', 'ACTIVE'] } },
-          select: LOAN_SELECT,
-          take: 1
-        },
-        queue: {
-          where: { status: { in: ['WAITING', 'NOTIFIED'] } },
-          orderBy: { createdAt: 'asc' },
-          select: { id: true, status: true, createdAt: true, user: { select: { id: true, name: true } } }
+    const where = internalId && name
+      ? {
+          AND: [
+            { internalId },
+            { name: { contains: name, mode: 'insensitive' as const } }
+          ]
         }
-      }
+      : internalId
+        ? { internalId }
+        : { name: { contains: name, mode: 'insensitive' as const } };
+
+    const items = await prisma.libraryItem.findMany({
+      where,
+      select: ITEM_SEARCH_SELECT,
+      orderBy: [
+        { name: 'asc' },
+        { internalId: 'asc' }
+      ],
+      take: internalId ? 20 : 50
     });
 
-    if (!item) {
-      res.status(404).json({ success: false, message: 'Ítem no encontrado' });
-      return;
-    }
-
-    res.json({ success: true, data: item });
+    res.json({ success: true, data: items });
   } catch (error) {
     console.error('Error en searchItem:', error);
-    res.status(500).json({ success: false, message: 'Error al buscar el ítem' });
+    res.status(500).json({ success: false, message: 'Error al buscar los ítems' });
   }
 };
 
@@ -123,25 +146,21 @@ export const requestLoan = async (req: Request, res: Response): Promise<void> =>
 
     const item = await prisma.libraryItem.findUnique({
       where: internalId ? { internalId } : { id: libraryItemId },
-      select: { id: true, internalId: true, name: true, loanStatus: true, isLoanable: true, loanPolicy: true }
+      select: { id: true, internalId: true, name: true, loanStatus: true, loanPolicy: true }
     });
 
     if (!item) { res.status(404).json({ success: false, message: 'Ítem no encontrado' }); return; }
-    if (!item.isLoanable) { res.status(400).json({ success: false, message: 'Este ítem no está disponible para préstamo' }); return; }
-
-    if (item.loanPolicy !== LibraryLoanPolicy.LOANABLE) { res.status(400).json({ success: false, message: 'Este item no esta disponible para prestamo' }); return; }
+    if (item.loanPolicy !== LibraryLoanPolicy.LOANABLE) { res.status(400).json({ success: false, message: 'Este ítem no está disponible para préstamo' }); return; }
     if (loanMaxActivePerUser > 0) {
       const activeCount = await prisma.libraryLoan.count({
         where: { userId, status: { in: [LibraryLoanStatus.REQUESTED, LibraryLoanStatus.ACTIVE] } }
       });
       if (activeCount >= loanMaxActivePerUser) {
-        res.status(400).json({ success: false, message: `Has alcanzado el maximo de ${loanMaxActivePerUser} prestamo(s) activos o pendientes` });
+        res.status(400).json({ success: false, message: `Has alcanzado el máximo de ${loanMaxActivePerUser} préstamo(s) activos o pendientes` });
         return;
       }
     }
 
-    // Atomically claim the item inside the transaction to prevent race conditions:
-    // updateMany with loanStatus=AVAILABLE guard ensures only one concurrent request wins.
     let loan;
     try {
       loan = await prisma.$transaction(async (tx) => {
@@ -158,7 +177,6 @@ export const requestLoan = async (req: Request, res: Response): Promise<void> =>
           select: LOAN_SELECT,
         });
 
-        // Mark any active queue entry for this user as FULFILLED
         await tx.libraryQueue.updateMany({
           where: {
             libraryItemId: item.id,
@@ -259,7 +277,7 @@ export const renewLoan = async (req: Request, res: Response): Promise<void> => {
     if (loan.status !== 'ACTIVE') { res.status(400).json({ success: false, message: 'Solo se pueden renovar préstamos activos' }); return; }
 
     const hasQueue = await prisma.libraryQueue.findFirst({
-      where: { libraryItemId: loan.libraryItemId, status: { in: ['WAITING', 'NOTIFIED'] } }
+      where: { libraryItemId: loan.libraryItemId, status: { in: [LibraryQueueStatus.WAITING, LibraryQueueStatus.NOTIFIED] } }
     });
     if (hasQueue) {
       res.status(400).json({ success: false, message: 'No es posible renovar: hay socios en lista de espera para este juego' });
@@ -325,7 +343,6 @@ export const returnLoan = async (req: Request, res: Response): Promise<void> => 
 
     const now = new Date();
     const finalItemStatus: LibraryItemLoanStatus = nextLoanStatus ?? LibraryItemLoanStatus.AVAILABLE;
-
     const conditionChanged = conditionIn && conditionIn !== loan.libraryItem.condition;
 
     const updated = await prisma.$transaction(async (tx) => {
@@ -352,23 +369,8 @@ export const returnLoan = async (req: Request, res: Response): Promise<void> => 
       { loanId: loan.id, itemName: loan.libraryItem.name }
     );
 
-    // Si el ítem vuelve a estar disponible, notificar al siguiente en cola
     if (finalItemStatus === LibraryItemLoanStatus.AVAILABLE) {
-      const nextInQueue = await prisma.libraryQueue.findFirst({
-        where: { libraryItemId: loan.libraryItemId, status: LibraryQueueStatus.WAITING },
-        orderBy: { createdAt: 'asc' },
-        select: { id: true, userId: true }
-      });
-      if (nextInQueue) {
-        await prisma.libraryQueue.update({ where: { id: nextInQueue.id }, data: { status: LibraryQueueStatus.NOTIFIED, notifiedAt: now } });
-        await notifyUser(
-          nextInQueue.userId,
-          'LIBRARY_QUEUE_AVAILABLE',
-          'Juego disponible',
-          `"${loan.libraryItem.name}" ya está disponible. ¡Solicita tu préstamo antes de que lo haga otro socio!`,
-          { itemId: loan.libraryItemId, itemName: loan.libraryItem.name }
-        );
-      }
+      await notifyNextInQueue(loan.libraryItemId, loan.libraryItem.name);
     }
 
     res.json({ success: true, message: 'Devolución registrada', data: updated });
@@ -424,12 +426,12 @@ export const getMyLoans = async (req: Request, res: Response): Promise<void> => 
 
     const [active, history, queue] = await Promise.all([
       prisma.libraryLoan.findMany({
-        where: { userId, status: { in: ['REQUESTED', 'ACTIVE'] } },
+        where: { userId, status: { in: [LibraryLoanStatus.REQUESTED, LibraryLoanStatus.ACTIVE] } },
         select: LOAN_SELECT,
         orderBy: { createdAt: 'desc' }
       }),
       prisma.libraryLoan.findMany({
-        where: { userId, status: { in: ['RETURNED', 'CANCELLED'] } },
+        where: { userId, status: { in: [LibraryLoanStatus.RETURNED, LibraryLoanStatus.CANCELLED] } },
         select: LOAN_SELECT,
         orderBy: { createdAt: 'desc' },
         take: 20
@@ -458,7 +460,7 @@ export const getMyLoans = async (req: Request, res: Response): Promise<void> => 
 export const getActiveLoans = async (_req: Request, res: Response): Promise<void> => {
   try {
     const loans = await prisma.libraryLoan.findMany({
-      where: { status: { in: ['REQUESTED', 'ACTIVE'] } },
+      where: { status: { in: [LibraryLoanStatus.REQUESTED, LibraryLoanStatus.ACTIVE] } },
       select: LOAN_SELECT,
       orderBy: { createdAt: 'asc' }
     });
@@ -478,7 +480,7 @@ export const getItemQueue = async (req: Request, res: Response): Promise<void> =
   try {
     const { itemId } = req.params;
     const queue = await prisma.libraryQueue.findMany({
-      where: { libraryItemId: itemId, status: { in: ['WAITING', 'NOTIFIED'] } },
+      where: { libraryItemId: itemId, status: { in: [LibraryQueueStatus.WAITING, LibraryQueueStatus.NOTIFIED] } },
       orderBy: { createdAt: 'asc' },
       select: { id: true, status: true, notifiedAt: true, createdAt: true, user: { select: { id: true, name: true } } }
     });
@@ -506,27 +508,23 @@ export const joinQueue = async (req: Request, res: Response): Promise<void> => {
 
     const item = await prisma.libraryItem.findUnique({
       where: { id: libraryItemId },
-      select: { id: true, name: true, loanStatus: true, isLoanable: true, loanPolicy: true }
+      select: { id: true, name: true, loanStatus: true, loanPolicy: true }
     });
 
     if (!item) { res.status(404).json({ success: false, message: 'Ítem no encontrado' }); return; }
-    if (!item.isLoanable) { res.status(400).json({ success: false, message: 'Este ítem no está disponible para préstamo' }); return; }
-    if (item.loanStatus === 'AVAILABLE') { res.status(400).json({ success: false, message: 'El ítem está disponible: solicita el préstamo directamente' }); return; }
-
-    if (item.loanPolicy !== LibraryLoanPolicy.LOANABLE) { res.status(400).json({ success: false, message: 'Este item no esta disponible para prestamo' }); return; }
+    if (item.loanStatus === LibraryItemLoanStatus.AVAILABLE) { res.status(400).json({ success: false, message: 'El ítem está disponible: solicita el préstamo directamente' }); return; }
+    if (item.loanPolicy !== LibraryLoanPolicy.LOANABLE) { res.status(400).json({ success: false, message: 'Este ítem no está disponible para préstamo' }); return; }
 
     const activeLoan = await prisma.libraryLoan.findFirst({
-      where: { libraryItemId, userId, status: { in: ['REQUESTED', 'ACTIVE'] } }
+      where: { libraryItemId, userId, status: { in: [LibraryLoanStatus.REQUESTED, LibraryLoanStatus.ACTIVE] } }
     });
     if (activeLoan) { res.status(400).json({ success: false, message: 'Ya tienes un préstamo activo o pendiente de este juego' }); return; }
 
-    // @@unique garantiza que no puede haber duplicado activo, pero el estado CANCELLED permite re-entrar
     const existing = await prisma.libraryQueue.findFirst({
-      where: { libraryItemId, userId, status: { in: ['WAITING', 'NOTIFIED'] } }
+      where: { libraryItemId, userId, status: { in: [LibraryQueueStatus.WAITING, LibraryQueueStatus.NOTIFIED] } }
     });
     if (existing) { res.status(400).json({ success: false, message: 'Ya estás en la lista de espera de este juego' }); return; }
 
-    // Upsert para reutilizar registro cancelado anterior si existe
     const entry = await prisma.libraryQueue.upsert({
       where: { libraryItemId_userId: { libraryItemId, userId } },
       update: { status: LibraryQueueStatus.WAITING, notifiedAt: null, createdAt: new Date() },
@@ -553,7 +551,7 @@ export const leaveQueue = async (req: Request, res: Response): Promise<void> => 
     const { itemId } = req.params;
 
     const entry = await prisma.libraryQueue.findFirst({
-      where: { libraryItemId: itemId, userId, status: { in: ['WAITING', 'NOTIFIED'] } }
+      where: { libraryItemId: itemId, userId, status: { in: [LibraryQueueStatus.WAITING, LibraryQueueStatus.NOTIFIED] } }
     });
 
     if (!entry) { res.status(404).json({ success: false, message: 'No estás en la lista de espera de este juego' }); return; }
@@ -568,35 +566,8 @@ export const leaveQueue = async (req: Request, res: Response): Promise<void> => 
 };
 
 /**
- * PATCH /api/library-loans/items/:itemId/loanable
- * Admin: activa o desactiva el préstamo de un ítem.
- */
-export const toggleLoanable = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { itemId } = req.params;
-    const { isLoanable } = req.body;
-
-    if (typeof isLoanable !== 'boolean') {
-      res.status(400).json({ success: false, message: 'isLoanable debe ser un booleano' });
-      return;
-    }
-
-    const item = await prisma.libraryItem.update({
-      where: { id: itemId },
-      data: { isLoanable, loanPolicy: isLoanable ? LibraryLoanPolicy.LOANABLE : LibraryLoanPolicy.NOT_LOANABLE },
-      select: { id: true, name: true, internalId: true, isLoanable: true, loanPolicy: true, loanStatus: true },
-    });
-
-    res.json({ success: true, data: item });
-  } catch (error) {
-    console.error('Error en toggleLoanable:', error);
-    res.status(500).json({ success: false, message: 'Error al actualizar el ítem' });
-  }
-};
-
-/**
  * PATCH /api/library-loans/items/:itemId/loan-policy
- * Admin: define si un item es prestable, consultable o no prestable.
+ * Admin: define si un ítem es prestable, consultable o no prestable.
  */
 export const updateLoanPolicy = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -609,29 +580,26 @@ export const updateLoanPolicy = async (req: Request, res: Response): Promise<voi
       LibraryLoanPolicy.LOANABLE,
     ];
     if (!loanPolicy || !validPolicies.includes(loanPolicy)) {
-      res.status(400).json({ success: false, message: 'loanPolicy no valido' });
+      res.status(400).json({ success: false, message: 'loanPolicy no válido' });
       return;
     }
 
     const item = await prisma.libraryItem.update({
       where: { id: itemId },
-      data: {
-        loanPolicy,
-        isLoanable: loanPolicy === LibraryLoanPolicy.LOANABLE,
-      },
-      select: { id: true, name: true, internalId: true, isLoanable: true, loanPolicy: true, loanStatus: true },
+      data: { loanPolicy },
+      select: { id: true, name: true, internalId: true, loanPolicy: true, loanStatus: true },
     });
 
     res.json({ success: true, data: item });
   } catch (error) {
     console.error('Error en updateLoanPolicy:', error);
-    res.status(500).json({ success: false, message: 'Error al actualizar el item' });
+    res.status(500).json({ success: false, message: 'Error al actualizar el ítem' });
   }
 };
 
 /**
  * POST /api/library-loans/consult
- * Socio: consulta a admins por un item marcado como CONSULT.
+ * Socio: consulta a admins por un ítem marcado como CONSULT.
  */
 export const consultLoan = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -642,27 +610,27 @@ export const consultLoan = async (req: Request, res: Response): Promise<void> =>
     if (!libraryItemId) { res.status(400).json({ success: false, message: 'libraryItemId es obligatorio' }); return; }
 
     const { loanEnabled } = await getLoanConfig();
-    if (!loanEnabled) { res.status(503).json({ success: false, message: 'El sistema de prestamos esta temporalmente desactivado' }); return; }
+    if (!loanEnabled) { res.status(503).json({ success: false, message: 'El sistema de préstamos está temporalmente desactivado' }); return; }
 
     const item = await prisma.libraryItem.findUnique({
       where: { id: libraryItemId },
       select: { id: true, internalId: true, name: true, loanPolicy: true }
     });
-    if (!item) { res.status(404).json({ success: false, message: 'Item no encontrado' }); return; }
+    if (!item) { res.status(404).json({ success: false, message: 'Ítem no encontrado' }); return; }
     if (item.loanPolicy !== LibraryLoanPolicy.CONSULT) {
-      res.status(400).json({ success: false, message: 'Este item no requiere consulta de prestamo' });
+      res.status(400).json({ success: false, message: 'Este ítem no requiere consulta de préstamo' });
       return;
     }
 
     const requester = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
     await notifyAdmins(
-      'Consulta de prestamo',
-      `${requester?.name ?? 'Un socio'} quiere consultar el prestamo de "${item.name}" (ID: ${item.internalId})`,
+      'Consulta de préstamo',
+      `${requester?.name ?? 'Un socio'} quiere consultar el préstamo de "${item.name}" (ID: ${item.internalId})`,
       'LIBRARY_LOAN_CONSULT_REQUESTED',
       { itemId: item.id, itemName: item.name, internalId: item.internalId, requesterId: userId }
     );
 
-    res.status(201).json({ success: true, message: 'Consulta enviada a administracion' });
+    res.status(201).json({ success: true, message: 'Consulta enviada a administración' });
   } catch (error) {
     console.error('Error en consultLoan:', error);
     res.status(500).json({ success: false, message: 'Error al enviar la consulta' });
