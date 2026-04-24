@@ -152,7 +152,7 @@ export default function EventCard({ event }: EventCardProps) {
         className="block bg-[var(--color-cardBackground)] rounded-lg border border-[var(--color-cardBorder)] hover:border-[var(--color-primary-300)] hover:shadow-md transition-all cursor-pointer"
       >
         <div className="p-6">
-          <div className="flex gap-4">
+          <div className="flex items-start gap-4">
             {isPartida && (
               <div className="flex-shrink-0">
                 <div
@@ -188,7 +188,7 @@ export default function EventCard({ event }: EventCardProps) {
                 </span>
               </div>
 
-              <div className="space-y-2 mb-4">
+              <div className="mb-4 space-y-2">
                 <div className="flex items-center gap-2 text-[var(--color-textSecondary)]">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -217,6 +217,7 @@ export default function EventCard({ event }: EventCardProps) {
                 onOpenGame={openGameDetails}
                 stopPropagation
                 maxVisible={2}
+                className="mt-2"
               />
             </div>
           </div>

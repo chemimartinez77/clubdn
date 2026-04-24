@@ -149,6 +149,7 @@ export default function EventCalendarWeek({ events, currentMonth }: EventCalenda
                     stopPropagation
                     maxVisible={1}
                     variant="minimal"
+                    className="mt-1"
                   />
                 </div>
               );

@@ -67,7 +67,7 @@ export default function EventExpansions({
           </div>
         ))}
         {remaining > 0 && (
-          <span className="rounded-full border border-[var(--color-cardBorder)] px-2 py-1 text-[10px] font-medium text-[var(--color-textSecondary)]">
+          <span className="rounded-md border border-[var(--color-cardBorder)] px-2 py-1 text-[10px] font-medium text-[var(--color-textSecondary)]">
             +exp.
           </span>
         )}
@@ -94,8 +94,8 @@ export default function EventExpansions({
             aria-label={`Ver detalles de la expansión ${expansion.name}`}
           >
             <GameImage src={expansion.image || expansion.thumbnail} alt={expansion.name} size="sm" />
-            <div className="min-w-0">
-              <p className="truncate font-medium text-[var(--color-text)]">{expansion.name}</p>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-[var(--color-text)]">{expansion.name}</p>
               <p className="text-xs text-amber-600">Expansión</p>
             </div>
           </div>
@@ -105,7 +105,7 @@ export default function EventExpansions({
   }
 
   return (
-    <div className={`mt-3 flex flex-wrap items-center gap-2 ${className}`} onClick={stopEventPropagation}>
+    <div className={`mt-3 flex flex-wrap items-start gap-2 ${className}`} onClick={stopEventPropagation}>
       {visibleExpansions.map((expansion) => (
         <div
           key={expansion.id}
@@ -116,17 +116,17 @@ export default function EventExpansions({
             if (onOpenGame) openExpansion(expansion.gameId);
           }}
           onKeyDown={(event) => handleActivation(event, () => openExpansion(expansion.gameId))}
-          className={`flex min-w-0 items-center gap-2 rounded-full border border-[var(--color-cardBorder)] px-2 py-1 transition-colors ${
+          className={`flex min-w-0 max-w-full items-center gap-2 rounded-md border border-[var(--color-cardBorder)] px-2 py-1.5 transition-colors ${
             onOpenGame ? 'cursor-pointer hover:border-[var(--color-primary)] hover:bg-[var(--color-tableRowHover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]' : ''
           }`}
           aria-label={`Ver detalles de la expansión ${expansion.name}`}
         >
-          <GameImage src={expansion.image || expansion.thumbnail} alt={expansion.name} size="sm" className="w-7 h-7" />
-          <span className="max-w-36 truncate text-xs font-medium text-[var(--color-text)]">{expansion.name}</span>
+          <GameImage src={expansion.image || expansion.thumbnail} alt={expansion.name} size="sm" className="w-7 h-7 shrink-0" />
+          <span className="text-xs font-medium text-[var(--color-text)] break-words leading-tight">{expansion.name}</span>
         </div>
       ))}
       {remaining > 0 && (
-        <span className="rounded-full border border-[var(--color-cardBorder)] px-2 py-1 text-xs font-medium text-[var(--color-textSecondary)]">
+        <span className="rounded-md border border-[var(--color-cardBorder)] px-2 py-1.5 text-xs font-medium text-[var(--color-textSecondary)]">
           +{remaining}
         </span>
       )}

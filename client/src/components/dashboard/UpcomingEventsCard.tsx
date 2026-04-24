@@ -165,8 +165,8 @@ export default function UpcomingEventsCard() {
                     className="p-3 border border-[var(--color-cardBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors cursor-pointer hover:shadow-md"
                     onClick={() => navigate(`/events/${event.id}`)}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="shrink-0">
+                    <div className="flex items-start gap-3">
+                      <div className="shrink-0 pt-0.5">
                         <div
                           role={canOpenBaseGame ? 'button' : undefined}
                           tabIndex={canOpenBaseGame ? 0 : -1}
@@ -193,39 +193,42 @@ export default function UpcomingEventsCard() {
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h5
-                          className={`font-semibold text-[var(--color-text)] truncate ${canOpenBaseGame ? 'cursor-pointer hover:underline' : ''}`}
-                          onClick={(mouseEvent) => {
-                            if (!event.bggId) return;
-                            mouseEvent.stopPropagation();
-                            openGameDetails(event.bggId);
-                          }}
-                        >
-                          {event.title}
-                        </h5>
-                        <div className="mt-1">
-                          <p className="text-sm text-[var(--color-textSecondary)]">{formatDate(event.date)}</p>
-                          {scheduleText && (
-                            <p className="text-sm text-[var(--color-textSecondary)]">
-                              {scheduleText}
-                            </p>
-                          )}
-                          {capacityText && (
-                            <p className="text-sm text-[var(--color-textSecondary)]">
-                              {capacityText}
-                            </p>
-                          )}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <h5
+                              className={`font-semibold text-[var(--color-text)] truncate ${canOpenBaseGame ? 'cursor-pointer hover:underline' : ''}`}
+                              onClick={(mouseEvent) => {
+                                if (!event.bggId) return;
+                                mouseEvent.stopPropagation();
+                                openGameDetails(event.bggId);
+                              }}
+                            >
+                              {event.title}
+                            </h5>
+                            <p className="text-sm text-[var(--color-textSecondary)]">{formatDate(event.date)}</p>
+                            {scheduleText && (
+                              <p className="text-sm text-[var(--color-textSecondary)]">
+                                {scheduleText}
+                              </p>
+                            )}
+                            {capacityText && (
+                              <p className="text-sm text-[var(--color-textSecondary)]">
+                                {capacityText}
+                              </p>
+                            )}
+                          </div>
+                          <span className={`shrink-0 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusClass(effectiveStatus)}`}>
+                            {statusLabel(effectiveStatus)}
+                          </span>
                         </div>
                         <EventExpansions
                           expansions={event.expansions}
                           onOpenGame={openGameDetails}
                           stopPropagation
                           maxVisible={2}
+                          className="mt-2"
                         />
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusClass(effectiveStatus)}`}>
-                        {statusLabel(effectiveStatus)}
-                      </span>
                     </div>
                   </div>
                 );
