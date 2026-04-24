@@ -495,8 +495,8 @@ export default function ClubConfigPage() {
 
               <div className="md:col-span-2">
                 <label className="flex items-center text-sm font-medium text-[var(--color-textSecondary)] mb-1">
-                  MÃ¡ximo de prÃ©stamos activos o pendientes por usuario
-                  <Tooltip text="Usa 0 para no aplicar limite. Cuenta solicitudes pendientes de entrega y prestamos activos." />
+                  Máximo de préstamos activos o pendientes por usuario
+                  <Tooltip text="Usa 0 para no aplicar límite. Cuenta solicitudes pendientes de entrega y préstamos activos." />
                 </label>
                 {isEditing ? (
                   <input
@@ -507,7 +507,7 @@ export default function ClubConfigPage() {
                   />
                 ) : (
                   <p className="text-[var(--color-text)] py-2">
-                    {(config?.loanMaxActivePerUser ?? 0) > 0 ? config?.loanMaxActivePerUser : 'Sin limite'}
+                    {(config?.loanMaxActivePerUser ?? 0) > 0 ? config?.loanMaxActivePerUser : 'Sin límite'}
                   </p>
                 )}
               </div>

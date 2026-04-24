@@ -771,7 +771,7 @@ export default function Ludoteca() {
                             disabled={loanActionLoading === item.id}
                             className="text-xs px-3 py-1 rounded-full border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white disabled:opacity-50 transition-colors"
                           >
-                            {loanActionLoading === item.id ? '...' : 'Consultar prestamo'}
+                            {loanActionLoading === item.id ? '...' : 'Consultar préstamo'}
                           </button>
                         )}
                       </div>

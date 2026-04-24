@@ -10,7 +10,7 @@ const conditionLabels: Record<GameCondition, string> = { NUEVO: 'Nuevo', BUENO: 
 const conditionOptions: GameCondition[] = ['NUEVO', 'BUENO', 'REGULAR', 'MALO'];
 const loanPolicyLabels: Record<LibraryLoanPolicy, string> = {
   LOANABLE: 'Prestable',
-  CONSULT: 'Solo consulta',
+  CONSULT: 'Consulta',
   NOT_LOANABLE: 'No prestable'
 };
 const loanStatusLabels: Record<LibraryItemLoanStatus, string> = {
