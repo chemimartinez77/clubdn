@@ -17,7 +17,9 @@ export type BadgeCategory =
   | 'TESTIGO_MESA'
   | 'AUDITOR_LUDICO'
   | 'CONOCEDOR_GENEROS'
-  | 'FOTOGRAFO';
+  | 'FOTOGRAFO'
+  | 'PRIMER_JUGADOR'
+  | 'GIRADOR_RULETA';
 
 export interface BadgeDefinition {
   id: string;
@@ -105,7 +107,9 @@ export const getCategoryDisplayName = (category: BadgeCategory): string => {
     INVITADOR: 'Invitador',
     VALIDADOR: 'Validador',
     TESTIGO_MESA: 'Testigo de Mesa',
-    AUDITOR_LUDICO: 'Auditor Ludico'
+    AUDITOR_LUDICO: 'Auditor Ludico',
+    PRIMER_JUGADOR: 'Primer Jugador',
+    GIRADOR_RULETA: 'Girador de Ruleta'
   };
   return categoryNames[category];
 };
@@ -128,7 +132,9 @@ export const getCategoryDescription = (category: BadgeCategory): string => {
     CONOCEDOR_GENEROS: 'Se obtiene cuando otro miembro coincide en la categoria que asignaste a un juego. El juego queda fijado con esa categoria para todos.',
     FOTOGRAFO: 'Se obtiene subiendo al menos una foto a una partida. Solo cuenta una vez por partida.',
     TESTIGO_MESA: 'Se obtiene escaneando el QR de otro jugador al terminar una partida. Tu eres el testigo con la camara.',
-    AUDITOR_LUDICO: 'Se obtiene cuando confirmas como organizador que una de tus partidas no validadas se celebro.'
+    AUDITOR_LUDICO: 'Se obtiene cuando confirmas como organizador que una de tus partidas no validadas se celebro.',
+    PRIMER_JUGADOR: 'Se obtiene cada vez que la ruleta te elige como primer jugador en una partida.',
+    GIRADOR_RULETA: 'Se obtiene cada vez que giras la ruleta de primer jugador en una partida.'
   };
   return descriptions[category];
 };
@@ -151,7 +157,9 @@ export const getCategoryColor = (category: BadgeCategory): string => {
     CONOCEDOR_GENEROS: '#7c3aed',
     FOTOGRAFO: '#0891b2',
     TESTIGO_MESA: '#0d9488',
-    AUDITOR_LUDICO: '#b45309'
+    AUDITOR_LUDICO: '#b45309',
+    PRIMER_JUGADOR: '#f59e0b',
+    GIRADOR_RULETA: '#6366f1'
   };
   return categoryColors[category];
 };
@@ -174,7 +182,9 @@ export const getCategoryIcon = (category: BadgeCategory): string => {
     INVITADOR: '\uD83E\uDD1D',
     VALIDADOR: '\u2705',
     TESTIGO_MESA: '\uD83D\uDC41\uFE0F',
-    AUDITOR_LUDICO: '\uD83D\uDD0D'
+    AUDITOR_LUDICO: '\uD83D\uDD0D',
+    PRIMER_JUGADOR: '\uD83C\uDFC6',
+    GIRADOR_RULETA: '\uD83C\uDF9A'
   };
   return categoryIcons[category];
 };

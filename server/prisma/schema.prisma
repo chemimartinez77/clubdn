@@ -149,6 +149,8 @@ model User {
   libraryLoansReturned     LibraryLoan[]                  @relation("LibraryLoanReturnedBy")
   libraryQueue             LibraryQueue[]                 @relation("LibraryQueueUser")
   pushDevices              PushDevice[]
+  firstPlayerSpinsAsSpinner FirstPlayerSpin[]             @relation("FirstPlayerSpinSpinner")
+  firstPlayerSpinsAsChosen  FirstPlayerSpin[]             @relation("FirstPlayerSpinChosen")
 
   @@index([email])
   @@index([status])
@@ -359,8 +361,9 @@ model Event {
   eventGuests     EventGuest[]
   photos          EventPhoto[]
   auditLogs       EventAuditLog[]
-  gamePlayHistory GamePlayHistory[]
-  gameValidations GameValidation[]
+  gamePlayHistory  GamePlayHistory[]
+  gameValidations  GameValidation[]
+  firstPlayerSpins FirstPlayerSpin[]
 
   // Aprobación de jugadores
   requiresApproval Boolean @default(true) // Si requiere aprobación del organizador
@@ -702,6 +705,9 @@ model ClubConfig {
   loanMaxActivePerUser Int     @default(0)     // 0 = sin limite de prestamos activos/pendientes por usuario
   personalStatsEnabled Boolean @default(true)  // Mostrar acceso a estadísticas personales
 
+  // Configuración de la ruleta de primer jugador
+  spinEffect String @default("ruleta") // "ruleta" | "spotlight"
+
   // Metadatos
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -1032,6 +1038,8 @@ enum BadgeCategory {
   AUDITOR_LUDICO
   CONOCEDOR_GENEROS
   FOTOGRAFO
+  PRIMER_JUGADOR  // Veces que el usuario ha sido elegido primer jugador
+  GIRADOR_RULETA  // Veces que el usuario ha girado la ruleta de primer jugador
 }
 
 // Tipos de notificaciones
@@ -1608,3 +1616,20 @@ model EventResult {
   @@index([userId])
 }
 
+// ==================== RULETA DE PRIMER JUGADOR ====================
+
+// Registro de cada uso de la ruleta en una partida
+model FirstPlayerSpin {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  spinnerId   String
+  spinner     User     @relation("FirstPlayerSpinSpinner", fields: [spinnerId], references: [id])
+  chosenId    String
+  chosen      User     @relation("FirstPlayerSpinChosen", fields: [chosenId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([eventId])
+  @@index([spinnerId])
+  @@index([chosenId])
+}

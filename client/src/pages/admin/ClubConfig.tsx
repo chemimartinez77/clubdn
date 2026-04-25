@@ -132,6 +132,7 @@ export default function ClubConfigPage() {
         loanQueueNotifyHours: config.loanQueueNotifyHours,
         loanMaxActivePerUser: config.loanMaxActivePerUser ?? 0,
         personalStatsEnabled: config.personalStatsEnabled ?? true,
+        spinEffect: config.spinEffect ?? 'ruleta',
       });
       setMembershipTypes(Array.isArray(config.membershipTypes) ? config.membershipTypes : []);
     }
@@ -372,6 +373,122 @@ export default function ClubConfigPage() {
               ) : (
                 <p className="text-[var(--color-text)] py-2">{config?.personalStatsEnabled ?? true ? 'Activadas' : 'Desactivadas'}</p>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Ruleta de primer jugador */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Ruleta de primer jugador</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-[var(--color-textSecondary)]">
+                Elige el efecto de animación que se mostrará al elegir al primer jugador en una partida.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Ruleta — disponible */}
+                {isEditing ? (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, spinEffect: 'ruleta' })}
+                    className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                      formData.spinEffect === 'ruleta'
+                        ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10'
+                        : 'border-[var(--color-cardBorder)] hover:border-[var(--color-primary)]/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">🎡</span>
+                      <span className="font-semibold text-[var(--color-text)]">Ruleta giratoria</span>
+                    </div>
+                    <p className="text-xs text-[var(--color-textSecondary)]">
+                      Los nombres aparecen en segmentos de colores. La ruleta gira con inercia y frena en el elegido.
+                    </p>
+                  </button>
+                ) : (
+                  <div className={`relative p-4 rounded-xl border-2 ${config?.spinEffect === 'ruleta' || !config?.spinEffect ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10' : 'border-[var(--color-cardBorder)]'}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">🎡</span>
+                      <span className="font-semibold text-[var(--color-text)]">Ruleta giratoria</span>
+                    </div>
+                    <p className="text-xs text-[var(--color-textSecondary)]">
+                      Los nombres aparecen en segmentos de colores. La ruleta gira con inercia y frena en el elegido.
+                    </p>
+                  </div>
+                )}
+
+                {/* Spotlight — disponible */}
+                {isEditing ? (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, spinEffect: 'spotlight' })}
+                    className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                      formData.spinEffect === 'spotlight'
+                        ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10'
+                        : 'border-[var(--color-cardBorder)] hover:border-[var(--color-primary)]/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">🔦</span>
+                      <span className="font-semibold text-[var(--color-text)]">Spotlight</span>
+                    </div>
+                    <p className="text-xs text-[var(--color-textSecondary)]">
+                      Los nombres se barren con un foco de luz que acelera y frena progresivamente hasta iluminar al elegido.
+                    </p>
+                  </button>
+                ) : (
+                  <div className={`relative p-4 rounded-xl border-2 ${config?.spinEffect === 'spotlight' ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10' : 'border-[var(--color-cardBorder)]'}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">🔦</span>
+                      <span className="font-semibold text-[var(--color-text)]">Spotlight</span>
+                    </div>
+                    <p className="text-xs text-[var(--color-textSecondary)]">
+                      Los nombres se barren con un foco de luz que acelera y frena progresivamente hasta iluminar al elegido.
+                    </p>
+                  </div>
+                )}
+
+                {/* Dado 3D — proximamente */}
+                <div className="relative p-4 rounded-xl border-2 border-[var(--color-cardBorder)] opacity-50 cursor-not-allowed">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xl">🎲</span>
+                    <span className="font-semibold text-[var(--color-text)]">Dado 3D</span>
+                    <Tooltip text="Pendiente de implementar. Un cubo 3D rotará en el espacio mostrando nombres en sus caras y se detendrá revelando al elegido. Requiere animación CSS 3D con perspectiva y transformaciones de rotación encadenadas." />
+                    <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-300">Próximamente</span>
+                  </div>
+                  <p className="text-xs text-[var(--color-textSecondary)]">
+                    Un dado 3D gira en el espacio mostrando nombres en cada cara y se detiene al azar.
+                  </p>
+                </div>
+
+                {/* Tambor de lotería — proximamente */}
+                <div className="relative p-4 rounded-xl border-2 border-[var(--color-cardBorder)] opacity-50 cursor-not-allowed">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xl">🎰</span>
+                    <span className="font-semibold text-[var(--color-text)]">Tambor de lotería</span>
+                    <Tooltip text="Pendiente de implementar. Bolas con los nombres rebotan dentro de una esfera transparente (canvas o SVG animado con física simulada) y una sale expulsada para revelar al elegido." />
+                    <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-300">Próximamente</span>
+                  </div>
+                  <p className="text-xs text-[var(--color-textSecondary)]">
+                    Bolas con nombres rebotan en un bombo y una sale elegida al azar.
+                  </p>
+                </div>
+
+                {/* Cartas — proximamente */}
+                <div className="relative p-4 rounded-xl border-2 border-[var(--color-cardBorder)] opacity-50 cursor-not-allowed">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xl">🃏</span>
+                    <span className="font-semibold text-[var(--color-text)]">Cartas</span>
+                    <Tooltip text="Pendiente de implementar. Las cartas con los nombres se reparten boca abajo, se mezclan con animación de barajado (CSS transform + keyframes) y se van eliminando una a una hasta que la última se voltea revelando al ganador." />
+                    <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-300">Próximamente</span>
+                  </div>
+                  <p className="text-xs text-[var(--color-textSecondary)]">
+                    Cartas boca abajo se mezclan y van eliminándose hasta que la última se voltea.
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

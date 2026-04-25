@@ -23,6 +23,7 @@ import type { Invitation, InvitationCreateResponse } from '../types/invitation';
 import { getCategoryDisplayName, getCategoryIcon } from '../types/badge';
 import { displayName, fullNameTooltip } from '../utils/displayName';
 import UserPopover from '../components/ui/UserPopover';
+import FirstPlayerModal from '../components/events/FirstPlayerModal';
 
 // ---------- tipos resultados ----------
 interface EventResultEntry {
@@ -91,6 +92,9 @@ export default function EventDetail() {
   const [memberSearchResults, setMemberSearchResults] = useState<Array<{ id: string; name: string; nick: string | null; avatar: string | null; membershipType: string | null; email: string | null }>>([]);
   const [memberSearchLoading, setMemberSearchLoading] = useState(false);
 
+  // Estado modal primer jugador
+  const [showFirstPlayerModal, setShowFirstPlayerModal] = useState(false);
+
   // Estado dropdown opciones
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [optionsPos, setOptionsPos] = useState<{ top: number; right: number } | null>(null);
@@ -152,6 +156,17 @@ export default function EventDetail() {
   const [resultRows, setResultRows] = useState<ResultRow[]>([]);
   const [tiebreakModal, setTiebreakModal] = useState<{ rowIndex: number } | null>(null);
   const [tiebreakNotes, setTiebreakNotes] = useState('');
+
+  // Configuración pública del club (para spinEffect)
+  const { data: publicConfig } = useQuery({
+    queryKey: ['publicConfig'],
+    queryFn: async () => {
+      const response = await api.get<{ success: boolean; data: { spinEffect: string } }>('/api/config/public');
+      return response.data.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const spinEffect = (publicConfig?.spinEffect ?? 'ruleta') as 'ruleta' | 'spotlight';
 
   // Fetch event details
   const { data: event, isLoading } = useQuery({
@@ -817,6 +832,13 @@ export default function EventDetail() {
     && event.userRegistrationStatus === 'CONFIRMED'
     && event.disputeResult !== true;
 
+  // Puede girar la ruleta si es PARTIDA con al menos 2 asistentes confirmados con cuenta y el usuario es uno de ellos
+  const confirmedMembersCount = (event.registrations ?? []).filter(r => r.status === 'CONFIRMED' && r.user).length;
+  const canSpinFirstPlayer = isPartida
+    && event.isUserRegistered
+    && event.userRegistrationStatus === 'CONFIRMED'
+    && confirmedMembersCount >= 2;
+
   // URL que codifica el QR de validación de este usuario en esta partida
   const validationQrData = id && user?.id
     ? `${window.location.origin}/validate-game/${id}/${user.id}`
@@ -1254,6 +1276,17 @@ export default function EventDetail() {
                           </svg>
                         </span>
                       </Button>
+                      {canSpinFirstPlayer && (
+                        <Button
+                          onClick={() => setShowFirstPlayerModal(true)}
+                          className="w-full sm:w-auto !bg-amber-500 hover:!bg-amber-600 !text-white transition-all duration-300"
+                        >
+                          <span className="flex items-center justify-center gap-2">
+                            <span>Primer jugador</span>
+                            <span>🏆</span>
+                          </span>
+                        </Button>
+                      )}
                       {canClone && (
                         <Button
                           onClick={handleCloneEvent}
@@ -2977,6 +3010,14 @@ export default function EventDetail() {
             </div>
           </div>
         </Modal>
+      )}
+
+      {showFirstPlayerModal && (
+        <FirstPlayerModal
+          eventId={id!}
+          spinEffect={spinEffect}
+          onClose={() => setShowFirstPlayerModal(false)}
+        />
       )}
     </Layout>
   );

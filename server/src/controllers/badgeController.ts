@@ -225,6 +225,12 @@ async function getCategoryCount(userId: string, category: BadgeCategory): Promis
     });
     return groups.length;
   }
+  if (category === BadgeCategory.PRIMER_JUGADOR) {
+    return prisma.firstPlayerSpin.count({ where: { chosenId: userId } });
+  }
+  if (category === BadgeCategory.GIRADOR_RULETA) {
+    return prisma.firstPlayerSpin.count({ where: { spinnerId: userId } });
+  }
   return prisma.gamePlayHistory.count({ where: { userId, gameCategory: category } });
 }
 
@@ -499,7 +505,9 @@ function getCategoryDisplayName(category: BadgeCategory): string {
     [BadgeCategory.TESTIGO_MESA]: 'Testigo de Mesa',
     [BadgeCategory.AUDITOR_LUDICO]: 'Auditor Lúdico',
     [BadgeCategory.CONOCEDOR_GENEROS]: 'Conocedor de Géneros',
-    [BadgeCategory.FOTOGRAFO]: 'Fotógrafo'
+    [BadgeCategory.FOTOGRAFO]: 'Fotógrafo',
+    [BadgeCategory.PRIMER_JUGADOR]: 'Primer Jugador',
+    [BadgeCategory.GIRADOR_RULETA]: 'Girador de Ruleta'
   };
   return names[category];
 }

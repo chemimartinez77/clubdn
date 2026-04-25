@@ -30,6 +30,7 @@ export interface ClubConfig {
   loanQueueNotifyHours: number;
   loanMaxActivePerUser: number;
   personalStatsEnabled: boolean;
+  spinEffect: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,10 +52,12 @@ export interface ClubConfigUpdate {
   loanQueueNotifyHours?: number;
   loanMaxActivePerUser?: number;
   personalStatsEnabled?: boolean;
+  spinEffect?: string;
 }
 
 export interface PublicConfig {
   loginParticleStyle: LoginParticleStyle;
   loanEnabled: boolean;
   personalStatsEnabled: boolean;
+  spinEffect: string;
 }

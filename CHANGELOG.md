@@ -4,6 +4,36 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-25
+
+### feat: ruleta de primer jugador con animaciones, logros y configuración de admin
+
+Se añade un botón "Primer jugador" en el detalle de cada partida que lanza una animación para elegir aleatoriamente entre los asistentes confirmados quién empieza. El efecto es configurable desde el panel de admin. Se crean dos nuevos logros vinculados a esta mecánica.
+
+**Schema y base de datos:**
+- `server/prisma/schema.prisma`: nuevo modelo `FirstPlayerSpin` (registra quién giró y quién fue elegido, con relaciones a `Event` y `User`); dos nuevos valores en `BadgeCategory` (`PRIMER_JUGADOR`, `GIRADOR_RULETA`); nuevo campo `spinEffect: String` en `ClubConfig` (default `'ruleta'`).
+- `server/prisma/migrations/20260425000000_add_first_player_spin/migration.sql` (nuevo): crea la tabla `FirstPlayerSpin`, añade los valores al enum y el campo `spinEffect` a `ClubConfig`.
+- `server/prisma/migrations/20260425000001_seed_first_player_badges/migration.sql` (nuevo): inserta los 12 badges nuevos (6 niveles × 2 categorías) con nombres temáticos.
+
+**Backend:**
+- `server/src/controllers/firstPlayerController.ts` (nuevo): endpoint `POST /api/events/:id/spin-first-player` — verifica que el usuario es asistente confirmado, elige aleatoriamente entre los miembros con cuenta, guarda el registro y desencadena el desbloqueo de badges de forma asíncrona.
+- `server/src/controllers/badgeController.ts`: `getCategoryCount` ampliado para contar giros de ruleta (`GIRADOR_RULETA`) y veces elegido (`PRIMER_JUGADOR`) usando `firstPlayerSpin`.
+- `server/src/controllers/configController.ts`: `getPublicConfig` y `updateClubConfig` incluyen `spinEffect` para que el frontend lo lea y el admin lo guarde.
+- `server/src/routes/eventRoutes.ts`: registra `POST /:id/spin-first-player` con autenticación.
+
+**Frontend — componentes nuevos:**
+- `client/src/components/events/SpinRuleta.tsx` (nuevo): ruleta SVG pura con segmentos de colores proporcionales, giro con easing cúbico de 4 segundos y flecha indicadora.
+- `client/src/components/events/SpinSpotlight.tsx` (nuevo): barrido rápido de nombres con spotlight que frena progresivamente hasta detenerse en el elegido.
+- `client/src/components/events/FirstPlayerModal.tsx` (nuevo): modal que orquesta la llamada al backend, lanza la animación configurada y muestra el resultado con opción de repetir.
+
+**Frontend — integración:**
+- `client/src/pages/EventDetail.tsx`: añade botón "Primer jugador" (amber) visible solo para asistentes confirmados con cuenta cuando hay ≥2; importa `FirstPlayerModal`; obtiene `spinEffect` de `publicConfig`.
+- `client/src/pages/admin/ClubConfig.tsx`: nueva sección "Ruleta de primer jugador" con tarjetas seleccionables para Ruleta y Spotlight (activas) y tres más con tooltip descriptivo y etiqueta "Próximamente" (Dado 3D, Tambor de lotería, Cartas).
+- `client/src/types/badge.ts`: añade `PRIMER_JUGADOR` y `GIRADOR_RULETA` a `BadgeCategory` con nombre, descripción, color e icono.
+- `client/src/types/config.ts`: añade `spinEffect` a `ClubConfig`, `ClubConfigUpdate` y `PublicConfig`.
+
+---
+
 ## 2026-04-24
 
 ### feat: simplificar políticas de préstamo y mejorar la búsqueda admin de ludoteca

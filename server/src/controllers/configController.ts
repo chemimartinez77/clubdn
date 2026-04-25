@@ -92,7 +92,7 @@ export const getPublicConfig = async (_req: Request, res: Response) => {
   try {
     const config = await prisma.clubConfig.findUnique({
       where: { id: 'club_config' },
-      select: { loginParticleStyle: true, loanEnabled: true, personalStatsEnabled: true }
+      select: { loginParticleStyle: true, loanEnabled: true, personalStatsEnabled: true, spinEffect: true }
     });
 
     return res.json({
@@ -100,7 +100,8 @@ export const getPublicConfig = async (_req: Request, res: Response) => {
       data: {
         loginParticleStyle: config?.loginParticleStyle ?? 'white',
         loanEnabled: config?.loanEnabled ?? false,
-        personalStatsEnabled: config?.personalStatsEnabled ?? true
+        personalStatsEnabled: config?.personalStatsEnabled ?? true,
+        spinEffect: config?.spinEffect ?? 'ruleta'
       }
     });
   } catch (error) {
@@ -133,7 +134,8 @@ export const updateClubConfig = async (req: Request, res: Response) => {
       loanDurationDays,
       loanQueueNotifyHours,
       loanMaxActivePerUser,
-      personalStatsEnabled
+      personalStatsEnabled,
+      spinEffect
     } = req.body;
 
     const config = await prisma.clubConfig.upsert({
@@ -154,7 +156,8 @@ export const updateClubConfig = async (req: Request, res: Response) => {
         ...(loanDurationDays !== undefined && { loanDurationDays }),
         ...(loanQueueNotifyHours !== undefined && { loanQueueNotifyHours }),
         ...(loanMaxActivePerUser !== undefined && { loanMaxActivePerUser }),
-        ...(personalStatsEnabled !== undefined && { personalStatsEnabled })
+        ...(personalStatsEnabled !== undefined && { personalStatsEnabled }),
+        ...(spinEffect !== undefined && { spinEffect })
       },
       create: {
         id: 'club_config',
@@ -173,7 +176,8 @@ export const updateClubConfig = async (req: Request, res: Response) => {
         loanDurationDays: loanDurationDays ?? 14,
         loanQueueNotifyHours: loanQueueNotifyHours ?? 48,
         loanMaxActivePerUser: loanMaxActivePerUser ?? 0,
-        personalStatsEnabled: personalStatsEnabled ?? true
+        personalStatsEnabled: personalStatsEnabled ?? true,
+        spinEffect: spinEffect ?? 'ruleta'
       }
     });
 
