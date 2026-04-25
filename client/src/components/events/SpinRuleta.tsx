@@ -218,6 +218,7 @@ export default function SpinRuleta({ players, chosenId, onAnimationEnd, onRespin
                   fill="white"
                   fontSize={fontSize}
                   fontWeight="bold"
+                  transform={`rotate(180, ${label.x}, ${label.y})`}
                   style={{ userSelect: 'none', pointerEvents: 'none' }}
                 >
                   {wheelLabel(player, maxChars)}
