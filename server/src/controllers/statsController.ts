@@ -609,8 +609,7 @@ export const getUserDetailedStats = async (req: Request, res: Response): Promise
         status: RegistrationStatus.CONFIRMED,
         event: {
           type: 'PARTIDA',
-          status: EventStatus.COMPLETED,
-          disputeResult: true
+          status: EventStatus.COMPLETED
         }
       },
       select: {
