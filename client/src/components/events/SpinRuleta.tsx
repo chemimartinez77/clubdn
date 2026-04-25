@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 interface Player {
   id: string;
   name: string;
+  nick?: string | null;
   avatarUrl?: string | null;
 }
 
@@ -36,8 +37,17 @@ function labelPosition(cx: number, cy: number, r: number, startAngle: number, en
   };
 }
 
-function truncate(name: string, maxLen: number) {
-  return name.length > maxLen ? name.slice(0, maxLen - 1) + '…' : name;
+function truncate(s: string, maxLen: number) {
+  return s.length > maxLen ? s.slice(0, maxLen - 1) + '…' : s;
+}
+
+function wheelLabel(player: Player, maxChars: number): string {
+  if (player.nick?.trim()) return truncate(player.nick.trim(), maxChars);
+  const parts = player.name.trim().split(/\s+/);
+  const label = parts.length > 1
+    ? `${parts[0]} ${parts[1]!.charAt(0)}.`
+    : parts[0]!;
+  return truncate(label, maxChars);
 }
 
 export default function SpinRuleta({ players, chosenId, onAnimationEnd }: SpinRuletaProps) {
@@ -52,14 +62,13 @@ export default function SpinRuleta({ players, chosenId, onAnimationEnd }: SpinRu
   const segAngle = 360 / n;
   const chosenIdx = players.findIndex(p => p.id === chosenId);
 
-  // Ángulo en el que el segmento elegido queda apuntando al indicador (arriba = -90°)
-  // El indicador está arriba. El centro del segmento elegido debe quedar en -90°.
-  // El segmento i empieza en i*segAngle. Su centro está en (i+0.5)*segAngle.
-  // Queremos que (chosenIdx + 0.5) * segAngle + finalRotation ≡ -90 (mod 360)
-  // finalRotation = -90 - (chosenIdx + 0.5) * segAngle
-  // Le sumamos vueltas completas (1440°) para que gire varias vueltas.
-  const targetAngle = -90 - (chosenIdx + 0.5) * segAngle;
-  const totalRotation = targetAngle + 1440 + 360 * Math.floor(Math.random() * 3);
+  // Los segmentos se dibujan con offset -90° (segmento 0 ya apunta arriba).
+  // Centro del segmento i en reposo = -90 + (i+0.5)*segAngle.
+  // Para que ese punto quede en la cima (-90°) necesitamos rotar: 90 - (chosenIdx+0.5)*segAngle
+  const targetAngle = 90 - (chosenIdx + 0.5) * segAngle;
+  // Normalizar a [0, 360) y añadir vueltas completas para que siempre gire hacia adelante
+  const normalizedTarget = ((targetAngle % 360) + 360) % 360;
+  const totalRotation = normalizedTarget + 1440 + 360 * Math.floor(Math.random() * 3);
 
   useEffect(() => {
     const DURATION = 4000;
@@ -137,7 +146,7 @@ export default function SpinRuleta({ players, chosenId, onAnimationEnd }: SpinRu
                   fontWeight="bold"
                   style={{ userSelect: 'none', pointerEvents: 'none' }}
                 >
-                  {truncate(player.name.split(' ')[0], maxChars)}
+                  {wheelLabel(player, maxChars)}
                 </text>
               </g>
             );

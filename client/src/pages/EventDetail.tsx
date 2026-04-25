@@ -1282,7 +1282,7 @@ export default function EventDetail() {
                           className="w-full sm:w-auto !bg-amber-500 hover:!bg-amber-600 !text-white transition-all duration-300"
                         >
                           <span className="flex items-center justify-center gap-2">
-                            <span>Primer jugador</span>
+                            <span>Jugador inicial</span>
                             <span>🏆</span>
                           </span>
                         </Button>
@@ -1400,7 +1400,7 @@ export default function EventDetail() {
                                 className="w-full text-left px-4 py-3 text-sm hover:bg-[var(--color-cardBorder)] flex items-center gap-3 rounded-lg text-amber-500"
                               >
                                 <span className="text-lg leading-none">🏆</span>
-                                Primer jugador
+                                Jugador inicial
                               </button>
                             )}
                             {canCloseCapacity && (
@@ -1498,7 +1498,7 @@ export default function EventDetail() {
                             className="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--color-cardBorder)] flex items-center gap-2 text-amber-500"
                           >
                             <span className="text-base leading-none">🏆</span>
-                            Primer jugador
+                            Jugador inicial
                           </button>
                         )}
                         {canCloseCapacity && (

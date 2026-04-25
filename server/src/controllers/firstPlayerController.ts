@@ -19,13 +19,16 @@ export const spinFirstPlayer = async (req: Request, res: Response): Promise<void
 
     const registrations = await prisma.eventRegistration.findMany({
       where: { eventId, status: 'CONFIRMED' },
-      include: { user: { select: { id: true, name: true } } }
+      include: { user: { select: { id: true, name: true, profile: { select: { nick: true } } } } }
     });
 
     // Excluye registros sin usuario (invitados externos sin cuenta)
     const confirmedMembers = registrations
       .filter(r => r.user !== null)
-      .map(r => r.user as { id: string; name: string });
+      .map(r => {
+        const u = r.user!;
+        return { id: u.id, name: u.name, nick: u.profile?.nick ?? null };
+      });
 
     if (!confirmedMembers.find(m => m.id === userId)) {
       res.status(403).json({ success: false, error: 'Solo los asistentes confirmados pueden girar la ruleta' });

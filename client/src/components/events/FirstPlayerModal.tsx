@@ -6,6 +6,7 @@ import SpinSpotlight from './SpinSpotlight';
 interface Player {
   id: string;
   name: string;
+  nick?: string | null;
   avatarUrl?: string | null;
 }
 
@@ -54,7 +55,7 @@ export default function FirstPlayerModal({ eventId, spinEffect, onClose }: First
       <div className="relative bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-5">
         {/* Cabecera */}
         <div className="flex w-full items-center justify-between">
-          <h2 className="text-lg font-bold text-white">Primer jugador</h2>
+          <h2 className="text-lg font-bold text-white">Jugador inicial</h2>
           <button
             onClick={onClose}
             className="text-zinc-400 hover:text-white transition-colors text-xl leading-none"
@@ -68,7 +69,9 @@ export default function FirstPlayerModal({ eventId, spinEffect, onClose }: First
         {phase === 'idle' && (
           <div className="flex flex-col items-center gap-4 w-full">
             <p className="text-sm text-zinc-400 text-center">
-              Gira la ruleta para elegir quien empieza la partida.
+              {spinEffect === 'ruleta'
+                ? 'Gira la ruleta para elegir quien empieza la partida.'
+                : 'Elige al azar quien empieza la partida.'}
             </p>
             <button
               onClick={handleSpin}
@@ -103,7 +106,14 @@ export default function FirstPlayerModal({ eventId, spinEffect, onClose }: First
             <div className="text-4xl">🏆</div>
             <div className="text-center">
               <p className="text-zinc-400 text-sm">Empieza</p>
-              <p className="text-white text-2xl font-extrabold mt-1">{result.chosen.name}</p>
+              {result.chosen.nick?.trim() ? (
+                <>
+                  <p className="text-white text-2xl font-extrabold mt-1">{result.chosen.nick.trim()}</p>
+                  <p className="text-zinc-500 text-sm mt-0.5">{result.chosen.name}</p>
+                </>
+              ) : (
+                <p className="text-white text-2xl font-extrabold mt-1">{result.chosen.name}</p>
+              )}
             </div>
             <div className="flex gap-3 w-full mt-2">
               <button

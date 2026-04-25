@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 interface Player {
   id: string;
   name: string;
+  nick?: string | null;
   avatarUrl?: string | null;
 }
 
@@ -93,7 +94,10 @@ export default function SpinSpotlight({ players, chosenId, onAnimationEnd }: Spi
                 transform: isActive || isChosen ? 'scale(1.08)' : 'scale(1)',
               }}
             >
-              {player.name.split(' ')[0]}
+              {player.nick?.trim() || (() => {
+                const parts = player.name.trim().split(/\s+/);
+                return parts.length > 1 ? `${parts[0]} ${parts[1]!.charAt(0)}.` : parts[0]!;
+              })()}
               {isChosen && (
                 <span className="absolute -top-2 -right-2 text-lg">🏆</span>
               )}

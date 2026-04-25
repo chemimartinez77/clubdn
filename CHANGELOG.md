@@ -32,6 +32,18 @@ Se añade un botón "Primer jugador" en el detalle de cada partida que lanza una
 - `client/src/types/badge.ts`: añade `PRIMER_JUGADOR` y `GIRADOR_RULETA` a `BadgeCategory` con nombre, descripción, color e icono.
 - `client/src/types/config.ts`: añade `spinEffect` a `ClubConfig`, `ClubConfigUpdate` y `PublicConfig`.
 
+### fix: correcciones en la ruleta de jugador inicial
+
+Tres correcciones sobre la funcionalidad lanzada en la misma sesión:
+
+1. **Ángulo final de la ruleta incorrecto** (`SpinRuleta.tsx`): el cálculo del ángulo destino no tenía en cuenta que los segmentos ya se dibujan con un offset de -90° (segmento 0 arriba). La fórmula corregida es `90 - (chosenIdx + 0.5) * segAngle`, normalizada a `[0, 360)` para garantizar que la rueda siempre gire hacia adelante.
+
+2. **Botón ausente en modo dropdown** (`EventDetail.tsx`): el botón solo existía en el bloque `useMulticolorButtons`, pero no en el menú "Opciones" (bottom sheet móvil ni dropdown desktop). Se añade la entrada "Jugador inicial" en ambos.
+
+3. **Nick y nombre completo** (`firstPlayerController.ts`, `SpinRuleta.tsx`, `SpinSpotlight.tsx`, `FirstPlayerModal.tsx`): el servidor ahora devuelve `nick` (via `UserProfile`). En la animación se muestra el nick si existe, o bien "Nombre I." con inicial del apellido. En el resultado se muestra el nick en grande con el nombre completo en gris debajo; si no hay nick, solo el nombre completo.
+
+4. **Renombrado a "Jugador inicial"** (`FirstPlayerModal.tsx`, `EventDetail.tsx`): el título del modal y las entradas en botón/dropdown pasan de "Primer jugador" a "Jugador inicial". El texto descriptivo del modal varía según el efecto activo ("Gira la ruleta…" para ruleta, "Elige al azar…" para spotlight).
+
 ---
 
 ## 2026-04-24
