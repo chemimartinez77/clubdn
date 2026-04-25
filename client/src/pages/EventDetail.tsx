@@ -892,15 +892,7 @@ export default function EventDetail() {
     createInvitationMutation.mutate();
   };
 
-  const handleCopyQr = async () => {
-    if (!qrUrl) return;
-    try {
-      await navigator.clipboard.writeText(qrUrl);
-      success('Enlace copiado');
-    } catch {
-      showError('No se pudo copiar el enlace');
-    }
-  };
+
 
   const handleToggleInviteQr = (invite: Invitation) => {
     if (!invite.qrUrl) return;
