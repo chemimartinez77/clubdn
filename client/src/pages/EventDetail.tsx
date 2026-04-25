@@ -3008,7 +3008,7 @@ export default function EventDetail() {
       {/* Modal QR invitación individual */}
       {showInviteHelp && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.85)' }}
           onClick={() => setShowInviteHelp(false)}
         >
@@ -3037,20 +3037,17 @@ export default function EventDetail() {
           size="sm"
         >
           <div className="flex flex-col items-center gap-4">
-            <div className="relative">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(inviteQrModal.qrUrl)}`}
-                alt="QR Invitación"
-                className="w-44 h-44"
-              />
-              <button
-                onClick={() => setShowInviteHelp(true)}
-                className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[var(--color-primary)] text-white text-xs font-bold flex items-center justify-center shadow-md hover:opacity-80 transition-opacity"
-                aria-label="Ayuda"
-              >
-                ?
-              </button>
-            </div>
+            <button
+              onClick={() => setShowInviteHelp(true)}
+              className="px-3 py-1 rounded-full text-xs font-semibold bg-[var(--color-primary)] text-white hover:opacity-80 transition-opacity"
+            >
+              Ayuda
+            </button>
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(inviteQrModal.qrUrl)}`}
+              alt="QR Invitación"
+              className="w-44 h-44"
+            />
             <p className="text-xs text-[var(--color-textSecondary)] text-center">
               Haz una captura de este QR y envíasela a tu invitado. El día de la partida deberá enseñarte el QR y lo escanearás con tu teléfono. Al hacerlo se abrirá una página donde podrás validar a tu invitado pulsando un botón.
             </p>

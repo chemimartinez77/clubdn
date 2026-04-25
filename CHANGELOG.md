@@ -81,6 +81,25 @@ Al confirmar la asistencia de un invitado (escaneo de QR + botón "Confirmar asi
 - `client/src/types/invitation.ts`: añade `pendant?: number | null` al interface `Invitation`.
 - `client/src/pages/InviteValidation.tsx`: en lugar del toast de éxito, abre un modal con el nombre del invitado y el número de colgante en un cuadro grande con gradiente del tema. Se cierra con el botón "Entendido".
 
+### feat: animación de ruleta en dos fases, parpadeo del ganador y detección de borde
+
+Se rediseña completamente la animación de `SpinRuleta.tsx` y se elimina la pantalla de resultado intermedia en `FirstPlayerModal.tsx`.
+
+1. **Animación en dos fases** (`SpinRuleta.tsx`): la ruleta ahora gira a velocidad constante durante 2,5 s (5 vueltas con `requestAnimationFrame` lineal) y luego frena con easing cúbico durante 4,5 s. El ángulo de parada se calcula geométricamente para que el frenado aterrice exactamente en el centro del segmento ganador.
+
+2. **Parpadeo del segmento ganador** (`SpinRuleta.tsx`): al detenerse, el segmento elegido parpadea 2,5 s con `animation: segBlink` (opacidad 1 → 0,25, `keyframes` definidos dentro del SVG). Tras el parpadeo aparece el botón "Cerrar".
+
+3. **Detección de borde ambiguo** (`SpinRuleta.tsx`): si la rotación final deja el puntero a menos de 3° de la división entre dos sectores, se muestra un aviso con fondo ámbar en lugar del parpadeo, con un botón "Relanzar ruleta" que devuelve al estado inicial para un nuevo giro. La lógica compara `finalRotation % 360` con cada borde `i * segAngle - 90 (mod 360)`.
+
+4. **Eliminada la pantalla de resultado** (`FirstPlayerModal.tsx`): la fase `result` (con nombre del ganador, 🏆 y botones "Repetir"/"Listo") se elimina; el botón "Cerrar" vive dentro de la ruleta y llama directamente a `onClose()`. El tipo `Phase` pasa de `idle | spinning | result | error` a `idle | spinning | error`.
+
+5. **Botón "Ayuda" como chip** (`EventDetail.tsx`): el botón `?` superpuesto sobre el QR de invitados se reemplaza por un chip pill "Ayuda" situado encima del QR. El overlay de la imagen de ayuda sube a `z-[200]` para aparecer por encima del modal del QR (`z-50`).
+
+**Archivos modificados:**
+- `client/src/components/events/SpinRuleta.tsx`: animación bifásica, parpadeo, detección de borde, prop `onRespin`.
+- `client/src/components/events/FirstPlayerModal.tsx`: eliminada fase `result`, `onRespin` conectado al reset de estado.
+- `client/src/pages/EventDetail.tsx`: chip "Ayuda" sobre QR, z-index del overlay de ayuda.
+
 ### fix: invitados incluidos en la ruleta y ángulo de parada corregido
 
 Dos correcciones en la funcionalidad de "Jugador inicial":

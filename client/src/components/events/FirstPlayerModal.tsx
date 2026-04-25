@@ -22,7 +22,7 @@ interface FirstPlayerModalProps {
   onClose: () => void;
 }
 
-type Phase = 'idle' | 'spinning' | 'result' | 'error';
+type Phase = 'idle' | 'spinning' | 'error';
 
 export default function FirstPlayerModal({ eventId, spinEffect, onClose }: FirstPlayerModalProps) {
   const [phase, setPhase] = useState<Phase>('idle');
@@ -43,7 +43,7 @@ export default function FirstPlayerModal({ eventId, spinEffect, onClose }: First
   }
 
   function handleAnimationEnd() {
-    setPhase('result');
+    onClose();
   }
 
   return (
@@ -90,6 +90,7 @@ export default function FirstPlayerModal({ eventId, spinEffect, onClose }: First
                 players={result.players}
                 chosenId={result.chosen.id}
                 onAnimationEnd={handleAnimationEnd}
+                onRespin={() => { setResult(null); setPhase('idle'); }}
               />
             ) : (
               <SpinSpotlight
@@ -99,38 +100,6 @@ export default function FirstPlayerModal({ eventId, spinEffect, onClose }: First
               />
             )}
           </>
-        )}
-
-        {phase === 'result' && result && (
-          <div className="flex flex-col items-center gap-4 w-full">
-            <div className="text-4xl">🏆</div>
-            <div className="text-center">
-              <p className="text-zinc-400 text-sm">Empieza</p>
-              {result.chosen.nick?.trim() ? (
-                <>
-                  <p className="text-white text-2xl font-extrabold mt-1">{result.chosen.nick.trim()}</p>
-                  <p className="text-zinc-500 text-sm mt-0.5">{result.chosen.name}</p>
-                </>
-              ) : (
-                <p className="text-white text-2xl font-extrabold mt-1">{result.chosen.name}</p>
-              )}
-            </div>
-            <div className="flex gap-3 w-full mt-2">
-              <button
-                onClick={() => { setPhase('idle'); setResult(null); }}
-                className="flex-1 py-2 rounded-xl text-sm font-semibold text-zinc-300 bg-zinc-800 hover:bg-zinc-700 transition-colors"
-              >
-                Repetir
-              </button>
-              <button
-                onClick={onClose}
-                className="flex-1 py-2 rounded-xl text-sm font-bold text-white transition-colors"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
-              >
-                Listo
-              </button>
-            </div>
-          </div>
         )}
 
         {phase === 'error' && (
