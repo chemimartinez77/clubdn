@@ -10,12 +10,6 @@ interface Player {
   avatarUrl?: string | null;
 }
 
-interface SpinResult {
-  spinId: string;
-  chosen: Player;
-  players: Player[];
-}
-
 interface FirstPlayerModalProps {
   eventId: string;
   spinEffect: 'ruleta' | 'spotlight';
@@ -26,25 +20,37 @@ type Phase = 'idle' | 'spinning' | 'error';
 
 export default function FirstPlayerModal({ eventId, spinEffect, onClose }: FirstPlayerModalProps) {
   const [phase, setPhase] = useState<Phase>('idle');
-  const [result, setResult] = useState<SpinResult | null>(null);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [chosenId, setChosenId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSpin() {
     setError(null);
     try {
-      const res = await api.post<{ success: boolean; data: SpinResult }>(`/api/events/${eventId}/spin-first-player`);
-      setResult(res.data.data);
+      const res = await api.get<{ success: boolean; data: { players: Player[] } }>(`/api/events/${eventId}/spin-first-player`);
+      const ps = res.data.data.players;
+      setPlayers(ps);
+      // Para spotlight: elegir el ganador ahora, una sola vez
+      if (spinEffect === 'spotlight') {
+        setChosenId(ps[Math.floor(Math.random() * ps.length)]!.id);
+      }
       setPhase('spinning');
     } catch (err: any) {
-      const msg = err?.response?.data?.error ?? 'Error al girar la ruleta';
-      setError(msg);
+      setError(err?.response?.data?.error ?? 'Error al obtener los jugadores');
       setPhase('error');
     }
   }
 
-  function handleAnimationEnd() {
+  async function handleResult(winner: Player) {
+    setChosenId(winner.id);
+    try {
+      await api.post(`/api/events/${eventId}/spin-first-player`, { chosenId: winner.id });
+    } catch {
+      // El registro falló pero no bloqueamos al usuario — el resultado visual ya se mostró
+    }
     onClose();
   }
+
 
   return (
     <div
@@ -53,7 +59,6 @@ export default function FirstPlayerModal({ eventId, spinEffect, onClose }: First
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="relative bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-5">
-        {/* Cabecera */}
         <div className="flex w-full items-center justify-between">
           <h2 className="text-lg font-bold text-white">Jugador inicial</h2>
           <button
@@ -65,7 +70,6 @@ export default function FirstPlayerModal({ eventId, spinEffect, onClose }: First
           </button>
         </div>
 
-        {/* Contenido según fase */}
         {phase === 'idle' && (
           <div className="flex flex-col items-center gap-4 w-full">
             <p className="text-sm text-zinc-400 text-center">
@@ -83,20 +87,21 @@ export default function FirstPlayerModal({ eventId, spinEffect, onClose }: First
           </div>
         )}
 
-        {phase === 'spinning' && result && (
+        {phase === 'spinning' && players.length > 0 && (
           <>
             {spinEffect === 'ruleta' ? (
               <SpinRuleta
-                players={result.players}
-                chosenId={result.chosen.id}
-                onAnimationEnd={handleAnimationEnd}
-                onRespin={() => { setResult(null); setPhase('idle'); }}
+                players={players}
+                onResult={handleResult}
               />
-            ) : (
+            ) : chosenId && (
               <SpinSpotlight
-                players={result.players}
-                chosenId={result.chosen.id}
-                onAnimationEnd={handleAnimationEnd}
+                players={players}
+                chosenId={chosenId}
+                onAnimationEnd={() => {
+                  const winner = players.find(p => p.id === chosenId);
+                  if (winner) handleResult(winner);
+                }}
               />
             )}
           </>

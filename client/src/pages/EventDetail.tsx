@@ -883,8 +883,8 @@ export default function EventDetail() {
       showError('Apellidos requeridos');
       return;
     }
-    if (guestDni.trim() && !isValidDniNie(guestDni.trim())) {
-      showError('DNI o NIE no válido');
+    if (!isValidDniNie(guestDni.trim())) {
+      showError('DNI o NIE requerido y debe ser válido');
       return;
     }
     if (!id) {
@@ -2415,7 +2415,7 @@ export default function EventDetail() {
 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-[var(--color-textSecondary)]">
-                DNI / NIE (opcional)
+                DNI / NIE *
               </label>
               <input
                 type="text"
@@ -2466,7 +2466,7 @@ export default function EventDetail() {
                     createInvitationMutation.isPending ||
                     guestFirstName.trim().length < 2 ||
                     guestLastName.trim().length < 2 ||
-                    (guestDni.trim().length > 0 && !isValidDniNie(guestDni.trim()))
+                    !isValidDniNie(guestDni.trim())
                   }
                   variant="primary"
                 >
@@ -3118,7 +3118,7 @@ export default function EventDetail() {
               <p>La base jurídica del tratamiento es el consentimiento del interesado y el interés legítimo de la asociación en garantizar la seguridad, control de acceso y cobertura de responsabilidades derivadas de su actividad.</p>
               <p>Los datos podrán ser comunicados, en su caso, a la entidad aseguradora exclusivamente cuando sea necesario para la gestión de siniestros o reclamaciones, no realizándose otras cesiones salvo obligación legal.</p>
               <p>Los datos se conservarán durante el tiempo imprescindible para la gestión de la actividad y, posteriormente, durante los plazos legales necesarios para la atención de posibles responsabilidades.</p>
-              <p>Puede ejercer sus derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad dirigiéndose a [contacto]. Asimismo, puede presentar una reclamación ante la Agencia Española de Protección de Datos.</p>
+              <p>Puede ejercer sus derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad dirigiéndose a clubdreadnought.vlc@gmail.com. Asimismo, puede presentar una reclamación ante la Agencia Española de Protección de Datos.</p>
             </div>
             <button
               onClick={() => setShowLegalModal(false)}

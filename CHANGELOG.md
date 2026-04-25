@@ -100,6 +100,23 @@ Se rediseña completamente la animación de `SpinRuleta.tsx` y se elimina la pan
 - `client/src/components/events/FirstPlayerModal.tsx`: eliminada fase `result`, `onRespin` conectado al reset de estado.
 - `client/src/pages/EventDetail.tsx`: chip "Ayuda" sobre QR, z-index del overlay de ayuda.
 
+### refactor: ruleta con ángulo aleatorio real y ganador determinado por la flecha
+
+Se elimina la lógica que forzaba la ruleta a parar exactamente en el centro del sector ganador (pre-determinado por el servidor). Ahora la rueda para en un ángulo completamente aleatorio y el ganador se determina leyendo a qué sector apunta la flecha al detenerse, igual que una ruleta física.
+
+**Cambios de arquitectura:**
+- El endpoint `POST /api/events/:id/spin-first-player` se divide en dos: `GET` para obtener la lista de jugadores (sin elegir ganador) y `POST` para registrar el resultado decidido por el cliente tras la animación.
+- Los logros (`GIRADOR_RULETA`, `PRIMER_JUGADOR`) ahora solo se conceden en el **primer spin del evento**; giros adicionales en la misma partida no acumulan logros.
+
+**Backend:**
+- `server/src/controllers/firstPlayerController.ts`: refactorizado con helpers `getPlayers`, `getSpinPlayers` (GET) y `registerSpin` (POST). El POST recibe `chosenId` del cliente, verifica que el spinner es asistente confirmado y comprueba si ya existe un spin previo en el evento antes de dar logros.
+- `server/src/routes/eventRoutes.ts`: registra `GET` y `POST` para `/:id/spin-first-player`.
+
+**Frontend:**
+- `client/src/components/events/SpinRuleta.tsx`: el ángulo de parada es totalmente aleatorio (`Math.random() * 360`). Se elimina `calcStopAngle`, `isOnBorder`, `chosenId` y `onRespin`. Nueva función `getWinnerIdx` calcula el sector bajo la flecha a partir de la rotación final. La prop `onResult(winner)` reemplaza a `onAnimationEnd`.
+- `client/src/components/events/FirstPlayerModal.tsx`: al pulsar "Girar" hace GET para obtener los jugadores; tras la animación hace POST con el ganador. Para spotlight, el ganador se elige aleatoriamente en cliente al pulsar "Girar".
+- `client/src/pages/EventDetail.tsx`: DNI/NIE pasa a ser obligatorio (label `*`, validación en `disabled` y en `handleCreateInvitation`).
+
 ### feat: consentimiento RGPD en formulario de creación de invitados
 
 Antes de poder crear una invitación, el socio debe activar un toggle que declara haber leído y aceptado el tratamiento de datos personales del invitado. El texto legal completo se muestra en un modal accesible desde un enlace dentro de la etiqueta del toggle.

@@ -24,7 +24,7 @@ import {
 import { authenticate, requireAdmin } from '../middleware/auth';
 import { getPendingInvitations, approveInvitation, rejectInvitation } from '../controllers/invitationController';
 import { getEventResults, upsertEventResults } from '../controllers/eventResultController';
-import { spinFirstPlayer } from '../controllers/firstPlayerController';
+import { getSpinPlayers, registerSpin } from '../controllers/firstPlayerController';
 
 const router = Router();
 
@@ -77,6 +77,7 @@ router.get('/:eventId/results', authenticate, getEventResults);
 router.put('/:eventId/results', authenticate, upsertEventResults);
 
 // Ruleta de primer jugador
-router.post('/:id/spin-first-player', authenticate, spinFirstPlayer);
+router.get('/:id/spin-first-player', authenticate, getSpinPlayers);
+router.post('/:id/spin-first-player', authenticate, registerSpin);
 
 export default router;

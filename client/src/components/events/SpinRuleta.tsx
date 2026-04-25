@@ -9,12 +9,9 @@ interface Player {
 
 interface SpinRuletaProps {
   players: Player[];
-  chosenId: string;
-  onAnimationEnd: () => void;
-  onRespin: () => void;
+  onResult: (winner: Player) => void;
 }
 
-const BORDER_THRESHOLD = 3; // grados de margen a cada lado de un borde
 const CONSTANT_SPINS = 5;
 const CONSTANT_DURATION = 2500; // ms
 const BRAKING_SPINS_MIN = 3;
@@ -61,63 +58,35 @@ function easeOutCubic(t: number) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-/**
- * Calcula cuántos grados debe rotar la rueda (sentido horario, CSS rotate)
- * para que el centro del sector winnerIdx quede bajo la flecha (arriba = -90° SVG).
- *
- * Geometría:
- *   - CSS rotate(R) suma R° a todos los ángulos SVG en pantalla.
- *   - El centro del sector i está en centerSVG = (i + 0.5) * segAngle - 90°.
- *   - Tras rotar R, su posición en pantalla es centerSVG + R.
- *   - La flecha apunta arriba = -90° SVG = 270° normalizado.
- *   - Queremos: (centerSVG + R) ≡ 270° (mod 360)
- *     => R = (270 - centerSVG) mod 360
- *          = (270 - centerNorm + 360) % 360   [con centerNorm en [0,360)]
- */
-function calcStopAngle(winnerIdx: number, segAngle: number): number {
-  const centerSVG = (winnerIdx + 0.5) * segAngle - 90;
-  const centerNorm = ((centerSVG % 360) + 360) % 360;
-  const stopAngle = (270 - centerNorm + 360) % 360;
-  // Si stopAngle == 0, el sector ya apunta arriba: añadir una vuelta completa
-  return stopAngle === 0 ? 360 : stopAngle;
+// Dado un ángulo de rotación CSS final, devuelve el índice del sector bajo la flecha.
+// La flecha está fija en pantalla a 270° (arriba). Tras rotar R°, el punto de la rueda
+// que queda bajo la flecha es el que estaba en (270 - R) mod 360.
+// Los sectores se dibujan con startAngle = i*segAngle - 90, así que
+// sector i ocupa [(i*segAngle - 90), (i+1)*segAngle - 90) en la rueda.
+function getWinnerIdx(finalRotation: number, segAngle: number, n: number): number {
+  const R = ((finalRotation % 360) + 360) % 360;
+  const flechaEnRueda = ((270 - R) % 360 + 360) % 360;
+  // Convertir a ángulo relativo al inicio del primer sector (que empieza en -90° = 270°)
+  const relAngle = ((flechaEnRueda - 270) % 360 + 360) % 360;
+  return Math.floor(relAngle / segAngle) % n;
 }
 
-function isOnBorder(finalRotation: number, segAngle: number, n: number): boolean {
-  // Posición de la flecha en el espacio de la rueda después de rotar
-  const pos = ((finalRotation % 360) + 360) % 360;
-  for (let i = 0; i < n; i++) {
-    // Borde entre sector i-1 e i: está en i*segAngle - 90, normalizado
-    const border = ((i * segAngle - 90) % 360 + 360) % 360;
-    // La flecha en el espacio de la rueda está en (360 - pos) % 360
-    const flecha = (360 - pos) % 360;
-    const diff = Math.abs(flecha - border);
-    const dist = Math.min(diff, 360 - diff);
-    if (dist < BORDER_THRESHOLD) return true;
-  }
-  return false;
-}
-
-export default function SpinRuleta({ players, chosenId, onAnimationEnd, onRespin }: SpinRuletaProps) {
+export default function SpinRuleta({ players, onResult }: SpinRuletaProps) {
   const [rotation, setRotation] = useState(0);
+  const [winnerIdx, setWinnerIdx] = useState<number | null>(null);
   const [blinking, setBlinking] = useState(false);
   const [showClose, setShowClose] = useState(false);
-  const [showBorderWarning, setShowBorderWarning] = useState(false);
   const animFrameRef = useRef<number>(0);
 
   const n = players.length;
   const segAngle = 360 / n;
 
-  // Fuente de verdad única: winnerIdx derivado de players + chosenId
-  const winnerIdx = players.findIndex(p => p.id === chosenId);
-
-  // useState con inicializador lazy: Math.random() se llama solo en el primer montaje.
+  // Ángulo de parada totalmente aleatorio — calculado una sola vez al montar.
   const [degrees] = useState<{ total: number; braking: number }>(() => {
-    const stopAngle = calcStopAngle(winnerIdx, segAngle);
     const constantDeg = CONSTANT_SPINS * 360;
-    let extraBraking = stopAngle - (constantDeg % 360);
-    if (extraBraking <= 0) extraBraking += 360;
+    const randomStop = Math.random() * 360; // ángulo aleatorio dentro de una vuelta
     const brakingSpins = BRAKING_SPINS_MIN + Math.floor(Math.random() * (BRAKING_SPINS_EXTRA + 1));
-    const brakingDeg = brakingSpins * 360 + extraBraking;
+    const brakingDeg = brakingSpins * 360 + randomStop;
     return { total: constantDeg + brakingDeg, braking: brakingDeg };
   });
 
@@ -147,21 +116,20 @@ export default function SpinRuleta({ players, chosenId, onAnimationEnd, onRespin
       } else {
         const brakingElapsed = now - brakingStartTime!;
         const t = Math.min(brakingElapsed / BRAKING_DURATION, 1);
-        setRotation(brakingStartRotation + easeOutCubic(t) * brakingDeg);
+        const currentRotation = brakingStartRotation + easeOutCubic(t) * brakingDeg;
+        setRotation(currentRotation);
 
         if (t < 1) {
           animFrameRef.current = requestAnimationFrame(animate);
         } else {
           const finalRot = brakingStartRotation + brakingDeg;
-          if (isOnBorder(finalRot, segAngle, n)) {
-            setShowBorderWarning(true);
-          } else {
-            setBlinking(true);
-            setTimeout(() => {
-              setBlinking(false);
-              setShowClose(true);
-            }, BLINK_DURATION);
-          }
+          const idx = getWinnerIdx(finalRot, segAngle, n);
+          setWinnerIdx(idx);
+          setBlinking(true);
+          setTimeout(() => {
+            setBlinking(false);
+            setShowClose(true);
+          }, BLINK_DURATION);
         }
       }
     }
@@ -175,6 +143,12 @@ export default function SpinRuleta({ players, chosenId, onAnimationEnd, onRespin
   const r = 135;
   const maxChars = n <= 4 ? 12 : n <= 6 ? 9 : 7;
   const fontSize = n <= 4 ? 13 : n <= 6 ? 11 : 9;
+
+  function handleClose() {
+    if (winnerIdx !== null) {
+      onResult(players[winnerIdx]!);
+    }
+  }
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
@@ -196,7 +170,6 @@ export default function SpinRuleta({ players, chosenId, onAnimationEnd, onRespin
             const endAngle = startAngle + segAngle;
             const path = buildWheelPath(cx, cy, r, startAngle, endAngle);
             const label = labelPosition(cx, cy, r, startAngle, endAngle);
-            // Color e isWinner derivados del mismo índice i y winnerIdx
             const color = COLORS[i % COLORS.length]!;
             const isWinner = i === winnerIdx;
             return (
@@ -233,30 +206,12 @@ export default function SpinRuleta({ players, chosenId, onAnimationEnd, onRespin
 
       {showClose && (
         <button
-          onClick={onAnimationEnd}
+          onClick={handleClose}
           className="w-full py-3 rounded-xl font-bold text-white text-base transition-all"
           style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
         >
           Cerrar
         </button>
-      )}
-
-      {showBorderWarning && (
-        <div className="w-full flex flex-col items-center gap-3 p-4 rounded-xl border border-amber-500/40 bg-amber-500/10">
-          <p className="text-sm font-semibold text-amber-400 text-center">
-            La flecha ha caído justo en el borde entre dos sectores.
-          </p>
-          <p className="text-xs text-amber-300/70 text-center">
-            El resultado no es válido. Vuelve a girar la ruleta.
-          </p>
-          <button
-            onClick={onRespin}
-            className="w-full py-2 rounded-xl font-bold text-white text-sm transition-all"
-            style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
-          >
-            Relanzar ruleta
-          </button>
-        </div>
       )}
     </div>
   );
