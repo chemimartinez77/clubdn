@@ -47,7 +47,6 @@ export default function SpinSpotlight({ players, chosenId, onAnimationEnd }: Spi
       const interval = SLOW_INTERVAL + step * 60;
       setActiveIdx(nextIdx);
 
-      const stepsLeft = SLOW_STEPS - step;
       const distToChosen = ((chosenIdx - nextIdx) % players.length + players.length) % players.length;
 
       if (step < SLOW_STEPS - 1 && distToChosen > 0) {
