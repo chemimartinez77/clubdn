@@ -44,6 +44,28 @@ Tres correcciones sobre la funcionalidad lanzada en la misma sesión:
 
 4. **Renombrado a "Jugador inicial"** (`FirstPlayerModal.tsx`, `EventDetail.tsx`): el título del modal y las entradas en botón/dropdown pasan de "Primer jugador" a "Jugador inicial". El texto descriptivo del modal varía según el efecto activo ("Gira la ruleta…" para ruleta, "Elige al azar…" para spotlight).
 
+### fix: icono de dado en botón "Jugador inicial" y colores de tema
+
+Se reemplaza el emoji 🏆 del botón "Jugador inicial" (en el layout multicolor, el bottom sheet móvil y el dropdown desktop) por un icono SVG monocromo de dado, para que herede el color del tema en lugar de usar `text-amber-500` fijo.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx`: tres botones "Jugador inicial" actualizados con SVG de dado (`stroke="currentColor"`) y sin clases de color hardcodeadas.
+
+### feat: mejoras en el modal de invitados (QR y ayuda)
+
+Se simplifica la UI del QR de invitados y se añade un botón de ayuda contextual:
+
+1. **Checkbox "Invitación excepcional" deshabilitado** (`EventDetail.tsx`): el checkbox visible solo para admins queda con `disabled` + `opacity-40 cursor-not-allowed` hasta que se reactive la funcionalidad.
+
+2. **Eliminado el enlace y botón "Copiar" del QR** (`EventDetail.tsx`): tanto en el bloque que aparece al crear una invitación como en el modal de QR de invitaciones existentes, se elimina el input con la URL y el botón Copiar. El usuario solo ve el código QR.
+
+3. **Texto de instrucciones actualizado** (`EventDetail.tsx`): el texto anterior ("Comparte este QR con el invitado. Es de un solo uso y válido solo para el {fecha}") se sustituye por instrucciones claras sobre cómo usar el QR el día de la partida.
+
+4. **Botón de ayuda `?`** (`EventDetail.tsx`): aparece en la esquina superior derecha del QR (en ambos contextos). Al pulsarlo se muestra la imagen `/ayuda.invitados.jpeg` a pantalla completa (`max-w-[90vw] max-h-[85vh]`), responsive para móvil. Se cierra pulsando fuera o el botón `×`.
+
+- `client/src/pages/EventDetail.tsx`: estado `showInviteHelp`, overlay de imagen de ayuda, botones `?` en ambos bloques QR.
+- `client/public/ayuda.invitados.jpeg` (nuevo): imagen de ayuda para el proceso de validación de invitados.
+
 ---
 
 ## 2026-04-24

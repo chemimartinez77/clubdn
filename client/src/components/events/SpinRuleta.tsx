@@ -103,8 +103,8 @@ export default function SpinRuleta({ players, chosenId, onAnimationEnd }: SpinRu
   const r = 135;
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="relative" style={{ width: 300, height: 300 }}>
+    <div className="flex flex-col items-center gap-4 w-full">
+      <div className="relative w-full" style={{ maxWidth: 300, aspectRatio: '1 / 1' }}>
         {/* Indicador (flecha arriba) */}
         <div
           className="absolute left-1/2 -translate-x-1/2 z-10"
@@ -117,12 +117,12 @@ export default function SpinRuleta({ players, chosenId, onAnimationEnd }: SpinRu
 
         <svg
           ref={svgRef}
-          width={300}
-          height={300}
+          width="100%"
+          height="100%"
           viewBox="0 0 300 300"
           style={{
             transform: `rotate(${rotation}deg)`,
-            transformOrigin: '150px 150px',
+            transformOrigin: '50% 50%',
             transition: spinning ? 'none' : undefined,
           }}
         >

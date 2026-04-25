@@ -94,6 +94,7 @@ export default function EventDetail() {
 
   // Estado modal primer jugador
   const [showFirstPlayerModal, setShowFirstPlayerModal] = useState(false);
+  const [showInviteHelp, setShowInviteHelp] = useState(false);
 
   // Estado dropdown opciones
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
@@ -1282,8 +1283,15 @@ export default function EventDetail() {
                           className="w-full sm:w-auto !bg-amber-500 hover:!bg-amber-600 !text-white transition-all duration-300"
                         >
                           <span className="flex items-center justify-center gap-2">
+                            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                              <rect x="2" y="2" width="20" height="20" rx="3" ry="3" strokeLinecap="round" strokeLinejoin="round"/>
+                              <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+                              <circle cx="16" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+                              <circle cx="8" cy="16" r="1.2" fill="currentColor" stroke="none"/>
+                              <circle cx="16" cy="16" r="1.2" fill="currentColor" stroke="none"/>
+                              <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+                            </svg>
                             <span>Jugador inicial</span>
-                            <span>🏆</span>
                           </span>
                         </Button>
                       )}
@@ -1397,9 +1405,16 @@ export default function EventDetail() {
                             {canSpinFirstPlayer && (
                               <button
                                 onClick={() => { setShowFirstPlayerModal(true); setIsOptionsOpen(false); }}
-                                className="w-full text-left px-4 py-3 text-sm hover:bg-[var(--color-cardBorder)] flex items-center gap-3 rounded-lg text-amber-500"
+                                className="w-full text-left px-4 py-3 text-sm hover:bg-[var(--color-cardBorder)] flex items-center gap-3 rounded-lg"
                               >
-                                <span className="text-lg leading-none">🏆</span>
+                                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                                  <rect x="2" y="2" width="20" height="20" rx="3" ry="3" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+                                  <circle cx="16" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+                                  <circle cx="8" cy="16" r="1.2" fill="currentColor" stroke="none"/>
+                                  <circle cx="16" cy="16" r="1.2" fill="currentColor" stroke="none"/>
+                                  <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+                                </svg>
                                 Jugador inicial
                               </button>
                             )}
@@ -1495,9 +1510,16 @@ export default function EventDetail() {
                         {canSpinFirstPlayer && (
                           <button
                             onClick={() => { setShowFirstPlayerModal(true); setIsOptionsOpen(false); }}
-                            className="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--color-cardBorder)] flex items-center gap-2 text-amber-500"
+                            className="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--color-cardBorder)] flex items-center gap-2"
                           >
-                            <span className="text-base leading-none">🏆</span>
+                            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                              <rect x="2" y="2" width="20" height="20" rx="3" ry="3" strokeLinecap="round" strokeLinejoin="round"/>
+                              <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+                              <circle cx="16" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+                              <circle cx="8" cy="16" r="1.2" fill="currentColor" stroke="none"/>
+                              <circle cx="16" cy="16" r="1.2" fill="currentColor" stroke="none"/>
+                              <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+                            </svg>
                             Jugador inicial
                           </button>
                         )}
@@ -2430,12 +2452,13 @@ export default function EventDetail() {
                   {createInvitationMutation.isPending ? 'Creando...' : 'Crear invitacion'}
                 </Button>
                 {isAdmin && (
-                  <label className="flex items-center gap-2 text-sm text-[var(--color-textSecondary)]">
+                  <label className="flex items-center gap-2 text-sm text-[var(--color-textSecondary)] opacity-40 cursor-not-allowed">
                     <input
                       type="checkbox"
                       checked={isExceptional}
                       onChange={(e) => setIsExceptional(e.target.checked)}
-                      className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)]"
+                      disabled
+                      className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] cursor-not-allowed"
                     />
                     Invitacion excepcional
                   </label>
@@ -2446,31 +2469,26 @@ export default function EventDetail() {
 
           {qrUrl && (
             <div className="border border-[var(--color-cardBorder)] rounded-lg p-4 bg-[var(--color-tableRowHover)]">
-              <div className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="flex flex-col sm:flex-row gap-4 items-center">
                 {qrImageUrl && (
-                  <img
-                    src={qrImageUrl}
-                    alt="QR Invitacion"
-                    className="w-44 h-44"
-                  />
-                )}
-                <div className="flex-1 space-y-2">
-                  <p className="text-sm text-[var(--color-textSecondary)]">Enlace del QR</p>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      readOnly
-                      value={qrUrl}
-                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-cardBackground)] text-sm"
+                  <div className="relative shrink-0">
+                    <img
+                      src={qrImageUrl}
+                      alt="QR Invitacion"
+                      className="w-44 h-44"
                     />
-                    <Button onClick={handleCopyQr} variant="outline">
-                      Copiar
-                    </Button>
+                    <button
+                      onClick={() => setShowInviteHelp(true)}
+                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[var(--color-primary)] text-white text-xs font-bold flex items-center justify-center shadow-md hover:opacity-80 transition-opacity"
+                      aria-label="Ayuda"
+                    >
+                      ?
+                    </button>
                   </div>
-                  <p className="text-xs text-[var(--color-textSecondary)]">
-                    Comparte este QR con el invitado. Es de un solo uso y válido solo para el {eventDateText}.
-                  </p>
-                </div>
+                )}
+                <p className="text-xs text-[var(--color-textSecondary)] text-center sm:text-left">
+                  Haz una captura de este QR y envíasela a tu invitado. El día de la partida deberá enseñarte el QR y lo escanearás con tu teléfono. Al hacerlo se abrirá una página donde podrás validar a tu invitado pulsando un botón.
+                </p>
               </div>
             </div>
           )}
@@ -2996,6 +3014,29 @@ export default function EventDetail() {
       </Modal>
 
       {/* Modal QR invitación individual */}
+      {showInviteHelp && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.85)' }}
+          onClick={() => setShowInviteHelp(false)}
+        >
+          <div className="relative max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowInviteHelp(false)}
+              className="absolute -top-3 -right-3 w-7 h-7 rounded-full bg-[var(--color-primary)] text-white text-base font-bold flex items-center justify-center shadow-lg hover:opacity-80 transition-opacity z-10"
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
+            <img
+              src="/ayuda.invitados.jpeg"
+              alt="Ayuda invitados"
+              className="max-w-[90vw] max-h-[85vh] rounded-xl object-contain shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
+
       {inviteQrModal && (
         <Modal
           isOpen={true}
@@ -3004,28 +3045,23 @@ export default function EventDetail() {
           size="sm"
         >
           <div className="flex flex-col items-center gap-4">
-            <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(inviteQrModal.qrUrl)}`}
-              alt="QR Invitación"
-              className="w-44 h-44"
-            />
-            <div className="w-full space-y-2">
-              <p className="text-sm text-[var(--color-textSecondary)]">Enlace del QR</p>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={inviteQrModal.qrUrl}
-                  className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-cardBackground)] text-sm"
-                />
-                <Button
-                  onClick={() => navigator.clipboard.writeText(inviteQrModal.qrUrl).then(() => success('Enlace copiado')).catch(() => showError('No se pudo copiar el enlace'))}
-                  variant="outline"
-                >
-                  Copiar
-                </Button>
-              </div>
+            <div className="relative">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(inviteQrModal.qrUrl)}`}
+                alt="QR Invitación"
+                className="w-44 h-44"
+              />
+              <button
+                onClick={() => setShowInviteHelp(true)}
+                className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[var(--color-primary)] text-white text-xs font-bold flex items-center justify-center shadow-md hover:opacity-80 transition-opacity"
+                aria-label="Ayuda"
+              >
+                ?
+              </button>
             </div>
+            <p className="text-xs text-[var(--color-textSecondary)] text-center">
+              Haz una captura de este QR y envíasela a tu invitado. El día de la partida deberá enseñarte el QR y lo escanearás con tu teléfono. Al hacerlo se abrirá una página donde podrás validar a tu invitado pulsando un botón.
+            </p>
           </div>
         </Modal>
       )}
