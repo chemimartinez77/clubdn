@@ -100,6 +100,19 @@ Se rediseña completamente la animación de `SpinRuleta.tsx` y se elimina la pan
 - `client/src/components/events/FirstPlayerModal.tsx`: eliminada fase `result`, `onRespin` conectado al reset de estado.
 - `client/src/pages/EventDetail.tsx`: chip "Ayuda" sobre QR, z-index del overlay de ayuda.
 
+### feat: consentimiento RGPD en formulario de creación de invitados
+
+Antes de poder crear una invitación, el socio debe activar un toggle que declara haber leído y aceptado el tratamiento de datos personales del invitado. El texto legal completo se muestra en un modal accesible desde un enlace dentro de la etiqueta del toggle.
+
+1. **Toggle de aceptación** (`EventDetail.tsx`): toggle personalizado (pill con bola deslizante) que ocupa el ancho completo del formulario. Hacer clic en cualquier parte de la fila (toggle o texto) lo activa/desactiva. El botón "Crear invitacion" permanece deshabilitado hasta que el toggle esté a `ON`.
+
+2. **Modal de información legal** (`EventDetail.tsx`): se abre haciendo clic en el enlace subrayado "tratamiento de datos personales del invitado" (sin activar el toggle). Muestra el texto RGPD completo con scroll interno, z-index 300 (por encima de todo). Se cierra pulsando "Entendido", la `×` o haciendo clic fuera.
+
+3. **Reset automático** (`EventDetail.tsx`): al cerrar el modal de invitados (`handleCloseInviteModal`) el estado `legalAccepted` se restablece a `false` para que la siguiente apertura requiera aceptación explícita.
+
+**Archivos modificados:**
+- `client/src/pages/EventDetail.tsx`: estados `legalAccepted` y `showLegalModal`; toggle RGPD; modal legal; `!legalAccepted` en `disabled` del botón; reset en `handleCloseInviteModal`.
+
 ### fix: invitados incluidos en la ruleta y ángulo de parada corregido
 
 Dos correcciones en la funcionalidad de "Jugador inicial":

@@ -84,6 +84,8 @@ export default function EventDetail() {
   const [removalReason, setRemovalReason] = useState('');
   const [cancellationReason, setCancellationReason] = useState('');
   const [inviteQrModal, setInviteQrModal] = useState<{ guestName: string; qrUrl: string } | null>(null);
+  const [legalAccepted, setLegalAccepted] = useState(false);
+  const [showLegalModal, setShowLegalModal] = useState(false);
 
   // Estado modal apuntar miembro
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
@@ -909,6 +911,7 @@ export default function EventDetail() {
     setIsInviteModalOpen(false);
     setExpandedInviteId(null);
     setQrUrl(null);
+    setLegalAccepted(false);
   };
 
   const handleOpenGameModal = () => {
@@ -2424,7 +2427,32 @@ export default function EventDetail() {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
+              <label
+                className="flex items-center gap-3 cursor-pointer select-none"
+                onClick={() => setLegalAccepted(v => !v)}
+              >
+                <div
+                  className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${legalAccepted ? 'bg-[var(--color-primary)]' : 'bg-zinc-600'}`}
+                >
+                  <span
+                    className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${legalAccepted ? 'translate-x-4' : 'translate-x-0'}`}
+                  />
+                </div>
+                <span className="text-sm text-[var(--color-textSecondary)]">
+                  He leído y acepto el{' '}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setShowLegalModal(true); }}
+                    className="underline text-[var(--color-primary)] hover:opacity-80 transition-opacity"
+                  >
+                    tratamiento de datos personales del invitado
+                  </button>
+                </span>
+              </label>
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
               <label className="block text-sm font-medium text-[var(--color-textSecondary)]">
                 Acciones
               </label>
@@ -2434,6 +2462,7 @@ export default function EventDetail() {
                   disabled={
                     !canInvite ||
                     !id ||
+                    !legalAccepted ||
                     createInvitationMutation.isPending ||
                     guestFirstName.trim().length < 2 ||
                     guestLastName.trim().length < 2 ||
@@ -3061,6 +3090,45 @@ export default function EventDetail() {
           spinEffect={spinEffect}
           onClose={() => setShowFirstPlayerModal(false)}
         />
+      )}
+
+      {showLegalModal && (
+        <div
+          className="fixed inset-0 z-[300] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.75)' }}
+          onClick={() => setShowLegalModal(false)}
+        >
+          <div
+            className="bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto p-6 flex flex-col gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-[var(--color-text)]">Información sobre protección de datos</h2>
+              <button
+                onClick={() => setShowLegalModal(false)}
+                className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors text-xl leading-none"
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </div>
+            <div className="text-sm text-[var(--color-textSecondary)] space-y-3 leading-relaxed">
+              <p>De conformidad con lo dispuesto en el Reglamento General de Protección de Datos y la Ley Orgánica de Protección de Datos y Garantía de Derechos Digitales, le informamos de que los datos personales facilitados serán tratados por el Club Dreadnought con la finalidad de gestionar el acceso de invitados, el control de asistencia y la participación en las actividades organizadas.</p>
+              <p>Con el fin de garantizar una identificación inequívoca de los asistentes, así como posibilitar la correcta gestión de posibles incidencias, accidentes o daños cubiertos por el seguro de la asociación, se solicita el DNI como dato identificativo único. Este dato no será utilizado para finalidades distintas de las aquí descritas.</p>
+              <p>La base jurídica del tratamiento es el consentimiento del interesado y el interés legítimo de la asociación en garantizar la seguridad, control de acceso y cobertura de responsabilidades derivadas de su actividad.</p>
+              <p>Los datos podrán ser comunicados, en su caso, a la entidad aseguradora exclusivamente cuando sea necesario para la gestión de siniestros o reclamaciones, no realizándose otras cesiones salvo obligación legal.</p>
+              <p>Los datos se conservarán durante el tiempo imprescindible para la gestión de la actividad y, posteriormente, durante los plazos legales necesarios para la atención de posibles responsabilidades.</p>
+              <p>Puede ejercer sus derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad dirigiéndose a [contacto]. Asimismo, puede presentar una reclamación ante la Agencia Española de Protección de Datos.</p>
+            </div>
+            <button
+              onClick={() => setShowLegalModal(false)}
+              className="mt-2 w-full py-2 rounded-xl text-sm font-semibold text-white transition-all"
+              style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-primaryHover, #7c3aed))' }}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
       )}
     </Layout>
   );
