@@ -62,16 +62,17 @@ export default function SpinRuleta({ players, chosenId, onAnimationEnd }: SpinRu
   const segAngle = 360 / n;
   const chosenIdx = players.findIndex(p => p.id === chosenId);
 
-  // Los segmentos se dibujan con offset -90° (segmento 0 ya apunta arriba).
-  // Centro del segmento i en reposo = -90 + (i+0.5)*segAngle.
-  // Para que ese punto quede en la cima (-90°) necesitamos rotar: 90 - (chosenIdx+0.5)*segAngle
-  const targetAngle = 90 - (chosenIdx + 0.5) * segAngle;
-  // Normalizar a [0, 360) y añadir vueltas completas para que siempre gire hacia adelante
-  const normalizedTarget = ((targetAngle % 360) + 360) % 360;
-  const totalRotation = normalizedTarget + 1440 + 360 * Math.floor(Math.random() * 3);
+  // Calcular totalRotation una sola vez y guardarlo en ref para que no cambie entre renders
+  const totalRotationRef = useRef<number>(0);
+  if (totalRotationRef.current === 0) {
+    const targetAngle = 90 - (chosenIdx + 0.5) * segAngle;
+    const normalizedTarget = ((targetAngle % 360) + 360) % 360;
+    totalRotationRef.current = normalizedTarget + 1440 + 360 * Math.floor(Math.random() * 3);
+  }
 
   useEffect(() => {
     const DURATION = 4000;
+    const totalRotation = totalRotationRef.current;
     setSpinning(true);
     startTimeRef.current = performance.now();
 

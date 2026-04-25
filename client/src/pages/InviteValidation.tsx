@@ -1,4 +1,5 @@
 // client/src/pages/InviteValidation.tsx
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
@@ -26,6 +27,7 @@ export default function InviteValidation() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { success, error: showError } = useToast();
+  const [pendantModal, setPendantModal] = useState<{ guestName: string; pendant: number } | null>(null);
 
   const { data: invitation, isLoading, isError, error } = useQuery({
     queryKey: ['invitation', token],
@@ -44,7 +46,15 @@ export default function InviteValidation() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['invitation', token] });
-      success(data.message || 'Asistencia confirmada');
+      const inv = data.data;
+      if (inv?.pendant != null) {
+        setPendantModal({
+          guestName: `${inv.guestFirstName} ${inv.guestLastName}`,
+          pendant: inv.pendant
+        });
+      } else {
+        success(data.message || 'Asistencia confirmada');
+      }
     },
     onError: (err: any) => {
       const serverMessage = err.response?.data?.message;
@@ -179,6 +189,31 @@ export default function InviteValidation() {
           </CardContent>
         </Card>
       </div>
+
+      {pendantModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.75)' }}
+        >
+          <div className="bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4 text-center">
+            <h2 className="text-lg font-bold text-[var(--color-text)]">Asistencia confirmada</h2>
+            <p className="text-sm text-[var(--color-textSecondary)]">
+              <span className="font-semibold text-[var(--color-text)]">{pendantModal.guestName}</span>
+              {' '}ha sido validado correctamente.
+            </p>
+            <p className="text-sm text-[var(--color-textSecondary)]">Debe coger el colgante:</p>
+            <div
+              className="w-28 h-28 rounded-2xl flex items-center justify-center text-6xl font-extrabold text-white shadow-lg"
+              style={{ background: 'linear-gradient(135deg, var(--color-primary), #7c3aed)' }}
+            >
+              {pendantModal.pendant}
+            </div>
+            <Button onClick={() => setPendantModal(null)} variant="primary" className="w-full mt-2">
+              Entendido
+            </Button>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

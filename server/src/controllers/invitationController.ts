@@ -1,6 +1,6 @@
 // server/src/controllers/invitationController.ts
 import { Request, Response } from 'express';
-import { BadgeCategory, InvitationStatus, UserRole } from '@prisma/client';
+import { BadgeCategory, InvitationStatus, UserRole, Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { generateInvitationToken } from '../utils/invitationToken';
 import { checkAndUnlockBadges } from './badgeController';
@@ -65,6 +65,36 @@ const startOfDay = (date: Date) => {
   return copy;
 };
 
+// Devuelve el timestamp UTC de las 06:00:00 AM hora Madrid del "día de contador" de now.
+// Si en Madrid son menos de las 6AM, el día de referencia es el anterior.
+function getPendantWindowStart(now: Date): Date {
+  const madridStr = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  }).format(now);
+
+  const [datePart, timePart] = madridStr.split(' ');
+  const madridHour = parseInt(((timePart ?? '06:00').split(':')[0]) ?? '6', 10);
+
+  let refDate = datePart;
+  if (madridHour < 6) {
+    const d = new Date(datePart + 'T12:00:00Z');
+    d.setUTCDate(d.getUTCDate() - 1);
+    refDate = d.toISOString().slice(0, 10);
+  }
+
+  const noon = new Date(refDate + 'T12:00:00Z');
+  const madridNoon = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+  }).format(noon);
+  const offsetMs = noon.getTime() - new Date(madridNoon.replace(' ', 'T') + 'Z').getTime();
+
+  return new Date(new Date(refDate + 'T06:00:00Z').getTime() + offsetMs);
+}
+
 const getInviteConfig = async () => {
   const config = await prisma.clubConfig.findUnique({
     where: { id: 'club_config' },
@@ -98,6 +128,7 @@ const mapInvitation = (invitation: any, options?: { includeQr?: boolean }) => {
     status: invitation.status,
     validDate: invitation.validDate,
     isExceptional: invitation.isExceptional,
+    pendant: invitation.pendant ?? null,
     event: invitation.event
       ? { id: invitation.event.id, title: invitation.event.title, date: invitation.event.date }
       : undefined,
@@ -545,6 +576,19 @@ export const validateInvitation = async (req: Request, res: Response): Promise<v
         return { error: { status: 409, message: 'Invitacion ya validada' }, invitation };
       }
 
+      // Asignar número de colgante correlativo (reinicia a 1 cada día a las 6AM Madrid)
+      const windowStart = getPendantWindowStart(now);
+      const todayCount = await tx.invitation.count({
+        where: {
+          usedAt: { gte: windowStart },
+          pendant: { not: null }
+        }
+      });
+      await tx.invitation.update({
+        where: { id: invitation.id },
+        data: { pendant: todayCount + 1 }
+      });
+
       const updated = await tx.invitation.findUnique({
         where: { id: invitation.id },
         include: {
@@ -555,6 +599,9 @@ export const validateInvitation = async (req: Request, res: Response): Promise<v
       });
 
       return { invitation: updated };
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      timeout: 10000
     });
 
     if (result.error) {

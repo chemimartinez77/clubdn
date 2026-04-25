@@ -66,6 +66,35 @@ Se simplifica la UI del QR de invitados y se añade un botón de ayuda contextua
 - `client/src/pages/EventDetail.tsx`: estado `showInviteHelp`, overlay de imagen de ayuda, botones `?` en ambos bloques QR.
 - `client/public/ayuda.invitados.jpeg` (nuevo): imagen de ayuda para el proceso de validación de invitados.
 
+### feat: número de colgante correlativo al validar invitados
+
+Al confirmar la asistencia de un invitado (escaneo de QR + botón "Confirmar asistencia"), el sistema asigna automáticamente un número de colgante correlativo que reinicia a 1 cada día a las 6:00 AM hora Madrid. Se muestra un modal con el nombre del invitado y el número en grande.
+
+**Backend — base de datos:**
+- `server/prisma/schema.prisma`: nuevo campo `pendant Int?` e índice `@@index([usedAt])` en el modelo `Invitation`.
+- `server/prisma/migrations/20260425100000_add_pendant_to_invitation/migration.sql` (nuevo): `ALTER TABLE "Invitation" ADD COLUMN "pendant" INTEGER` + índice sobre `usedAt`.
+
+**Backend — lógica:**
+- `server/src/controllers/invitationController.ts`: importa `Prisma` de `@prisma/client`; añade helper `getPendantWindowStart()` que calcula las 6:00 AM hora Madrid en UTC usando `Intl.DateTimeFormat` con soporte automático de cambio horario; `validateInvitation` cuenta los colgantes ya asignados en la ventana del día y asigna `pendant = todayCount + 1` dentro de la transacción; la transacción usa `isolationLevel: Serializable` para evitar duplicados bajo concurrencia; `mapInvitation` devuelve `pendant` en la respuesta.
+
+**Frontend:**
+- `client/src/types/invitation.ts`: añade `pendant?: number | null` al interface `Invitation`.
+- `client/src/pages/InviteValidation.tsx`: en lugar del toast de éxito, abre un modal con el nombre del invitado y el número de colgante en un cuadro grande con gradiente del tema. Se cierra con el botón "Entendido".
+
+### fix: invitados incluidos en la ruleta y ángulo de parada corregido
+
+Dos correcciones en la funcionalidad de "Jugador inicial":
+
+1. **Invitados excluidos de la ruleta** (`firstPlayerController.ts`): el backend solo incluía miembros con cuenta. Ahora también consulta `EventGuest` con invitación en estado `USED` (validada) y los añade como jugadores. Los badges siguen asignándose solo a miembros con cuenta; si el elegido es un invitado, solo se desbloquea el badge `GIRADOR_RULETA` para quien giró.
+
+2. **Ruleta se para en jugador incorrecto** (`SpinRuleta.tsx`): `totalRotation` se calculaba en cada render del componente con un `Math.random()` diferente. La closure del `useEffect` capturaba el valor inicial, pero renders posteriores (causados por `setRotation`) hacían que el valor disponible en el scope cambiara. Solución: se calcula una sola vez y se persiste en un `useRef` para que sea estable durante toda la animación.
+
+### fix: logro "Girador de Ruleta" cuenta solo la primera tirada por partida
+
+Antes, el contador del logro `GIRADOR_RULETA` sumaba todos los spins del usuario como girador, permitiendo acumular puntos repitiendo tiradas. Ahora usa una consulta `DISTINCT ON ("eventId") ORDER BY createdAt ASC` en PostgreSQL para contar únicamente los eventos donde ese usuario fue el **primero** en girar, con un máximo de un logro por partida independientemente de las repeticiones.
+
+- `server/src/controllers/badgeController.ts`: `getCategoryCount` para `GIRADOR_RULETA` reemplaza el `count` simple por `$queryRaw` con subconsulta `DISTINCT ON`.
+
 ---
 
 ## 2026-04-24

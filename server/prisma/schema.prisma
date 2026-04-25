@@ -428,6 +428,7 @@ model Invitation {
   validatedByUserId   String?
   validatedBy         User?            @relation("InvitationsValidated", fields: [validatedByUserId], references: [id])
   usedAt              DateTime?
+  pendant             Int?
   approvedById        String?
   approvedBy          User?            @relation("InvitationsApproved", fields: [approvedById], references: [id])
   approvedAt          DateTime?
@@ -439,6 +440,7 @@ model Invitation {
   @@index([status])
   @@index([validDate])
   @@index([guestPhone])
+  @@index([usedAt])
 }
 
 model EventShareLink {

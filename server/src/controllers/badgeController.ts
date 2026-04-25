@@ -229,7 +229,17 @@ async function getCategoryCount(userId: string, category: BadgeCategory): Promis
     return prisma.firstPlayerSpin.count({ where: { chosenId: userId } });
   }
   if (category === BadgeCategory.GIRADOR_RULETA) {
-    return prisma.firstPlayerSpin.count({ where: { spinnerId: userId } });
+    // Cuenta los eventos donde este usuario fue el PRIMERO en girar (un premio por partida)
+    const result = await prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT COUNT(*) AS count
+      FROM (
+        SELECT DISTINCT ON ("eventId") "eventId", "spinnerId"
+        FROM "FirstPlayerSpin"
+        ORDER BY "eventId", "createdAt" ASC
+      ) first_spins
+      WHERE "spinnerId" = ${userId}
+    `;
+    return Number(result[0]?.count ?? 0);
   }
   return prisma.gamePlayHistory.count({ where: { userId, gameCategory: category } });
 }

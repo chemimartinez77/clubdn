@@ -17,12 +17,20 @@ export const spinFirstPlayer = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    const registrations = await prisma.eventRegistration.findMany({
-      where: { eventId, status: 'CONFIRMED' },
-      include: { user: { select: { id: true, name: true, profile: { select: { nick: true } } } } }
-    });
+    const [registrations, eventGuests] = await Promise.all([
+      prisma.eventRegistration.findMany({
+        where: { eventId, status: 'CONFIRMED' },
+        include: { user: { select: { id: true, name: true, profile: { select: { nick: true } } } } }
+      }),
+      prisma.eventGuest.findMany({
+        where: {
+          eventId,
+          invitation: { status: 'USED' }
+        },
+        select: { id: true, guestFirstName: true, guestLastName: true }
+      })
+    ]);
 
-    // Excluye registros sin usuario (invitados externos sin cuenta)
     const confirmedMembers = registrations
       .filter(r => r.user !== null)
       .map(r => {
@@ -35,27 +43,42 @@ export const spinFirstPlayer = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    if (confirmedMembers.length < 2) {
+    const guests = eventGuests.map(g => ({
+      id: g.id,
+      name: `${g.guestFirstName} ${g.guestLastName}`,
+      nick: null as string | null
+    }));
+
+    const allPlayers = [...confirmedMembers, ...guests];
+
+    if (allPlayers.length < 2) {
       res.status(400).json({ success: false, error: 'Se necesitan al menos 2 asistentes para girar la ruleta' });
       return;
     }
 
-    const chosenIdx = Math.floor(Math.random() * confirmedMembers.length);
-    const chosen = confirmedMembers[chosenIdx]!;
+    const chosenIdx = Math.floor(Math.random() * allPlayers.length);
+    const chosen = allPlayers[chosenIdx]!;
+
+    // Solo se guardan los badges/spin para miembros con cuenta
+    const chosenMemberId = confirmedMembers.find(m => m.id === chosen.id)?.id ?? null;
 
     const spin = await prisma.firstPlayerSpin.create({
-      data: { eventId, spinnerId: userId, chosenId: chosen.id }
+      data: { eventId, spinnerId: userId, chosenId: chosenMemberId ?? userId }
     });
 
-    checkAndUnlockBadges(userId, BadgeCategory.GIRADOR_RULETA).catch(console.error);
-    checkAndUnlockBadges(chosen.id, BadgeCategory.PRIMER_JUGADOR).catch(console.error);
+    if (chosenMemberId) {
+      checkAndUnlockBadges(userId, BadgeCategory.GIRADOR_RULETA).catch(console.error);
+      checkAndUnlockBadges(chosenMemberId, BadgeCategory.PRIMER_JUGADOR).catch(console.error);
+    } else {
+      checkAndUnlockBadges(userId, BadgeCategory.GIRADOR_RULETA).catch(console.error);
+    }
 
     res.json({
       success: true,
       data: {
         spinId: spin.id,
         chosen,
-        players: confirmedMembers
+        players: allPlayers
       }
     });
   } catch (error) {

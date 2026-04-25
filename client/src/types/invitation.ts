@@ -21,6 +21,7 @@ export interface Invitation {
   validDate: string;
   isExceptional?: boolean;
   usedAt?: string | null;
+  pendant?: number | null;
   qrUrl?: string;
   event?: InvitationEventInfo;
   inviter?: InvitationUserInfo;
