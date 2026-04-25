@@ -63,25 +63,22 @@ function easeOutCubic(t: number) {
 
 /**
  * Calcula cuántos grados debe rotar la rueda (sentido horario, CSS rotate)
- * para que el centro del sector winnerIdx quede bajo la flecha (12h = -90° SVG).
+ * para que el centro del sector winnerIdx quede bajo la flecha (arriba = -90° SVG).
  *
  * Geometría:
- *   - Sector i ocupa [i*seg - 90, (i+1)*seg - 90] en ángulos SVG.
- *   - Su centro está en: centerSVG = (i + 0.5) * seg - 90  (puede ser negativo)
- *   - Normalizado a [0, 360): centerNorm = ((centerSVG % 360) + 360) % 360
- *   - CSS rotate(X) gira la rueda X grados en sentido horario.
- *   - Después de rotar X grados, el punto que estaba en centerNorm pasa a estar en
- *     (centerNorm + X) % 360 en coordenadas de pantalla.
- *   - Queremos que ese punto quede en 0° (12h en pantalla, donde apunta la flecha).
- *     => (centerNorm + X) % 360 = 0
- *     => X = (360 - centerNorm) % 360
- *   - Si centerNorm == 0 ya está arriba: X = 0, así que añadimos 360 extra para que gire.
+ *   - CSS rotate(R) suma R° a todos los ángulos SVG en pantalla.
+ *   - El centro del sector i está en centerSVG = (i + 0.5) * segAngle - 90°.
+ *   - Tras rotar R, su posición en pantalla es centerSVG + R.
+ *   - La flecha apunta arriba = -90° SVG = 270° normalizado.
+ *   - Queremos: (centerSVG + R) ≡ 270° (mod 360)
+ *     => R = (270 - centerSVG) mod 360
+ *          = (270 - centerNorm + 360) % 360   [con centerNorm en [0,360)]
  */
 function calcStopAngle(winnerIdx: number, segAngle: number): number {
   const centerSVG = (winnerIdx + 0.5) * segAngle - 90;
   const centerNorm = ((centerSVG % 360) + 360) % 360;
-  const stopAngle = (360 - centerNorm) % 360;
-  // Si stopAngle == 0, el sector ya está arriba: añadir una vuelta completa
+  const stopAngle = (270 - centerNorm + 360) % 360;
+  // Si stopAngle == 0, el sector ya apunta arriba: añadir una vuelta completa
   return stopAngle === 0 ? 360 : stopAngle;
 }
 
@@ -113,31 +110,20 @@ export default function SpinRuleta({ players, chosenId, onAnimationEnd, onRespin
   // Fuente de verdad única: winnerIdx derivado de players + chosenId
   const winnerIdx = players.findIndex(p => p.id === chosenId);
 
-  // Calcular rotación total una sola vez (ref con null como guardia)
-  const totalDegreesRef = useRef<number | null>(null);
-  const brakingDegreesRef = useRef<number | null>(null);
-
-  if (totalDegreesRef.current === null) {
+  // useState con inicializador lazy: Math.random() se llama solo en el primer montaje.
+  const [degrees] = useState<{ total: number; braking: number }>(() => {
     const stopAngle = calcStopAngle(winnerIdx, segAngle);
     const constantDeg = CONSTANT_SPINS * 360;
-
-    // Cuánto hay que sumar al final de la fase constante para llegar a stopAngle
-    const afterConstant = constantDeg % 360; // posición angular al terminar fase constante
-    // En el espacio de la rueda, la flecha está en (360 - afterConstant) % 360
-    // Necesitamos que esa posición recorra hasta stopAngle
-    let extraBraking = stopAngle - afterConstant;
+    let extraBraking = stopAngle - (constantDeg % 360);
     if (extraBraking <= 0) extraBraking += 360;
-
     const brakingSpins = BRAKING_SPINS_MIN + Math.floor(Math.random() * (BRAKING_SPINS_EXTRA + 1));
     const brakingDeg = brakingSpins * 360 + extraBraking;
-
-    totalDegreesRef.current = constantDeg + brakingDeg;
-    brakingDegreesRef.current = brakingDeg;
-  }
+    return { total: constantDeg + brakingDeg, braking: brakingDeg };
+  });
 
   useEffect(() => {
-    const totalDeg = totalDegreesRef.current!;
-    const brakingDeg = brakingDegreesRef.current!;
+    const totalDeg = degrees.total;
+    const brakingDeg = degrees.braking;
     const constantDeg = totalDeg - brakingDeg;
     const degreesPerMs = (CONSTANT_SPINS * 360) / CONSTANT_DURATION;
 
@@ -182,7 +168,7 @@ export default function SpinRuleta({ players, chosenId, onAnimationEnd, onRespin
 
     animFrameRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, []);
+  }, [degrees.total, degrees.braking, n, segAngle]);
 
   const cx = 150;
   const cy = 150;
