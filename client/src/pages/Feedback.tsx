@@ -650,7 +650,7 @@ export default function Feedback() {
                               </p>
                             ) : (
                               sortedComments.map((comment: ReportComment) => {
-                                const isAdminComment = comment.user.role === 'ADMIN' || comment.user.role === 'SUPER_ADMIN';
+                                const isAdminComment = comment.user.role === 'ADMIN' || comment.user.role === 'SUPER_ADMIN' || comment.user.role === 'CHEMI';
                                 const isOwnComment = comment.user.id === user?.id;
                                 return (
                                   <div

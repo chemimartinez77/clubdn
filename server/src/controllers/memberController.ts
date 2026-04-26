@@ -1136,7 +1136,8 @@ export const uploadMemberAvatar = async (req: Request, res: Response): Promise<v
 /**
  * PATCH /api/admin/members/:memberId/role
  * Cambiar el rol de un miembro.
- * - SUPER_ADMIN puede asignar cualquier rol (USER, ADMIN, SUPER_ADMIN).
+ * - CHEMI puede asignar cualquier rol excepto CHEMI (USER, ADMIN, SUPER_ADMIN).
+ * - SUPER_ADMIN puede asignar USER y ADMIN, pero no SUPER_ADMIN ni tocar a CHEMI.
  * - ADMIN solo puede asignar USER.
  * - Nadie puede cambiar su propio rol.
  */
@@ -1157,15 +1158,22 @@ export const changeMemberRole = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const validRoles = ['USER', 'ADMIN', 'SUPER_ADMIN'];
+    const isChemi = actorRole === 'CHEMI';
+    const isSuperAdmin = actorRole === 'SUPER_ADMIN';
+
+    const validRoles = isChemi ? ['USER', 'ADMIN', 'SUPER_ADMIN'] : ['USER', 'ADMIN', 'SUPER_ADMIN'];
     if (!newRole || !validRoles.includes(newRole)) {
       res.status(400).json({ success: false, message: `Rol inválido. Valores permitidos: ${validRoles.join(', ')}` });
       return;
     }
 
-    const isSuperAdmin = actorRole === 'SUPER_ADMIN';
-    if (!isSuperAdmin && (newRole === 'ADMIN' || newRole === 'SUPER_ADMIN')) {
-      res.status(403).json({ success: false, message: 'Solo un SUPER_ADMIN puede asignar roles de administrador' });
+    if (!isChemi && (newRole === 'SUPER_ADMIN')) {
+      res.status(403).json({ success: false, message: 'Solo CHEMI puede asignar el rol SUPER_ADMIN' });
+      return;
+    }
+
+    if (!isChemi && !isSuperAdmin && newRole === 'ADMIN') {
+      res.status(403).json({ success: false, message: 'Solo un administrador elevado puede asignar el rol ADMIN' });
       return;
     }
 
@@ -1176,6 +1184,11 @@ export const changeMemberRole = async (req: Request, res: Response): Promise<voi
 
     if (!target) {
       res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+      return;
+    }
+
+    if (target.role === 'CHEMI') {
+      res.status(403).json({ success: false, message: 'No se puede modificar el rol de CHEMI' });
       return;
     }
 
@@ -1202,7 +1215,7 @@ export const changeMemberRole = async (req: Request, res: Response): Promise<voi
 
 /**
  * POST /api/admin/members/:memberId/impersonate
- * Genera un token JWT temporal para que un SUPER_ADMIN pueda ver la app como otro usuario.
+ * Genera un token JWT temporal para que CHEMI pueda ver la app como otro usuario.
  * El token incluye impersonatedBy con el id del admin real.
  */
 export const impersonateMember = async (req: Request, res: Response): Promise<void> => {
@@ -1216,8 +1229,8 @@ export const impersonateMember = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    if (actorRole !== 'SUPER_ADMIN') {
-      res.status(403).json({ success: false, message: 'Solo SUPER_ADMIN puede impersonar usuarios' });
+    if (actorRole !== 'CHEMI') {
+      res.status(403).json({ success: false, message: 'Solo CHEMI puede impersonar usuarios' });
       return;
     }
 
@@ -1236,8 +1249,8 @@ export const impersonateMember = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    if (target.role === 'SUPER_ADMIN') {
-      res.status(403).json({ success: false, message: 'No puedes impersonar a otro SUPER_ADMIN' });
+    if (target.role === 'SUPER_ADMIN' || String(target.role) === 'CHEMI') {
+      res.status(403).json({ success: false, message: 'No puedes impersonar a otro usuario con permisos elevados' });
       return;
     }
 

@@ -1,5 +1,5 @@
 // client/src/pages/CreatePartida.tsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
@@ -14,6 +14,8 @@ import type { BGGGame, CreateEventData, CreatePartidaCloneState } from '../types
 import { getCategoryDisplayName, getCategoryIcon } from '../types/badge';
 import CreatePartidaTour from '../components/tour/CreatePartidaTour';
 import { useTour } from '../hooks/useTour';
+import { isMagicTheGatheringBggId } from '../utils/eventRules';
+import { isChemiRole } from '../utils/roles';
 
 type CreatePartidaLocationState = {
   selectedDate?: string;
@@ -29,6 +31,7 @@ export default function CreatePartida() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const isChemi = isChemiRole(user?.role);
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
   const { shouldShow: showTour, dismissTour } = useTour('createPartida');
@@ -73,6 +76,7 @@ export default function CreatePartida() {
   const [confirmedCategory, setConfirmedCategory] = useState<string | null>(null);
   const [selectedClonedAttendeeIds, setSelectedClonedAttendeeIds] = useState<string[]>(() => cloneAttendees.map((attendee) => attendee.id));
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [allowLateJoin, setAllowLateJoin] = useState<boolean>(clonePrefill?.allowLateJoin ?? false);
 
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const minutes = [0, 15, 30, 45];
@@ -123,6 +127,7 @@ export default function CreatePartida() {
       maxAttendees: parseInt(formData.get('maxAttendees') as string, 10),
       attend,
       requiresApproval,
+      allowLateJoin,
       gameName: selectedGame?.name,
       gameImage: selectedGame?.image,
       bggId: selectedGame?.id,
@@ -180,6 +185,7 @@ export default function CreatePartida() {
 
   const handleGameSelect = async (game: BGGGame) => {
     setSelectedGame(game);
+    setAllowLateJoin(isMagicTheGatheringBggId(game.id) ? true : false);
     setConfirmedCategory(null);
 
     try {
@@ -198,6 +204,7 @@ export default function CreatePartida() {
 
   const handleRemoveGame = () => {
     setSelectedGame(null);
+    setAllowLateJoin(false);
     setSelectedExpansions([]);
     setLinkedNextGame(null);
     setSelectedCategory('');
@@ -250,6 +257,14 @@ export default function CreatePartida() {
     : '0';
   const requiresApprovalDefaultValue = clonePrefill?.requiresApproval ?? true;
   const attendDefaultValue = cloneState ? currentUserWasConfirmed : true;
+  const isMagicSelected = isMagicTheGatheringBggId(selectedGame?.id);
+  const canConfigureLateJoin = isChemi || isMagicSelected;
+
+  useEffect(() => {
+    if (isMagicSelected) {
+      setAllowLateJoin(true);
+    }
+  }, [isMagicSelected]);
 
   return (
     <Layout>
@@ -436,6 +451,29 @@ export default function CreatePartida() {
                   Requiere aprobación del organizador
                 </label>
               </div>
+
+              {canConfigureLateJoin && (
+                <div className="space-y-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      id="allowLateJoin"
+                      type="checkbox"
+                      checked={allowLateJoin}
+                      disabled={isMagicSelected}
+                      onChange={(e) => setAllowLateJoin(e.target.checked)}
+                      className="h-4 w-4 rounded border-[var(--color-inputBorder)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-70"
+                    />
+                    <label htmlFor="allowLateJoin" className="text-sm text-[var(--color-textSecondary)]">
+                      Permitir incorporaciones una vez iniciada
+                    </label>
+                  </div>
+                  <p className="text-xs text-[var(--color-textSecondary)]">
+                    {isMagicSelected
+                      ? 'En Magic: The Gathering esta opción se activa automáticamente.'
+                      : 'Permite apuntar o invitar jugadores cuando la sesión ya está en curso.'}
+                  </p>
+                </div>
+              )}
 
               <div id="create-partida-title">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">

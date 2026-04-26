@@ -84,6 +84,7 @@ export interface Event {
   maxAttendees: number;
   guestCount?: number;
   requiresApproval?: boolean;
+  allowLateJoin?: boolean;
   status: EventStatus;
   createdBy: string;
   createdAt: string;
@@ -137,6 +138,7 @@ export interface CreatePartidaClonePrefill {
   address?: string | null;
   maxAttendees: number;
   requiresApproval: boolean;
+  allowLateJoin?: boolean;
   startHour?: number | null;
   startMinute?: number | null;
   durationHours?: number | null;
@@ -230,6 +232,7 @@ export interface CreateEventData {
   maxAttendees: number;
   attend?: boolean;
   requiresApproval?: boolean;
+  allowLateJoin?: boolean;
 }
 
 export interface UpdateEventData {
@@ -251,6 +254,7 @@ export interface UpdateEventData {
   status?: EventStatus;
   gameCategory?: string | null;
   requiresApproval?: boolean;
+  allowLateJoin?: boolean;
   linkedNext?: {
     gameId: string;
     durationHours?: number;

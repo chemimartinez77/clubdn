@@ -1,0 +1,2 @@
+ALTER TABLE "Event"
+ADD COLUMN "allowLateJoin" BOOLEAN NOT NULL DEFAULT false;

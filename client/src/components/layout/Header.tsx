@@ -18,7 +18,9 @@ export default function Header() {
   const { themeMode } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
+  const [isCalendarMenuOpen, setIsCalendarMenuOpen] = useState(false);
   const [isGamesMenuOpen, setIsGamesMenuOpen] = useState(false);
+  const [isMobileCalendarOpen, setIsMobileCalendarOpen] = useState(false);
   const [isMobileGamesOpen, setIsMobileGamesOpen] = useState(false);
   const [isComunidadMenuOpen, setIsComunidadMenuOpen] = useState(false);
   const [isMobileComunidadOpen, setIsMobileComunidadOpen] = useState(false);
@@ -50,8 +52,12 @@ export default function Header() {
   const closeAllMenus = () => {
     setIsMenuOpen(false);
     setIsAdminMenuOpen(false);
+    setIsCalendarMenuOpen(false);
     setIsGamesMenuOpen(false);
     setIsComunidadMenuOpen(false);
+    setIsMobileCalendarOpen(false);
+    setIsMobileGamesOpen(false);
+    setIsMobileComunidadOpen(false);
   };
 
   const membershipLabel =
@@ -66,9 +72,7 @@ export default function Header() {
       : user?.membership?.type === 'BAJA'
       ? 'Baja'
       : 'Miembro';
-  const isCombatZoneEnabledForUser =
-    user?.id === 'cmlnolhj4000oo175283glccj' ||
-    user?.email?.toLowerCase() === 'chemimartinez@gmail.com';
+  const isCombatZoneEnabledForUser = user?.role === 'CHEMI';
 
   return (
     <>
@@ -122,15 +126,56 @@ export default function Header() {
               Inicio
             </Link>
 
-            {/* Calendario (antes Eventos) */}
-            <Link
-              id="nav-calendario"
-              to="/events"
-              state={{ forceMonth: true }}
-              className="text-[var(--color-textSecondary)] hover:text-primary transition-colors"
-            >
-              Calendario
-            </Link>
+            {/* Eventos - Desplegable */}
+            <div className="relative">
+              <button
+                id="nav-calendario"
+                onClick={() => {
+                  setIsCalendarMenuOpen(!isCalendarMenuOpen);
+                  setIsGamesMenuOpen(false);
+                  setIsComunidadMenuOpen(false);
+                  setIsAdminMenuOpen(false);
+                  setIsMenuOpen(false);
+                }}
+                className="text-[var(--color-textSecondary)] hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                Eventos
+                <svg
+                  className={`w-4 h-4 transition-transform ${isCalendarMenuOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {isCalendarMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setIsCalendarMenuOpen(false)}
+                  />
+                  <div className="absolute left-0 mt-2 w-48 bg-[var(--color-cardBackground)] rounded-lg shadow-lg border border-[var(--color-cardBorder)] py-1 z-20">
+                    <Link
+                      to="/events"
+                      state={{ forceMonth: true }}
+                      className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                      onClick={() => setIsCalendarMenuOpen(false)}
+                    >
+                      Calendario
+                    </Link>
+                    <Link
+                      to="/events/preview-semanal"
+                      className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                      onClick={() => setIsCalendarMenuOpen(false)}
+                    >
+                      Preview semanal
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* Juegos - Desplegable */}
             <div className="relative">
@@ -219,18 +264,12 @@ export default function Header() {
               )}
             </div>
 
-            {/* Documentos - Accesible a todos */}
-            <Link
-              to="/documentos"
-              className="text-[var(--color-textSecondary)] hover:text-primary transition-colors"
-            >
-              Documentos
-            </Link>
             {/* Comunidad - Desplegable */}
             <div className="relative">
               <button
                 onClick={() => {
                   setIsComunidadMenuOpen(!isComunidadMenuOpen);
+                  setIsCalendarMenuOpen(false);
                   setIsGamesMenuOpen(false);
                   setIsAdminMenuOpen(false);
                   setIsMenuOpen(false);
@@ -277,13 +316,23 @@ export default function Header() {
               )}
             </div>
 
+            {/* Documentos - Accesible a todos */}
+            <Link
+              to="/documentos"
+              className="text-[var(--color-textSecondary)] hover:text-primary transition-colors"
+            >
+              Documentos
+            </Link>
+
             {/* Menú Administración - Solo admin */}
             {isAdmin && (
               <div className="relative">
                 <button
                   onClick={() => {
                     setIsAdminMenuOpen(!isAdminMenuOpen);
+                    setIsCalendarMenuOpen(false);
                     setIsGamesMenuOpen(false);
+                    setIsComunidadMenuOpen(false);
                     setIsMenuOpen(false);
                   }}
                   className="text-[var(--color-textSecondary)] hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
@@ -351,13 +400,6 @@ export default function Header() {
                         onClick={() => setIsAdminMenuOpen(false)}
                       >
                         Gestión Financiera
-                      </Link>
-                      <Link
-                        to="/events/preview-semanal"
-                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
-                        onClick={() => setIsAdminMenuOpen(false)}
-                      >
-                        Preview semanal
                       </Link>
                       <div className="border-t border-[var(--color-cardBorder)] my-1"></div>
                       <Link
@@ -444,7 +486,13 @@ export default function Header() {
                       {user?.profile?.nick && <p className="text-xs text-[var(--color-textSecondary)]">{user.name}</p>}
                       <p className="text-xs text-[var(--color-textSecondary)]">{user?.email}</p>
                       <p className="text-xs text-primary mt-1 font-medium">
-                        {user?.role === 'SUPER_ADMIN' ? 'Super Administrador' : user?.role === 'ADMIN' ? 'Administrador' : 'Usuario'}
+                        {user?.role === 'SUPER_ADMIN'
+                          ? 'Super Administrador'
+                          : user?.role === 'ADMIN'
+                          ? 'Administrador'
+                          : user?.role === 'CHEMI'
+                          ? 'Chemi'
+                          : 'Usuario'}
                       </p>
                     </div>
 
@@ -552,15 +600,42 @@ export default function Header() {
                 Inicio
               </Link>
 
-              {/* Calendario */}
-              <Link
-                to="/events"
-                state={{ forceMonth: true }}
-                className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
-                onClick={closeAllMenus}
-              >
-                Calendario
-              </Link>
+              {/* Eventos */}
+              <div>
+                <button
+                  onClick={() => setIsMobileCalendarOpen(!isMobileCalendarOpen)}
+                  className="w-full px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors flex items-center justify-between cursor-pointer"
+                >
+                  <span>Eventos</span>
+                  <svg
+                    className={`w-4 h-4 transition-transform ${isMobileCalendarOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {isMobileCalendarOpen && (
+                  <div className="ml-4 mt-1 space-y-1">
+                    <Link
+                      to="/events"
+                      state={{ forceMonth: true }}
+                      className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                      onClick={closeAllMenus}
+                    >
+                      Calendario
+                    </Link>
+                    <Link
+                      to="/events/preview-semanal"
+                      className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                      onClick={closeAllMenus}
+                    >
+                      Preview semanal
+                    </Link>
+                  </div>
+                )}
+              </div>
 
               {/* Juegos - Acordeón móvil */}
               <div>
@@ -638,14 +713,6 @@ export default function Header() {
                 )}
               </div>
 
-              {/* Documentos */}
-              <Link
-                to="/documentos"
-                className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
-                onClick={closeAllMenus}
-              >
-                Documentos
-              </Link>
               {/* Comunidad - Acordeón móvil */}
               <div>
                 <button
@@ -689,6 +756,15 @@ export default function Header() {
                 )}
               </div>
 
+
+              {/* Documentos */}
+              <Link
+                to="/documentos"
+                className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                onClick={closeAllMenus}
+              >
+                Documentos
+              </Link>
               {/* Administración - Solo admin */}
               {isAdmin && (
                 <>
@@ -738,13 +814,6 @@ export default function Header() {
                     onClick={closeAllMenus}
                   >
                     Gestión Financiera
-                  </Link>
-                  <Link
-                    to="/events/preview-semanal"
-                    className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
-                    onClick={closeAllMenus}
-                  >
-                    Preview semanal
                   </Link>
                   <Link
                     to="/admin/invitations"

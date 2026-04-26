@@ -1,6 +1,7 @@
 // client/src/components/routes/AdminRoute.tsx
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { isAdminRole } from '../../utils/roles';
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -24,7 +25,7 @@ export default function AdminRoute({ children }: AdminRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+  if (!isAdminRole(user.role)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--color-tableRowHover)]">
         <div className="text-center max-w-md">

@@ -1,5 +1,6 @@
 // server/src/types/express.d.ts
-import { UserRole, MembershipType } from '@prisma/client';
+import { MembershipType } from '@prisma/client';
+import type { EffectiveUserRole } from '../utils/roles';
 
 declare global {
   namespace Express {
@@ -7,7 +8,7 @@ declare global {
       user?: {
         userId: string;
         email: string;
-        role: UserRole;
+        role: EffectiveUserRole;
         impersonatedBy?: string;
       };
       membership?: {

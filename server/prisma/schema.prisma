@@ -22,6 +22,7 @@ enum UserRole {
   USER
   ADMIN
   SUPER_ADMIN
+  CHEMI
 }
 
 
@@ -367,6 +368,7 @@ model Event {
 
   // Aprobación de jugadores
   requiresApproval Boolean @default(true) // Si requiere aprobación del organizador
+  allowLateJoin    Boolean @default(false) // Permite incorporaciones con la sesión ya iniciada
 
   // Estado
   status              EventStatus @default(SCHEDULED)

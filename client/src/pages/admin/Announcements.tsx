@@ -10,6 +10,7 @@ import { api } from '../../api/axios';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Announcement, AnnouncementFormData } from '../../types/announcement';
 import type { ApiResponse } from '../../types/auth';
+import { isElevatedRole } from '../../utils/roles';
 
 const EMPTY_FORM: AnnouncementFormData = { title: '', content: '', pinned: false };
 
@@ -17,7 +18,7 @@ export default function AdminAnnouncements() {
   const queryClient = useQueryClient();
   const { success, error: showError } = useToast();
   const { user } = useAuth();
-  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const isSuperAdmin = isElevatedRole(user?.role);
   const [form, setForm] = useState<AnnouncementFormData>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);

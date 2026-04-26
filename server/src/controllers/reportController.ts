@@ -507,7 +507,7 @@ export const createReportComment = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const isAdmin = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN';
+    const isAdmin = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN' || String(user.role) === 'CHEMI';
 
     // Subir imágenes a Cloudinary si las hay
     const imageUrls: string[] = [];

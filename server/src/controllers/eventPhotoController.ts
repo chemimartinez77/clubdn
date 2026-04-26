@@ -294,7 +294,7 @@ export const deleteEventPhoto = async (req: Request, res: Response): Promise<voi
     }
 
     // Verificar permisos: solo quien subió la foto o admin
-    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || String(userRole) === 'CHEMI';
     if (photo.uploadedById !== userId && !isAdmin) {
       res.status(403).json({
         success: false,

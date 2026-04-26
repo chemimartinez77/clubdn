@@ -1,6 +1,7 @@
 // server/src/controllers/eventResultController.ts
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
+import { isElevatedRole } from '../utils/roles';
 
 /**
  * GET /api/events/:eventId/results
@@ -63,7 +64,7 @@ export const upsertEventResults = async (req: Request, res: Response) => {
     }
 
     // Solo el organizador o un participante confirmado puede guardar resultados
-    const isSuperAdmin = req.user!.role === 'SUPER_ADMIN';
+    const isSuperAdmin = isElevatedRole(req.user!.role);
     const isOrganizer = event.createdBy === createdBy;
     const isParticipant = event.registrations.some((r) => r.userId === createdBy);
 

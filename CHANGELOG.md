@@ -4,6 +4,51 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-26
+
+### feat: rol CHEMI, allowLateJoin para Magic y reorganización del header
+
+Lote de cambios estructurales en roles, permisos, eventos y navegación.
+
+**Rol CHEMI — nuevo rol real de base de datos:**
+- `server/prisma/schema.prisma`: `CHEMI` añadido al enum `UserRole`. Es el rol más elevado de la aplicación, por encima de `SUPER_ADMIN`.
+- `server/prisma/migrations/20260426000200_add_chemi_role/migration.sql` (nuevo): `ALTER TYPE "UserRole" ADD VALUE IF NOT EXISTS 'CHEMI'`; migra `chemimartinez@gmail.com` de `SUPER_ADMIN` a `CHEMI`.
+- `server/src/utils/roles.ts` (nuevo): funciones `isAdminLikeRole`, `isElevatedRole` e `isChemiRole` sobre `EffectiveUserRole = UserRole | 'CHEMI'`.
+- `client/src/utils/roles.ts` (nuevo): equivalentes en el cliente sobre el tipo `UserRole` del frontend.
+- `server/src/middleware/auth.ts`: `requireAdmin` y `requireSuperAdmin` usan las nuevas helpers en lugar de comparaciones literales.
+- `server/src/types/express.d.ts`: `req.user.role` tipado como `EffectiveUserRole`.
+- `client/src/types/auth.ts`: `UserRole` incluye `'CHEMI'`.
+- `client/src/contexts/AuthContext.tsx`: `isAdmin` calculado con `isAdminRole`.
+- `client/src/components/routes/AdminRoute.tsx`: usa `isAdminRole` del nuevo utils.
+
+**Permisos de impersonación y cambio de rol:**
+- `server/src/controllers/memberController.ts`:
+  - Impersonación restringida exclusivamente a `CHEMI` (antes era `SUPER_ADMIN`).
+  - `changeMemberRole`: `CHEMI` puede asignar `USER`, `ADMIN` o `SUPER_ADMIN`; `SUPER_ADMIN` puede asignar `USER` y `ADMIN` pero no `SUPER_ADMIN` ni tocar a `CHEMI`; el rol `CHEMI` es intocable por cualquiera.
+
+**Permisos colaterales actualizados para CHEMI:**
+- `server/src/controllers/authController.ts`, `documentController.ts`, `eventPhotoController.ts`, `eventResultController.ts`, `invitationController.ts`, `libraryLoansController.ts`, `memberController.ts`, `reportController.ts`: comprobaciones que antes miraban literalmente `SUPER_ADMIN` migradas a `isElevatedRole` / `isAdminLikeRole`.
+- `client/src/pages/Feedback.tsx`, `admin/Announcements.tsx`, `admin/Members.tsx`: idem en el frontend.
+- `server/src/controllers/documentController.ts`: corregido para usar el singleton de Prisma (`../config/database`) en lugar de instanciar `new PrismaClient()` propio.
+
+**allowLateJoin para Magic: The Gathering:**
+- `server/prisma/schema.prisma`: campo `allowLateJoin Boolean @default(false)` en el modelo `Event`.
+- `server/prisma/migrations/20260426000100_add_event_allow_late_join/migration.sql` (nuevo): `ALTER TABLE "Event" ADD COLUMN "allowLateJoin" BOOLEAN NOT NULL DEFAULT false`.
+- `server/src/utils/eventRules.ts` (nuevo): `MAGIC_THE_GATHERING_BGG_ID = '463'`, `isMagicTheGatheringBggId` y `resolveAllowLateJoin` (fuerza `true` si es Magic, respeta la petición solo si el actor es `CHEMI`).
+- `client/src/utils/eventRules.ts` (nuevo): `MAGIC_THE_GATHERING_BGG_ID` e `isMagicTheGatheringBggId` para el frontend.
+- `server/src/controllers/eventController.ts`: creación y edición de eventos aplican `resolveAllowLateJoin`; los guards de `ONGOING` comprueban `eventAllowsLateJoin`.
+- `server/src/controllers/invitationController.ts`: bloquea invitaciones en `ONGOING` a menos que `eventAllowsLateJoin` sea verdadero.
+- `client/src/pages/CreatePartida.tsx`, `EventDetail.tsx`: si el juego es Magic, el checkbox `allowLateJoin` aparece marcado y deshabilitado; si no, solo lo ve `CHEMI`.
+- `client/src/types/event.ts`: `allowLateJoin` añadido al tipo `Event`.
+
+**Header y navegación:**
+- `client/src/components/layout/Header.tsx`:
+  - `Calendario` pasa a ser un submenú dentro de `Eventos` (junto a `Preview semanal`).
+  - `Preview semanal` se retira de Administración y queda público dentro de `Eventos`.
+  - `Comunidad` y `Documentos` intercambian posición; `Documentos` queda después de `Comunidad`.
+  - Etiqueta de rol en el dropdown de usuario contempla `CHEMI` → muestra "Chemi".
+  - `isCombatZoneEnabledForUser` simplificado a `user?.role === 'CHEMI'` (eliminado id hardcodeado y check por email).
+
 ## 2026-04-25
 
 ### feat: ruleta de primer jugador con animaciones, logros y configuración de admin

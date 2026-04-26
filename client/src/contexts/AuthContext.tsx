@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/axios';
 import type { User, LoginData, ApiResponse } from '../types/auth';
+import { isAdminRole } from '../utils/roles';
 
 interface ImpersonatedUser {
   id: string;
@@ -125,7 +126,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     isLoading,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN',
+    isAdmin: isAdminRole(user?.role),
     impersonating,
     login,
     logout,

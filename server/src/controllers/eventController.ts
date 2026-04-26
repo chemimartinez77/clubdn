@@ -5,6 +5,8 @@ import { BadgeCategory, Prisma, RegistrationStatus } from '@prisma/client';
 import { checkAndUnlockBadges, processGameCategoryVote } from './badgeController';
 import { processEventPlayHistory } from './statsController';
 import { findUserIdsByPersonSearch, normalizeSearchTerm } from '../utils/personSearch';
+import { isAdminLikeRole } from '../utils/roles';
+import { isMagicTheGatheringBggId, resolveAllowLateJoin } from '../utils/eventRules';
 import {
   sendRegistrationJoinedEmail,
   sendRegistrationLeftEmail,
@@ -178,6 +180,38 @@ async function getGameSnapshot(gameId: string) {
   }
 
   return game;
+}
+
+function getEffectiveEventStatus(event: {
+  status: string;
+  date: Date;
+  durationHours?: number | null;
+  durationMinutes?: number | null;
+}) {
+  if (event.status === 'CANCELLED' || event.status === 'COMPLETED') {
+    return event.status;
+  }
+
+  const now = new Date();
+  const start = new Date(event.date);
+  const durationMinutes = ((event.durationHours ?? 0) * 60) + (event.durationMinutes ?? 0);
+
+  if (durationMinutes > 0) {
+    const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+    if (now >= end) {
+      return 'COMPLETED';
+    }
+  }
+
+  if (now >= start) {
+    return 'ONGOING';
+  }
+
+  return 'SCHEDULED';
+}
+
+function eventAllowsLateJoin(event: { allowLateJoin?: boolean | null; bggId?: string | null }) {
+  return Boolean(event.allowLateJoin) || isMagicTheGatheringBggId(event.bggId);
 }
 
 function normalizeExpansionInputs(raw: unknown): EventExpansionInput[] {
@@ -575,6 +609,7 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
 
         return {
           ...event,
+          allowLateJoin: eventAllowsLateJoin(event),
           expansions: serializeEventExpansions(event.expansions),
           registrations: undefined, // No exponer lista completa en el listado
           eventGuests: undefined,
@@ -645,6 +680,7 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       data: {
           event: {
             ...event,
+            allowLateJoin: eventAllowsLateJoin(event),
             expansions: serializeEventExpansions(event.expansions),
             eventGuests: undefined,
             invitations: event.invitations.map(invitation => ({
@@ -698,7 +734,8 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
       startMinute,
       durationHours,
       durationMinutes,
-      attend
+      attend,
+      allowLateJoin
     } = req.body;
 
     if (!userId) {
@@ -710,8 +747,9 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
     }
 
     // Validar permisos según tipo de evento
-    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+    const isAdmin = isAdminLikeRole(userRole);
     const eventType = type || 'OTROS';
+    const normalizedAllowLateJoin = resolveAllowLateJoin(allowLateJoin, bggId, userRole);
 
     if (!isAdmin && eventType !== 'PARTIDA') {
       res.status(403).json({
@@ -787,6 +825,7 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
           durationHours: durationHours !== undefined ? parseInt(durationHours) : null,
           durationMinutes: durationMinutes !== undefined ? parseInt(durationMinutes) : null,
           requiresApproval: req.body.requiresApproval !== undefined ? req.body.requiresApproval === true || req.body.requiresApproval === 'true' : true,
+          allowLateJoin: normalizedAllowLateJoin,
           createdBy: userId
         },
       });
@@ -890,7 +929,7 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
       title, description, date, location, address, maxAttendees, status,
       gameName, gameImage, bggId, expansions, linkedNext, gameCategory,
       startHour, startMinute, durationHours, durationMinutes,
-      requiresApproval
+      requiresApproval, allowLateJoin
     } = req.body;
 
     if (!eventId) {
@@ -917,7 +956,7 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
     }
 
     // Verificar permisos (admin o organizador)
-    if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN' && existingEvent.createdBy !== userId) {
+    if (!isAdminLikeRole(userRole) && existingEvent.createdBy !== userId) {
       res.status(403).json({
         success: false,
         message: 'No tienes permiso para editar este evento'
@@ -973,6 +1012,12 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
       }
     }
 
+    const normalizedAllowLateJoin = resolveAllowLateJoin(
+      allowLateJoin,
+      bggId !== undefined ? bggId : existingEvent.bggId,
+      userRole
+    );
+
     const updateData: Record<string, unknown> = {
       ...(title && { title }),
       ...(description && { description }),
@@ -988,7 +1033,8 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
       ...(startMinute !== undefined && { startMinute: startMinute !== null ? parseInt(startMinute) : null }),
       ...(durationHours !== undefined && { durationHours: durationHours !== null ? parseInt(durationHours) : null }),
       ...(durationMinutes !== undefined && { durationMinutes: durationMinutes !== null ? parseInt(durationMinutes) : null }),
-      ...(requiresApproval !== undefined && { requiresApproval: requiresApproval === true || requiresApproval === 'true' })
+      ...(requiresApproval !== undefined && { requiresApproval: requiresApproval === true || requiresApproval === 'true' }),
+      ...((allowLateJoin !== undefined || bggId !== undefined) && { allowLateJoin: normalizedAllowLateJoin })
     };
 
     if (location !== undefined) {
@@ -1172,7 +1218,7 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
         return;
       }
 
-      const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+      const isAdmin = isAdminLikeRole(userRole);
       if (!isAdmin && event.createdBy !== userId) {
         res.status(403).json({
           success: false,
@@ -1279,9 +1325,11 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
       });
       return;
     }
+    const effectiveStatus = getEffectiveEventStatus(event);
+    const allowLateJoin = eventAllowsLateJoin(event);
 
     // Validar que el evento no esté cancelado o completado
-    if (event.status === 'CANCELLED' || event.status === 'COMPLETED') {
+    if (effectiveStatus === 'CANCELLED' || effectiveStatus === 'COMPLETED') {
       res.status(400).json({
         success: false,
         message: 'No puedes registrarte a un evento cancelado o completado'
@@ -1289,11 +1337,10 @@ export const registerToEvent = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    // Validar que el evento sea futuro
-    if (new Date(event.date) <= now) {
+    if (effectiveStatus === 'ONGOING' && !allowLateJoin) {
       res.status(400).json({
         success: false,
-        message: 'No puedes registrarte a un evento pasado'
+        message: 'No puedes registrarte una vez iniciada la partida'
       });
       return;
     }
@@ -1715,7 +1762,7 @@ export const removeParticipant = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+    const isAdmin = isAdminLikeRole(userRole);
     const isOrganizer = registration.event?.createdBy === userId;
 
     if (!isAdmin && !isOrganizer) {
@@ -1985,9 +2032,20 @@ export const addMemberToEvent = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const isAdmin = actorRole === 'ADMIN' || actorRole === 'SUPER_ADMIN';
+    const isAdmin = isAdminLikeRole(actorRole);
     if (!isAdmin && event.createdBy !== actorId) {
       res.status(403).json({ success: false, message: 'Sin permiso para añadir miembros' });
+      return;
+    }
+
+    const effectiveStatus = getEffectiveEventStatus(event);
+    if (effectiveStatus === 'CANCELLED' || effectiveStatus === 'COMPLETED') {
+      res.status(400).json({ success: false, message: 'La partida ya no admite incorporaciones' });
+      return;
+    }
+
+    if (effectiveStatus === 'ONGOING' && !eventAllowsLateJoin(event)) {
+      res.status(400).json({ success: false, message: 'No se puede apuntar a miembros una vez iniciada la partida' });
       return;
     }
 
@@ -2177,7 +2235,7 @@ export const getPendingRegistrations = async (req: Request, res: Response): Prom
     }
 
     // Solo organizador o admin pueden ver registros pendientes
-    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+    const isAdmin = isAdminLikeRole(userRole);
     if (!isAdmin && event.createdBy !== userId) {
       res.status(403).json({
         success: false,
@@ -2274,7 +2332,7 @@ export const approveRegistration = async (req: Request, res: Response): Promise<
     }
 
     // Solo organizador o admin pueden aprobar
-    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+    const isAdmin = isAdminLikeRole(userRole);
     if (!isAdmin && registration.event.createdBy !== userId) {
       res.status(403).json({
         success: false,
@@ -2392,7 +2450,7 @@ export const rejectRegistration = async (req: Request, res: Response): Promise<v
     }
 
     // Solo organizador o admin pueden rechazar
-    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+    const isAdmin = isAdminLikeRole(userRole);
     if (!isAdmin && registration.event.createdBy !== userId) {
       res.status(403).json({
         success: false,
@@ -2516,7 +2574,7 @@ export const completeEvent = async (req: Request, res: Response): Promise<void> 
 };
 
 /**
- * El organizador confirma que la partida SÍ se disputó.
+ * El organizador confirma que la partida sí se disputó.
  * Crea los GamePlayHistory y desbloquea badges.
  */
 export const confirmEventPlayed = async (req: Request, res: Response): Promise<void> => {
@@ -2646,7 +2704,7 @@ export const validateGameQr = async (req: Request, res: Response): Promise<void>
     const now = new Date();
     const eventDate = new Date(event.date);
 
-    // event.date ya almacena la hora de inicio en UTC — usarlo directamente
+    // event.date ya almacena la hora de inicio en UTC; usarlo directamente
     const eventStart = eventDate;
 
     // Ventana de apertura: 1 hora antes del inicio
@@ -2683,7 +2741,7 @@ export const validateGameQr = async (req: Request, res: Response): Promise<void>
         data: { eventId, scannerId, scannedId: scannedUserId }
       });
     } catch {
-      // Ya existe esta validación exacta — idempotente
+      // Ya existe esta validación exacta; operación idempotente
       res.status(200).json({ success: true, message: 'La partida ya estaba validada', alreadyValidated: true });
       return;
     }

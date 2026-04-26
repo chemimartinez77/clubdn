@@ -1,6 +1,6 @@
 // server/src/controllers/invitationController.ts
 import { Request, Response } from 'express';
-import { BadgeCategory, InvitationStatus, UserRole, Prisma } from '@prisma/client';
+import { BadgeCategory, InvitationStatus, Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { generateInvitationToken } from '../utils/invitationToken';
 import { checkAndUnlockBadges } from './badgeController';
@@ -9,6 +9,8 @@ import {
   findInvitationIdsByPersonSearch,
   normalizeSearchTerm,
 } from '../utils/personSearch';
+import { isMagicTheGatheringBggId } from '../utils/eventRules';
+import { isAdminLikeRole } from '../utils/roles';
 const DNI_REGEX = /^\d{8}[A-HJ-NP-TV-Z]$/i;
 const NIE_REGEX = /^[XYZ]\d{7}[A-HJ-NP-TV-Z]$/i;
 const DNI_LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE';
@@ -64,6 +66,37 @@ const startOfDay = (date: Date) => {
   copy.setHours(0, 0, 0, 0);
   return copy;
 };
+
+const getEffectiveEventStatus = (event: {
+  status: string;
+  date: Date;
+  durationHours?: number | null;
+  durationMinutes?: number | null;
+}) => {
+  if (event.status === 'CANCELLED' || event.status === 'COMPLETED') {
+    return event.status;
+  }
+
+  const now = new Date();
+  const start = new Date(event.date);
+  const durationMinutes = ((event.durationHours ?? 0) * 60) + (event.durationMinutes ?? 0);
+
+  if (durationMinutes > 0) {
+    const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+    if (now >= end) {
+      return 'COMPLETED';
+    }
+  }
+
+  if (now >= start) {
+    return 'ONGOING';
+  }
+
+  return 'SCHEDULED';
+};
+
+const eventAllowsLateJoin = (event: { allowLateJoin?: boolean | null; bggId?: string | null }) =>
+  Boolean(event.allowLateJoin) || isMagicTheGatheringBggId(event.bggId);
 
 // Devuelve el timestamp UTC de las 06:00:00 AM hora Madrid del "día de contador" de now.
 // Si en Madrid son menos de las 6AM, el día de referencia es el anterior.
@@ -186,6 +219,10 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
           date: true,
           status: true,
           title: true,
+          bggId: true,
+          allowLateJoin: true,
+          durationHours: true,
+          durationMinutes: true,
           maxAttendees: true,
           requiresApproval: true,
           createdBy: true,
@@ -205,18 +242,21 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    if (event.status === 'CANCELLED' || event.status === 'COMPLETED') {
+    const effectiveStatus = getEffectiveEventStatus(event);
+
+    if (effectiveStatus === 'CANCELLED' || effectiveStatus === 'COMPLETED') {
       res.status(400).json({ success: false, message: 'Evento no disponible' });
+      return;
+    }
+
+    if (effectiveStatus === 'ONGOING' && !eventAllowsLateJoin(event)) {
+      res.status(400).json({ success: false, message: 'No se pueden registrar invitados una vez iniciada la partida' });
       return;
     }
 
     const now = new Date();
     const eventDay = startOfDay(new Date(event.date));
     const today = startOfDay(now);
-    if (eventDay < today) {
-      res.status(400).json({ success: false, message: 'Evento ya pasado' });
-      return;
-    }
 
       const confirmedCount = event.registrations.length + event.invitations.length;
     if (confirmedCount >= event.maxAttendees) {
@@ -224,7 +264,7 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const isAdmin = userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN;
+    const isAdmin = isAdminLikeRole(userRole);
     const isOrganizer = event.createdBy === userId;
     const isAttendee = event.registrations.some(r => r.userId === userId);
 
@@ -349,11 +389,11 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
       },
       message: needsApproval
         ? 'Invitación enviada. Pendiente de aprobación del organizador.'
-        : 'Invitacion creada'
+        : 'Invitación creada'
     });
   } catch (error) {
-    console.error('[INVITATION] Error al crear invitacion:', error);
-    res.status(500).json({ success: false, message: 'Error al crear invitacion' });
+    console.error('[INVITATION] Error al crear invitación:', error);
+    res.status(500).json({ success: false, message: 'Error al crear invitación' });
   }
 };
 
@@ -420,7 +460,7 @@ export const cancelInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const isAdmin = userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN;
+    const isAdmin = isAdminLikeRole(userRole);
     const isOwner = invitation.memberId === userId;
     const isOrganizer = invitation.event?.createdBy === userId;
 
@@ -647,7 +687,7 @@ export const expireInvitations = async (_req: Request, res: Response): Promise<v
   }
 };
 
-// ── Aprobación de invitaciones pendientes ──────────────────────────────────
+// -------- Aprobación de invitaciones pendientes --------
 
 export const getPendingInvitations = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -711,7 +751,7 @@ export const approveInvitation = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    const isAdmin = userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN;
+    const isAdmin = isAdminLikeRole(userRole);
     if (!isAdmin && event.createdBy !== userId) {
       res.status(403).json({ success: false, message: 'No autorizado' });
       return;
@@ -803,7 +843,7 @@ export const rejectInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const isAdmin = userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN;
+    const isAdmin = isAdminLikeRole(userRole);
     if (!isAdmin && event.createdBy !== userId) {
       res.status(403).json({ success: false, message: 'No autorizado' });
       return;
@@ -844,7 +884,7 @@ export const rejectInvitation = async (req: Request, res: Response): Promise<voi
   }
 };
 
-// ── Historial de invitados (admin) ────────────────────────────────────────────
+// -------- Historial de invitados (admin) --------
 export const getInvitationHistory = async (req: Request, res: Response): Promise<void> => {
   try {
     const { page = '1', limit = '50', search = '', memberId = '' } = req.query as Record<string, string>;

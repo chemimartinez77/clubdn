@@ -734,7 +734,7 @@ export default function Members() {
                                   Reactivar
                                 </Button>
                               )}
-                              {currentUser?.role === 'SUPER_ADMIN' && member.id !== currentUser.id && (
+                              {(currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'CHEMI') && member.id !== currentUser.id && (
                                 <Button
                                   variant="outline"
                                   size="sm"

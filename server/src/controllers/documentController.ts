@@ -1,9 +1,10 @@
 // server/src/controllers/documentController.ts
 import { Request, Response } from 'express';
-import { PrismaClient, DocumentVisibility, UserRole } from '@prisma/client';
+import { DocumentVisibility } from '@prisma/client';
 import { v2 as cloudinary } from 'cloudinary';
-
-const prisma = new PrismaClient();
+import type { EffectiveUserRole } from '../utils/roles';
+import { isAdminLikeRole, isElevatedRole } from '../utils/roles';
+import { prisma } from '../config/database';
 
 // Configurar Cloudinary
 cloudinary.config({
@@ -28,16 +29,14 @@ const ALLOWED_MIME_TYPES = [
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
 // Verificar si el usuario es admin
-const isAdmin = (role: UserRole): boolean => {
-  return role === 'ADMIN' || role === 'SUPER_ADMIN';
-};
+const isAdmin = (role: EffectiveUserRole): boolean => isAdminLikeRole(role);
 
 /**
  * Listar documentos (filtrados según rol del usuario)
  */
 export const getDocuments = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = req.user?.role as UserRole;
+    const userRole = req.user?.role as EffectiveUserRole;
     const { search, visibility } = req.query;
 
     // Construir filtro base según rol
@@ -46,7 +45,7 @@ export const getDocuments = async (req: Request, res: Response): Promise<void> =
 
     if (userRole === 'ADMIN') {
       visibilityFilter = ['PUBLIC', 'SOCIOS', 'ADMIN'];
-    } else if (userRole === 'SUPER_ADMIN') {
+    } else if (isElevatedRole(userRole)) {
       visibilityFilter = ['PUBLIC', 'SOCIOS', 'ADMIN', 'SUPER_ADMIN'];
     } else if (userId) {
       // Usuario normal: comprobar si tiene membresía SOCIO
@@ -117,7 +116,7 @@ export const getDocuments = async (req: Request, res: Response): Promise<void> =
 export const uploadDocument = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?.userId;
-    const userRole = req.user?.role as UserRole;
+    const userRole = req.user?.role as EffectiveUserRole;
     const file = req.file;
     const { title, visibility } = req.body;
 
@@ -251,7 +250,7 @@ export const uploadDocument = async (req: Request, res: Response): Promise<void>
  */
 export const updateDocument = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = req.user?.role as UserRole;
+    const userRole = req.user?.role as EffectiveUserRole;
     const { id } = req.params;
     const { title, visibility } = req.body;
 
@@ -321,7 +320,7 @@ export const updateDocument = async (req: Request, res: Response): Promise<void>
  */
 export const deleteDocument = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = req.user?.role as UserRole;
+    const userRole = req.user?.role as EffectiveUserRole;
     const { id } = req.params;
 
     // Verificar que sea admin
@@ -403,7 +402,7 @@ export const trackDownload = async (req: Request, res: Response): Promise<void> 
  */
 export const getDocumentStats = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = req.user?.role as UserRole;
+    const userRole = req.user?.role as EffectiveUserRole;
 
     if (!isAdmin(userRole)) {
       res.status(403).json({

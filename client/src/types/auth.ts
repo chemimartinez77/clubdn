@@ -1,5 +1,5 @@
 // client/src/types/auth.ts
-export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
+export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN' | 'CHEMI';
 export type UserStatus =
   | 'PENDING_VERIFICATION'
   | 'PENDING_APPROVAL'

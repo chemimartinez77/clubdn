@@ -397,7 +397,7 @@ export const cancelLoan = async (req: Request, res: Response): Promise<void> => 
 
     if (!loan) { res.status(404).json({ success: false, message: 'Préstamo no encontrado' }); return; }
 
-    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || String(userRole) === 'CHEMI';
     if (!isAdmin && loan.userId !== userId) { res.status(403).json({ success: false, message: 'No tienes permiso' }); return; }
     if (loan.status !== 'REQUESTED') { res.status(400).json({ success: false, message: 'Solo se pueden cancelar solicitudes pendientes' }); return; }
 

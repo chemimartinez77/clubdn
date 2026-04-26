@@ -1,13 +1,14 @@
 // server/src/middleware/auth.ts
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { UserRole } from '@prisma/client';
 import { prisma } from '../config/database';
+import type { EffectiveUserRole } from '../utils/roles';
+import { isAdminLikeRole, isElevatedRole } from '../utils/roles';
 
 interface JwtPayload {
   userId: string;
   email: string;
-  role: UserRole;
+  role: EffectiveUserRole;
   impersonatedBy?: string;
 }
 
@@ -48,7 +49,10 @@ export const authenticate = async (
     }
 
     // Adjuntar info del usuario al request
-    req.user = decoded;
+    req.user = {
+      ...decoded,
+      role: decoded.role
+    };
 
     next();
   } catch (error) {
@@ -64,7 +68,7 @@ export const requireAdmin = (
   res: Response,
   next: NextFunction
 ): void => {
-  if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
+  if (!isAdminLikeRole(req.user?.role)) {
     res.status(403).json({
       success: false,
       message: 'Acceso denegado. Se requieren permisos de administrador.'
@@ -79,10 +83,10 @@ export const requireSuperAdmin = (
   res: Response,
   next: NextFunction
 ): void => {
-  if (req.user?.role !== 'SUPER_ADMIN') {
+  if (!isElevatedRole(req.user?.role)) {
     res.status(403).json({
       success: false,
-      message: 'Acceso denegado. Se requieren permisos de superadministrador.'
+      message: 'Acceso denegado. Se requieren permisos elevados.'
     });
     return;
   }
