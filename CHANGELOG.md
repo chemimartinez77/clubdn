@@ -6,6 +6,13 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-27
 
+### chore: aviso de recarga en modal de invitación y Page Visibility API en notificaciones
+
+Dos pequeñas mejoras de UX/eficiencia sin cambios de lógica:
+
+- `client/src/pages/EventDetail.tsx`: añadido párrafo informativo en el modal "Invitar a alguien" indicando al socio que debe recargar la página para ver el nombre del invitado una vez que este haya aceptado. Decisión tomada frente a alternativas como polling o WebSockets por ser la opción con cero coste de tráfico y suficiente para el flujo real (el socio siempre recibe confirmación por WhatsApp antes de mirar la lista).
+- `client/src/components/notifications/NotificationBell.tsx`: el `setInterval` que consulta el contador de notificaciones no leídas cada 2 minutos ahora comprueba `document.hidden` antes de hacer la petición. Si la pestaña está en segundo plano (otra pestaña activa, ventana minimizada en escritorio) se omite la llamada. Los navegadores móviles ya congelan los timers al bloquear el dispositivo, pero este cambio cubre el caso de escritorio con pestaña oculta.
+
 ### feat: nuevo flujo de invitación por enlace con QR para el invitado
 
 Rediseño completo del sistema de invitación a partidas. El flujo anterior requería que el socio introdujera el nombre y DNI del invitado manualmente. El nuevo flujo es: el socio genera un enlace y se lo envía al invitado por WhatsApp → el invitado rellena sus propios datos → recibe un QR personal → el socio escanea ese QR en la puerta para hacer el check-in.

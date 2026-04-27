@@ -2326,6 +2326,9 @@ export default function EventDetail() {
           <p className="text-sm text-[var(--color-textSecondary)]">
             Genera un enlace único y envíaselo a tu invitado por WhatsApp. Él rellenará sus datos y recibirá un QR para entrar al club. Al generar el enlace se creará una reserva de plaza por 15 minutos para que el invitado pueda apuntarse.
           </p>
+          <p className="text-sm text-[var(--color-textSecondary)]">
+            Cuando tu invitado acepte, recarga la página para ver su nombre en la lista de asistentes.
+          </p>
 
           {!shareLinkUrl ? (
             <Button
