@@ -58,6 +58,7 @@ export default function EventDetail() {
   const queryClient = useQueryClient();
   const { isAdmin, user } = useAuth();
   const isChemi = isChemiRole(user?.role);
+  const [disputeConfirmModal, setDisputeConfirmModal] = useState<'played' | 'not-played' | null>(null);
   const [isShareLinkModalOpen, setIsShareLinkModalOpen] = useState(false);
   const [shareLinkUrl, setShareLinkUrl] = useState<string | null>(null);
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
@@ -568,6 +569,26 @@ export default function EventDetail() {
     onError: (err: unknown) => {
       showError(getErrorMessage(err, 'Error al rechazar la invitación'));
     }
+  });
+
+  const confirmPlayedMutation = useMutation({
+    mutationFn: () => api.post(`/api/events/${id}/confirm-played`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      setDisputeConfirmModal(null);
+      success('Partida confirmada como disputada');
+    },
+    onError: (err: unknown) => showError(getErrorMessage(err, 'Error al confirmar'))
+  });
+
+  const confirmNotPlayedMutation = useMutation({
+    mutationFn: () => api.post(`/api/events/${id}/confirm-not-played`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      setDisputeConfirmModal(null);
+      success('Partida marcada como no disputada');
+    },
+    onError: (err: unknown) => showError(getErrorMessage(err, 'Error al confirmar'))
   });
 
   const generateShareLinkMutation = useMutation({
@@ -1720,6 +1741,35 @@ export default function EventDetail() {
           </Card>
         )}
 
+        {/* Confirmación de disputa por el organizador */}
+        {isOrganizerOrAdmin && isPartida && event.status === 'COMPLETED' && event.disputeResult === null && (
+          <Card>
+            <CardHeader>
+              <CardTitle>¿Se celebró esta partida?</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-[var(--color-textSecondary)]">
+                Solo podrás marcarlo una vez y no podrá deshacerse.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="primary"
+                  onClick={() => setDisputeConfirmModal('played')}
+                  className="flex-1"
+                >
+                  Sí, se jugó
+                </Button>
+                <Button
+                  onClick={() => setDisputeConfirmModal('not-played')}
+                  className="flex-1"
+                >
+                  No llegó a jugarse
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Attendees */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Confirmed */}
@@ -2316,6 +2366,43 @@ export default function EventDetail() {
         source={selectedGameSource}
       />
 
+      {disputeConfirmModal !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.75)' }}
+          onClick={() => setDisputeConfirmModal(null)}
+        >
+          <div
+            className="bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <h2 className="text-base font-bold text-[var(--color-text)]">¿Estás seguro?</h2>
+            <p className="text-sm text-[var(--color-textSecondary)]">
+              Esta acción es irreversible. Una vez confirmada no podrás cambiarla.
+            </p>
+            <div className="flex gap-3 mt-2">
+              <Button
+                onClick={() => setDisputeConfirmModal(null)}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1"
+                disabled={confirmPlayedMutation.isPending || confirmNotPlayedMutation.isPending}
+                onClick={() => {
+                  if (disputeConfirmModal === 'played') confirmPlayedMutation.mutate();
+                  else confirmNotPlayedMutation.mutate();
+                }}
+              >
+                {(confirmPlayedMutation.isPending || confirmNotPlayedMutation.isPending) ? 'Confirmando...' : 'Confirmar'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Modal
         isOpen={isShareLinkModalOpen}
         onClose={handleCloseShareLinkModal}
@@ -2330,16 +2417,7 @@ export default function EventDetail() {
             Cuando tu invitado acepte, recarga la página para ver su nombre en la lista de asistentes.
           </p>
 
-          {!shareLinkUrl ? (
-            <Button
-              onClick={() => generateShareLinkMutation.mutate()}
-              disabled={generateShareLinkMutation.isPending || !canInvite}
-              variant="primary"
-              className="w-full"
-            >
-              {generateShareLinkMutation.isPending ? 'Generando...' : 'Generar enlace de invitación'}
-            </Button>
-          ) : (
+          {shareLinkUrl && (
             <div className="space-y-3">
               <div className="flex items-center gap-2 p-3 bg-[var(--color-tableRowHover)] border border-[var(--color-cardBorder)] rounded-lg">
                 <p className="text-sm text-[var(--color-text)] flex-1 break-all">{shareLinkUrl}</p>
@@ -2359,6 +2437,17 @@ export default function EventDetail() {
               </p>
             </div>
           )}
+
+          <Button
+            onClick={() => generateShareLinkMutation.mutate()}
+            disabled={generateShareLinkMutation.isPending || !canInvite}
+            variant="primary"
+            className="w-full"
+          >
+            {generateShareLinkMutation.isPending
+              ? 'Generando...'
+              : shareLinkUrl ? 'Reservar otra plaza' : 'Generar enlace de invitación'}
+          </Button>
 
           {!canInvite && (
             <p className="text-sm text-[var(--color-textSecondary)]">

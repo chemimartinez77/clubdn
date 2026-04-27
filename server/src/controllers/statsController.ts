@@ -378,7 +378,8 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
         event: {
           type: 'PARTIDA',
           status: EventStatus.COMPLETED,
-          gameName: { not: null }
+          gameName: { not: null },
+          disputeResult: true
         }
       },
       select: {
@@ -609,7 +610,8 @@ export const getUserDetailedStats = async (req: Request, res: Response): Promise
         status: RegistrationStatus.CONFIRMED,
         event: {
           type: 'PARTIDA',
-          status: EventStatus.COMPLETED
+          status: EventStatus.COMPLETED,
+          disputeResult: true
         }
       },
       select: {
@@ -922,7 +924,8 @@ export const getUserGamesPlayed = async (req: Request, res: Response): Promise<v
         status: RegistrationStatus.CONFIRMED,
         event: {
           type: 'PARTIDA',
-          status: EventStatus.COMPLETED
+          status: EventStatus.COMPLETED,
+          disputeResult: true
         }
       },
       select: {
@@ -1134,7 +1137,8 @@ export const getClubStats = async (_req: Request, res: Response): Promise<void> 
       where: {
         type: 'PARTIDA',
         status: EventStatus.COMPLETED,
-        gameName: { not: null }
+        gameName: { not: null },
+        disputeResult: true
       },
       select: {
         gameName: true,

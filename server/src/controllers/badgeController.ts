@@ -167,7 +167,7 @@ async function getCategoryCount(userId: string, category: BadgeCategory): Promis
   if (category === BadgeCategory.REPETIDOR) {
     const groups = await prisma.gamePlayHistory.groupBy({
       by: ['gameName'],
-      where: { userId },
+      where: { userId, event: { disputeResult: true } },
       having: { gameName: { _count: { gte: 3 } } }
     });
     return groups.length;
@@ -241,7 +241,7 @@ async function getCategoryCount(userId: string, category: BadgeCategory): Promis
     `;
     return Number(result[0]?.count ?? 0);
   }
-  return prisma.gamePlayHistory.count({ where: { userId, gameCategory: category } });
+  return prisma.gamePlayHistory.count({ where: { userId, gameCategory: category, event: { disputeResult: true } } });
 }
 
 async function calculateBadgeProgress(userId: string) {
@@ -417,7 +417,7 @@ export const getGamePlayHistory = async (req: Request, res: Response): Promise<v
     }
 
     const history = await prisma.gamePlayHistory.findMany({
-      where: { userId },
+      where: { userId, event: { disputeResult: true } },
       include: {
         event: {
           select: {
@@ -472,7 +472,8 @@ export const getGameStats = async (req: Request, res: Response): Promise<void> =
       const uniqueGames = await prisma.gamePlayHistory.findMany({
         where: {
           userId,
-          gameCategory: category
+          gameCategory: category,
+          event: { disputeResult: true }
         },
         select: {
           gameName: true

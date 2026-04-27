@@ -6,6 +6,26 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-27
 
+### feat: filtrar partidas no celebradas en estadísticas y botones de disputa en EventDetail
+
+Dos mejoras relacionadas con la confirmación de si una partida se celebró o no:
+
+**Filtro en estadísticas y badges (`disputeResult = true` obligatorio):**
+- `server/src/controllers/statsController.ts`: las queries `getUserStats`, `getUserDetailedStats`, `getUserGamesPlayed` y `getClubStats` ahora exigen `disputeResult: true` en el filtro del evento. Antes bastaba con `status: COMPLETED`, lo que hacía que partidas no celebradas (o sin confirmar) contaminaran las estadísticas.
+- `server/src/controllers/badgeController.ts`: mismo filtro aplicado en `getGamePlayHistory`, `getGameStats` y los dos cálculos de `getCategoryCount` (REPETIDOR y categorías de juego).
+- Decisión: no se eliminan los registros `GamePlayHistory` — se filtran en consulta. Los datos permanecen por si el organizador corrige después.
+
+**Botones de disputa en EventDetail (`client/src/pages/EventDetail.tsx`):**
+- El organizador ve una nueva tarjeta "¿Se celebró esta partida?" cuando el evento está `COMPLETED` y `disputeResult === null` (sin confirmar aún). Muestra los botones "Sí, se jugó" y "No llegó a jugarse".
+- Al pulsar cualquiera aparece una modal de advertencia de irreversibilidad con botón "Confirmar".
+- Llama a los endpoints existentes `POST /api/events/:id/confirm-played` y `POST /api/events/:id/confirm-not-played`.
+- Nuevas mutations: `confirmPlayedMutation` y `confirmNotPlayedMutation`.
+- Nuevo estado: `disputeConfirmModal: 'played' | 'not-played' | null`.
+
+**Notificación de disputa:**
+- `client/src/components/notifications/NotificationBell.tsx`: el click en una notificación `EVENT_DISPUTE_CONFIRMATION` ya no abre el modal `DisputeConfirmationModal` sino que redirige directamente al detalle de la partida, donde están los botones.
+- `server/src/services/notificationService.ts`: texto de la notificación actualizado para indicar que la confirmación se hace en el detalle de la partida.
+
 ### chore: aviso de recarga en modal de invitación y Page Visibility API en notificaciones
 
 Dos pequeñas mejoras de UX/eficiencia sin cambios de lógica:

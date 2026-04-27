@@ -134,8 +134,13 @@ export default function NotificationBell() {
     switch (notification.type) {
       case 'EVENT_DISPUTE_CONFIRMATION':
         setIsOpen(false);
-        setDisputeNotification(notification);
-        return;
+        if (notification.metadata && typeof notification.metadata === 'object') {
+          const metadata = notification.metadata as { eventId?: string };
+          if (metadata.eventId) {
+            navigate(`/events/${metadata.eventId}`);
+          }
+        }
+        break;
 
       case 'ADMIN_NEW_USER':
         navigate('/admin/pending-approvals', { state: { refreshPending: true } });

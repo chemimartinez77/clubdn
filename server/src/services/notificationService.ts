@@ -454,7 +454,7 @@ export const notifyEventDisputeConfirmation = async (
     userId: organizerId,
     type: 'EVENT_DISPUTE_CONFIRMATION',
     title: '¿Se disputó esta partida?',
-    message: `La partida "${eventTitle}" ya ha finalizado. ¿Llegó a disputarse?`,
+    message: `La partida "${eventTitle}" ya ha finalizado. ¿Llegó a disputarse? Confírmalo en el detalle de la partida.`,
     metadata: { eventId, eventTitle },
   });
 };
