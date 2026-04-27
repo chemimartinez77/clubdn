@@ -19,8 +19,8 @@ export default function SevenWondersDuelHub() {
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
       <div className="mx-auto flex min-h-screen max-w-4xl flex-col px-4 py-8">
         <button
-          onClick={() => navigate('/azul/combatzone')}
-          className="mb-6 w-fit text-xs text-[var(--color-textSecondary)] transition-colors hover:text-[var(--color-text)]"
+          onClick={() => navigate('/combatzone')}
+          className="flex items-center gap-2 text-sm font-medium text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors"
         >
           {'<-'} Combat Zone
         </button>
@@ -69,8 +69,8 @@ export default function SevenWondersDuelHub() {
 
           <div className="mt-6 flex flex-wrap gap-3">
             <button
-              onClick={() => navigate('/azul/combatzone')}
-              className="rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              onClick={() => navigate('/combatzone')}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-[var(--color-text)] bg-[var(--color-surface)] hover:bg-[var(--color-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary)] transition-colors"
             >
               Volver a Combat Zone
             </button>

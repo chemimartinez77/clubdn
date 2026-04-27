@@ -4,6 +4,34 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-27 (sesión 3)
+
+### refactor: unificar rutas de Combat Zone bajo `/combatzone/`
+
+Todas las rutas relacionadas con la Combat Zone estaban dispersas con prefijos inconsistentes (`/azul/combatzone`, `/viernes`, `/7-wonders-duel`, `/azul/combatzone/centipede`). Se unifican todas bajo el prefijo `/combatzone/` para reflejar que la Combat Zone es una sección independiente del juego Azul.
+
+**Cambios de rutas:**
+- `/azul/combatzone` → `/combatzone` (hub principal)
+- `/azul/combatzone/:id` → `/combatzone/azul/:id` (partida de Azul)
+- `/azul/combatzone/coming-soon` → `/combatzone/coming-soon`
+- `/azul/combatzone/centipede` → `/combatzone/centipede`
+- `/viernes` → `/combatzone/viernes`
+- `/viernes/:id` → `/combatzone/viernes/:id`
+- `/7-wonders-duel` → `/combatzone/7-wonders-duel`
+
+**Archivos modificados:**
+- `client/src/App.tsx`: actualizadas todas las definiciones de `<Route>` y el guard `CombatZoneRoute`.
+- `client/src/components/layout/Header.tsx`: enlace del menú actualizado a `/combatzone`; el item de Combat Zone pasa de texto plano con "Coming soon" a tarjeta con icono `Swords`, descripción breve y badge "BETA".
+- `client/src/pages/azul/CombatZone.tsx`: rutas en `COMBAT_ZONE_GAMES` y en los `navigate()` al crear/abrir partida actualizadas.
+- `client/src/pages/azul/AzulGame.tsx`: botón breadcrumb apunta a `/combatzone`.
+- `client/src/pages/centipede/CentipedeGame.tsx`: botón "volver" apunta a `/combatzone`.
+- `client/src/pages/sevenWondersDuel/SevenWondersDuelHub.tsx`: botones "volver" apuntan a `/combatzone`.
+- `client/src/pages/viernes/ViernesHub.tsx`: botón "volver" y navegación a partidas actualizados.
+- `client/src/components/combatzone/viernes/ViernesBoard.tsx`: botones "Volver al hub" y "Nueva partida" en el banner de fin de partida actualizados.
+- `client/src/hooks/useViernesGame.ts`: `navigate` tras crear partida actualizado a `/combatzone/viernes/:id`.
+
+---
+
 ## 2026-04-27 (sesión 2)
 
 ### fix: corregir onboarding saltado en nuevos usuarios aprobados

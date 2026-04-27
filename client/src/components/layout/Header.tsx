@@ -242,16 +242,24 @@ export default function Header() {
                     </Link>
                     {isCombatZoneEnabledForUser ? (
                       <Link
-                        to="/azul/combatzone"
-                        className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
-                        onClick={() => setIsGamesMenuOpen(false)}
+                        to="/combatzone"
+                        className="group flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-all duration-300 border border-transparent hover:border-gray-100"
+                        onClick={() => setActiveMenu(null)}
                       >
-                        <span className="block leading-tight">⚠️ Combat Zone</span>
-                        <span className="block text-[10px] opacity-70 leading-tight">Coming soon</span>
+                        <div className="mt-1 p-2 bg-red-50 text-red-600 rounded-lg group-hover:scale-110 group-hover:bg-red-100 transition-all duration-300">
+                          <Swords className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                            Combat Zone
+                            <span className="px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-full shadow-sm">BETA</span>
+                          </div>
+                          <p className="text-sm text-gray-500 leading-relaxed">Multijugador online.</p>
+                        </div>
                       </Link>
                     ) : (
                       <Link
-                        to="/azul/combatzone/coming-soon"
+                        to="/combatzone/coming-soon"
                         className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                         onClick={() => setIsGamesMenuOpen(false)}
                       >

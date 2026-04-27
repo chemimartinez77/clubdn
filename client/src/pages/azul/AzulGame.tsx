@@ -8,7 +8,7 @@ export default function AzulGame() {
   const navigate = useNavigate();
 
   if (!id) {
-    navigate('/azul/combatzone');
+    navigate('/combatzone');
     return null;
   }
 
@@ -17,8 +17,8 @@ export default function AzulGame() {
       <div className="max-w-5xl mx-auto px-4 py-6 flex flex-col gap-4">
         {/* Breadcrumb */}
         <button
-          onClick={() => navigate('/azul/combatzone')}
-          className="text-sm text-gray-400 hover:text-gray-600 transition-colors self-start flex items-center gap-1"
+          onClick={() => navigate('/combatzone')}
+          className="flex items-center gap-2 text-sm text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors"
         >
           ‹ Dreadnought Combat Zone
         </button>

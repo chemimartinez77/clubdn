@@ -90,8 +90,8 @@ export default function ViernesHub() {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="mb-8">
         <button
-          onClick={() => navigate('/azul/combatzone')}
-          className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] mb-4 flex items-center gap-1"
+          onClick={() => navigate('/combatzone')}
+          className="flex items-center gap-2 text-sm text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors"
         >
           {'<-'} Combat Zone
         </button>
@@ -178,7 +178,7 @@ export default function ViernesHub() {
               </h2>
               <div className="flex flex-col gap-3">
                 {activeGames.map((game) => (
-                  <GameCard key={game.id} game={game} onClick={() => navigate(`/viernes/${game.id}`)} />
+                  <GameCard key={game.id} game={game} onClick={() => navigate(`/combatzone/viernes/${game.id}`)} />
                 ))}
               </div>
             </section>
@@ -191,7 +191,7 @@ export default function ViernesHub() {
               </h2>
               <div className="flex flex-col gap-3">
                 {finishedGames.slice(0, 5).map((game) => (
-                  <GameCard key={game.id} game={game} onClick={() => navigate(`/viernes/${game.id}`)} />
+                  <GameCard key={game.id} game={game} onClick={() => navigate(`/combatzone/viernes/${game.id}`)} />
                 ))}
               </div>
             </section>

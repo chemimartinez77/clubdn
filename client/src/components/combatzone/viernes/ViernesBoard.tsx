@@ -674,13 +674,13 @@ function GameOverBanner({ gs }: { gs: ViernesGameState }) {
       </p>
       <div className="flex gap-3 mt-2">
         <button
-          onClick={() => navigate('/viernes')}
+          onClick={() => navigate('/combatzone/viernes')}
           className="px-5 py-2 rounded-lg border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-border)] transition-all"
         >
           Volver al hub
         </button>
         <button
-          onClick={() => navigate('/viernes')}
+          onClick={() => navigate('/combatzone/viernes')}
           className="px-5 py-2 rounded-lg bg-[var(--color-primary)] text-white font-bold hover:opacity-90 transition-all"
         >
           Nueva partida

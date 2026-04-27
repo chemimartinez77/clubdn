@@ -113,7 +113,7 @@ export function useViernesGameList() {
     },
     onSuccess: (game) => {
       queryClient.invalidateQueries({ queryKey: ['viernes-games'] });
-      navigate(`/viernes/${game.id}`);
+      navigate(`/combatzone/viernes/${game.id}`);
     },
   });
 

@@ -121,7 +121,7 @@ function CombatZoneRoute({ children }: { children: React.ReactNode }) {
     user.email?.toLowerCase() === 'chemimartinez@gmail.com';
 
   if (!isAllowedUser) {
-    return <Navigate to="/azul/combatzone/coming-soon" replace />;
+    return <Navigate to="/combatzone/coming-soon" replace />;
   }
 
   return <>{children}</>;
@@ -323,7 +323,7 @@ function App() {
 
           {/* Combat Zone — Coming Soon (accesible a todos los usuarios) */}
           <Route
-            path="/azul/combatzone/coming-soon"
+            path="/combatzone/coming-soon"
             element={
               <ProtectedRoute>
                 <CombatZoneComingSoon />
@@ -331,17 +331,19 @@ function App() {
             }
           />
 
-          {/* Dreadnought Combat Zone — Azul online */}
+          {/* Dreadnought Combat Zone — Hub Principal */}
           <Route
-            path="/azul/combatzone"
+            path="/combatzone"
             element={
               <CombatZoneRoute>
                 <CombatZone />
               </CombatZoneRoute>
             }
           />
+          
+          {/* Dreadnought Combat Zone — Azul online */}
           <Route
-            path="/azul/combatzone/:id"
+            path="/combatzone/azul/:id"
             element={
               <CombatZoneRoute>
                 <AzulGame />
@@ -351,7 +353,7 @@ function App() {
 
           {/* Dreadnought Combat Zone — Viernes (solitario) */}
           <Route
-            path="/viernes"
+            path="/combatzone/viernes"
             element={
               <CombatZoneRoute>
                 <ViernesHub />
@@ -359,7 +361,7 @@ function App() {
             }
           />
           <Route
-            path="/viernes/:id"
+            path="/combatzone/viernes/:id"
             element={
               <CombatZoneRoute>
                 <ViernesGame />
@@ -367,7 +369,7 @@ function App() {
             }
           />
           <Route
-            path="/7-wonders-duel"
+            path="/combatzone/7-wonders-duel"
             element={
               <CombatZoneRoute>
                 <SevenWondersDuelHub />
@@ -375,7 +377,7 @@ function App() {
             }
           />
           <Route
-            path="/azul/combatzone/centipede"
+            path="/combatzone/centipede"
             element={
               <CombatZoneRoute>
                 <CentipedeGame />

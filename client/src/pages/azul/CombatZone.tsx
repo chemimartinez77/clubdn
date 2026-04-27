@@ -27,10 +27,10 @@ type CombatZoneGame = {
 };
 
 const COMBAT_ZONE_GAMES = [
-  { bggId: '230802', name: 'Azul',      path: '/azul/combatzone',           solo: false, launchMode: 'AZUL_CREATE', fetchInfo: true },
-  { bggId: '173346', name: '7 Wonders Duel', path: '/7-wonders-duel',       solo: false, launchMode: 'NAVIGATE',    fetchInfo: true },
-  { bggId: '43570',  name: 'Viernes',   path: '/viernes',                   solo: true,  launchMode: 'NAVIGATE',    fetchInfo: true },
-  { bggId: '2243',   name: 'Centipede', path: '/azul/combatzone/centipede', solo: true,  launchMode: 'NAVIGATE',    fetchInfo: false },
+  { bggId: '230802', name: 'Azul',      path: '/combatzone/azul',           solo: false, launchMode: 'AZUL_CREATE', fetchInfo: true },
+  { bggId: '173346', name: '7 Wonders Duel', path: '/combatzone/7-wonders-duel',       solo: false, launchMode: 'NAVIGATE',    fetchInfo: true },
+  { bggId: '43570',  name: 'Viernes',   path: '/combatzone/viernes',                   solo: true,  launchMode: 'NAVIGATE',    fetchInfo: true },
+  { bggId: '2243',   name: 'Centipede', path: '/combatzone/centipede', solo: true,  launchMode: 'NAVIGATE',    fetchInfo: false },
 ] satisfies ReadonlyArray<CombatZoneGame>;
 
 function useGameInfo(bggId: string, enabled = true) {
@@ -221,7 +221,7 @@ export default function CombatZone() {
       // Azul: crear partida con el número de jugadores elegido
       try {
         const game = await createGame(selectedMaxPlayers);
-        navigate(`/azul/combatzone/${game.id}`);
+        navigate(`/combatzone/azul/${game.id}`);
       } catch (err) {
         console.error('[CombatZone] Error al crear partida:', err);
       }
@@ -317,7 +317,7 @@ export default function CombatZone() {
                   key={game.id}
                   game={game}
                   myId={myId}
-                  onClick={() => navigate(`/azul/combatzone/${game.id}`)}
+                  onClick={() => navigate(`/combatzone/azul/${game.id}`)}
                 />
               ))
             )}
@@ -334,7 +334,7 @@ export default function CombatZone() {
                   key={game.id}
                   game={game}
                   myId={myId}
-                  onClick={() => navigate(`/azul/combatzone/${game.id}`)}
+                  onClick={() => navigate(`/combatzone/azul/${game.id}`)}
                 />
               ))}
             </div>
