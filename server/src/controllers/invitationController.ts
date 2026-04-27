@@ -469,8 +469,13 @@ export const cancelInvitation = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    if (invitation.status !== InvitationStatus.PENDING && invitation.status !== InvitationStatus.PENDING_APPROVAL) {
-      res.status(400).json({ success: false, message: 'Invitacion ya usada o expirada' });
+    const isCancellable =
+      invitation.status === InvitationStatus.PENDING ||
+      invitation.status === InvitationStatus.PENDING_APPROVAL ||
+      invitation.status === InvitationStatus.RESERVED ||
+      (isAdmin && invitation.status === InvitationStatus.USED);
+    if (!isCancellable) {
+      res.status(400).json({ success: false, message: 'Invitación no puede cancelarse' });
       return;
     }
 

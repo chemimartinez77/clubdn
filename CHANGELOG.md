@@ -66,6 +66,18 @@ Cambio de diseño: la plaza se reserva en el momento en que el socio genera el e
 - `client/src/types/event.ts`: `EventInvitation.status` incluye `'RESERVED'`; `guestFirstName` y `guestLastName` pasan a opcionales; añadido campo `expiresAt?`.
 - `client/src/types/invitation.ts`: `InvitationStatus` incluye `'RESERVED'`.
 
+### fix: múltiples reservas por enlace y eliminación de invitaciones USED
+
+Dos correcciones al flujo de invitación por enlace:
+
+**Múltiples reservas desde el mismo enlace:**
+- `client/src/pages/EventDetail.tsx`: el botón "Generar enlace de invitación" ya no desaparece tras la primera generación. Cuando ya existe un enlace generado, el texto cambia a "Reservar otra plaza" pero el botón sigue visible. Antes se ocultaba porque `shareLinkUrl` ya tenía valor, lo que impedía reservar plazas adicionales sin recargar la página.
+- `server/src/controllers/shareLinkController.ts`: el backend ya soportaba múltiples `RESERVED` del mismo socio+evento (cancela las expiradas antes de crear una nueva). El fix es solo de UI.
+
+**Botón "Eliminar" en invitaciones USED:**
+- `client/src/pages/EventDetail.tsx`: el botón "Eliminar" ya no aparece en invitaciones con `status === 'USED'` salvo que el usuario sea admin o CHEMI (rol por encima de admin). Antes aparecía para todos los que tenían permisos de organización, lo que causaba un error 400 del backend al intentar cancelar una invitación ya usada.
+- `server/src/controllers/invitationController.ts`: la lógica de `cancelInvitation` ahora acepta cancelar estados `PENDING`, `PENDING_APPROVAL` y `RESERVED` siempre; y `USED` únicamente si `isAdmin` (incluye CHEMI). El check de rol ya era correcto mediante `isAdminLikeRole`.
+
 ### fix: modal LOPD, reserva de plaza con PENDING_APPROVAL y tipo InvitationStatus
 
 Tres correcciones al flujo de invitación por enlace:

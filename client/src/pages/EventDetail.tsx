@@ -1871,7 +1871,8 @@ export default function EventDetail() {
                           {invitationStatusLabels[guest.status] || guest.status}
                         </span>
                       ))}
-                      {(isAdmin || user?.id === event.createdBy || (guest.inviterId && user?.id === guest.inviterId)) && (
+                      {(isAdmin || user?.id === event.createdBy || (guest.inviterId && user?.id === guest.inviterId)) &&
+                        (guest.status !== 'USED' || isAdmin) && (
                         <button
                           onClick={() => cancelInvitationMutation.mutate(guest.id)}
                           className="text-xs text-red-700 bg-red-100 px-2 py-0.5 rounded-full cursor-pointer hover:bg-red-200 hover:text-red-800"
