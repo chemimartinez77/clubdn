@@ -18,10 +18,15 @@ const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
 const shouldAutoCompleteOnboarding = async (userId: string): Promise<boolean> => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { status: true }
+    select: {
+      status: true,
+      profile: { select: { firstName: true, lastName: true } }
+    }
   });
 
-  return user?.status === 'APPROVED';
+  if (user?.status !== 'APPROVED') return false;
+  // Solo auto-completar si ya tiene datos básicos (usuarios migrados desde la web anterior)
+  return !!(user.profile?.firstName || user.profile?.lastName);
 };
 
 /**

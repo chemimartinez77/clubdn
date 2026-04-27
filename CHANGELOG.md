@@ -4,6 +4,22 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-27 (sesión 2)
+
+### fix: corregir onboarding saltado en nuevos usuarios aprobados
+
+Nuevos usuarios que se registraban y eran aprobados por un admin entraban directamente al portal sin ver el formulario de onboarding, porque al crear su `UserProfile` por primera vez se marcaba `onboardingCompleted = true` al detectar que su `status` era `APPROVED`.
+
+**Causa raíz:** la lógica de auto-completado del onboarding estaba pensada para usuarios migrados desde la web anterior (que ya tenían datos), pero también se aplicaba a los nuevos usuarios recién aprobados, que no tienen datos todavía.
+
+**Solución:** `shouldAutoCompleteOnboarding` y `shouldAutoCompleteOnboardingForStatus` ahora exigen además que el usuario tenga `firstName` o `lastName` rellenos. Si está `APPROVED` pero sin datos (usuario nuevo), `onboardingCompleted` se crea a `false` y el formulario se muestra correctamente.
+
+**Cambios:**
+- `server/src/controllers/profileController.ts`: `shouldAutoCompleteOnboarding` amplía la consulta para incluir `profile.firstName` y `profile.lastName`, y solo devuelve `true` si el usuario tiene alguno de esos campos rellenos.
+- `server/src/controllers/memberController.ts`: `shouldAutoCompleteOnboardingForStatus` recibe un segundo parámetro `hasProfileData` y solo devuelve `true` si está `APPROVED` y tiene datos. La llamada en `getMemberProfile` pasa `!!(user.profile?.firstName || user.profile?.lastName)`.
+
+---
+
 ## 2026-04-27
 
 ### refactor: token único por invitación en enlace de invitación
