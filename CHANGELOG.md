@@ -21,6 +21,24 @@ Rediseño completo del sistema de invitación a partidas. El flujo anterior requ
 - `client/src/App.tsx`: ruta `/invite/:token` movida fuera de `ProtectedRoute` para que el invitado pueda abrir su QR sin estar logueado.
 - `client/package.json` + `client/package-lock.json`: añadida dependencia `react-qr-code@2.0.18` para generación de QR en el cliente sin llamadas a servicios externos.
 
+### feat: reserva de plaza al generar enlace de invitación (estado RESERVED, TTL 15 min)
+
+Cambio de diseño: la plaza se reserva en el momento en que el socio genera el enlace, no cuando el invitado completa el formulario. La reserva expira en 15 minutos si el invitado no acepta; pasado ese tiempo se cancela automáticamente y el aforo queda libre.
+
+**Schema/Migración:**
+- `server/prisma/schema.prisma`: nuevo valor `RESERVED` en el enum `InvitationStatus`; nuevo campo `expiresAt DateTime?` en `Invitation`; `guestFirstName` y `guestLastName` pasan a opcionales (`String?`) para poder crear la invitación sin datos del invitado aún.
+- `server/prisma/migrations/20260427000100_add_reserved_status_and_expires_at/migration.sql`: migración manual con `ALTER TYPE ... ADD VALUE`, `ADD COLUMN expiresAt`, y `DROP NOT NULL` en ambos campos de nombre.
+
+**Backend:**
+- `server/src/controllers/shareLinkController.ts`: `generateShareLink` verifica aforo, cancela reservas expiradas del mismo socio+evento, reutiliza reserva activa si ya existe, y crea una `Invitation` con `status: RESERVED` y `expiresAt = now + 15 min`. `requestViaShareLink` ya no crea una invitación nueva sino que actualiza la reserva existente con los datos del invitado (nombre, apellidos, teléfono) y la promueve a `PENDING` o `PENDING_APPROVAL`. Si la reserva ha expirado devuelve error claro. `getShareLink` consulta si la reserva está vigente para calcular `isFull` correctamente.
+- `server/src/controllers/eventController.ts`: el conteo de plazas ocupadas (`activeInvitationsCount`) incluye ahora reservas `RESERVED` no expiradas; las expiradas se excluyen. Se añade `expiresAt` al select de invitaciones. Las invitaciones `RESERVED` expiradas se filtran antes de enviarse al cliente.
+- `server/src/controllers/invitationController.ts`: corregidos dos puntos donde `guestFirstName`/`guestLastName` se usaban como `string` en `EventGuest.create`; ahora se hace `?? ''` para compatibilidad con los campos ahora opcionales.
+
+**Frontend:**
+- `client/src/pages/EventDetail.tsx`: tras generar el enlace, se invalida la query del evento para que la fila "Plaza reservada" aparezca inmediatamente en la lista de asistentes. Texto de la modal actualizado con el aviso de reserva de 15 minutos. En la lista de invitados, las entradas con `status === 'RESERVED'` muestran "Plaza reservada" con `?` en el avatar y sin chip de estado.
+- `client/src/types/event.ts`: `EventInvitation.status` incluye `'RESERVED'`; `guestFirstName` y `guestLastName` pasan a opcionales; añadido campo `expiresAt?`.
+- `client/src/types/invitation.ts`: `InvitationStatus` incluye `'RESERVED'`.
+
 ### fix: modal LOPD, reserva de plaza con PENDING_APPROVAL y tipo InvitationStatus
 
 Tres correcciones al flujo de invitación por enlace:

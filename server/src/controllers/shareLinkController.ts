@@ -4,6 +4,8 @@ import { InvitationStatus } from '@prisma/client';
 import { prisma } from '../config/database';
 import { generateInvitationToken } from '../utils/invitationToken';
 
+const RESERVATION_TTL_MS = 15 * 60 * 1000; // 15 minutos
+
 // Acepta formato E.164 (+34612345678) o número local (612345678)
 const isValidPhone = (value: string) => /^\+?\d{6,15}$/.test(value.replace(/\s/g, ''));
 
@@ -57,7 +59,7 @@ export const getShareLink = async (req: Request, res: Response): Promise<void> =
               select: { id: true }
             },
             invitations: {
-              where: { status: { in: [InvitationStatus.PENDING, InvitationStatus.USED] } },
+              where: { status: { in: [InvitationStatus.PENDING, InvitationStatus.USED, InvitationStatus.PENDING_APPROVAL] } },
               select: { id: true }
             }
           }
@@ -76,6 +78,20 @@ export const getShareLink = async (req: Request, res: Response): Promise<void> =
     const event = link.event;
     const isFull = (event.registrations.length + event.invitations.length) >= event.maxAttendees;
     const isActive = event.status === 'SCHEDULED' && startOfDay(new Date(event.date)) >= startOfDay(new Date());
+
+    // Verificar si la reserva asociada a este enlace ha expirado
+    const reservation = await prisma.invitation.findFirst({
+      where: {
+        memberId: link.memberId,
+        eventId: event.id,
+        status: InvitationStatus.RESERVED
+      },
+      select: { expiresAt: true }
+    });
+
+    const reservationExpired = reservation
+      ? reservation.expiresAt !== null && reservation.expiresAt < new Date()
+      : true;
 
     res.status(200).json({
       success: true,
@@ -96,7 +112,7 @@ export const getShareLink = async (req: Request, res: Response): Promise<void> =
           gameImage: event.game?.image || event.game?.thumbnail || event.gameImage || null,
           location: event.location,
           requiresApproval: event.requiresApproval,
-          isFull,
+          isFull: isFull || reservationExpired,
           isActive
         },
         invitedBy: { id: link.member.id, name: link.member.name }
@@ -109,7 +125,7 @@ export const getShareLink = async (req: Request, res: Response): Promise<void> =
 };
 
 /**
- * POST /api/share/generate — Generar o reutilizar token para el usuario autenticado (requiere auth)
+ * POST /api/share/generate — Genera el enlace y reserva una plaza por 15 min (requiere auth)
  */
 export const generateShareLink = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -123,7 +139,22 @@ export const generateShareLink = async (req: Request, res: Response): Promise<vo
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { id: true, status: true, date: true }
+      select: {
+        id: true,
+        status: true,
+        date: true,
+        maxAttendees: true,
+        registrations: {
+          where: { status: 'CONFIRMED' },
+          select: { id: true }
+        },
+        invitations: {
+          where: {
+            status: { in: [InvitationStatus.RESERVED, InvitationStatus.PENDING, InvitationStatus.USED, InvitationStatus.PENDING_APPROVAL] }
+          },
+          select: { id: true, status: true, expiresAt: true }
+        }
+      }
     });
 
     if (!event) {
@@ -141,22 +172,70 @@ export const generateShareLink = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    // Buscar o crear token único por (evento + socio)
-    const existing = await prisma.eventShareLink.findUnique({
-      where: { eventId_memberId: { eventId, memberId: userId } }
+    // Cancelar reservas expiradas de este socio para este evento
+    await prisma.invitation.updateMany({
+      where: {
+        memberId: userId,
+        eventId,
+        status: InvitationStatus.RESERVED,
+        expiresAt: { lt: new Date() }
+      },
+      data: { status: InvitationStatus.CANCELLED }
     });
 
-    if (existing) {
-      res.status(200).json({ success: true, data: { url: buildShareUrl(existing.token) } });
+    // Comprobar si ya tiene una reserva activa
+    const activeReservation = await prisma.invitation.findFirst({
+      where: {
+        memberId: userId,
+        eventId,
+        status: InvitationStatus.RESERVED,
+        expiresAt: { gt: new Date() }
+      }
+    });
+
+    // Verificar aforo (excluyendo reservas expiradas ya canceladas arriba)
+    const activeInvitations = event.invitations.filter(inv =>
+      inv.status !== InvitationStatus.RESERVED ||
+      (inv.expiresAt !== null && inv.expiresAt > new Date())
+    );
+    const totalOccupied = event.registrations.length + activeInvitations.length;
+
+    if (!activeReservation && totalOccupied >= event.maxAttendees) {
+      res.status(400).json({ success: false, message: 'Evento completo' });
       return;
     }
 
-    const token = generateInvitationToken();
-    await prisma.eventShareLink.create({
-      data: { token, eventId, memberId: userId }
+    // Obtener o crear el share link
+    let shareToken: string;
+    const existingLink = await prisma.eventShareLink.findUnique({
+      where: { eventId_memberId: { eventId, memberId: userId } }
     });
 
-    res.status(201).json({ success: true, data: { url: buildShareUrl(token) } });
+    if (existingLink) {
+      shareToken = existingLink.token;
+    } else {
+      shareToken = generateInvitationToken();
+      await prisma.eventShareLink.create({
+        data: { token: shareToken, eventId, memberId: userId }
+      });
+    }
+
+    // Crear reserva si no hay una activa
+    if (!activeReservation) {
+      const invitationToken = generateInvitationToken();
+      await prisma.invitation.create({
+        data: {
+          token: invitationToken,
+          memberId: userId,
+          eventId,
+          validDate: new Date(event.date),
+          status: InvitationStatus.RESERVED,
+          expiresAt: new Date(Date.now() + RESERVATION_TTL_MS)
+        }
+      });
+    }
+
+    res.status(200).json({ success: true, data: { url: buildShareUrl(shareToken) } });
   } catch (error) {
     console.error('Error al generar share link:', error);
     res.status(500).json({ success: false, message: 'Error interno' });
@@ -164,7 +243,7 @@ export const generateShareLink = async (req: Request, res: Response): Promise<vo
 };
 
 /**
- * POST /api/share/:token/request — El invitado rellena sus datos y reserva su plaza (sin auth)
+ * POST /api/share/:token/request — El invitado rellena sus datos y confirma la reserva (sin auth)
  */
 export const requestViaShareLink = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -231,9 +310,24 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const totalOccupied = event.registrations.length + event.invitations.length;
-    if (totalOccupied >= event.maxAttendees) {
-      res.status(400).json({ success: false, message: 'Evento completo' });
+    // Buscar reserva activa de este socio para este evento
+    const reservation = await prisma.invitation.findFirst({
+      where: {
+        memberId: link.memberId,
+        eventId: event.id,
+        status: InvitationStatus.RESERVED
+      }
+    });
+
+    if (!reservation) {
+      // No hay reserva activa — puede que haya expirado; verificar aforo y crear nueva
+      const totalOccupied = event.registrations.length + event.invitations.length;
+      if (totalOccupied >= event.maxAttendees) {
+        res.status(400).json({ success: false, message: 'Evento completo o la reserva ha expirado' });
+        return;
+      }
+    } else if (reservation.expiresAt !== null && reservation.expiresAt < new Date()) {
+      res.status(400).json({ success: false, message: 'La reserva ha expirado. Pide a tu invitador un nuevo enlace.' });
       return;
     }
 
@@ -251,21 +345,36 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const invitationToken = generateInvitationToken();
-    const status = event.requiresApproval ? InvitationStatus.PENDING_APPROVAL : InvitationStatus.PENDING;
+    const newStatus = event.requiresApproval ? InvitationStatus.PENDING_APPROVAL : InvitationStatus.PENDING;
 
-    await prisma.invitation.create({
-      data: {
-        token: invitationToken,
-        memberId: link.memberId,
-        guestFirstName: guestFirstName.trim(),
-        guestLastName: guestLastName.trim(),
-        guestPhone: normalizedPhone,
-        eventId: event.id,
-        validDate: new Date(event.date),
-        status
-      }
-    });
+    if (reservation) {
+      // Actualizar la reserva existente con los datos del invitado
+      await prisma.invitation.update({
+        where: { id: reservation.id },
+        data: {
+          guestFirstName: guestFirstName.trim(),
+          guestLastName: guestLastName.trim(),
+          guestPhone: normalizedPhone,
+          status: newStatus,
+          expiresAt: null
+        }
+      });
+    } else {
+      // Crear nueva invitación si no había reserva (aforo ya verificado arriba)
+      const invitationToken = generateInvitationToken();
+      await prisma.invitation.create({
+        data: {
+          token: invitationToken,
+          memberId: link.memberId,
+          guestFirstName: guestFirstName.trim(),
+          guestLastName: guestLastName.trim(),
+          guestPhone: normalizedPhone,
+          eventId: event.id,
+          validDate: new Date(event.date),
+          status: newStatus
+        }
+      });
+    }
 
     // Notificar al organizador si requiere aprobación
     if (event.requiresApproval && event.createdBy) {
@@ -273,7 +382,15 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
       await notifyRegistrationPending(event.id, event.title, event.createdBy, `${guestFirstName.trim()} ${guestLastName.trim()}`);
     }
 
-    const qrUrl = buildInviteUrl(invitationToken);
+    const invitationForQr = reservation
+      ? await prisma.invitation.findUnique({ where: { id: reservation.id }, select: { token: true } })
+      : await prisma.invitation.findFirst({
+          where: { memberId: link.memberId, eventId: event.id, status: newStatus },
+          orderBy: { createdAt: 'desc' },
+          select: { token: true }
+        });
+
+    const qrUrl = buildInviteUrl(invitationForQr!.token);
 
     res.status(201).json({
       success: true,

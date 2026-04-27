@@ -577,6 +577,7 @@ export default function EventDetail() {
     },
     onSuccess: (data) => {
       setShareLinkUrl(data.data?.url || null);
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
     },
     onError: (err: unknown) => {
       showError(getErrorMessage(err, 'Error al generar el enlace de invitación'));
@@ -1789,12 +1790,16 @@ export default function EventDetail() {
                     <li key={guest.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-tableRowHover)]">
                       <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                         <span className="text-purple-600 font-semibold text-sm">
-                          {guest.guestFirstName.charAt(0).toUpperCase()}
+                          {guest.status === 'RESERVED' ? '?' : (guest.guestFirstName?.charAt(0).toUpperCase() ?? '?')}
                         </span>
                       </div>
-                      <span className="text-[var(--color-text)] flex-1">{guest.guestFirstName} {guest.guestLastName}</span>
+                      <span className="text-[var(--color-text)] flex-1">
+                        {guest.status === 'RESERVED'
+                          ? 'Plaza reservada'
+                          : `${guest.guestFirstName ?? ''} ${guest.guestLastName ?? ''}`.trim()}
+                      </span>
                       <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Invitado</span>
-                      {invitationStatusTooltips[guest.status] ? (
+                      {guest.status !== 'RESERVED' && (invitationStatusTooltips[guest.status] ? (
                         <InfoTooltip
                           content={invitationStatusTooltips[guest.status]}
                           ariaLabel={`Información del estado ${invitationStatusLabels[guest.status] || guest.status}`}
@@ -1815,7 +1820,7 @@ export default function EventDetail() {
                         >
                           {invitationStatusLabels[guest.status] || guest.status}
                         </span>
-                      )}
+                      ))}
                       {(isAdmin || user?.id === event.createdBy || (guest.inviterId && user?.id === guest.inviterId)) && (
                         <button
                           onClick={() => cancelInvitationMutation.mutate(guest.id)}
@@ -2319,7 +2324,7 @@ export default function EventDetail() {
       >
         <div className="space-y-5">
           <p className="text-sm text-[var(--color-textSecondary)]">
-            Genera un enlace único y envíaselo a tu invitado por WhatsApp. Él rellenará sus datos y recibirá un QR para entrar al club.
+            Genera un enlace único y envíaselo a tu invitado por WhatsApp. Él rellenará sus datos y recibirá un QR para entrar al club. Al generar el enlace se creará una reserva de plaza por 15 minutos para que el invitado pueda apuntarse.
           </p>
 
           {!shareLinkUrl ? (

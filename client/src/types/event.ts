@@ -165,10 +165,11 @@ export interface EventGuest {
 
 export interface EventInvitation {
   id: string;
-  guestFirstName: string;
-  guestLastName: string;
-  status: 'PENDING' | 'PENDING_APPROVAL' | 'USED' | 'EXPIRED' | 'CANCELLED';
+  guestFirstName?: string | null;
+  guestLastName?: string | null;
+  status: 'RESERVED' | 'PENDING' | 'PENDING_APPROVAL' | 'USED' | 'EXPIRED' | 'CANCELLED';
   inviterId?: string | null;
+  expiresAt?: string | null;
 }
 
 export interface PendingInvitation {

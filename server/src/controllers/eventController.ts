@@ -93,7 +93,8 @@ const eventDetailInclude = {
       status: true,
       guestFirstName: true,
       guestLastName: true,
-      memberId: true
+      memberId: true,
+      expiresAt: true
     },
     orderBy: { createdAt: 'asc' as const }
   },
@@ -537,7 +538,8 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
           invitations: {
             select: {
               id: true,
-              status: true
+              status: true,
+              expiresAt: true
             }
           },
         game: {
@@ -593,9 +595,11 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
 
     // Calcular datos adicionales para cada evento
       const eventsWithStats = events.map(event => {
-        const activeGuestCount = event.invitations.filter(inv =>
-          inv.status === 'PENDING' || inv.status === 'PENDING_APPROVAL' || inv.status === 'USED'
-        ).length;
+        const now = new Date();
+        const activeGuestCount = event.invitations.filter(inv => {
+          if (inv.status === 'RESERVED') return inv.expiresAt !== null && inv.expiresAt > now;
+          return inv.status === 'PENDING' || inv.status === 'PENDING_APPROVAL' || inv.status === 'USED';
+        }).length;
         const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length + activeGuestCount;
         const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST').length;
         const userRegistration = event.registrations.find(r => r.userId === userId);
@@ -666,9 +670,11 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-      const activeInvitationsCount = event.invitations.filter(inv =>
-        inv.status === 'PENDING' || inv.status === 'PENDING_APPROVAL' || inv.status === 'USED'
-      ).length;
+      const now = new Date();
+      const activeInvitationsCount = event.invitations.filter(inv => {
+        if (inv.status === 'RESERVED') return inv.expiresAt !== null && inv.expiresAt > now;
+        return inv.status === 'PENDING' || inv.status === 'PENDING_APPROVAL' || inv.status === 'USED';
+      }).length;
       const guestCount = activeInvitationsCount;
       const registeredCount =
         event.registrations.filter(r => r.status === 'CONFIRMED').length + activeInvitationsCount;
@@ -683,13 +689,16 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
             allowLateJoin: eventAllowsLateJoin(event),
             expansions: serializeEventExpansions(event.expansions),
             eventGuests: undefined,
-            invitations: event.invitations.map(invitation => ({
-              id: invitation.id,
-              guestFirstName: invitation.guestFirstName,
-              guestLastName: invitation.guestLastName,
-              status: invitation.status,
-              inviterId: invitation.memberId
-            })),
+            invitations: event.invitations
+              .filter(inv => inv.status !== 'RESERVED' || (inv.expiresAt !== null && inv.expiresAt > now))
+              .map(invitation => ({
+                id: invitation.id,
+                guestFirstName: invitation.guestFirstName,
+                guestLastName: invitation.guestLastName,
+                status: invitation.status,
+                inviterId: invitation.memberId,
+                expiresAt: invitation.expiresAt
+              })),
             guestCount,
             registeredCount,
             waitlistCount,

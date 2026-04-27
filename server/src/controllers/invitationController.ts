@@ -351,8 +351,8 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
           data: {
             eventId: event.id,
             invitationId: created.id,
-            guestFirstName: created.guestFirstName,
-            guestLastName: created.guestLastName,
+            guestFirstName: created.guestFirstName ?? '',
+            guestLastName: created.guestLastName ?? '',
             guestPhone: created.guestPhone
           }
         });
@@ -797,8 +797,8 @@ export const approveInvitation = async (req: Request, res: Response): Promise<vo
         data: {
           eventId,
           invitationId: invitationId!,
-          guestFirstName: invitation.guestFirstName,
-          guestLastName: invitation.guestLastName,
+          guestFirstName: invitation.guestFirstName ?? '',
+          guestLastName: invitation.guestLastName ?? '',
           guestPhone: invitation.guestPhone
         }
       });

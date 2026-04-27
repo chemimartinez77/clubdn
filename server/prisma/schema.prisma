@@ -316,6 +316,7 @@ enum RegistrationStatus {
 }
 
 enum InvitationStatus {
+  RESERVED           // Plaza reservada por el socio, pendiente de que el invitado rellene sus datos (expira en 15 min)
   PENDING            // Válida, en espera de ser usada en puerta
   PENDING_APPROVAL   // Esperando aprobación del organizador
   USED
@@ -418,14 +419,15 @@ model Invitation {
   token               String           @unique
   memberId            String
   member              User             @relation("InvitationsCreated", fields: [memberId], references: [id], onDelete: Cascade)
-  guestFirstName      String
-  guestLastName       String
+  guestFirstName      String?
+  guestLastName       String?
   guestPhone          String?
   guestDniNormalized  String?
   eventId             String
   event               Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
   validDate           DateTime
   status              InvitationStatus @default(PENDING)
+  expiresAt           DateTime?
   isExceptional       Boolean          @default(false)
   validatedByUserId   String?
   validatedBy         User?            @relation("InvitationsValidated", fields: [validatedByUserId], references: [id])
