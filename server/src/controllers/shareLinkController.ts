@@ -37,6 +37,7 @@ export const getShareLink = async (req: Request, res: Response): Promise<void> =
           select: {
             id: true,
             title: true,
+            description: true,
             date: true,
             startHour: true,
             startMinute: true,
@@ -45,8 +46,12 @@ export const getShareLink = async (req: Request, res: Response): Promise<void> =
             status: true,
             maxAttendees: true,
             gameName: true,
+            gameImage: true,
             location: true,
             requiresApproval: true,
+            game: {
+              select: { image: true, thumbnail: true }
+            },
             registrations: {
               where: { status: 'CONFIRMED' },
               select: { id: true }
@@ -78,6 +83,7 @@ export const getShareLink = async (req: Request, res: Response): Promise<void> =
         event: {
           id: event.id,
           title: event.title,
+          description: event.description,
           date: event.date,
           startHour: event.startHour,
           startMinute: event.startMinute,
@@ -87,6 +93,7 @@ export const getShareLink = async (req: Request, res: Response): Promise<void> =
           maxAttendees: event.maxAttendees,
           registeredCount: event.registrations.length + event.invitations.length,
           gameName: event.gameName,
+          gameImage: event.game?.image || event.game?.thumbnail || event.gameImage || null,
           location: event.location,
           requiresApproval: event.requiresApproval,
           isFull,

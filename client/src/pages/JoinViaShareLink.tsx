@@ -23,8 +23,14 @@ interface ShareLinkData {
   event: {
     id: string;
     title: string;
+    description?: string;
     date: string;
+    startHour?: number;
+    startMinute?: number;
+    durationHours?: number;
+    durationMinutes?: number;
     gameName?: string;
+    gameImage?: string | null;
     location: string;
     isFull: boolean;
     isActive: boolean;
@@ -45,6 +51,13 @@ type Screen = 'info' | 'form' | 'qr';
 function formatEventDate(dateStr: string) {
   const d = new Date(dateStr);
   return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function formatTime(hour?: number, minute?: number) {
+  if (hour == null) return null;
+  const h = String(hour).padStart(2, '0');
+  const m = String(minute ?? 0).padStart(2, '0');
+  return `${h}:${m}`;
 }
 
 export default function JoinViaShareLink() {
@@ -165,6 +178,7 @@ export default function JoinViaShareLink() {
 
   // Pantalla 1: info del evento
   if (screen === 'info') {
+    const timeStr = formatTime(data.event.startHour, data.event.startMinute);
     return (
       <div className={containerClass}>
         <div className={cardClass}>
@@ -173,14 +187,33 @@ export default function JoinViaShareLink() {
             <p className="text-xl font-bold text-[var(--color-text)]">{data.invitedBy.name}</p>
           </div>
 
+          {data.event.gameImage && (
+            <div className="flex justify-center">
+              <img
+                src={data.event.gameImage}
+                alt={data.event.gameName || data.event.title}
+                className="w-32 h-32 object-cover rounded-xl shadow"
+              />
+            </div>
+          )}
+
           <div className="border-t border-[var(--color-cardBorder)] pt-4 space-y-2">
             <p className="text-base font-semibold text-[var(--color-text)]">{data.event.title}</p>
             {data.event.gameName && (
               <p className="text-sm text-[var(--color-textSecondary)]">{data.event.gameName}</p>
             )}
-            <p className="text-sm text-[var(--color-textSecondary)] capitalize">{formatEventDate(data.event.date)}</p>
+            <p className="text-sm text-[var(--color-textSecondary)] capitalize">
+              {formatEventDate(data.event.date)}
+              {timeStr && <span> · {timeStr}h</span>}
+            </p>
             <p className="text-sm text-[var(--color-textSecondary)]">{data.event.location}</p>
           </div>
+
+          {data.event.description && (
+            <p className="text-sm text-[var(--color-textSecondary)] leading-relaxed border-t border-[var(--color-cardBorder)] pt-3">
+              {data.event.description}
+            </p>
+          )}
 
           {data.event.isFull ? (
             <p className="text-sm text-red-600 font-medium text-center">El evento está completo.</p>

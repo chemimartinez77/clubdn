@@ -61,7 +61,6 @@ export default function EventDetail() {
   const [isShareLinkModalOpen, setIsShareLinkModalOpen] = useState(false);
   const [shareLinkUrl, setShareLinkUrl] = useState<string | null>(null);
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
-  const [expandedInviteId, setExpandedInviteId] = useState<string | null>(null);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [selectedGameSource, setSelectedGameSource] = useState<'bgg' | 'rpggeek'>('bgg');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
