@@ -4,6 +4,25 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-27
+
+### feat: nuevo flujo de invitación por enlace con QR para el invitado
+
+Rediseño completo del sistema de invitación a partidas. El flujo anterior requería que el socio introdujera el nombre y DNI del invitado manualmente. El nuevo flujo es: el socio genera un enlace y se lo envía al invitado por WhatsApp → el invitado rellena sus propios datos → recibe un QR personal → el socio escanea ese QR en la puerta para hacer el check-in.
+
+**Backend:**
+- `server/src/controllers/shareLinkController.ts`: `requestViaShareLink` ahora acepta teléfono en formato E.164 (con prefijo de país), soporta campo honeypot anti-bot, elimina el hack que guardaba el teléfono en `guestDniNormalized`, y devuelve `{ qrUrl, requiresApproval, eventTitle, eventDate }` al invitado tras registrarse.
+- `server/src/routes/invitationRoutes.ts`: `GET /:token` pasa a ser público (sin autenticación), necesario para que el invitado pueda ver su QR sin cuenta en el club.
+
+**Frontend:**
+- `client/src/pages/JoinViaShareLink.tsx`: reescrito completamente. Implementa tres pantallas secuenciales: (1) info del evento e invitador, (2) formulario con nombre, apellidos, teléfono con selector de prefijo de país, toggle LOPD y honeypot oculto, (3) QR generado con `react-qr-code` y botón de descarga como imagen PNG. Si el accedente es el propio socio invitador (JWT presente), se redirige al evento.
+- `client/src/pages/InviteValidation.tsx`: adaptado para funcionar sin sesión. El invitado sin cuenta ve su QR al abrir la URL. El socio invitador logueado ve el botón "Confirmar asistencia". Otros usuarios ven información informativa sin acción.
+- `client/src/pages/EventDetail.tsx`: eliminado el modal de invitación con formulario nombre/DNI/LOPD. Reemplazado por un modal simple con botón "Generar enlace de invitación" que llama a `POST /api/share/generate` y muestra el enlace con botón de copia. Eliminados estados y funciones asociados al flujo antiguo (`guestFirstName`, `guestLastName`, `guestDni`, `isExceptional`, `legalAccepted`, `isValidDniNie`, `createInvitationMutation`, `inviteQrModal`, `showInviteHelp`, `showLegalModal`).
+- `client/src/App.tsx`: ruta `/invite/:token` movida fuera de `ProtectedRoute` para que el invitado pueda abrir su QR sin estar logueado.
+- `client/package.json` + `client/package-lock.json`: añadida dependencia `react-qr-code@2.0.18` para generación de QR en el cliente sin llamadas a servicios externos.
+
+---
+
 ## 2026-04-26
 
 ### feat: rol CHEMI, allowLateJoin para Magic y reorganización del header

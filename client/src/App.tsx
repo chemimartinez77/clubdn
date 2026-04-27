@@ -235,8 +235,10 @@ function App() {
           />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-          {/* Enlace de invitación por WhatsApp — público */}
+          {/* Enlace de invitación por WhatsApp — público (el invitado no tiene cuenta) */}
           <Route path="/join/:token" element={<JoinViaShareLink />} />
+          {/* QR del invitado — público (el invitado lo muestra; el socio lo abre al escanear) */}
+          <Route path="/invite/:token" element={<InviteValidation />} />
           {/* Sandbox Azul — pública para pruebas sin login */}
           <Route path="/azul/local" element={<AzulLocal />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -307,14 +309,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <EventDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/invite/:token"
-            element={
-              <ProtectedRoute>
-                <InviteValidation />
               </ProtectedRoute>
             }
           />

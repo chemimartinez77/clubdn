@@ -22,6 +22,7 @@ router.get('/', authenticate, doorValidators, listInvitations);
 router.post('/', authenticate, doorValidators, createInvitation);
 router.delete('/:id', authenticate, doorValidators, cancelInvitation);
 router.post('/:token/validate', authenticate, doorValidators, validateInvitation);
-router.get('/:token', authenticate, doorValidators, getInvitationByToken);
+// Público: el invitado necesita ver su QR sin estar logueado; el socio lo abre al escanear el QR
+router.get('/:token', getInvitationByToken);
 
 export default router;

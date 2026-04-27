@@ -1,19 +1,69 @@
 // client/src/pages/JoinViaShareLink.tsx
-import { useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import QRCode from 'react-qr-code';
 import { api } from '../api/axios';
 import type { ApiResponse } from '../types/auth';
 
+const PHONE_PREFIXES = [
+  { code: 'ES', prefix: '+34', label: 'España (+34)' },
+  { code: 'PT', prefix: '+351', label: 'Portugal (+351)' },
+  { code: 'FR', prefix: '+33', label: 'Francia (+33)' },
+  { code: 'DE', prefix: '+49', label: 'Alemania (+49)' },
+  { code: 'IT', prefix: '+39', label: 'Italia (+39)' },
+  { code: 'GB', prefix: '+44', label: 'UK (+44)' },
+  { code: 'NL', prefix: '+31', label: 'Países Bajos (+31)' },
+  { code: 'BE', prefix: '+32', label: 'Bélgica (+32)' },
+  { code: 'AR', prefix: '+54', label: 'Argentina (+54)' },
+  { code: 'MX', prefix: '+52', label: 'México (+52)' },
+];
+
 interface ShareLinkData {
-  event: { id: string };
+  event: {
+    id: string;
+    title: string;
+    date: string;
+    gameName?: string;
+    location: string;
+    isFull: boolean;
+    isActive: boolean;
+    requiresApproval: boolean;
+  };
+  invitedBy: { id: string; name: string };
+}
+
+interface RegistrationResult {
+  qrUrl: string;
+  requiresApproval: boolean;
+  eventTitle: string;
+  eventDate: string;
+}
+
+type Screen = 'info' | 'form' | 'qr';
+
+function formatEventDate(dateStr: string) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 export default function JoinViaShareLink() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
+  const [screen, setScreen] = useState<Screen>('info');
 
-  const { data, isError } = useQuery({
+  // Form state
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phonePrefix, setPhonePrefix] = useState('+34');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [legalAccepted, setLegalAccepted] = useState(false);
+  const honeypotRef = useRef<HTMLInputElement>(null);
+
+  // Result state
+  const [result, setResult] = useState<RegistrationResult | null>(null);
+
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['shareLink', token],
     queryFn: async () => {
       const res = await api.get<ApiResponse<ShareLinkData>>(`/api/share/${token}`);
@@ -23,30 +73,294 @@ export default function JoinViaShareLink() {
     retry: false
   });
 
-  useEffect(() => {
-    if (!data) return;
-    const eventPath = `/events/${data.event.id}`;
-    if (localStorage.getItem('token')) {
-      navigate(eventPath, { replace: true });
-    } else {
-      navigate(`/login?redirect=${encodeURIComponent(eventPath)}`, { replace: true });
+  // Si el usuario está logueado y es el propio invitador, redirigir al evento
+  const storedToken = localStorage.getItem('token');
+  if (storedToken && data) {
+    try {
+      const payload = JSON.parse(atob(storedToken.split('.')[1]));
+      if (payload.userId === data.invitedBy.id) {
+        navigate(`/events/${data.event.id}`, { replace: true });
+        return null;
+      }
+    } catch {
+      // token malformado, ignorar
     }
-  }, [data, navigate]);
+  }
 
-  if (isError) {
+  const requestMutation = useMutation({
+    mutationFn: async () => {
+      const phone = `${phonePrefix}${phoneNumber.replace(/\s/g, '')}`;
+      const res = await api.post<ApiResponse<RegistrationResult>>(`/api/share/${token}/request`, {
+        guestFirstName: firstName.trim(),
+        guestLastName: lastName.trim(),
+        guestPhone: phone,
+        honeypot: honeypotRef.current?.value ?? ''
+      });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      if (data.data) {
+        setResult(data.data);
+        setScreen('qr');
+      }
+    }
+  });
+
+  const handleDownloadQr = () => {
+    const svg = document.getElementById('guest-qr-svg');
+    if (!svg) return;
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 300;
+    const ctx = canvas.getContext('2d')!;
+    const img = new Image();
+    img.onload = () => {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 300, 300);
+      ctx.drawImage(img, 0, 0, 300, 300);
+      const link = document.createElement('a');
+      link.download = 'mi-invitacion-qr.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
+  };
+
+  const containerClass = 'min-h-screen flex items-center justify-center bg-[var(--color-background)] p-4';
+  const cardClass = 'w-full max-w-sm bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-2xl shadow-lg p-6 space-y-5';
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)]">
-        <div className="text-center p-8">
-          <p className="text-lg font-semibold text-[var(--color-text)] mb-2">Enlace no válido</p>
-          <p className="text-[var(--color-textSecondary)]">Este enlace no existe o ha expirado.</p>
+      <div className={containerClass}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]" />
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className={containerClass}>
+        <div className={cardClass}>
+          <h2 className="text-lg font-bold text-red-600">Enlace no válido</h2>
+          <p className="text-sm text-[var(--color-textSecondary)]">Este enlace no existe o ha expirado.</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)]">
-      <p className="text-[var(--color-textSecondary)]">Cargando...</p>
-    </div>
-  );
+  if (!data.event.isActive) {
+    return (
+      <div className={containerClass}>
+        <div className={cardClass}>
+          <h2 className="text-lg font-bold text-[var(--color-text)]">Evento no disponible</h2>
+          <p className="text-sm text-[var(--color-textSecondary)]">
+            {data.event.isFull ? 'El evento está completo.' : 'El evento ya ha pasado o no está disponible.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Pantalla 1: info del evento
+  if (screen === 'info') {
+    return (
+      <div className={containerClass}>
+        <div className={cardClass}>
+          <div className="text-center space-y-1">
+            <p className="text-sm text-[var(--color-textSecondary)]">Has sido invitado por</p>
+            <p className="text-xl font-bold text-[var(--color-text)]">{data.invitedBy.name}</p>
+          </div>
+
+          <div className="border-t border-[var(--color-cardBorder)] pt-4 space-y-2">
+            <p className="text-base font-semibold text-[var(--color-text)]">{data.event.title}</p>
+            {data.event.gameName && (
+              <p className="text-sm text-[var(--color-textSecondary)]">{data.event.gameName}</p>
+            )}
+            <p className="text-sm text-[var(--color-textSecondary)] capitalize">{formatEventDate(data.event.date)}</p>
+            <p className="text-sm text-[var(--color-textSecondary)]">{data.event.location}</p>
+          </div>
+
+          {data.event.isFull ? (
+            <p className="text-sm text-red-600 font-medium text-center">El evento está completo.</p>
+          ) : (
+            <button
+              onClick={() => setScreen('form')}
+              className="w-full py-3 px-4 rounded-xl font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 transition-opacity"
+            >
+              Aceptar invitación
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Pantalla 2: formulario del invitado
+  if (screen === 'form') {
+    const isFormValid =
+      firstName.trim().length >= 2 &&
+      lastName.trim().length >= 2 &&
+      phoneNumber.trim().length >= 6 &&
+      legalAccepted;
+
+    const serverError = (requestMutation.error as any)?.response?.data?.message;
+
+    return (
+      <div className={containerClass}>
+        <div className={cardClass}>
+          <div>
+            <h2 className="text-lg font-bold text-[var(--color-text)]">Confirma tu asistencia</h2>
+            <p className="text-sm text-[var(--color-textSecondary)] mt-1">
+              Invitación a: <span className="font-medium">{data.event.title}</span>
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Nombre</label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={e => setFirstName(e.target.value)}
+                placeholder="Tu nombre"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Apellidos</label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={e => setLastName(e.target.value)}
+                placeholder="Tus apellidos"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Teléfono móvil</label>
+              <div className="flex gap-2">
+                <select
+                  value={phonePrefix}
+                  onChange={e => setPhonePrefix(e.target.value)}
+                  className="px-2 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                >
+                  {PHONE_PREFIXES.map(p => (
+                    <option key={p.code} value={p.prefix}>{p.label}</option>
+                  ))}
+                </select>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={e => setPhoneNumber(e.target.value.replace(/[^0-9\s]/g, ''))}
+                  placeholder="612 345 678"
+                  className="flex-1 px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                />
+              </div>
+            </div>
+
+            {/* Honeypot oculto */}
+            <input
+              ref={honeypotRef}
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              style={{ display: 'none' }}
+            />
+
+            <label
+              className="flex items-center gap-3 cursor-pointer select-none"
+              onClick={() => setLegalAccepted(v => !v)}
+            >
+              <div
+                className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${legalAccepted ? 'bg-[var(--color-primary)]' : 'bg-zinc-600'}`}
+              >
+                <span
+                  className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${legalAccepted ? 'translate-x-4' : 'translate-x-0'}`}
+                />
+              </div>
+              <span className="text-xs text-[var(--color-textSecondary)] leading-snug">
+                Acepto el tratamiento de mis datos personales para el control de acceso al club (LOPD).
+              </span>
+            </label>
+          </div>
+
+          {serverError && (
+            <p className="text-sm text-red-600">{serverError}</p>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setScreen('info')}
+              className="flex-1 py-2 px-4 rounded-xl font-medium text-[var(--color-textSecondary)] border border-[var(--color-cardBorder)] hover:bg-[var(--color-background)] transition-colors text-sm"
+            >
+              Volver
+            </button>
+            <button
+              onClick={() => requestMutation.mutate()}
+              disabled={!isFormValid || requestMutation.isPending}
+              className="flex-1 py-2 px-4 rounded-xl font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
+            >
+              {requestMutation.isPending ? 'Enviando...' : 'Confirmar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Pantalla 3: QR del invitado
+  if (screen === 'qr' && result) {
+    return (
+      <div className={containerClass}>
+        <div className={cardClass}>
+          <div className="text-center">
+            <h2 className="text-lg font-bold text-[var(--color-text)]">
+              {result.requiresApproval ? 'Solicitud enviada' : 'Plaza reservada'}
+            </h2>
+            <p className="text-sm text-[var(--color-textSecondary)] mt-1">
+              {result.requiresApproval
+                ? 'Tu plaza está pendiente de aprobación por el organizador.'
+                : 'Muestra este QR al entrar al club.'}
+            </p>
+          </div>
+
+          {!result.requiresApproval && (
+            <>
+              <div className="flex justify-center p-4 bg-white rounded-xl">
+                <QRCode
+                  id="guest-qr-svg"
+                  value={result.qrUrl}
+                  size={220}
+                  level="M"
+                />
+              </div>
+
+              <p className="text-xs text-center text-[var(--color-textSecondary)]">
+                Guarda esta pantalla o descarga la imagen. Muéstrala al entrar.
+              </p>
+
+              <button
+                onClick={handleDownloadQr}
+                className="w-full py-2 px-4 rounded-xl font-medium text-[var(--color-text)] border border-[var(--color-cardBorder)] hover:bg-[var(--color-background)] transition-colors text-sm"
+              >
+                Descargar imagen
+              </button>
+            </>
+          )}
+
+          <div className="border-t border-[var(--color-cardBorder)] pt-3 text-sm text-[var(--color-textSecondary)] space-y-1">
+            <p><span className="font-medium text-[var(--color-text)]">{result.eventTitle}</span></p>
+            <p className="capitalize">{formatEventDate(result.eventDate)}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }

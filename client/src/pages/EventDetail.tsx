@@ -19,7 +19,7 @@ import { useAuth } from '../contexts/AuthContext';
 import type { Event, BGGGame, UpdateEventData, PendingInvitation, CreatePartidaCloneState } from '../types/event';
 import type { ApiResponse } from '../types/auth';
 import type { UserProfile } from '../types/profile';
-import type { Invitation, InvitationCreateResponse } from '../types/invitation';
+import type { Invitation } from '../types/invitation';
 import { getCategoryDisplayName, getCategoryIcon } from '../types/badge';
 import { displayName, fullNameTooltip } from '../utils/displayName';
 import UserPopover from '../components/ui/UserPopover';
@@ -50,18 +50,6 @@ interface ResultRow {
   invitationId?: string;
 }
 
-const DNI_LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE';
-const isValidDniNie = (value: string): boolean => {
-  const v = value.trim().toUpperCase();
-  if (/^\d{8}[A-HJ-NP-TV-Z]$/.test(v)) {
-    return v[8] === DNI_LETTERS[parseInt(v.slice(0, 8), 10) % 23];
-  }
-  if (/^[XYZ]\d{7}[A-HJ-NP-TV-Z]$/.test(v)) {
-    const prefix: Record<string, string> = { X: '0', Y: '1', Z: '2' };
-    return v[8] === DNI_LETTERS[parseInt(prefix[v[0]] + v.slice(1, 8), 10) % 23];
-  }
-  return false;
-};
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -70,12 +58,9 @@ export default function EventDetail() {
   const queryClient = useQueryClient();
   const { isAdmin, user } = useAuth();
   const isChemi = isChemiRole(user?.role);
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [guestFirstName, setGuestFirstName] = useState('');
-  const [guestLastName, setGuestLastName] = useState('');
-  const [guestDni, setGuestDni] = useState('');
-  const [isExceptional, setIsExceptional] = useState(false);
-  const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [isShareLinkModalOpen, setIsShareLinkModalOpen] = useState(false);
+  const [shareLinkUrl, setShareLinkUrl] = useState<string | null>(null);
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
   const [expandedInviteId, setExpandedInviteId] = useState<string | null>(null);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [selectedGameSource, setSelectedGameSource] = useState<'bgg' | 'rpggeek'>('bgg');
@@ -86,9 +71,6 @@ export default function EventDetail() {
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name?: string } | null>(null);
   const [removalReason, setRemovalReason] = useState('');
   const [cancellationReason, setCancellationReason] = useState('');
-  const [inviteQrModal, setInviteQrModal] = useState<{ guestName: string; qrUrl: string } | null>(null);
-  const [legalAccepted, setLegalAccepted] = useState(false);
-  const [showLegalModal, setShowLegalModal] = useState(false);
 
   // Estado modal apuntar miembro
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
@@ -99,7 +81,6 @@ export default function EventDetail() {
 
   // Estado modal primer jugador
   const [showFirstPlayerModal, setShowFirstPlayerModal] = useState(false);
-  const [showInviteHelp, setShowInviteHelp] = useState(false);
 
   // Estado dropdown opciones
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
@@ -590,33 +571,16 @@ export default function EventDetail() {
     }
   });
 
-  const createInvitationMutation = useMutation({
+  const generateShareLinkMutation = useMutation({
     mutationFn: async () => {
-      const payload = {
-        eventId: id,
-        guestFirstName: guestFirstName.trim(),
-        guestLastName: guestLastName.trim(),
-        guestDni: guestDni.trim(),
-        ...(isAdmin && isExceptional ? { isExceptional: true } : {})
-      };
-      const response = await api.post<ApiResponse<InvitationCreateResponse>>('/api/invitations', payload);
+      const response = await api.post<ApiResponse<{ url: string }>>('/api/share/generate', { eventId: id });
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['invitations', id] });
-      queryClient.invalidateQueries({ queryKey: ['event', id] });
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['pending-invitations', id] });
-      setGuestFirstName('');
-      setGuestLastName('');
-      setGuestDni('');
-      setIsExceptional(false);
-      setQrUrl(data.data?.pendingApproval ? null : (data.data?.qrUrl || null));
-      setExpandedInviteId(data.data?.pendingApproval ? null : (data.data?.invitation.id || null));
-      success(data.message || 'Invitacion creada');
+      setShareLinkUrl(data.data?.url || null);
     },
     onError: (err: unknown) => {
-      showError(getErrorMessage(err, 'Error al crear invitacion'));
+      showError(getErrorMessage(err, 'Error al generar el enlace de invitación'));
     }
   });
 
@@ -875,9 +839,6 @@ export default function EventDetail() {
   const gameImageUrl = event.game?.image || event.game?.thumbnail || event.gameImage || null;
   const canShowGameDetails = isPartida && !!event.bggId;
   const expansionsLabel = (event.expansions ?? []).map((expansion) => expansion.name).join(', ');
-  const qrImageUrl = qrUrl
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrUrl)}`
-    : null;
   const eventDateText = formatDateOnly(event.date);
   const linkedEstimatedStart = event.linkedPreviousEvent
     ? calcLinkedEstimatedStartDate(event.linkedPreviousEvent)
@@ -892,44 +853,10 @@ export default function EventDetail() {
         event.durationMinutes
       );
 
-  const handleCreateInvitation = () => {
-    if (!guestFirstName.trim()) {
-      showError('Nombre requerido');
-      return;
-    }
-    if (!guestLastName.trim()) {
-      showError('Apellidos requeridos');
-      return;
-    }
-    if (!isValidDniNie(guestDni.trim())) {
-      showError('DNI o NIE requerido y debe ser válido');
-      return;
-    }
-    if (!id) {
-      showError('Evento no valido');
-      return;
-    }
-    createInvitationMutation.mutate();
-  };
-
-
-
-  const handleToggleInviteQr = (invite: Invitation) => {
-    if (!invite.qrUrl) return;
-    if (expandedInviteId === invite.id) {
-      setExpandedInviteId(null);
-      setQrUrl(null);
-      return;
-    }
-    setExpandedInviteId(invite.id);
-    setQrUrl(invite.qrUrl);
-  };
-
-  const handleCloseInviteModal = () => {
-    setIsInviteModalOpen(false);
-    setExpandedInviteId(null);
-    setQrUrl(null);
-    setLegalAccepted(false);
+  const handleCloseShareLinkModal = () => {
+    setIsShareLinkModalOpen(false);
+    setShareLinkUrl(null);
+    setShareLinkCopied(false);
   };
 
   const handleOpenGameModal = () => {
@@ -1242,7 +1169,7 @@ export default function EventDetail() {
                   {useMulticolorButtons ? (
                     <>
                       <Button
-                        onClick={() => setIsInviteModalOpen(true)}
+                        onClick={() => setIsShareLinkModalOpen(true)}
                         disabled={!canInvite}
                         className="w-full sm:w-auto !bg-indigo-500 hover:!bg-indigo-600 !text-white transition-all duration-300"
                       >
@@ -1402,7 +1329,7 @@ export default function EventDetail() {
                               </button>
                             )}
                             <button
-                              onClick={() => { setIsInviteModalOpen(true); setIsOptionsOpen(false); }}
+                              onClick={() => { setIsShareLinkModalOpen(true); setIsOptionsOpen(false); }}
                               disabled={!canInvite}
                               className="w-full text-left px-4 py-3 text-sm hover:bg-[var(--color-cardBorder)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-3 rounded-lg"
                             >
@@ -1504,7 +1431,7 @@ export default function EventDetail() {
                           </button>
                         )}
                         <button
-                          onClick={() => { setIsInviteModalOpen(true); setIsOptionsOpen(false); }}
+                          onClick={() => { setIsShareLinkModalOpen(true); setIsOptionsOpen(false); }}
                           disabled={!canInvite}
                           className="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--color-cardBorder)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                         >
@@ -1890,20 +1817,6 @@ export default function EventDetail() {
                           {invitationStatusLabels[guest.status] || guest.status}
                         </span>
                       )}
-                      {(() => {
-                        const inv = invitations.find(i => i.id === guest.id);
-                        return inv?.qrUrl ? (
-                          <button
-                            onClick={() => setInviteQrModal({ guestName: `${guest.guestFirstName} ${guest.guestLastName}`, qrUrl: inv.qrUrl! })}
-                            className="p-1 rounded text-[var(--color-textSecondary)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-100)] transition-colors"
-                            title="Ver QR"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-                            </svg>
-                          </button>
-                        ) : null;
-                      })()}
                       {(isAdmin || user?.id === event.createdBy || (guest.inviterId && user?.id === guest.inviterId)) && (
                         <button
                           onClick={() => cancelInvitationMutation.mutate(guest.id)}
@@ -2400,139 +2313,43 @@ export default function EventDetail() {
       />
 
       <Modal
-        isOpen={isInviteModalOpen}
-        onClose={handleCloseInviteModal}
-        title="Invitados"
-        size="lg"
+        isOpen={isShareLinkModalOpen}
+        onClose={handleCloseShareLinkModal}
+        title="Invitar a alguien"
+        size="sm"
       >
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-[var(--color-textSecondary)]">
-                Nombre *
-              </label>
-              <input
-                type="text"
-                value={guestFirstName}
-                onChange={(e) => setGuestFirstName(e.target.value)}
-                minLength={2}
-                className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-                placeholder="Nombre"
-              />
-            </div>
+        <div className="space-y-5">
+          <p className="text-sm text-[var(--color-textSecondary)]">
+            Genera un enlace único y envíaselo a tu invitado por WhatsApp. Él rellenará sus datos y recibirá un QR para entrar al club.
+          </p>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-[var(--color-textSecondary)]">
-                Apellidos *
-              </label>
-              <input
-                type="text"
-                value={guestLastName}
-                onChange={(e) => setGuestLastName(e.target.value)}
-                minLength={2}
-                className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-                placeholder="Apellidos"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-[var(--color-textSecondary)]">
-                DNI / NIE *
-              </label>
-              <input
-                type="text"
-                value={guestDni}
-                onChange={(e) => setGuestDni(e.target.value)}
-                maxLength={9}
-                className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-                placeholder="12345678A"
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <label
-                className="flex items-center gap-3 cursor-pointer select-none"
-                onClick={() => setLegalAccepted(v => !v)}
-              >
-                <div
-                  className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${legalAccepted ? 'bg-[var(--color-primary)]' : 'bg-zinc-600'}`}
+          {!shareLinkUrl ? (
+            <Button
+              onClick={() => generateShareLinkMutation.mutate()}
+              disabled={generateShareLinkMutation.isPending || !canInvite}
+              variant="primary"
+              className="w-full"
+            >
+              {generateShareLinkMutation.isPending ? 'Generando...' : 'Generar enlace de invitación'}
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 p-3 bg-[var(--color-tableRowHover)] border border-[var(--color-cardBorder)] rounded-lg">
+                <p className="text-sm text-[var(--color-text)] flex-1 break-all">{shareLinkUrl}</p>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(shareLinkUrl);
+                    setShareLinkCopied(true);
+                    setTimeout(() => setShareLinkCopied(false), 2000);
+                  }}
+                  className="shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--color-primary)] text-white hover:opacity-90 transition-opacity"
                 >
-                  <span
-                    className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${legalAccepted ? 'translate-x-4' : 'translate-x-0'}`}
-                  />
-                </div>
-                <span className="text-sm text-[var(--color-textSecondary)]">
-                  He leído y acepto el{' '}
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setShowLegalModal(true); }}
-                    className="underline text-[var(--color-primary)] hover:opacity-80 transition-opacity"
-                  >
-                    tratamiento de datos personales del invitado
-                  </button>
-                </span>
-              </label>
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <label className="block text-sm font-medium text-[var(--color-textSecondary)]">
-                Acciones
-              </label>
-              <div className="flex items-center gap-3">
-                <Button
-                  onClick={handleCreateInvitation}
-                  disabled={
-                    !canInvite ||
-                    !id ||
-                    !legalAccepted ||
-                    createInvitationMutation.isPending ||
-                    guestFirstName.trim().length < 2 ||
-                    guestLastName.trim().length < 2 ||
-                    !isValidDniNie(guestDni.trim())
-                  }
-                  variant="primary"
-                >
-                  {createInvitationMutation.isPending ? 'Creando...' : 'Crear invitacion'}
-                </Button>
-                {isAdmin && (
-                  <label className="flex items-center gap-2 text-sm text-[var(--color-textSecondary)] opacity-40 cursor-not-allowed">
-                    <input
-                      type="checkbox"
-                      checked={isExceptional}
-                      onChange={(e) => setIsExceptional(e.target.checked)}
-                      disabled
-                      className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] cursor-not-allowed"
-                    />
-                    Invitacion excepcional
-                  </label>
-                )}
+                  {shareLinkCopied ? 'Copiado' : 'Copiar'}
+                </button>
               </div>
-            </div>
-          </div>
-
-          {qrUrl && (
-            <div className="border border-[var(--color-cardBorder)] rounded-lg p-4 bg-[var(--color-tableRowHover)]">
-              <div className="flex flex-col sm:flex-row gap-4 items-center">
-                {qrImageUrl && (
-                  <div className="relative shrink-0">
-                    <img
-                      src={qrImageUrl}
-                      alt="QR Invitacion"
-                      className="w-44 h-44"
-                    />
-                    <button
-                      onClick={() => setShowInviteHelp(true)}
-                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[var(--color-primary)] text-white text-xs font-bold flex items-center justify-center shadow-md hover:opacity-80 transition-opacity"
-                      aria-label="Ayuda"
-                    >
-                      ?
-                    </button>
-                  </div>
-                )}
-                <p className="text-xs text-[var(--color-textSecondary)] text-center sm:text-left">
-                  Haz una captura de este QR y envíasela a tu invitado. El día de la partida deberá enseñarte el QR y lo escanearás con tu teléfono. Al hacerlo se abrirá una página donde podrás validar a tu invitado pulsando un botón.
-                </p>
-              </div>
+              <p className="text-xs text-[var(--color-textSecondary)]">
+                Envía este enlace a tu invitado por WhatsApp. El enlace es reutilizable para esta partida.
+              </p>
             </div>
           )}
 
@@ -2543,55 +2360,34 @@ export default function EventDetail() {
           )}
 
           <div>
-            <h4 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-2">Invitaciones creadas</h4>
+            <h4 className="text-sm font-semibold text-[var(--color-textSecondary)] mb-2">Invitaciones</h4>
             {isInvitesLoading ? (
-              <p className="text-sm text-[var(--color-textSecondary)]">Cargando invitaciones...</p>
+              <p className="text-sm text-[var(--color-textSecondary)]">Cargando...</p>
             ) : isInvitesError ? (
               <p className="text-sm text-[var(--color-textSecondary)]">No tienes permisos para ver invitaciones.</p>
             ) : invitations.length === 0 ? (
-              <p className="text-sm text-[var(--color-textSecondary)]">No hay invitaciones registradas.</p>
+              <p className="text-sm text-[var(--color-textSecondary)]">Aún no hay invitaciones para esta partida.</p>
             ) : (
               <div className="space-y-2">
-                {invitations.map((invite) => {
-                  const isExpanded = expandedInviteId === invite.id;
-                  return (
-                    <div
-                      key={invite.id}
-                      onClick={() => handleToggleInviteQr(invite)}
-                      className={`flex items-center justify-between p-3 border rounded-lg bg-[var(--color-tableRowHover)] ${
-                        invite.qrUrl ? 'cursor-pointer hover:brightness-110' : ''
-                      } ${
-                        isExpanded ? 'border-[var(--color-primary)]' : 'border-[var(--color-cardBorder)]'
-                      }`}
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-[var(--color-text)]">
-                          {invite.guestFirstName} {invite.guestLastName}
-                        </p>
-                        {invite.guestDniMasked && (
-                          <p className="text-xs text-[var(--color-textSecondary)]">DNI: {invite.guestDniMasked}</p>
-                        )}
-                        <p className="text-xs text-[var(--color-textSecondary)]">
-                          {new Date(invite.validDate).toLocaleDateString('es-ES')}
-                        </p>
-                      </div>
-                      {invitationStatusTooltips[invite.status] ? (
-                        <InfoTooltip
-                          content={invitationStatusTooltips[invite.status]}
-                          ariaLabel={`Información del estado ${invitationStatusLabels[invite.status] || invite.status}`}
-                        >
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium cursor-help select-none ${
-                            invite.status === 'USED'
-                              ? 'bg-green-700 text-green-100'
-                              : invite.status === 'EXPIRED' || invite.status === 'CANCELLED'
-                                ? 'bg-red-700 text-red-100'
-                                : 'bg-yellow-700 text-yellow-100'
-                          }`}>
-                            {invitationStatusLabels[invite.status] || invite.status}
-                          </span>
-                        </InfoTooltip>
-                      ) : (
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium select-none ${
+                {invitations.map((invite) => (
+                  <div
+                    key={invite.id}
+                    className="flex items-center justify-between p-3 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-tableRowHover)]"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-text)]">
+                        {invite.guestFirstName} {invite.guestLastName}
+                      </p>
+                      <p className="text-xs text-[var(--color-textSecondary)]">
+                        {new Date(invite.validDate).toLocaleDateString('es-ES')}
+                      </p>
+                    </div>
+                    {invitationStatusTooltips[invite.status] ? (
+                      <InfoTooltip
+                        content={invitationStatusTooltips[invite.status]}
+                        ariaLabel={`Información del estado ${invitationStatusLabels[invite.status] || invite.status}`}
+                      >
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium cursor-help select-none ${
                           invite.status === 'USED'
                             ? 'bg-green-700 text-green-100'
                             : invite.status === 'EXPIRED' || invite.status === 'CANCELLED'
@@ -2600,10 +2396,20 @@ export default function EventDetail() {
                         }`}>
                           {invitationStatusLabels[invite.status] || invite.status}
                         </span>
-                      )}
-                    </div>
-                  );
-                })}
+                      </InfoTooltip>
+                    ) : (
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium select-none ${
+                        invite.status === 'USED'
+                          ? 'bg-green-700 text-green-100'
+                          : invite.status === 'EXPIRED' || invite.status === 'CANCELLED'
+                            ? 'bg-red-700 text-red-100'
+                            : 'bg-yellow-700 text-yellow-100'
+                      }`}>
+                        {invitationStatusLabels[invite.status] || invite.status}
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -3078,55 +2884,6 @@ export default function EventDetail() {
         </div>
       </Modal>
 
-      {/* Modal QR invitación individual */}
-      {showInviteHelp && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.85)' }}
-          onClick={() => setShowInviteHelp(false)}
-        >
-          <div className="relative max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={() => setShowInviteHelp(false)}
-              className="absolute -top-3 -right-3 w-7 h-7 rounded-full bg-[var(--color-primary)] text-white text-base font-bold flex items-center justify-center shadow-lg hover:opacity-80 transition-opacity z-10"
-              aria-label="Cerrar"
-            >
-              ×
-            </button>
-            <img
-              src="/ayuda.invitados.jpeg"
-              alt="Ayuda invitados"
-              className="max-w-[90vw] max-h-[85vh] rounded-xl object-contain shadow-2xl"
-            />
-          </div>
-        </div>
-      )}
-
-      {inviteQrModal && (
-        <Modal
-          isOpen={true}
-          onClose={() => setInviteQrModal(null)}
-          title={`QR — ${inviteQrModal.guestName}`}
-          size="sm"
-        >
-          <div className="flex flex-col items-center gap-4">
-            <button
-              onClick={() => setShowInviteHelp(true)}
-              className="px-3 py-1 rounded-full text-xs font-semibold bg-[var(--color-primary)] text-white hover:opacity-80 transition-opacity"
-            >
-              Ayuda
-            </button>
-            <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(inviteQrModal.qrUrl)}`}
-              alt="QR Invitación"
-              className="w-44 h-44"
-            />
-            <p className="text-xs text-[var(--color-textSecondary)] text-center">
-              Haz una captura de este QR y envíasela a tu invitado. El día de la partida deberá enseñarte el QR y lo escanearás con tu teléfono. Al hacerlo se abrirá una página donde podrás validar a tu invitado pulsando un botón.
-            </p>
-          </div>
-        </Modal>
-      )}
 
       {showFirstPlayerModal && (
         <FirstPlayerModal
@@ -3136,44 +2893,6 @@ export default function EventDetail() {
         />
       )}
 
-      {showLegalModal && (
-        <div
-          className="fixed inset-0 z-[300] flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.75)' }}
-          onClick={() => setShowLegalModal(false)}
-        >
-          <div
-            className="bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto p-6 flex flex-col gap-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-[var(--color-text)]">Información sobre protección de datos</h2>
-              <button
-                onClick={() => setShowLegalModal(false)}
-                className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors text-xl leading-none"
-                aria-label="Cerrar"
-              >
-                ×
-              </button>
-            </div>
-            <div className="text-sm text-[var(--color-textSecondary)] space-y-3 leading-relaxed">
-              <p>De conformidad con lo dispuesto en el Reglamento General de Protección de Datos y la Ley Orgánica de Protección de Datos y Garantía de Derechos Digitales, le informamos de que los datos personales facilitados serán tratados por el Club Dreadnought con la finalidad de gestionar el acceso de invitados, el control de asistencia y la participación en las actividades organizadas.</p>
-              <p>Con el fin de garantizar una identificación inequívoca de los asistentes, así como posibilitar la correcta gestión de posibles incidencias, accidentes o daños cubiertos por el seguro de la asociación, se solicita el DNI como dato identificativo único. Este dato no será utilizado para finalidades distintas de las aquí descritas.</p>
-              <p>La base jurídica del tratamiento es el consentimiento del interesado y el interés legítimo de la asociación en garantizar la seguridad, control de acceso y cobertura de responsabilidades derivadas de su actividad.</p>
-              <p>Los datos podrán ser comunicados, en su caso, a la entidad aseguradora exclusivamente cuando sea necesario para la gestión de siniestros o reclamaciones, no realizándose otras cesiones salvo obligación legal.</p>
-              <p>Los datos se conservarán durante el tiempo imprescindible para la gestión de la actividad y, posteriormente, durante los plazos legales necesarios para la atención de posibles responsabilidades.</p>
-              <p>Puede ejercer sus derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad dirigiéndose a clubdreadnought.vlc@gmail.com. Asimismo, puede presentar una reclamación ante la Agencia Española de Protección de Datos.</p>
-            </div>
-            <button
-              onClick={() => setShowLegalModal(false)}
-              className="mt-2 w-full py-2 rounded-xl text-sm font-semibold text-white transition-all"
-              style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-primaryHover, #7c3aed))' }}
-            >
-              Entendido
-            </button>
-          </div>
-        </div>
-      )}
     </Layout>
   );
 }

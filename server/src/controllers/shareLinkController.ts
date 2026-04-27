@@ -3,7 +3,9 @@ import { Request, Response } from 'express';
 import { InvitationStatus } from '@prisma/client';
 import { prisma } from '../config/database';
 import { generateInvitationToken } from '../utils/invitationToken';
-const isValidPhone = (value: string) => /^\d{1,12}$/.test(value);
+
+// Acepta formato E.164 (+34612345678) o número local (612345678)
+const isValidPhone = (value: string) => /^\+?\d{6,15}$/.test(value.replace(/\s/g, ''));
 
 const startOfDay = (date: Date) => {
   const copy = new Date(date);
@@ -14,6 +16,11 @@ const startOfDay = (date: Date) => {
 const buildShareUrl = (token: string) => {
   const baseUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
   return `${baseUrl}/join/${token}`;
+};
+
+const buildInviteUrl = (token: string) => {
+  const baseUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
+  return `${baseUrl}/invite/${token}`;
 };
 
 /**
@@ -150,12 +157,18 @@ export const generateShareLink = async (req: Request, res: Response): Promise<vo
 };
 
 /**
- * POST /api/share/:token/request — Solicitar plaza como invitado (sin auth)
+ * POST /api/share/:token/request — El invitado rellena sus datos y reserva su plaza (sin auth)
  */
 export const requestViaShareLink = async (req: Request, res: Response): Promise<void> => {
   try {
     const { token } = req.params;
-    const { guestFirstName, guestLastName, guestPhone } = req.body;
+    const { guestFirstName, guestLastName, guestPhone, honeypot } = req.body;
+
+    // Honeypot: si está relleno es un bot
+    if (honeypot) {
+      res.status(201).json({ success: true, message: 'Solicitud registrada.' });
+      return;
+    }
 
     if (!guestFirstName?.trim() || !guestLastName?.trim()) {
       res.status(400).json({ success: false, message: 'Nombre y apellidos requeridos' });
@@ -163,9 +176,11 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
     }
 
     if (!guestPhone || !isValidPhone(guestPhone)) {
-      res.status(400).json({ success: false, message: 'Teléfono no válido (solo dígitos, máximo 12)' });
+      res.status(400).json({ success: false, message: 'Número de teléfono no válido' });
       return;
     }
+
+    const normalizedPhone = guestPhone.replace(/\s/g, '');
 
     const link = await prisma.eventShareLink.findUnique({
       where: { token },
@@ -219,7 +234,7 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
     const existingInvitation = await prisma.invitation.findFirst({
       where: {
         eventId: event.id,
-        guestDniNormalized: guestPhone,
+        guestPhone: normalizedPhone,
         status: { in: [InvitationStatus.PENDING, InvitationStatus.USED, InvitationStatus.PENDING_APPROVAL] }
       }
     });
@@ -238,8 +253,7 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
         memberId: link.memberId,
         guestFirstName: guestFirstName.trim(),
         guestLastName: guestLastName.trim(),
-        guestPhone,
-        guestDniNormalized: guestPhone,
+        guestPhone: normalizedPhone,
         eventId: event.id,
         validDate: new Date(event.date),
         status
@@ -252,11 +266,19 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
       await notifyRegistrationPending(event.id, event.title, event.createdBy, `${guestFirstName.trim()} ${guestLastName.trim()}`);
     }
 
+    const qrUrl = buildInviteUrl(invitationToken);
+
     res.status(201).json({
       success: true,
+      data: {
+        qrUrl,
+        requiresApproval: event.requiresApproval,
+        eventTitle: event.title,
+        eventDate: event.date
+      },
       message: event.requiresApproval
         ? 'Solicitud enviada. El organizador debe aprobarla.'
-        : 'Invitación creada correctamente. Muestra el QR en la entrada.'
+        : 'Plaza reservada. Muestra el QR al entrar al club.'
     });
   } catch (error) {
     console.error('Error al solicitar plaza:', error);
