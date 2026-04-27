@@ -21,6 +21,14 @@ Rediseño completo del sistema de invitación a partidas. El flujo anterior requ
 - `client/src/App.tsx`: ruta `/invite/:token` movida fuera de `ProtectedRoute` para que el invitado pueda abrir su QR sin estar logueado.
 - `client/package.json` + `client/package-lock.json`: añadida dependencia `react-qr-code@2.0.18` para generación de QR en el cliente sin llamadas a servicios externos.
 
+### fix: modal LOPD, reserva de plaza con PENDING_APPROVAL y tipo InvitationStatus
+
+Tres correcciones al flujo de invitación por enlace:
+
+- `client/src/pages/JoinViaShareLink.tsx`: el toggle de aceptación LOPD ahora incluye un enlace "Leer información sobre protección de datos" que abre una modal con el texto legal completo (RGPD/LOPDGDD). La modal se cierra clicando fuera o con el botón "Cerrar". El JSX fue refactorizado para usar un fragmento `<>...</>` que envuelve la pantalla del formulario y la modal superpuesta.
+- `server/src/controllers/eventController.ts`: el conteo de plazas ocupadas (`activeInvitationsCount`) ahora incluye invitaciones con estado `PENDING_APPROVAL`, no solo `PENDING` y `USED`. Corregido en dos puntos: detalle de evento (`getEvent`) y listado de eventos. Sin este fix, las invitaciones creadas para eventos con `requiresApproval: true` no contaban como plaza reservada.
+- `client/src/types/invitation.ts`: añadido `'PENDING_APPROVAL'` al tipo `InvitationStatus` (estaba incompleto, causaba que el estado no se renderizara correctamente en el cliente).
+
 ---
 
 ## 2026-04-26

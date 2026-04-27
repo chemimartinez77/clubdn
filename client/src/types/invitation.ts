@@ -1,5 +1,5 @@
 // client/src/types/invitation.ts
-export type InvitationStatus = 'PENDING' | 'USED' | 'EXPIRED' | 'CANCELLED';
+export type InvitationStatus = 'PENDING' | 'PENDING_APPROVAL' | 'USED' | 'EXPIRED' | 'CANCELLED';
 
 export interface InvitationEventInfo {
   id: string;

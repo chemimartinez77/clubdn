@@ -594,7 +594,7 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
     // Calcular datos adicionales para cada evento
       const eventsWithStats = events.map(event => {
         const activeGuestCount = event.invitations.filter(inv =>
-          inv.status === 'PENDING' || inv.status === 'USED'
+          inv.status === 'PENDING' || inv.status === 'PENDING_APPROVAL' || inv.status === 'USED'
         ).length;
         const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length + activeGuestCount;
         const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST').length;
@@ -667,7 +667,7 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
     }
 
       const activeInvitationsCount = event.invitations.filter(inv =>
-        inv.status === 'PENDING' || inv.status === 'USED'
+        inv.status === 'PENDING' || inv.status === 'PENDING_APPROVAL' || inv.status === 'USED'
       ).length;
       const guestCount = activeInvitationsCount;
       const registeredCount =

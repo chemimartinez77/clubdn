@@ -48,6 +48,14 @@ interface RegistrationResult {
 
 type Screen = 'info' | 'form' | 'qr';
 
+const LOPD_TEXT = `De conformidad con el RGPD y la LOPDGDD, le informamos de que los datos personales facilitados (nombre, apellidos y teléfono) serán tratados por el "Club Dreadnought" con la finalidad de gestionar el acceso de invitados, el control de asistencia y posibilitar la comunicación necesaria ante posibles incidencias o accidentes durante la actividad.
+
+La base jurídica del tratamiento es el consentimiento del interesado al facilitar sus datos y el interés legítimo de la asociación en garantizar la seguridad y el control de acceso a sus instalaciones.
+
+Los datos se conservarán durante el tiempo imprescindible para gestionar la asistencia y, posteriormente, durante los plazos legales para atender posibles responsabilidades. No se realizarán cesiones a terceros, salvo obligación legal o necesidad de comunicación a la entidad aseguradora en caso de siniestro.
+
+Puede ejercer sus derechos de acceso, rectificación, supresión, oposición y limitación del tratamiento dirigiéndose a clubdreadnought.vlc@gmail.com. Asimismo, tiene derecho a presentar una reclamación ante la Agencia Española de Protección de Datos (www.aepd.es).`;
+
 function formatEventDate(dateStr: string) {
   const d = new Date(dateStr);
   return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -75,6 +83,7 @@ export default function JoinViaShareLink() {
 
   // Result state
   const [result, setResult] = useState<RegistrationResult | null>(null);
+  const [showLopdModal, setShowLopdModal] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['shareLink', token],
@@ -241,108 +250,146 @@ export default function JoinViaShareLink() {
     const serverError = (requestMutation.error as any)?.response?.data?.message;
 
     return (
-      <div className={containerClass}>
-        <div className={cardClass}>
-          <div>
-            <h2 className="text-lg font-bold text-[var(--color-text)]">Confirma tu asistencia</h2>
-            <p className="text-sm text-[var(--color-textSecondary)] mt-1">
-              Invitación a: <span className="font-medium">{data.event.title}</span>
-            </p>
-          </div>
-
-          <div className="space-y-3">
+      <>
+        <div className={containerClass}>
+          <div className={cardClass}>
             <div>
-              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Nombre</label>
-              <input
-                type="text"
-                value={firstName}
-                onChange={e => setFirstName(e.target.value)}
-                placeholder="Tu nombre"
-                className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-              />
+              <h2 className="text-lg font-bold text-[var(--color-text)]">Confirma tu asistencia</h2>
+              <p className="text-sm text-[var(--color-textSecondary)] mt-1">
+                Invitación a: <span className="font-medium">{data.event.title}</span>
+              </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Apellidos</label>
-              <input
-                type="text"
-                value={lastName}
-                onChange={e => setLastName(e.target.value)}
-                placeholder="Tus apellidos"
-                className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Teléfono móvil</label>
-              <div className="flex gap-2">
-                <select
-                  value={phonePrefix}
-                  onChange={e => setPhonePrefix(e.target.value)}
-                  className="px-2 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                >
-                  {PHONE_PREFIXES.map(p => (
-                    <option key={p.code} value={p.prefix}>{p.label}</option>
-                  ))}
-                </select>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Nombre</label>
                 <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={e => setPhoneNumber(e.target.value.replace(/[^0-9\s]/g, ''))}
-                  placeholder="612 345 678"
-                  className="flex-1 px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  type="text"
+                  value={firstName}
+                  onChange={e => setFirstName(e.target.value)}
+                  placeholder="Tu nombre"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Apellidos</label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={e => setLastName(e.target.value)}
+                  placeholder="Tus apellidos"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Teléfono móvil</label>
+                <div className="flex gap-2">
+                  <select
+                    value={phonePrefix}
+                    onChange={e => setPhonePrefix(e.target.value)}
+                    className="px-2 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  >
+                    {PHONE_PREFIXES.map(p => (
+                      <option key={p.code} value={p.prefix}>{p.label}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={e => setPhoneNumber(e.target.value.replace(/[^0-9\s]/g, ''))}
+                    placeholder="612 345 678"
+                    className="flex-1 px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  />
+                </div>
+              </div>
+
+              {/* Honeypot oculto */}
+              <input
+                ref={honeypotRef}
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                style={{ display: 'none' }}
+              />
+
+              <div className="flex items-start gap-3">
+                <button
+                  type="button"
+                  onClick={() => setLegalAccepted(v => !v)}
+                  className="flex-shrink-0 mt-0.5"
+                  aria-pressed={legalAccepted}
+                >
+                  <div
+                    className={`relative w-10 h-6 rounded-full transition-colors ${legalAccepted ? 'bg-[var(--color-primary)]' : 'bg-zinc-600'}`}
+                  >
+                    <span
+                      className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${legalAccepted ? 'translate-x-4' : 'translate-x-0'}`}
+                    />
+                  </div>
+                </button>
+                <span className="text-xs text-[var(--color-textSecondary)] leading-snug">
+                  Acepto el tratamiento de mis datos personales para el control de acceso al club.{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowLopdModal(true)}
+                    className="underline text-[var(--color-primary)] hover:opacity-80"
+                  >
+                    Leer información sobre protección de datos
+                  </button>
+                </span>
               </div>
             </div>
 
-            {/* Honeypot oculto */}
-            <input
-              ref={honeypotRef}
-              type="text"
-              name="website"
-              tabIndex={-1}
-              autoComplete="off"
-              style={{ display: 'none' }}
-            />
+            {serverError && (
+              <p className="text-sm text-red-600">{serverError}</p>
+            )}
 
-            <label
-              className="flex items-center gap-3 cursor-pointer select-none"
-              onClick={() => setLegalAccepted(v => !v)}
-            >
-              <div
-                className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${legalAccepted ? 'bg-[var(--color-primary)]' : 'bg-zinc-600'}`}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setScreen('info')}
+                className="flex-1 py-2 px-4 rounded-xl font-medium text-[var(--color-textSecondary)] border border-[var(--color-cardBorder)] hover:bg-[var(--color-background)] transition-colors text-sm"
               >
-                <span
-                  className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${legalAccepted ? 'translate-x-4' : 'translate-x-0'}`}
-                />
-              </div>
-              <span className="text-xs text-[var(--color-textSecondary)] leading-snug">
-                Acepto el tratamiento de mis datos personales para el control de acceso al club (LOPD).
-              </span>
-            </label>
-          </div>
-
-          {serverError && (
-            <p className="text-sm text-red-600">{serverError}</p>
-          )}
-
-          <div className="flex gap-2">
-            <button
-              onClick={() => setScreen('info')}
-              className="flex-1 py-2 px-4 rounded-xl font-medium text-[var(--color-textSecondary)] border border-[var(--color-cardBorder)] hover:bg-[var(--color-background)] transition-colors text-sm"
-            >
-              Volver
-            </button>
-            <button
-              onClick={() => requestMutation.mutate()}
-              disabled={!isFormValid || requestMutation.isPending}
-              className="flex-1 py-2 px-4 rounded-xl font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
-            >
-              {requestMutation.isPending ? 'Enviando...' : 'Confirmar'}
-            </button>
+                Volver
+              </button>
+              <button
+                onClick={() => requestMutation.mutate()}
+                disabled={!isFormValid || requestMutation.isPending}
+                className="flex-1 py-2 px-4 rounded-xl font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
+              >
+                {requestMutation.isPending ? 'Enviando...' : 'Confirmar'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+
+        {showLopdModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.75)' }}
+            onClick={() => setShowLopdModal(false)}
+          >
+            <div
+              className="bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4 max-h-[80vh] overflow-y-auto"
+              onClick={e => e.stopPropagation()}
+            >
+              <h2 className="text-base font-bold text-[var(--color-text)]">Información sobre protección de datos</h2>
+              {LOPD_TEXT.split('\n\n').map((paragraph, i) => (
+                <p key={i} className="text-xs text-[var(--color-textSecondary)] leading-relaxed">{paragraph}</p>
+              ))}
+              <button
+                type="button"
+                onClick={() => setShowLopdModal(false)}
+                className="w-full py-2 px-4 rounded-xl font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 transition-opacity text-sm mt-2"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
