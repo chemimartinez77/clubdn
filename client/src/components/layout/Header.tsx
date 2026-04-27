@@ -244,10 +244,12 @@ export default function Header() {
                       <Link
                         to="/combatzone"
                         className="group flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-all duration-300 border border-transparent hover:border-gray-100"
-                        onClick={() => setActiveMenu(null)}
+                        onClick={() => setIsGamesMenuOpen(false)}
                       >
                         <div className="mt-1 p-2 bg-red-50 text-red-600 rounded-lg group-hover:scale-110 group-hover:bg-red-100 transition-all duration-300">
-                          <Swords className="w-5 h-5" />
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.5 10.5l-5-5m0 0L3 12l6.5 6.5 5-5m0 0l5-5-6.5-6.5z" />
+                          </svg>
                         </div>
                         <div>
                           <div className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
