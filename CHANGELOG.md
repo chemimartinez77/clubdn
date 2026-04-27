@@ -6,6 +6,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-27
 
+### refactor: token único por invitación en enlace de invitación
+
+Rediseño del mecanismo de generación de enlaces de invitación para que cada reserva tenga su propio token único en la URL, en lugar de reutilizar el token del `EventShareLink`.
+
+**Problema anterior:** el enlace compartido usaba siempre el mismo token del `EventShareLink` (único por socio+evento). Cuando el socio generaba una segunda reserva para el mismo evento, la URL era idéntica a la anterior, lo que provocaba colisiones en el backend al intentar identificar qué invitación concreta completar.
+
+**Solución:** el token de la URL es ahora el token de la propia `Invitation RESERVED`. Cada llamada a "Generar enlace" / "Reservar otra plaza" crea una invitación nueva con token distinto y devuelve una URL única.
+
+**Cambios:**
+- `server/src/controllers/shareLinkController.ts`: `generateShareLink` ya no consulta ni reutiliza `EventShareLink`; crea directamente una `Invitation RESERVED` con `generateInvitationToken()` y devuelve `/join/<invitation.token>`. `getShareLink` busca la invitación por su token (no por el share link) y verifica que el estado sea `RESERVED`. `requestViaShareLink` localiza la invitación exacta por token, sin lógica de fallback a creación de nueva invitación.
+- `server/src/routes/shareLinkRoutes.ts`: las rutas públicas pasan a ser `GET /api/share/invite/:token` y `POST /api/share/invite/:token/request`.
+- `client/src/pages/JoinViaShareLink.tsx`: las dos llamadas a la API actualizadas al nuevo prefijo `/api/share/invite/`.
+- El modelo `EventShareLink` permanece en la base de datos sin uso activo (no se elimina para no romper migraciones existentes).
+
 ### feat: filtrar partidas no celebradas en estadísticas y botones de disputa en EventDetail
 
 Dos mejoras relacionadas con la confirmación de si una partida se celebró o no:

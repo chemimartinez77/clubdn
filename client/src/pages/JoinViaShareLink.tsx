@@ -88,7 +88,7 @@ export default function JoinViaShareLink() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['shareLink', token],
     queryFn: async () => {
-      const res = await api.get<ApiResponse<ShareLinkData>>(`/api/share/${token}`);
+      const res = await api.get<ApiResponse<ShareLinkData>>(`/api/share/invite/${token}`);
       return res.data.data!;
     },
     enabled: !!token,
@@ -112,7 +112,7 @@ export default function JoinViaShareLink() {
   const requestMutation = useMutation({
     mutationFn: async () => {
       const phone = `${phonePrefix}${phoneNumber.replace(/\s/g, '')}`;
-      const res = await api.post<ApiResponse<RegistrationResult>>(`/api/share/${token}/request`, {
+      const res = await api.post<ApiResponse<RegistrationResult>>(`/api/share/invite/${token}/request`, {
         guestFirstName: firstName.trim(),
         guestLastName: lastName.trim(),
         guestPhone: phone,
