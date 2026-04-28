@@ -29,7 +29,7 @@ router.post(
       .trim()
       .isEmail()
       .withMessage('Debe proporcionar un email válido')
-      .normalizeEmail(),
+      .normalizeEmail({ gmail_remove_dots: false }),
     body('password')
       .isLength({ min: 8 })
       .withMessage('La contraseña debe tener al menos 8 caracteres')
