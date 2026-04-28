@@ -275,9 +275,9 @@ async function processNextPendingJob() {
   }
 
   processing = true;
+  let hadWork = false;
 
   try {
-    // Primero: calcular diff de jobs QUEUED (fase rápida, 1 a la vez)
     const queuedJob = await prisma.bggSyncJob.findFirst({
       where: { status: BggSyncJobStatus.QUEUED },
       orderBy: { requestedAt: 'asc' },
@@ -285,22 +285,27 @@ async function processNextPendingJob() {
     });
 
     if (queuedJob) {
+      hadWork = true;
       await computeAndSaveDiff(queuedJob.id);
-      return; // en el próximo tick se procesará como PENDING
-    }
+    } else {
+      const pendingJob = await prisma.bggSyncJob.findFirst({
+        where: { status: BggSyncJobStatus.PENDING },
+        orderBy: { requestedAt: 'asc' },
+        select: { id: true },
+      });
 
-    // Después: importar jobs PENDING con diff ya calculado
-    const pendingJob = await prisma.bggSyncJob.findFirst({
-      where: { status: BggSyncJobStatus.PENDING },
-      orderBy: { requestedAt: 'asc' },
-      select: { id: true },
-    });
-
-    if (pendingJob) {
-      await processJob(pendingJob.id);
+      if (pendingJob) {
+        hadWork = true;
+        await processJob(pendingJob.id);
+      }
     }
   } finally {
     processing = false;
+  }
+
+  // Reprogramar solo si había trabajo, para vaciar la cola sin polling en idle
+  if (hadWork) {
+    setTimeout(() => { void processNextPendingJob(); }, BGG_SYNC_POLL_MS);
   }
 }
 
@@ -315,8 +320,5 @@ export async function startBggSyncJobWorker() {
 
   workerStarted = true;
   await markStaleJobsAsQueued();
-  setInterval(() => {
-    void processNextPendingJob();
-  }, BGG_SYNC_POLL_MS);
   void processNextPendingJob();
 }
