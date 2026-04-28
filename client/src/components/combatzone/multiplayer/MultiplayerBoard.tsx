@@ -3,6 +3,12 @@ import type {
   TresEnRayaCtx,
   TresEnRayaEngineState,
 } from '../../../types/multiplayer';
+import JaipurBoard from './JaipurBoard';
+
+interface MatchMoveInput {
+  type: string;
+  args?: unknown[];
+}
 
 function getCellLabel(value: null | '0' | '1') {
   if (value === '0') return 'X';
@@ -30,21 +36,17 @@ function getBoardTitle(snapshot: MultiplayerMatchSnapshot) {
   return 'Esperando al rival';
 }
 
-export default function MultiplayerBoard({
+function TresEnRayaBoard({
   snapshot,
-  onCellClick,
   isSending,
+  onSendMove,
 }: {
   snapshot: MultiplayerMatchSnapshot;
-  onCellClick: (index: number) => void;
   isSending: boolean;
+  onSendMove: (move: MatchMoveInput) => void;
 }) {
-  if (snapshot.match.gameKey !== 'tres-en-raya' || !snapshot.engine) {
-    return (
-      <div className="rounded-[32px] border border-dashed border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] p-8 text-center text-[var(--color-textSecondary)]">
-        El tablero aparecerá cuando la partida esté lista.
-      </div>
-    );
+  if (!snapshot.engine) {
+    return null;
   }
 
   const board = snapshot.engine.G as TresEnRayaEngineState;
@@ -71,7 +73,7 @@ export default function MultiplayerBoard({
             <button
               key={index}
               type="button"
-              onClick={() => onCellClick(index)}
+              onClick={() => onSendMove({ type: 'placeMark', args: [index] })}
               disabled={!canPlay || cell !== null}
               className={[
                 'aspect-square rounded-[28px] border text-5xl font-black transition-all duration-200',
@@ -96,3 +98,36 @@ export default function MultiplayerBoard({
     </section>
   );
 }
+
+export default function MultiplayerBoard({
+  snapshot,
+  isSending,
+  onSendMove,
+}: {
+  snapshot: MultiplayerMatchSnapshot;
+  isSending: boolean;
+  onSendMove: (move: MatchMoveInput) => void;
+}) {
+  if (!snapshot.engine) {
+    return (
+      <div className="rounded-[32px] border border-dashed border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] p-8 text-center text-[var(--color-textSecondary)]">
+        El tablero aparecerá cuando la partida esté lista.
+      </div>
+    );
+  }
+
+  if (snapshot.match.gameKey === 'jaipur') {
+    return <JaipurBoard snapshot={snapshot} isSending={isSending} onSendMove={onSendMove} />;
+  }
+
+  if (snapshot.match.gameKey === 'tres-en-raya') {
+    return <TresEnRayaBoard snapshot={snapshot} isSending={isSending} onSendMove={onSendMove} />;
+  }
+
+  return (
+    <div className="rounded-[32px] border border-dashed border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] p-8 text-center text-[var(--color-textSecondary)]">
+      El tablero aparecerá cuando la partida esté lista.
+    </div>
+  );
+}
+

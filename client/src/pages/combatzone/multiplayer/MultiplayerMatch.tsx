@@ -105,9 +105,8 @@ export default function MultiplayerMatch() {
             <MultiplayerBoard
               snapshot={snapshot}
               isSending={isSendingMove}
-              onCellClick={(index) => {
-                if (snapshot.match.gameKey !== 'tres-en-raya') return;
-                void sendMove({ type: 'placeMark', args: [index] });
+              onSendMove={(move) => {
+                void sendMove(move);
               }}
             />
 
@@ -132,7 +131,11 @@ export default function MultiplayerMatch() {
                             </p>
                           </div>
                           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
-                            {player.playerIndex === 0 ? 'X' : 'O'}
+                            {snapshot.match.gameKey === 'tres-en-raya'
+                              ? player.playerIndex === 0
+                                ? 'X'
+                                : 'O'
+                              : `J${player.playerIndex + 1}`}
                           </span>
                         </div>
                       </div>

@@ -1,7 +1,9 @@
 import type { BoardGameDefinition, BoardGameKey } from '../types/contracts';
+import { jaipurDefinition } from './jaipur/game';
 import { tresEnRayaDefinition } from './tresEnRaya/game';
 
 const gameRegistry = new Map<BoardGameKey, BoardGameDefinition>([
+  [jaipurDefinition.gameKey, jaipurDefinition],
   [tresEnRayaDefinition.gameKey, tresEnRayaDefinition],
 ]);
 

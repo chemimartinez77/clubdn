@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Layout from '../../../components/layout/Layout';
 import MatchLobbyCard from '../../../components/combatzone/multiplayer/MatchLobbyCard';
+import Layout from '../../../components/layout/Layout';
 import { useMultiplayerLobby } from '../../../hooks/multiplayer/useMultiplayerLobby';
 import type { MultiplayerVisibility } from '../../../types/multiplayer';
 
@@ -14,11 +14,11 @@ const VISIBILITY_OPTIONS: Array<{ value: MultiplayerVisibility; label: string }>
 export default function MultiplayerHub() {
   const navigate = useNavigate();
   const { games, matches, isLoadingGames, isLoadingMatches, createMatch, isCreating } = useMultiplayerLobby();
-  const [selectedGameKey, setSelectedGameKey] = useState<string>('tres-en-raya');
+  const [selectedGameKey, setSelectedGameKey] = useState<string>('jaipur');
   const [visibility, setVisibility] = useState<MultiplayerVisibility>('CLUB');
   const [maxPlayers, setMaxPlayers] = useState(2);
 
-  const selectedGame = games.find((game) => game.gameKey === selectedGameKey) ?? null;
+  const selectedGame = games.find((game) => game.gameKey === selectedGameKey) ?? games[0] ?? null;
 
   const handleCreate = async () => {
     if (!selectedGame) return;
@@ -35,12 +35,12 @@ export default function MultiplayerHub() {
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8">
         <section className="rounded-[40px] bg-[radial-gradient(circle_at_top_left,#f97316_0%,#fb923c_12%,#fff7ed_36%,#ecfeff_100%)] p-8 shadow-[0_40px_90px_rgba(15,23,42,0.12)]">
           <p className="text-sm font-bold uppercase tracking-[0.32em] text-slate-600">Combat Zone Multiplayer</p>
-          <h1 className="mt-3 max-w-2xl text-4xl font-black text-slate-900">
-            Mesas vivas, turnos autoritativos y una arena distinta a la típica cuadrícula plana.
+          <h1 className="mt-3 max-w-3xl text-4xl font-black text-slate-900">
+            Mesas vivas, turnos autoritativos y una arena que ya puede sostener duelos con bastante más tensión.
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-            Esta primera versión monta un motor multijugador modular sobre el stack actual del club. El primer vertical slice es
-            un tres en raya en tiempo real, pensado como base reutilizable para juegos más potentes.
+            Esta primera versión monta un motor multijugador modular sobre el stack actual del club. `Jaipur` entra como primer
+            juego comercial serio y comparte infraestructura con verticales más pequeños como el tres en raya.
           </p>
         </section>
 
@@ -130,7 +130,7 @@ export default function MultiplayerHub() {
               <li>Motor turn-based con `boardgame.io` integrado en backend.</li>
               <li>Lobby persistido con Prisma y relación directa con usuarios del club.</li>
               <li>Canal SSE por partida para sincronizar turnos y reconexiones.</li>
-              <li>Tablero visual propio en React, sin depender aún de `PixiJS`.</li>
+              <li>Mesas visuales específicas por juego, sin depender aún de `PixiJS`.</li>
             </ul>
           </div>
         </section>
@@ -167,3 +167,4 @@ export default function MultiplayerHub() {
     </Layout>
   );
 }
+

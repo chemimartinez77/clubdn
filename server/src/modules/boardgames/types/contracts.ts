@@ -1,6 +1,6 @@
 import type { Game } from 'boardgame.io';
 
-export type BoardGameKey = 'tres-en-raya';
+export type BoardGameKey = 'tres-en-raya' | 'jaipur';
 
 export interface BoardGameDefinition {
   gameKey: BoardGameKey;

@@ -1,6 +1,6 @@
 export type MultiplayerVisibility = 'PRIVATE' | 'CLUB' | 'INVITE_ONLY';
 export type MultiplayerStatus = 'LOBBY' | 'ACTIVE' | 'FINISHED' | 'ABANDONED';
-export type MultiplayerGameKey = 'tres-en-raya';
+export type MultiplayerGameKey = 'tres-en-raya' | 'jaipur';
 
 export interface MultiplayerGameInfo {
   gameKey: MultiplayerGameKey;
@@ -78,4 +78,57 @@ export interface TresEnRayaCtx {
     draw?: boolean;
   };
   turn: number;
+}
+
+export type JaipurGoodsType = 'diamante' | 'oro' | 'plata' | 'tela' | 'especias' | 'cuero';
+export type JaipurCardType = JaipurGoodsType | 'camello';
+export type JaipurPlayerID = '0' | '1';
+
+export interface JaipurPlayerView {
+  hand: JaipurGoodsType[];
+  handSize: number;
+  herdCount: number;
+  goodsTokenValuesWon: number[];
+  bonusTokenValuesWon: number[];
+  camelTokenWon: boolean;
+}
+
+export interface JaipurRoundSummary {
+  roundNumber: number;
+  winnerPlayerID: JaipurPlayerID | null;
+  winnerBy: 'rupias' | 'bonus' | 'goods' | 'empate';
+  totals: Record<JaipurPlayerID, number>;
+  bonusCounts: Record<JaipurPlayerID, number>;
+  goodsCounts: Record<JaipurPlayerID, number>;
+  camelWinnerPlayerID: JaipurPlayerID | null;
+  seals: Record<JaipurPlayerID, number>;
+  reason: 'three-goods-depleted' | 'deck-empty-refill';
+}
+
+export interface JaipurEngineState {
+  roundNumber: number;
+  roundStarterIndex: 0 | 1;
+  matchSeals: Record<JaipurPlayerID, number>;
+  matchWinnerPlayerID: JaipurPlayerID | null;
+  players: Record<JaipurPlayerID, JaipurPlayerView>;
+  deck: JaipurCardType[];
+  market: JaipurCardType[];
+  discard: JaipurGoodsType[];
+  goodsTokens: Record<JaipurGoodsType, number[]>;
+  bonusTokens3: number[];
+  bonusTokens4: number[];
+  bonusTokens5: number[];
+  camelTokenAvailable: boolean;
+  lastRoundSummary: JaipurRoundSummary | null;
+}
+
+export interface JaipurCtx {
+  currentPlayer: string;
+  turn: number;
+  gameover?: {
+    winner?: JaipurPlayerID;
+    seals?: Record<JaipurPlayerID, number>;
+    rounds?: number;
+    lastRoundSummary?: JaipurRoundSummary | null;
+  };
 }
