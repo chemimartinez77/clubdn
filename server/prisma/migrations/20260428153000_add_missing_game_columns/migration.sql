@@ -1,0 +1,4 @@
+ALTER TABLE "Game"
+  ADD COLUMN IF NOT EXISTS "isExpansion" BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS "parentBggId" TEXT,
+  ADD COLUMN IF NOT EXISTS "badgeCategory" "BadgeCategory";

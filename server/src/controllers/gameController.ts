@@ -4,6 +4,12 @@ import { prisma } from '../config/database';
 import { getRPGGeekItem } from '../services/bggService';
 import { ensureGameFromBgg } from '../services/gameCatalogService';
 
+const combatZoneGameFallbacks: Record<string, { id: string; name: string; image: null; thumbnail: null }> = {
+  '230802': { id: '230802', name: 'Azul', image: null, thumbnail: null },
+  '173346': { id: '173346', name: '7 Wonders Duel', image: null, thumbnail: null },
+  '43570': { id: '43570', name: 'Viernes', image: null, thumbnail: null },
+};
+
 /**
  * Obtener o crear un juego en la base de datos
  * Si el juego ya existe, lo devuelve. Si no, lo busca en BGG y lo guarda.
@@ -260,13 +266,23 @@ export const getGameBasicInfo = async (req: Request, res: Response) => {
     });
 
     if (!game) {
-      const ensured = await ensureGameFromBgg(gameId, { refreshIfExists: false });
-      game = {
-        id: ensured.game.id,
-        name: ensured.game.name,
-        image: ensured.game.image,
-        thumbnail: ensured.game.thumbnail,
-      };
+      try {
+        const ensured = await ensureGameFromBgg(gameId, { refreshIfExists: false });
+        game = {
+          id: ensured.game.id,
+          name: ensured.game.name,
+          image: ensured.game.image,
+          thumbnail: ensured.game.thumbnail,
+        };
+      } catch (error) {
+        const fallbackGame = combatZoneGameFallbacks[gameId];
+        if (fallbackGame) {
+          console.warn(`[GAME] Usando fallback local para ${gameId} al no poder cargar BGG`);
+          game = fallbackGame;
+        } else {
+          throw error;
+        }
+      }
     }
 
     return res.json({ success: true, data: game });

@@ -22,6 +22,7 @@ export interface User {
   profile?: {
     avatar?: string | null;
     nick?: string | null;
+    accessCombatZone?: boolean;
   } | null;
 }
 

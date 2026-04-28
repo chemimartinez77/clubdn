@@ -42,10 +42,11 @@ export default function MultiplayerMatch() {
   const match = snapshot?.match ?? null;
   const isOwner = match?.ownerUserId === user?.id;
   const isParticipant = match?.mePlayerIndex !== null && match?.mePlayerIndex !== undefined;
+  const isJaipur = match?.gameKey === 'jaipur';
 
   return (
     <Layout>
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8">
+      <div className="mx-auto flex max-w-[1500px] flex-col gap-8 px-4 py-8">
         <div className="flex items-center justify-between gap-4">
           <div>
             <button
@@ -57,7 +58,9 @@ export default function MultiplayerMatch() {
             </button>
             <p className="mt-4 text-xs uppercase tracking-[0.22em] text-[var(--color-textSecondary)]">Mesa en directo</p>
             <h1 className="mt-1 text-3xl font-black text-[var(--color-text)]">{match?.gameTitle ?? 'Cargando partida…'}</h1>
-            <p className="mt-2 text-sm text-[var(--color-textSecondary)]">{match ? getStatusText(match.status) : 'Resolviendo estado actual'}</p>
+            <p className="mt-2 text-sm text-[var(--color-textSecondary)]">
+              {match ? getStatusText(match.status) : 'Resolviendo estado actual'}
+            </p>
           </div>
 
           {match && (
@@ -100,6 +103,14 @@ export default function MultiplayerMatch() {
           <div className="rounded-[28px] border border-dashed border-[var(--color-cardBorder)] p-8 text-center text-[var(--color-textSecondary)]">
             Cargando partida…
           </div>
+        ) : isJaipur ? (
+          <MultiplayerBoard
+            snapshot={snapshot}
+            isSending={isSendingMove}
+            onSendMove={(move) => {
+              void sendMove(move);
+            }}
+          />
         ) : (
           <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
             <MultiplayerBoard
@@ -116,6 +127,7 @@ export default function MultiplayerMatch() {
                 <div className="mt-4 space-y-3">
                   {snapshot.match.players.map((player) => {
                     const isMe = player.userId === user?.id;
+
                     return (
                       <div
                         key={player.userId}
@@ -150,9 +162,7 @@ export default function MultiplayerMatch() {
                   <p>La mesa recibe snapshots del servidor por SSE y cada movimiento se valida en backend.</p>
                   <p>Si recargas la página, el cliente pide el estado actual y reengancha el canal automáticamente.</p>
                   {snapshot.engine && (
-                    <p className="font-semibold text-[var(--color-text)]">
-                      Versión de estado: #{snapshot.engine.stateId}
-                    </p>
+                    <p className="font-semibold text-[var(--color-text)]">Versión de estado: #{snapshot.engine.stateId}</p>
                   )}
                 </div>
               </section>

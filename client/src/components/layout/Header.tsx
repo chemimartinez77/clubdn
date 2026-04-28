@@ -72,7 +72,7 @@ export default function Header() {
       : user?.membership?.type === 'BAJA'
       ? 'Baja'
       : 'Miembro';
-  const isCombatZoneEnabledForUser = user?.role === 'CHEMI';
+  const isCombatZoneEnabledForUser = user?.profile?.accessCombatZone === true;
 
   return (
     <>
@@ -702,7 +702,7 @@ export default function Header() {
                     </Link>
                     {isCombatZoneEnabledForUser ? (
                       <Link
-                        to="/azul/combatzone"
+                        to="/combatzone"
                         className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                         onClick={closeAllMenus}
                       >
@@ -711,7 +711,7 @@ export default function Header() {
                       </Link>
                     ) : (
                       <Link
-                        to="/azul/combatzone/coming-soon"
+                        to="/combatzone/coming-soon"
                         className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                         onClick={closeAllMenus}
                       >
