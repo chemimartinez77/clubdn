@@ -142,12 +142,6 @@ async function main() {
       ])
       const startDate = randomDate(new Date(2023, 0, 1), new Date())
 
-      // Configurar precio según tipo
-      let monthlyFee = 15
-      if (membershipType === MembershipType.SOCIO) monthlyFee = 19
-      else if (membershipType === MembershipType.FAMILIAR) monthlyFee = 10
-      else if (membershipType === MembershipType.EN_PRUEBAS || membershipType === MembershipType.BAJA) monthlyFee = 0
-
       // Si es BAJA, siempre tiene fechaBaja
       const hasFechaBaja = membershipType === MembershipType.BAJA || Math.random() < 0.05
       const fechaBaja = hasFechaBaja ? randomDate(startDate, new Date()) : null
@@ -156,7 +150,6 @@ async function main() {
         data: {
           userId: user.id,
           type: membershipType,
-          monthlyFee,
           startDate,
           becameSocioAt: membershipType === MembershipType.SOCIO ? randomDate(startDate, new Date()) : null,
           fechaBaja,
