@@ -254,16 +254,27 @@ export const listGames = async (req: Request, res: Response) => {
 export const getGameBasicInfo = async (req: Request, res: Response) => {
   try {
     const { gameId } = req.params;
-    const game = await prisma.game.findUnique({
+    let game = await prisma.game.findUnique({
       where: { id: gameId },
       select: { id: true, name: true, image: true, thumbnail: true },
     });
+
     if (!game) {
-      return res.status(404).json({ success: false, message: 'Game not found' });
+      const ensured = await ensureGameFromBgg(gameId, { refreshIfExists: false });
+      game = {
+        id: ensured.game.id,
+        name: ensured.game.name,
+        image: ensured.game.image,
+        thumbnail: ensured.game.thumbnail,
+      };
     }
+
     return res.json({ success: true, data: game });
   } catch (error) {
     console.error('[GAME] Error al obtener info del juego:', error);
+    if (error instanceof Error && error.message === 'Game not found in BoardGameGeek') {
+      return res.status(404).json({ success: false, message: error.message });
+    }
     return res.status(500).json({ success: false, message: 'Error fetching game info' });
   }
 };

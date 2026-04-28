@@ -1,2 +1,2 @@
 ALTER TABLE "public"."UserProfile"
-ADD COLUMN "accessCombatZone" BOOLEAN NOT NULL DEFAULT false;
+ADD COLUMN IF NOT EXISTS "accessCombatZone" BOOLEAN NOT NULL DEFAULT false;
