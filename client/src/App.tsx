@@ -55,6 +55,8 @@ import ViernesGame from './pages/viernes/ViernesGame';
 import CentipedeGame from './pages/centipede/CentipedeGame';
 import CombatZoneComingSoon from './pages/CombatZoneComingSoon';
 import SevenWondersDuelHub from './pages/sevenWondersDuel/SevenWondersDuelHub';
+import MultiplayerHub from './pages/combatzone/multiplayer/MultiplayerHub';
+import MultiplayerMatch from './pages/combatzone/multiplayer/MultiplayerMatch';
 import WeeklyPreview from './pages/WeeklyPreview';
 import Marketplace from './pages/marketplace/Marketplace';
 import MarketplaceNew from './pages/marketplace/MarketplaceNew';
@@ -381,6 +383,22 @@ function App() {
             element={
               <CombatZoneRoute>
                 <CentipedeGame />
+              </CombatZoneRoute>
+            }
+          />
+          <Route
+            path="/combatzone/multiplayer"
+            element={
+              <CombatZoneRoute>
+                <MultiplayerHub />
+              </CombatZoneRoute>
+            }
+          />
+          <Route
+            path="/combatzone/multiplayer/:id"
+            element={
+              <CombatZoneRoute>
+                <MultiplayerMatch />
               </CombatZoneRoute>
             }
           />

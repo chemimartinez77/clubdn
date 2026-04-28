@@ -129,6 +129,8 @@ model User {
   azulGamesAsPlayer3  AzulGame[]          @relation("AzulGamesAsPlayer3")
   azulGamesAsPlayer4  AzulGame[]          @relation("AzulGamesAsPlayer4")
   viernesGames        ViernesGame[]       @relation("ViernesGamesAsPlayer")
+  ownedMultiplayerMatches MultiplayerMatch[] @relation("MultiplayerMatchOwner")
+  multiplayerMatchSeats   MultiplayerMatchSeat[]
   pageViews           PageView[]
   gameValidationsAsScanner GameValidation[]    @relation("GameValidationScanner")
   gameValidationsAsScanned GameValidation[]    @relation("GameValidationScanned")
@@ -1282,6 +1284,19 @@ enum ViernesGameStatus {
   FINISHED  // Partida terminada
 }
 
+enum MultiplayerMatchStatus {
+  LOBBY
+  ACTIVE
+  FINISHED
+  ABANDONED
+}
+
+enum MultiplayerMatchVisibility {
+  PRIVATE
+  CLUB
+  INVITE_ONLY
+}
+
 // Partida del juego solitario Viernes (Friday/Freitag de Friedemann Friese)
 model ViernesGame {
   id         String             @id @default(cuid())
@@ -1297,6 +1312,47 @@ model ViernesGame {
   @@index([playerId])
   @@index([status])
   @@index([createdAt])
+}
+
+model MultiplayerMatch {
+  id           String                     @id @default(cuid())
+  gameKey      String
+  status       MultiplayerMatchStatus     @default(LOBBY)
+  visibility   MultiplayerMatchVisibility @default(CLUB)
+  ownerUserId  String
+  owner        User                       @relation("MultiplayerMatchOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  minPlayers   Int                        @default(2)
+  maxPlayers   Int
+  winnerUserId String?
+  engineState  Json?
+  result       Json?
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+  seats        MultiplayerMatchSeat[]
+
+  @@index([gameKey, status])
+  @@index([ownerUserId])
+  @@index([visibility, status])
+  @@index([createdAt])
+}
+
+model MultiplayerMatchSeat {
+  id          String            @id @default(cuid())
+  matchId     String
+  match       MultiplayerMatch  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playerIndex Int
+  isReady     Boolean           @default(true)
+  joinedAt    DateTime          @default(now())
+  leftAt      DateTime?
+
+  @@unique([matchId, userId])
+  @@unique([matchId, playerIndex])
+  @@index([userId, joinedAt])
+  @@index([matchId, leftAt])
 }
 
 // ==================== GESTION FINANCIERA ====================
