@@ -260,6 +260,7 @@ export const listGames = async (req: Request, res: Response) => {
 export const getGameBasicInfo = async (req: Request, res: Response) => {
   try {
     const { gameId } = req.params;
+    if (!gameId) return res.status(400).json({ success: false, message: 'gameId requerido' });
     let game = await prisma.game.findUnique({
       where: { id: gameId },
       select: { id: true, name: true, image: true, thumbnail: true },
