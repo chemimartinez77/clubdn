@@ -92,14 +92,19 @@ export const register = async (req: Request, res: Response) => {
     }
 
     const { name, email, password, hcaptchaToken } = req.body;
+    const bypassHcaptcha = shouldBypassHcaptcha(req);
 
     // Verificar hCaptcha
-    if (!hcaptchaToken) {
+    if (!bypassHcaptcha && !hcaptchaToken) {
       return res.status(400).json({ success: false, message: 'Verificación de seguridad requerida' });
     }
-    const captchaOk = await verifyHcaptcha(hcaptchaToken);
-    if (!captchaOk) {
-      return res.status(400).json({ success: false, message: 'Verificación de seguridad fallida. Inténtalo de nuevo.' });
+    if (!bypassHcaptcha) {
+      const captchaOk = await verifyHcaptcha(hcaptchaToken);
+      if (!captchaOk) {
+        return res.status(400).json({ success: false, message: 'Verificación de seguridad fallida. Inténtalo de nuevo.' });
+      }
+    } else {
+      console.warn('[hCaptcha] Verificación omitida temporalmente para registro móvil/local');
     }
 
     // Verificar si el email ya existe

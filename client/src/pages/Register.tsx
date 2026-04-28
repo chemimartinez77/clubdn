@@ -10,6 +10,7 @@ import { registerSchema, type RegisterFormData } from '../lib/validations';
 import type { ApiResponse } from '../types/auth';
 
 export default function Register() {
+  const shouldBypassHcaptcha = import.meta.env.DEV || window.location.hostname === 'localhost';
   const { success: showSuccess, error: showError } = useToast();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -50,7 +51,7 @@ export default function Register() {
   });
 
   const onSubmit = async (data: RegisterFormData) => {
-    if (!captchaToken) {
+    if (!shouldBypassHcaptcha && !captchaToken) {
       setError('Por favor, completa la verificación de seguridad.');
       return;
     }
@@ -60,7 +61,7 @@ export default function Register() {
     try {
       const response = await api.post<ApiResponse<{ email: string }>>(
         '/api/auth/register',
-        { ...data, hcaptchaToken: captchaToken }
+        { ...data, hcaptchaToken: captchaToken ?? '' }
       );
 
       if (response.data.success) {
@@ -213,18 +214,20 @@ export default function Register() {
             </p>
           </div>
 
-          <div className="flex justify-center">
-            <HCaptcha
-              ref={captchaRef}
-              sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
-              onVerify={handleCaptchaVerify}
-              onExpire={handleCaptchaExpire}
-            />
-          </div>
+          {!shouldBypassHcaptcha && (
+            <div className="flex justify-center">
+              <HCaptcha
+                ref={captchaRef}
+                sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
+                onVerify={handleCaptchaVerify}
+                onExpire={handleCaptchaExpire}
+              />
+            </div>
+          )}
 
           <button
             type="submit"
-            disabled={loading || !captchaToken}
+            disabled={loading || (!shouldBypassHcaptcha && !captchaToken)}
             className="w-full bg-[var(--color-primary)] text-white py-3 rounded-lg font-semibold hover:bg-[var(--color-primaryDark)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Registrando...' : 'Registrarse'}

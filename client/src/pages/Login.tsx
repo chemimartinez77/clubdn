@@ -24,6 +24,7 @@ interface Particle {
 }
 
 export default function Login() {
+  const shouldBypassHcaptcha = import.meta.env.DEV || window.location.hostname === 'localhost';
   const navigate = useNavigate();
   const { login } = useAuth();
   const redirectTo = new URLSearchParams(window.location.search).get('redirect') || '/';
@@ -87,7 +88,7 @@ export default function Login() {
   }, []);
 
   const onSubmit = async (data: LoginFormData) => {
-    if (!captchaToken) {
+    if (!shouldBypassHcaptcha && !captchaToken) {
       setError('Por favor, completa la verificación de seguridad.');
       return;
     }
@@ -97,7 +98,7 @@ export default function Login() {
 
     try {
       console.log('[LOGIN DEBUG] email enviado:', JSON.stringify(data.email));
-      await login(data.email, data.password, captchaToken);
+      await login(data.email, data.password, captchaToken ?? '');
       success('Sesión iniciada correctamente');
 
       // Si hay redirect explícito, respetarlo; si no, usar la pantalla de inicio del perfil
@@ -369,19 +370,21 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="flex justify-center">
-            <HCaptcha
-              ref={captchaRef}
-              sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
-              onVerify={handleCaptchaVerify}
-              onExpire={handleCaptchaExpire}
-              theme={themeMode === 'dark' ? 'dark' : 'light'}
-            />
-          </div>
+          {!shouldBypassHcaptcha && (
+            <div className="flex justify-center">
+              <HCaptcha
+                ref={captchaRef}
+                sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
+                onVerify={handleCaptchaVerify}
+                onExpire={handleCaptchaExpire}
+                theme={themeMode === 'dark' ? 'dark' : 'light'}
+              />
+            </div>
+          )}
 
           <button
             type="submit"
-            disabled={loading || !captchaToken || freezeSeconds > 0}
+            disabled={loading || (!shouldBypassHcaptcha && !captchaToken) || freezeSeconds > 0}
             className="w-full bg-[var(--color-primary)] text-white py-3 rounded-lg font-semibold hover:bg-[var(--color-primaryDark)] transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg hover:shadow-xl"
           >
             {loading ? (
