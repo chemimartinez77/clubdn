@@ -27,6 +27,7 @@ export interface UserProfile {
   notifyInvitations: boolean;
   allowEventInvitations: boolean;
   showTipOfTheDay: boolean;
+  accessCombatZone: boolean;
   ludotecaPublica: boolean;
   noughterColor: string | null;
   defaultScreen: string;

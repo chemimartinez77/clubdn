@@ -105,8 +105,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function CombatZoneRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
 
-  if (isLoading) {
+  const { data: profileData, isLoading: profileLoading } = useQuery({
+    queryKey: ['myProfile'],
+    queryFn: () => api.get('/api/profile/me').then(r => r.data.data?.profile),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (isLoading || (!!user && profileLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[var(--color-primary)]"></div>
@@ -118,12 +126,8 @@ function CombatZoneRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  const isAllowedUser =
-    user.id === 'cmlnolhj4000oo175283glccj' ||
-    user.email?.toLowerCase() === 'chemimartinez@gmail.com';
-
-  if (!isAllowedUser) {
-    return <Navigate to="/combatzone/coming-soon" replace />;
+  if (!profileData?.accessCombatZone) {
+    return <Navigate to="/combatzone/coming-soon" replace state={{ from: location }} />;
   }
 
   return <>{children}</>;

@@ -4,6 +4,24 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-28 (sesión 2)
+
+### feat: control de acceso a Combat Zone por campo de perfil
+
+Sustituye el hardcode de IDs/emails de usuario en el guard `CombatZoneRoute` por un campo real en base de datos, permitiendo gestionar el acceso a Combat Zone desde el panel de administración sin tocar código.
+
+**Problema anterior:** el acceso a Combat Zone estaba condicionado a una lista blanca de IDs y emails hardcodeados en `App.tsx`. Cualquier cambio requería modificar y redesplegar el código.
+
+**Solución:** nuevo campo booleano `accessCombatZone` en `UserProfile` (por defecto `false`). El guard consulta el perfil del usuario y redirige a `/combatzone/coming-soon` si el campo no está activado.
+
+**Cambios:**
+- `server/prisma/schema.prisma`: añadido campo `accessCombatZone Boolean @default(false)` en el modelo `UserProfile`.
+- `server/prisma/migrations/20260428123000_add_access_combat_zone_to_user_profile/`: migración que añade la columna a la BD.
+- `client/src/App.tsx`: `CombatZoneRoute` deja de usar la lista blanca hardcodeada; ahora carga el perfil con `useQuery` y comprueba `profileData?.accessCombatZone`. Mientras carga el perfil muestra el spinner.
+- `client/src/types/profile.ts`: añadido campo `accessCombatZone: boolean` a la interfaz `UserProfile`.
+
+---
+
 ## 2026-04-28
 
 ### feat: base multijugador reusable con `boardgame.io` y especificación inicial de Jaipur

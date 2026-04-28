@@ -207,6 +207,7 @@ model UserProfile {
   notifyInvitations     Boolean @default(true)   // Estado de invitaciones
   allowEventInvitations Boolean @default(true)   // Permitir ser apuntado a eventos por otros miembros
   showTipOfTheDay       Boolean @default(true)   // Mostrar consejo del día al iniciar sesión
+  accessCombatZone      Boolean @default(false)  // Permite acceder a Combat Zone
 
   // Personalización
   defaultScreen        String   @default("home")       // Pantalla de inicio tras login: "home" o "events"
