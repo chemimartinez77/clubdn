@@ -506,7 +506,6 @@ model Membership {
   user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   type              MembershipType @default(COLABORADOR)
-  iban              String?
   notes             String?        @db.Text  // Observaciones internas del admin
 
   // Fechas importantes

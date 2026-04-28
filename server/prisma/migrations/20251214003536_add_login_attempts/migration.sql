@@ -23,3 +23,10 @@ CREATE INDEX "LoginAttempt_success_idx" ON "LoginAttempt"("success");
 
 -- CreateIndex
 CREATE INDEX "LoginAttempt_attemptedAt_idx" ON "LoginAttempt"("attemptedAt");
+
+-- Add missing reset password fields to User
+ALTER TABLE "User"
+  ADD COLUMN "resetPasswordToken" TEXT,
+  ADD COLUMN "resetPasswordExpiry" TIMESTAMP(3);
+
+CREATE UNIQUE INDEX "User_resetPasswordToken_key" ON "User"("resetPasswordToken");
