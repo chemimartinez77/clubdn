@@ -26,10 +26,10 @@ export default function SpinSpotlight({ players, chosenId, onAnimationEnd }: Spi
     const TOTAL_FAST_MS = 2500;
 
     // Fase 2: frenado progresivo en ~3s
-    // Cada paso incrementa el intervalo exponencialmente hasta detenerse en el elegido
-    const SLOW_STEPS = 14;
-    const SLOW_BASE = 120;   // intervalo inicial del frenado (ms)
-    const SLOW_GROWTH = 1.45; // factor multiplicativo entre pasos
+    // Se calculan de antemano todos los pasos necesarios para llegar al elegido
+    // dando al menos 2 vueltas completas, con intervalos crecientes exponencialmente
+    const SLOW_BASE = 100;
+    const SLOW_GROWTH = 1.5;
 
     let elapsed = 0;
     let currentIdx = 0;
@@ -42,26 +42,29 @@ export default function SpinSpotlight({ players, chosenId, onAnimationEnd }: Spi
       if (elapsed < TOTAL_FAST_MS) {
         timeoutRef.current = setTimeout(fastStep, FAST_INTERVAL);
       } else {
-        slowStep(0, currentIdx);
+        // Calcular cuántos pasos necesitamos para llegar al elegido
+        // dando al menos 2 vueltas completas desde la posición actual
+        const minSteps = players.length * 2;
+        const distToChosen = ((chosenIdx - currentIdx) % players.length + players.length) % players.length || players.length;
+        const totalSteps = minSteps + distToChosen;
+        slowStep(0, currentIdx, totalSteps);
       }
     }
 
-    function slowStep(step: number, idx: number) {
+    function slowStep(step: number, idx: number, totalSteps: number) {
       const nextIdx = (idx + 1) % players.length;
       const interval = Math.round(SLOW_BASE * Math.pow(SLOW_GROWTH, step));
       setActiveIdx(nextIdx);
 
-      const distToChosen = ((chosenIdx - nextIdx) % players.length + players.length) % players.length;
-
-      if (step < SLOW_STEPS - 1 && distToChosen > 0) {
-        timeoutRef.current = setTimeout(() => slowStep(step + 1, nextIdx), interval);
+      if (step < totalSteps - 1) {
+        timeoutRef.current = setTimeout(() => slowStep(step + 1, nextIdx, totalSteps), interval);
       } else {
         // Parada final en el elegido
         timeoutRef.current = setTimeout(() => {
           setActiveIdx(chosenIdx);
           setDone(true);
           onAnimationEnd();
-        }, interval + 120);
+        }, interval + 150);
       }
     }
 

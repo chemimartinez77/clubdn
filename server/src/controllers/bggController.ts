@@ -1,6 +1,36 @@
 // server/src/controllers/bggController.ts
 import { Request, Response } from 'express';
-import { searchBGGGames, getBGGGame, searchRPGGeekGames } from '../services/bggService';
+import { searchBGGGames, getBGGGame, searchRPGGeekGames, type BGGGame } from '../services/bggService';
+
+// Juegos que siempre deben aparecer primero si la búsqueda coincide con su alias
+const PINNED_GAMES: { keywords: string[]; game: BGGGame }[] = [
+  {
+    keywords: ['magic', 'mtg', 'gathering'],
+    game: { id: '463', name: 'Magic: The Gathering', yearPublished: '1993', image: '', thumbnail: '', itemType: 'boardgame' },
+  },
+  {
+    keywords: ['heroclix'],
+    game: { id: '3439', name: 'HeroClix', yearPublished: '2002', image: '', thumbnail: '', itemType: 'boardgame' },
+  },
+];
+
+function applyPinnedGames(query: string, games: BGGGame[]): BGGGame[] {
+  const q = query.toLowerCase();
+  const toPin: BGGGame[] = [];
+
+  for (const pinned of PINNED_GAMES) {
+    if (pinned.keywords.some(k => q.includes(k))) {
+      // Buscar si ya viene en los resultados para usar sus imágenes
+      const existing = games.find(g => g.id === pinned.game.id);
+      toPin.push(existing ?? pinned.game);
+    }
+  }
+
+  if (toPin.length === 0) return games;
+
+  const pinnedIds = new Set(toPin.map(g => g.id));
+  return [...toPin, ...games.filter(g => !pinnedIds.has(g.id))];
+}
 
 /**
  * GET /api/bgg/search?query=catan&page=1&pageSize=10
@@ -27,10 +57,12 @@ export const searchGames = async (req: Request, res: Response): Promise<void> =>
     const searchResult = await searchBGGGames(query, pageNumber, pageSizeNumber, expansionOnlyBool);
     console.log('[BGG SEARCH] Resultados:', searchResult.games.length, 'juegos encontrados');
 
+    const games = applyPinnedGames(query, searchResult.games);
+
     res.status(200).json({
       success: true,
       data: {
-        games: searchResult.games,
+        games,
         total: searchResult.total,
         page: searchResult.page,
         pageSize: searchResult.pageSize,
