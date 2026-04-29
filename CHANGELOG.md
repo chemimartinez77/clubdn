@@ -6,6 +6,13 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-30
 
+### feat: mejoras en el efecto spotlight del selector de primer jugador
+
+El frenado del efecto spotlight era demasiado brusco y el modal se cerraba automáticamente al terminar la animación.
+
+- `client/src/components/events/SpinSpotlight.tsx`: la fase de frenado pasa de 8 pasos lineales a 14 pasos con crecimiento exponencial (factor ×1.45, base 120ms), lo que da una deceleración suave de ~3 segundos. Se elimina el emoji de copa del jugador elegido.
+- `client/src/components/events/FirstPlayerModal.tsx`: el modal ya no se cierra automáticamente al terminar la animación — permanece abierto mostrando al ganador hasta que el usuario cierre manualmente con el aspa o haciendo click fuera.
+
 ### fix: acceso a partidas canceladas restringido a admins y ventana temporal para elegir primer jugador
 
 **Partidas canceladas solo visibles para admins:**
