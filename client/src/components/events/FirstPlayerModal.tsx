@@ -48,7 +48,7 @@ export default function FirstPlayerModal({ eventId, spinEffect, onClose }: First
     } catch {
       // El registro falló pero no bloqueamos al usuario — el resultado visual ya se mostró
     }
-    onClose();
+    // No cerramos: el usuario cierra manualmente con el aspa o clicando fuera
   }
 
 

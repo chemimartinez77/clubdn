@@ -21,11 +21,15 @@ export default function SpinSpotlight({ players, chosenId, onAnimationEnd }: Spi
   const chosenIdx = players.findIndex(p => p.id === chosenId);
 
   useEffect(() => {
-    // Fase 1: barrido rápido aleatorio durante ~2.5s, luego frenado
+    // Fase 1: barrido rápido durante ~2.5s
     const FAST_INTERVAL = 80;
-    const SLOW_INTERVAL = 200;
     const TOTAL_FAST_MS = 2500;
-    const SLOW_STEPS = 8;
+
+    // Fase 2: frenado progresivo en ~3s
+    // Cada paso incrementa el intervalo exponencialmente hasta detenerse en el elegido
+    const SLOW_STEPS = 14;
+    const SLOW_BASE = 120;   // intervalo inicial del frenado (ms)
+    const SLOW_GROWTH = 1.45; // factor multiplicativo entre pasos
 
     let elapsed = 0;
     let currentIdx = 0;
@@ -38,14 +42,13 @@ export default function SpinSpotlight({ players, chosenId, onAnimationEnd }: Spi
       if (elapsed < TOTAL_FAST_MS) {
         timeoutRef.current = setTimeout(fastStep, FAST_INTERVAL);
       } else {
-        // Fase 2: frenado hacia el elegido
         slowStep(0, currentIdx);
       }
     }
 
     function slowStep(step: number, idx: number) {
       const nextIdx = (idx + 1) % players.length;
-      const interval = SLOW_INTERVAL + step * 60;
+      const interval = Math.round(SLOW_BASE * Math.pow(SLOW_GROWTH, step));
       setActiveIdx(nextIdx);
 
       const distToChosen = ((chosenIdx - nextIdx) % players.length + players.length) % players.length;
@@ -53,12 +56,12 @@ export default function SpinSpotlight({ players, chosenId, onAnimationEnd }: Spi
       if (step < SLOW_STEPS - 1 && distToChosen > 0) {
         timeoutRef.current = setTimeout(() => slowStep(step + 1, nextIdx), interval);
       } else {
-        // Ir directo al elegido
+        // Parada final en el elegido
         timeoutRef.current = setTimeout(() => {
           setActiveIdx(chosenIdx);
           setDone(true);
-          setTimeout(onAnimationEnd, 800);
-        }, interval + 100);
+          onAnimationEnd();
+        }, interval + 120);
       }
     }
 
@@ -98,9 +101,6 @@ export default function SpinSpotlight({ players, chosenId, onAnimationEnd }: Spi
                 const parts = player.name.trim().split(/\s+/);
                 return parts.length > 1 ? `${parts[0]} ${parts[1]!.charAt(0)}.` : parts[0]!;
               })()}
-              {isChosen && (
-                <span className="absolute -top-2 -right-2 text-lg">🏆</span>
-              )}
             </div>
           );
         })}
