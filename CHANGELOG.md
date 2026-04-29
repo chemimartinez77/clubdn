@@ -4,6 +4,37 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-29
+
+### feat: depuración visual de Jaipur, reinicio de partidas y corrección del barajado inicial
+
+Se mejora de forma notable la iteración sobre el tablero de `Jaipur`, tanto a nivel de UX de desarrollo como de lógica de partida. Además, se añade una acción de reinicio para no tener que abandonar y recrear la mesa en cada prueba.
+
+**Corrección del barajado en `Jaipur`:**
+
+- `server/src/modules/boardgames/games/jaipur/game.ts`: corregido el uso del contexto de `boardgame.io` para consumir `random` desde la API real del motor, en lugar de buscarlo dentro de `ctx`. Con esto el mazo inicial y las nuevas rondas vuelven a barajarse correctamente.
+- `server/src/modules/boardgames/services/matchService.ts`: el arranque de partida ya inicializa el juego procesado con `ProcessGameConfig(...)`, manteniendo coherencia con el resto del flujo del motor.
+
+**Reinicio de partida desde la propia mesa:**
+
+- `server/src/modules/boardgames/services/matchService.ts`: nueva operación `restartMatch` que reinicia una mesa activa manteniendo la misma partida, el mismo creador y los jugadores activos.
+- `server/src/modules/boardgames/controllers/multiplayerController.ts`: nuevo controlador `restartMatchController`.
+- `server/src/modules/boardgames/routes/multiplayerRoutes.ts`: nueva ruta `POST /api/multiplayer/matches/:matchId/restart`.
+- `client/src/api/multiplayer.ts`: nuevo cliente `restartMultiplayerMatch(...)` y soporte del evento SSE `match:restarted`.
+- `client/src/hooks/multiplayer/useMultiplayerMatch.ts`: nueva mutación `restartMatch`.
+- `client/src/hooks/multiplayer/useMultiplayerRealtime.ts`: escucha del nuevo evento `match:restarted`.
+- `client/src/types/multiplayer.ts`: ampliado `MatchStreamEventName` con `match:restarted`.
+- `client/src/pages/combatzone/multiplayer/MultiplayerMatch.tsx`: añadido botón `Reiniciar partida`, visible solo para el creador y protegido con confirmación previa.
+
+**Ajustes visuales y herramientas de calibración del tablero de Jaipur:**
+
+- `client/src/components/combatzone/multiplayer/jaipur/JaipurPixiScene.ts`: añadido modo debug activable por query string (`?jaipurDebug=1`) para superponer cajas del layout sobre el tablero y facilitar el ajuste fino de coordenadas.
+- `client/src/components/combatzone/multiplayer/jaipur/JaipurPixiScene.ts`: eliminado el marco artificial de las cartas del mercado para mostrar los assets tal cual, manteniendo el área de clic.
+- `client/src/components/combatzone/multiplayer/jaipur/JaipurPixiScene.ts`: retirado del render normal el `marketPanel` redundante y excluido también del modo debug para no tapar la ilustración base.
+- `client/src/components/combatzone/multiplayer/jaipur/layout.ts`: ajustado `JAIPUR_STAGE_HEIGHT` a `851` para alinearlo con `mesa-base.png`, y recalibradas las coordenadas y tamaños de `marketSlots` para encajar sobre el arte real del mercado.
+
+---
+
 ## 2026-04-28 (sesión 2)
 
 ### feat: control de acceso a Combat Zone por campo de perfil

@@ -4,6 +4,7 @@ import {
   joinMultiplayerMatch,
   leaveMultiplayerMatch,
   moveMultiplayerMatch,
+  restartMultiplayerMatch,
   startMultiplayerMatch,
 } from '../../api/multiplayer';
 import { useMultiplayerRealtime } from './useMultiplayerRealtime';
@@ -41,6 +42,14 @@ export function useMultiplayerMatch(matchId: string) {
     },
   });
 
+  const restartMutation = useMutation({
+    mutationFn: () => restartMultiplayerMatch(matchId),
+    onSuccess: (snapshot) => {
+      queryClient.setQueryData(['multiplayer-match', matchId], snapshot);
+      queryClient.invalidateQueries({ queryKey: ['multiplayer-matches'] });
+    },
+  });
+
   const moveMutation = useMutation({
     mutationFn: (payload: { type: string; args?: unknown[] }) => moveMultiplayerMatch(matchId, payload),
     onSuccess: (snapshot) => {
@@ -55,10 +64,12 @@ export function useMultiplayerMatch(matchId: string) {
     joinMatch: joinMutation.mutateAsync,
     leaveMatch: leaveMutation.mutateAsync,
     startMatch: startMutation.mutateAsync,
+    restartMatch: restartMutation.mutateAsync,
     sendMove: moveMutation.mutateAsync,
     isJoining: joinMutation.isPending,
     isLeaving: leaveMutation.isPending,
     isStarting: startMutation.isPending,
+    isRestarting: restartMutation.isPending,
     isSendingMove: moveMutation.isPending,
   };
 }

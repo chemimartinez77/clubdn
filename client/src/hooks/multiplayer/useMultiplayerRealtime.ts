@@ -21,6 +21,7 @@ export function useMultiplayerRealtime(matchId: string | null) {
       'match:player-joined': updateSnapshot,
       'match:player-left': updateSnapshot,
       'match:started': updateSnapshot,
+      'match:restarted': updateSnapshot,
       'match:move-applied': updateSnapshot,
       'match:finished': updateSnapshot,
     });

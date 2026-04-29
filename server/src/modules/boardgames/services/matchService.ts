@@ -398,8 +398,9 @@ export async function startMatch(matchId: string, viewer: MatchViewer): Promise<
     }
 
     const definition = assertGameDefinition(match.gameKey);
+    const processedGame = ProcessGameConfig(definition.game);
     const initialState = InitializeGame({
-      game: definition.game,
+      game: processedGame,
       numPlayers: activeSeats.length,
     });
 
@@ -408,6 +409,46 @@ export async function startMatch(matchId: string, viewer: MatchViewer): Promise<
       data: {
         status: 'ACTIVE',
         startedAt: new Date(),
+        engineState: sanitizeEngineState(initialState) as unknown as Prisma.InputJsonValue,
+      },
+    });
+
+    const updated = await getMatchOrThrow(tx, matchId);
+    return buildSnapshot(updated, viewer.userId);
+  });
+}
+
+export async function restartMatch(matchId: string, viewer: MatchViewer): Promise<MultiplayerMatchSnapshotDto> {
+  return prisma.$transaction(async (tx) => {
+    const match = await getMatchOrThrow(tx, matchId);
+    if (match.ownerUserId !== viewer.userId) {
+      throw new MatchError('Solo el creador puede reiniciar la partida', 403);
+    }
+
+    if (match.status === 'ABANDONED') {
+      throw new MatchError('No se puede reiniciar una partida abandonada', 400);
+    }
+
+    const activeSeats = getActiveSeats(match.seats);
+    if (activeSeats.length < match.minPlayers) {
+      throw new MatchError('No hay suficientes jugadores activos para reiniciar la partida', 400);
+    }
+
+    const definition = assertGameDefinition(match.gameKey);
+    const processedGame = ProcessGameConfig(definition.game);
+    const initialState = InitializeGame({
+      game: processedGame,
+      numPlayers: activeSeats.length,
+    });
+
+    await tx.multiplayerMatch.update({
+      where: { id: matchId },
+      data: {
+        status: 'ACTIVE',
+        startedAt: new Date(),
+        finishedAt: null,
+        winnerUserId: null,
+        result: Prisma.JsonNull,
         engineState: sanitizeEngineState(initialState) as unknown as Prisma.InputJsonValue,
       },
     });

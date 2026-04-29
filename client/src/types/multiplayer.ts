@@ -62,6 +62,7 @@ export type MatchStreamEventName =
   | 'match:player-joined'
   | 'match:player-left'
   | 'match:started'
+  | 'match:restarted'
   | 'match:move-applied'
   | 'match:finished'
   | 'match:error';
