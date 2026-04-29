@@ -68,6 +68,9 @@ const BUTTON_LINE = 0xd6b57c;
 const BUTTON_DISABLED_ALPHA = 0.45;
 const SHADOW_GLOW = 0xf3c16f;
 const CARD_GLOW = 0x8b5e22;
+const DEBUG_STROKE = 0x0f172a;
+const DEBUG_FILL = 0x38bdf8;
+const DEBUG_TEXT = 0x082f49;
 
 function sum(values: number[]) {
   return values.reduce((accumulator, value) => accumulator + value, 0);
@@ -181,6 +184,35 @@ function createBulletRow(label: string, value: string, x: number, y: number, wid
   return container;
 }
 
+function isJaipurLayoutDebugEnabled() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const debugParam = params.get('jaipurDebug');
+  return debugParam === '1' || debugParam === 'true';
+}
+
+function createDebugRect(rect: JaipurRect, label: string) {
+  const container = new Container();
+  const overlay = new Graphics()
+    .roundRect(rect.x, rect.y, rect.width, rect.height, 12)
+    .fill({ color: DEBUG_FILL, alpha: 0.12 })
+    .stroke({ color: DEBUG_STROKE, width: 2 });
+
+  const textNode = createText(label, rect.x + 8, rect.y + 6, {
+    fontSize: 10,
+    fontWeight: '700',
+    fill: DEBUG_TEXT,
+    wordWrapWidth: Math.max(48, rect.width - 16),
+    lineHeight: 12,
+  });
+
+  container.addChild(overlay, textNode);
+  return container;
+}
+
 function clearContainer(container: Container) {
   const children = container.removeChildren();
   for (const child of children) {
@@ -197,6 +229,7 @@ export class JaipurPixiScene {
   private resizeTarget = { width: 0, height: 0 };
   private pendingSnapshot: MultiplayerMatchSnapshot | null = null;
   private pendingUiState: JaipurBoardUiState | null = null;
+  private readonly debugLayout = isJaipurLayoutDebugEnabled();
 
   private readonly rootContainer = new Container();
   private readonly tableContainer = new Container();
@@ -330,6 +363,10 @@ export class JaipurPixiScene {
     this.renderSync(snapshot);
     this.renderActionBar(uiState);
     this.renderPlayerArea(myPlayer, uiState);
+
+    if (this.debugLayout) {
+      this.renderDebugLayout();
+    }
   }
 
   private renderTable() {
@@ -426,21 +463,6 @@ export class JaipurPixiScene {
   }
 
   private renderMarket(snapshot: MultiplayerMatchSnapshot, uiState: JaipurBoardUiState, market: JaipurCardType[]) {
-    const panel = JAIPUR_LAYOUT.marketPanel;
-    this.marketContainer.addChild(createPanel(panel, 0.78));
-    this.marketContainer.addChild(
-      createText('Mercado central', panel.x + 20, panel.y + 18, {
-        fontSize: 12,
-        fill: TEXT_MUTED,
-        letterSpacing: 2,
-      }),
-      createText('Cinco puestos, una sola decisión buena', panel.x + 20, panel.y + 42, {
-        fontSize: 22,
-        fontWeight: '700',
-        wordWrapWidth: panel.width - 40,
-      }),
-    );
-
     market.forEach((card, index) => {
       const slot = JAIPUR_LAYOUT.marketSlots[index];
       const isSelected = uiState.selectedTakeIndices.includes(index);
@@ -457,17 +479,10 @@ export class JaipurPixiScene {
         );
       }
 
-      const frame = new Graphics()
-        .roundRect(slot.x - 6, slot.y - 6, slot.width + 12, slot.height + 12, 20)
-        .fill({ color: 0xfff5e4, alpha: 0.92 })
-        .stroke({
-          color: isSelected ? SHADOW_GLOW : 0xe7d7bc,
-          width: isSelected ? 4 : 2,
-        });
-
-      frame.eventMode = 'static';
-      frame.cursor = uiState.canPlay && (card !== 'camello' || uiState.selectedTakeIndices.length > 0) ? 'pointer' : 'default';
-      frame.on('pointertap', () => {
+      const hitArea = new Graphics().rect(slot.x, slot.y, slot.width, slot.height).fill({ color: 0xffffff, alpha: 0.001 });
+      hitArea.eventMode = 'static';
+      hitArea.cursor = uiState.canPlay && (card !== 'camello' || uiState.selectedTakeIndices.length > 0) ? 'pointer' : 'default';
+      hitArea.on('pointertap', () => {
         if (uiState.selectedTakeIndices.length > 0) {
           uiState.onToggleTakeIndex(index);
           return;
@@ -487,7 +502,7 @@ export class JaipurPixiScene {
       sprite.height = slot.height;
       sprite.alpha = uiState.selectedTakeIndices.length > 0 && !isSelected ? 0.82 : 1;
 
-      cardContainer.addChild(frame, sprite);
+      cardContainer.addChild(sprite, hitArea);
 
       if (card === 'camello') {
         cardContainer.addChild(
@@ -523,20 +538,6 @@ export class JaipurPixiScene {
 
       this.marketContainer.addChild(cardContainer);
     });
-
-    this.marketContainer.addChild(
-      createButton(
-        { x: panel.x + 20, y: panel.y + panel.height - 52, width: 180, height: 30 },
-        snapshot.match.status === 'ACTIVE' ? 'Mercado en vivo' : 'Mesa bloqueada',
-        {
-          fill: snapshot.match.status === 'ACTIVE' ? BUTTON_TEAL : TEXT_MUTED,
-          textColor: BUTTON_TEAL_TEXT,
-          borderColor: snapshot.match.status === 'ACTIVE' ? BUTTON_TEAL : TEXT_MUTED,
-          disabled: true,
-          fontSize: 12,
-        },
-      ),
-    );
   }
 
   private renderTokens(
@@ -880,6 +881,33 @@ export class JaipurPixiScene {
       });
 
       sellY += 38;
+    });
+  }
+
+  private renderDebugLayout() {
+    const debugRects: Array<{ label: string; rect: JaipurRect }> = [
+      { label: 'hud.title', rect: JAIPUR_LAYOUT.hud.title },
+      { label: 'hud.roundStat', rect: JAIPUR_LAYOUT.hud.roundStat },
+      { label: 'hud.deckStat', rect: JAIPUR_LAYOUT.hud.deckStat },
+      { label: 'rivalPanel', rect: JAIPUR_LAYOUT.rivalPanel },
+      { label: 'tokensPanel', rect: JAIPUR_LAYOUT.tokensPanel },
+      { label: 'playersPanel', rect: JAIPUR_LAYOUT.playersPanel },
+      { label: 'syncPanel', rect: JAIPUR_LAYOUT.syncPanel },
+      { label: 'actionBar', rect: JAIPUR_LAYOUT.actionBar },
+      { label: 'handPanel', rect: JAIPUR_LAYOUT.handPanel },
+      { label: 'sellPanel', rect: JAIPUR_LAYOUT.sellPanel },
+    ];
+
+    debugRects.forEach(({ label, rect }) => {
+      this.overlayContainer.addChild(createDebugRect(rect, label));
+    });
+
+    JAIPUR_LAYOUT.marketSlots.forEach((rect, index) => {
+      this.overlayContainer.addChild(createDebugRect(rect, `marketSlots[${index}]`));
+    });
+
+    JAIPUR_LAYOUT.handCardSlots.forEach((rect, index) => {
+      this.overlayContainer.addChild(createDebugRect(rect, `handCardSlots[${index}]`));
     });
   }
 }

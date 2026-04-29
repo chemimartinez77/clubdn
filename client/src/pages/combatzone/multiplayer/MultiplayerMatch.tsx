@@ -27,10 +27,12 @@ export default function MultiplayerMatch() {
     isLoading,
     joinMatch,
     leaveMatch,
+    restartMatch,
     startMatch,
     sendMove,
     isJoining,
     isLeaving,
+    isRestarting,
     isStarting,
     isSendingMove,
   } = useMultiplayerMatch(id ?? '');
@@ -43,6 +45,7 @@ export default function MultiplayerMatch() {
   const isOwner = match?.ownerUserId === user?.id;
   const isParticipant = match?.mePlayerIndex !== null && match?.mePlayerIndex !== undefined;
   const isJaipur = match?.gameKey === 'jaipur';
+  const canRestart = Boolean(match && isOwner && match.currentPlayers >= match.minPlayers && match.status !== 'ABANDONED');
 
   return (
     <Layout>
@@ -83,6 +86,22 @@ export default function MultiplayerMatch() {
                   className="rounded-full bg-[#ea580c] px-5 py-3 text-sm font-bold text-white disabled:opacity-50"
                 >
                   {isStarting ? 'Arrancando…' : 'Iniciar partida'}
+                </button>
+              )}
+              {canRestart && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!window.confirm('¿Quieres reiniciar la partida actual y volver a repartir desde cero?')) {
+                      return;
+                    }
+
+                    void restartMatch();
+                  }}
+                  disabled={isRestarting}
+                  className="rounded-full bg-[#b45309] px-5 py-3 text-sm font-bold text-white disabled:opacity-50"
+                >
+                  {isRestarting ? 'Reiniciando…' : 'Reiniciar partida'}
                 </button>
               )}
               {isParticipant && (

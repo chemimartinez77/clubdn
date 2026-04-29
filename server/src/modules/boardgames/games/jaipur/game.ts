@@ -56,6 +56,11 @@ interface JaipurRandomApi {
   Shuffle: <T>(deck: T[]) => T[];
 }
 
+interface JaipurGameContext {
+  ctx: Ctx;
+  random?: JaipurRandomApi;
+}
+
 const PLAYER_IDS: JaipurPlayerID[] = ['0', '1'];
 const GOODS_TYPES: JaipurGoodsType[] = ['diamante', 'oro', 'plata', 'tela', 'especias', 'cuero'];
 const PREMIUM_GOODS = new Set<JaipurGoodsType>(['diamante', 'oro', 'plata']);
@@ -119,8 +124,8 @@ function isGoodsCard(card: JaipurCardType): card is JaipurGoodsType {
   return card !== 'camello';
 }
 
-function hasJaipurRandom(ctx: Ctx): ctx is Ctx & { random: JaipurRandomApi } {
-  return typeof (ctx as Ctx & { random?: JaipurRandomApi }).random?.Shuffle === 'function';
+function hasJaipurRandom(context: JaipurGameContext): context is JaipurGameContext & { random: JaipurRandomApi } {
+  return typeof context.random?.Shuffle === 'function';
 }
 
 function getPlayerId(index: number): JaipurPlayerID {
@@ -153,8 +158,8 @@ function refillMarket(G: JaipurState): boolean {
   return depletedDuringRefill;
 }
 
-function getInitialRoundStarter(ctx: Ctx): 0 | 1 {
-  if (hasJaipurRandom(ctx) && ctx.random.Die(2) === 2) {
+function getInitialRoundStarter(context: JaipurGameContext): 0 | 1 {
+  if (hasJaipurRandom(context) && context.random.Die(2) === 2) {
     return 1;
   }
 
@@ -163,11 +168,11 @@ function getInitialRoundStarter(ctx: Ctx): 0 | 1 {
 
 function setupRound(
   G: JaipurState,
-  ctx: Ctx,
+  context: JaipurGameContext,
   roundStarterIndex: 0 | 1,
   roundNumber: number,
 ): JaipurState {
-  const deck = hasJaipurRandom(ctx) ? ctx.random.Shuffle(createBaseDeck()) : createBaseDeck();
+  const deck = hasJaipurRandom(context) ? context.random.Shuffle(createBaseDeck()) : createBaseDeck();
   const market: JaipurCardType[] = ['camello', 'camello', 'camello'];
   const players: Record<JaipurPlayerID, JaipurPlayerState> = {
     '0': createEmptyPlayer(),
@@ -207,9 +212,9 @@ function setupRound(
     market,
     discard: [],
     goodsTokens: cloneGoodsTokens(),
-    bonusTokens3: hasJaipurRandom(ctx) ? ctx.random.Shuffle([...BONUS_3_VALUES]) : [...BONUS_3_VALUES],
-    bonusTokens4: hasJaipurRandom(ctx) ? ctx.random.Shuffle([...BONUS_4_VALUES]) : [...BONUS_4_VALUES],
-    bonusTokens5: hasJaipurRandom(ctx) ? ctx.random.Shuffle([...BONUS_5_VALUES]) : [...BONUS_5_VALUES],
+    bonusTokens3: hasJaipurRandom(context) ? context.random.Shuffle([...BONUS_3_VALUES]) : [...BONUS_3_VALUES],
+    bonusTokens4: hasJaipurRandom(context) ? context.random.Shuffle([...BONUS_4_VALUES]) : [...BONUS_4_VALUES],
+    bonusTokens5: hasJaipurRandom(context) ? context.random.Shuffle([...BONUS_5_VALUES]) : [...BONUS_5_VALUES],
     camelTokenAvailable: true,
   };
 }
@@ -317,7 +322,7 @@ function getNextRoundStarterIndex(summary: JaipurRoundSummary, currentStarterInd
   return summary.winnerPlayerID === '0' ? 1 : 0;
 }
 
-function maybeTransitionRound(G: JaipurState, ctx: Ctx, reason: JaipurRoundEndReason | null): JaipurRoundSummary | null {
+function maybeTransitionRound(G: JaipurState, context: JaipurGameContext, reason: JaipurRoundEndReason | null): JaipurRoundSummary | null {
   if (!reason) {
     return null;
   }
@@ -330,7 +335,7 @@ function maybeTransitionRound(G: JaipurState, ctx: Ctx, reason: JaipurRoundEndRe
   }
 
   const nextRoundStarterIndex = getNextRoundStarterIndex(summary, G.lastRoundStarterIndex);
-  const nextRoundState = setupRound(G, ctx, nextRoundStarterIndex, G.roundNumber + 1);
+  const nextRoundState = setupRound(G, context, nextRoundStarterIndex, G.roundNumber + 1);
 
   G.roundNumber = nextRoundState.roundNumber;
   G.roundStarterIndex = nextRoundState.roundStarterIndex;
@@ -351,12 +356,12 @@ function maybeTransitionRound(G: JaipurState, ctx: Ctx, reason: JaipurRoundEndRe
 
 function finishTurn(
   G: JaipurState,
-  ctx: Ctx,
+  context: JaipurGameContext,
   events: FnContext['events'],
   playerID: JaipurPlayerID,
   deckEmptiedDuringRefill: boolean,
 ) {
-  const summary = maybeTransitionRound(G, ctx, getRoundEndReason(G, deckEmptiedDuringRefill));
+  const summary = maybeTransitionRound(G, context, getRoundEndReason(G, deckEmptiedDuringRefill));
   if (G.matchWinnerPlayerID) {
     return;
   }
@@ -416,8 +421,8 @@ function createPlayerView(G: JaipurState, playerID: string | null): unknown {
 
 const jaipurGame: Game<JaipurState> = {
   name: 'jaipur',
-  setup: ({ ctx }) => {
-    const starterIndex = getInitialRoundStarter(ctx);
+  setup: (context) => {
+    const starterIndex = getInitialRoundStarter(context);
 
     return setupRound(
       {
@@ -440,7 +445,7 @@ const jaipurGame: Game<JaipurState> = {
         camelTokenAvailable: true,
         lastRoundSummary: null,
       },
-      ctx,
+      context,
       starterIndex,
       1,
     );
@@ -455,7 +460,7 @@ const jaipurGame: Game<JaipurState> = {
     },
   },
   moves: {
-    takeSingleGood: ({ G, playerID, ctx, events }, marketIndex: number) => {
+    takeSingleGood: ({ G, playerID, ctx, events, random }, marketIndex: number) => {
       if (!playerID || (playerID !== '0' && playerID !== '1')) {
         return INVALID_MOVE;
       }
@@ -477,10 +482,10 @@ const jaipurGame: Game<JaipurState> = {
       G.market.splice(marketIndex, 1);
       player.hand.push(pickedCard);
       const deckEmptiedDuringRefill = refillMarket(G);
-      finishTurn(G, ctx, events, playerID, deckEmptiedDuringRefill);
+      finishTurn(G, { ctx, random }, events, playerID, deckEmptiedDuringRefill);
       return G;
     },
-    takeAllCamels: ({ G, playerID, ctx, events }) => {
+    takeAllCamels: ({ G, playerID, ctx, events, random }) => {
       if (!playerID || (playerID !== '0' && playerID !== '1')) {
         return INVALID_MOVE;
       }
@@ -493,10 +498,10 @@ const jaipurGame: Game<JaipurState> = {
       G.market = G.market.filter((card) => card !== 'camello');
       G.players[playerID].herdCount += camelCount;
       const deckEmptiedDuringRefill = refillMarket(G);
-      finishTurn(G, ctx, events, playerID, deckEmptiedDuringRefill);
+      finishTurn(G, { ctx, random }, events, playerID, deckEmptiedDuringRefill);
       return G;
     },
-    exchangeGoods: ({ G, playerID, ctx, events }, payload: ExchangePayload) => {
+    exchangeGoods: ({ G, playerID, ctx, events, random }, payload: ExchangePayload) => {
       if (!playerID || (playerID !== '0' && playerID !== '1')) {
         return INVALID_MOVE;
       }
@@ -568,10 +573,10 @@ const jaipurGame: Game<JaipurState> = {
       }
 
       player.hand.push(...takenGoods);
-      finishTurn(G, ctx, events, playerID, false);
+      finishTurn(G, { ctx, random }, events, playerID, false);
       return G;
     },
-    sellGoods: ({ G, playerID, ctx, events }, goodsType: JaipurGoodsType, count: number) => {
+    sellGoods: ({ G, playerID, ctx, events, random }, goodsType: JaipurGoodsType, count: number) => {
       if (!playerID || (playerID !== '0' && playerID !== '1')) {
         return INVALID_MOVE;
       }
@@ -605,7 +610,7 @@ const jaipurGame: Game<JaipurState> = {
         player.bonusTokenValuesWon.push(bonusValue);
       }
 
-      finishTurn(G, ctx, events, playerID, false);
+      finishTurn(G, { ctx, random }, events, playerID, false);
       return G;
     },
   },

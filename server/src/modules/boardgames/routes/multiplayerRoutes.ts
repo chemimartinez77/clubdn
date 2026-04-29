@@ -8,6 +8,7 @@ import {
   listAvailableGames,
   listMatches,
   moveMatchController,
+  restartMatchController,
   startMatchController,
   streamMatchController,
 } from '../controllers/multiplayerController';
@@ -22,6 +23,7 @@ router.get('/matches/:matchId/stream', streamMatchController);
 router.post('/matches/:matchId/join', authenticate, joinMatchController);
 router.post('/matches/:matchId/leave', authenticate, leaveMatchController);
 router.post('/matches/:matchId/start', authenticate, startMatchController);
+router.post('/matches/:matchId/restart', authenticate, restartMatchController);
 router.post('/matches/:matchId/move', authenticate, moveMatchController);
 
 export default router;

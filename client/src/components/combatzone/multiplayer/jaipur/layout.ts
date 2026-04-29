@@ -1,5 +1,5 @@
 export const JAIPUR_STAGE_WIDTH = 1292;
-export const JAIPUR_STAGE_HEIGHT = 861;
+export const JAIPUR_STAGE_HEIGHT = 851;
 
 export interface JaipurRect {
   x: number;
@@ -21,11 +21,11 @@ export const JAIPUR_LAYOUT = {
   rivalPanel: { x: 46, y: 180, width: 210, height: 176 },
   marketPanel: { x: 274, y: 126, width: 584, height: 286 },
   marketSlots: [
-    { x: 319, y: 214, width: 86, height: 124 },
-    { x: 426, y: 214, width: 86, height: 124 },
-    { x: 533, y: 214, width: 86, height: 124 },
-    { x: 640, y: 214, width: 86, height: 124 },
-    { x: 747, y: 214, width: 86, height: 124 },
+    { x: 205, y: 350, width: 108, height: 150 },
+    { x: 334, y: 350, width: 108, height: 150 },
+    { x: 462, y: 350, width: 108, height: 150 },
+    { x: 591, y: 350, width: 108, height: 150 },
+    { x: 719, y: 350, width: 108, height: 150 },
   ] satisfies JaipurRect[],
   tokensPanel: { x: 912, y: 160, width: 318, height: 212 },
   playersPanel: { x: 912, y: 392, width: 318, height: 160 },

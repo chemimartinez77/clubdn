@@ -10,6 +10,7 @@ import {
   leaveMatch,
   listGameCatalog,
   listMatchesForUser,
+  restartMatch,
   startMatch,
 } from '../services/matchService';
 
@@ -117,6 +118,20 @@ export async function startMatchController(req: Request, res: Response): Promise
     res.json({ success: true, data: snapshot });
   } catch (error) {
     handleControllerError(error, res, 'Error al iniciar la partida');
+  }
+}
+
+export async function restartMatchController(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    const matchId = req.params.matchId!;
+    const snapshot = await restartMatch(matchId, { userId });
+    void matchGateway.publish(matchId, 'match:restarted', (viewerId) =>
+      getMatchSnapshot(matchId, { userId: viewerId })
+    );
+    res.json({ success: true, data: snapshot });
+  } catch (error) {
+    handleControllerError(error, res, 'Error al reiniciar la partida');
   }
 }
 

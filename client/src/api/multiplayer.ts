@@ -57,6 +57,11 @@ export async function startMultiplayerMatch(matchId: string) {
   return response.data.data!;
 }
 
+export async function restartMultiplayerMatch(matchId: string) {
+  const response = await api.post<ApiResponse<MultiplayerMatchSnapshot>>(`/api/multiplayer/matches/${matchId}/restart`);
+  return response.data.data!;
+}
+
 export async function moveMultiplayerMatch(matchId: string, payload: MovePayload) {
   const response = await api.post<ApiResponse<MultiplayerMatchSnapshot>>(`/api/multiplayer/matches/${matchId}/move`, payload);
   return response.data.data!;
@@ -84,6 +89,7 @@ export function createMultiplayerEventSource(
   bind('match:player-joined');
   bind('match:player-left');
   bind('match:started');
+  bind('match:restarted');
   bind('match:move-applied');
   bind('match:finished');
   source.onerror = (event) => handlers.onError?.(event);
