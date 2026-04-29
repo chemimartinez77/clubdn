@@ -408,7 +408,8 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
             postalCode: profile.postalCode,
             iban: profile.iban,
             imageConsentActivities: profile.imageConsentActivities,
-            imageConsentSocial: profile.imageConsentSocial
+            imageConsentSocial: profile.imageConsentSocial,
+            accessCombatZone: profile.accessCombatZone
           },
           reliability
         }
@@ -1367,5 +1368,44 @@ export const createMember = async (req: Request, res: Response): Promise<void> =
   } catch (error) {
     console.error('[MEMBER] Error al crear usuario:', error);
     res.status(500).json({ success: false, message: 'Error al crear el usuario' });
+  }
+};
+
+/**
+ * PATCH /api/admin/members/:memberId/combat-zone
+ * Activar o desactivar el acceso a Combat Zone de un miembro (solo CHEMI)
+ */
+export const toggleCombatZoneAccess = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const actorRole = req.user?.role;
+    const { memberId } = req.params;
+    const { accessCombatZone } = req.body;
+
+    if (actorRole !== 'CHEMI') {
+      res.status(403).json({ success: false, message: 'Solo CHEMI puede gestionar el acceso a Combat Zone' });
+      return;
+    }
+
+    if (typeof accessCombatZone !== 'boolean') {
+      res.status(400).json({ success: false, message: 'El campo accessCombatZone debe ser un booleano' });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: memberId }, select: { id: true } });
+    if (!user) {
+      res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+      return;
+    }
+
+    await prisma.userProfile.upsert({
+      where: { userId: user.id },
+      update: { accessCombatZone },
+      create: { userId: user.id, favoriteGames: [], accessCombatZone }
+    });
+
+    res.status(200).json({ success: true, data: { accessCombatZone } });
+  } catch (error) {
+    console.error('[MEMBER] Error al actualizar accessCombatZone:', error);
+    res.status(500).json({ success: false, message: 'Error al actualizar acceso a Combat Zone' });
   }
 };

@@ -33,6 +33,7 @@ export interface MemberProfileInfo {
   iban: string | null;
   imageConsentActivities: boolean;
   imageConsentSocial: boolean;
+  accessCombatZone: boolean;
 }
 
 export interface MemberReliability {

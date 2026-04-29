@@ -18,7 +18,8 @@ import {
   getMembershipHistory,
   changeMemberRole,
   impersonateMember,
-  createMember
+  createMember,
+  toggleCombatZoneAccess
 } from '../controllers/memberController';
 import { updateReportAdmin } from '../controllers/reportController';
 
@@ -100,6 +101,12 @@ router.post('/members/:memberId/reactivate', reactivateMember);
  * Cambiar el rol de un miembro
  */
 router.patch('/members/:memberId/role', changeMemberRole);
+
+/**
+ * PATCH /api/admin/members/:memberId/combat-zone
+ * Activar/desactivar acceso a Combat Zone (solo CHEMI)
+ */
+router.patch('/members/:memberId/combat-zone', toggleCombatZoneAccess);
 
 /**
  * POST /api/admin/members/:memberId/impersonate

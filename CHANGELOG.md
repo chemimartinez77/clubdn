@@ -6,6 +6,31 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-04-29
 
+### feat: toggle de acceso a Combat Zone para el rol CHEMI en el directorio de miembros
+
+El rol CHEMI puede ahora activar o desactivar el campo `accessCombatZone` de cada miembro directamente desde la ficha del miembro en el directorio de administración, sin necesidad de tocar la base de datos.
+
+- `server/src/controllers/memberController.ts`: nueva función `toggleCombatZoneAccess` que actualiza (o crea vía `upsert`) el campo `accessCombatZone` en `UserProfile`. Solo accesible para el rol CHEMI; devuelve 403 a cualquier otro rol.
+- `server/src/controllers/memberController.ts`: `getMemberProfile` ahora incluye `accessCombatZone` en la respuesta del perfil.
+- `server/src/routes/adminRoutes.ts`: nueva ruta `PATCH /api/admin/members/:memberId/combat-zone`.
+- `client/src/types/members.ts`: `accessCombatZone: boolean` añadido a la interfaz `MemberProfileInfo`.
+- `client/src/pages/admin/Members.tsx`: nueva sección "Combat Zone" en el modal de ficha del miembro, visible únicamente para CHEMI, con un toggle que dispara la llamada al API de forma inmediata (sin pasar por el botón "Guardar").
+
+### fix: errores de build en cliente y servidor (variables no usadas y tipo de evento SSE)
+
+- `server/src/modules/boardgames/realtime/matchGateway.ts`: añadido `'match:restarted'` al union type `MatchEventName` para que `restartMatchController` pueda publicar el evento sin error de tipos.
+- `client/src/components/combatzone/multiplayer/jaipur/JaipurPixiScene.ts`: renombrado el parámetro `snapshot` a `_snapshot` en `renderMarket` para indicar que es intencionalmente no utilizado y eliminar el error TS6133.
+
+### fix: migraciones bloqueadas en Railway por migración con estado fallido
+
+La migración `20260411020000_add_financial_tables` había quedado marcada como fallida en la tabla `_prisma_migrations` de Railway (el SQL se había aplicado completamente, pero el proceso terminó con error de red/timeout). Esto bloqueaba la aplicación de las 8 migraciones posteriores. Se resolvió manualmente:
+
+1. `prisma migrate resolve --applied 20260411020000_add_financial_tables` — marcada como aplicada.
+2. Mismo procedimiento para `20260415101000_add_missing_tables`, que presentaba el mismo problema con el enum `ReportType`.
+3. `prisma migrate deploy` — aplicadas correctamente las 6 migraciones restantes pendientes desde el 15 de abril.
+
+---
+
 ### feat: depuración visual de Jaipur, reinicio de partidas y corrección del barajado inicial
 
 Se mejora de forma notable la iteración sobre el tablero de `Jaipur`, tanto a nivel de UX de desarrollo como de lógica de partida. Además, se añade una acción de reinicio para no tener que abandonar y recrear la mesa en cada prueba.

@@ -127,6 +127,20 @@ export default function Members() {
     enabled: !!selectedMember?.id && viewModalOpen
   });
 
+  const toggleCombatZoneMutation = useMutation({
+    mutationFn: async ({ memberId, value }: { memberId: string; value: boolean }) => {
+      await api.patch(`/api/admin/members/${memberId}/combat-zone`, { accessCombatZone: value });
+      return value;
+    },
+    onSuccess: (value) => {
+      queryClient.invalidateQueries({ queryKey: ['memberProfile', selectedMember?.id] });
+      success(value ? 'Acceso a Combat Zone activado' : 'Acceso a Combat Zone desactivado');
+    },
+    onError: () => {
+      error('Error al actualizar el acceso a Combat Zone');
+    }
+  });
+
   const updateProfileMutation = useMutation({
     mutationFn: async () => {
       if (!selectedMember?.id) return null;
@@ -1031,6 +1045,41 @@ export default function Members() {
                     </span>
                   </label>
                 </div>
+
+                {/* Combat Zone — solo visible para CHEMI */}
+                {currentUser?.role === 'CHEMI' && (
+                  <div className="border-t border-[var(--color-cardBorder)] pt-4 mt-2">
+                    <h4 className="text-sm font-semibold text-[var(--color-text)] mb-3">Combat Zone</h4>
+                    <label className="flex items-center justify-between gap-3 cursor-pointer rounded-lg p-3 bg-[var(--color-tableRowHover)] border border-[var(--color-cardBorder)]">
+                      <span className="text-sm text-[var(--color-textSecondary)]">
+                        Acceso a la Dreadnought Combat Zone
+                      </span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={memberProfile.member.profile.accessCombatZone}
+                        disabled={toggleCombatZoneMutation.isPending}
+                        onClick={() =>
+                          toggleCombatZoneMutation.mutate({
+                            memberId: memberProfile.member.id,
+                            value: !memberProfile.member.profile.accessCombatZone,
+                          })
+                        }
+                        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 disabled:opacity-50 ${
+                          memberProfile.member.profile.accessCombatZone
+                            ? 'bg-[var(--color-primary)]'
+                            : 'bg-[var(--color-cardBorder)]'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                            memberProfile.member.profile.accessCombatZone ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </label>
+                  </div>
+                )}
 
                 {/* Fidelidad */}
                 <div className="border-t border-[var(--color-cardBorder)] pt-4 mt-2">
