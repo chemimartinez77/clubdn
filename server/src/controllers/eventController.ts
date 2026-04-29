@@ -2042,20 +2042,23 @@ export const addMemberToEvent = async (req: Request, res: Response): Promise<voi
     }
 
     const isAdmin = isAdminLikeRole(actorRole);
+    const isChemi = actorRole === 'CHEMI';
     if (!isAdmin && event.createdBy !== actorId) {
       res.status(403).json({ success: false, message: 'Sin permiso para añadir miembros' });
       return;
     }
 
     const effectiveStatus = getEffectiveEventStatus(event);
-    if (effectiveStatus === 'CANCELLED' || effectiveStatus === 'COMPLETED') {
-      res.status(400).json({ success: false, message: 'La partida ya no admite incorporaciones' });
-      return;
-    }
+    if (!isChemi) {
+      if (effectiveStatus === 'CANCELLED' || effectiveStatus === 'COMPLETED') {
+        res.status(400).json({ success: false, message: 'La partida ya no admite incorporaciones' });
+        return;
+      }
 
-    if (effectiveStatus === 'ONGOING' && !eventAllowsLateJoin(event)) {
-      res.status(400).json({ success: false, message: 'No se puede apuntar a miembros una vez iniciada la partida' });
-      return;
+      if (effectiveStatus === 'ONGOING' && !eventAllowsLateJoin(event)) {
+        res.status(400).json({ success: false, message: 'No se puede apuntar a miembros una vez iniciada la partida' });
+        return;
+      }
     }
 
     const targetUser = await prisma.user.findUnique({

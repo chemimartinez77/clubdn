@@ -802,10 +802,9 @@ export default function EventDetail() {
     && (effectiveStatus === 'SCHEDULED' || canLateJoin);
   const canDelete = isPartida && !isPast && event.status !== 'CANCELLED' && (isAdmin || user?.id === event.createdBy);
   const canEdit = isOrganizerOrAdmin && event.status !== 'CANCELLED' && !isPast;
-  const canAddMember = isOrganizerOrAdmin
-    && !isFull
-    && !inheritsRegistrationsFromPrevious
-    && (effectiveStatus === 'SCHEDULED' || canLateJoin);
+  const canAddMember = isChemi
+    ? (isOrganizerOrAdmin && !inheritsRegistrationsFromPrevious && effectiveStatus !== 'CANCELLED')
+    : (isOrganizerOrAdmin && !isFull && !inheritsRegistrationsFromPrevious && (effectiveStatus === 'SCHEDULED' || canLateJoin));
   const canClone = isPartida && isOrganizerOrAdmin && ['SCHEDULED', 'ONGOING', 'COMPLETED', 'CANCELLED'].includes(event.status);
   const canCloseCapacity = isPartida
     && !isPast
