@@ -7,6 +7,7 @@ type MatchEventName =
   | 'match:started'
   | 'match:move-applied'
   | 'match:finished'
+  | 'match:restarted'
   | 'match:error';
 
 interface MatchStreamClient {

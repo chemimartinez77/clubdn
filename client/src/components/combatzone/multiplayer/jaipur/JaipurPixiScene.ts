@@ -462,7 +462,7 @@ export class JaipurPixiScene {
     );
   }
 
-  private renderMarket(snapshot: MultiplayerMatchSnapshot, uiState: JaipurBoardUiState, market: JaipurCardType[]) {
+  private renderMarket(_snapshot: MultiplayerMatchSnapshot, uiState: JaipurBoardUiState, market: JaipurCardType[]) {
     market.forEach((card, index) => {
       const slot = JAIPUR_LAYOUT.marketSlots[index];
       const isSelected = uiState.selectedTakeIndices.includes(index);
