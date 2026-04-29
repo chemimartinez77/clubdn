@@ -1381,8 +1381,6 @@ export const toggleCombatZoneAccess = async (req: Request, res: Response): Promi
     const { memberId } = req.params;
     const { accessCombatZone } = req.body;
 
-    console.log('[COMBAT-ZONE] toggle — actorRole:', actorRole, 'memberId:', memberId, 'value:', accessCombatZone, 'typeof:', typeof accessCombatZone);
-
     if (actorRole !== 'CHEMI') {
       res.status(403).json({ success: false, message: 'Solo CHEMI puede gestionar el acceso a Combat Zone' });
       return;
