@@ -4,6 +4,31 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-04-30
+
+### fix: acceso a partidas canceladas restringido a admins y ventana temporal para elegir primer jugador
+
+**Partidas canceladas solo visibles para admins:**
+
+Cualquier usuario con un enlace antiguo a una partida cancelada recibía el detalle completo. Ahora el endpoint `GET /api/events/:id` devuelve 404 a usuarios sin permisos de administración (ADMIN, SUPER_ADMIN o CHEMI) cuando la partida tiene estado `CANCELLED`.
+
+- `server/src/controllers/eventController.ts`: check añadido tras la consulta del evento — si `status === 'CANCELLED'` y el rol no es admin-like, se devuelve 404.
+
+**Ventana temporal para el selector de primer jugador:**
+
+El botón de la ruleta de primer jugador ahora solo está habilitado durante la ventana `[inicio - 1h, inicio + 2h]`. Antes no tenía restricción horaria, lo que permitía usarlo en cualquier momento. La ventana de 2h tras el inicio cubre los casos en que hay que explicar el juego antes de empezar.
+
+- `client/src/pages/EventDetail.tsx`: calculadas `firstPlayerWindowOpen` y `firstPlayerWindowClose`, y añadida la condición `isInFirstPlayerWindow` a `canSpinFirstPlayer`.
+
+**CHEMI puede añadir miembros a partidas en cualquier estado:**
+
+El rol CHEMI puede ahora añadir participantes a partidas independientemente de si están en curso o completadas. El resto de roles mantienen las restricciones existentes.
+
+- `server/src/controllers/eventController.ts`: los checks de estado `COMPLETED`/`ONGOING` en `addMemberToEvent` se saltean cuando el actor es CHEMI.
+- `client/src/pages/EventDetail.tsx`: `canAddMember` diferenciado — para CHEMI solo requiere que la partida no esté `CANCELLED`.
+
+---
+
 ## 2026-04-29
 
 ### feat: toggle de acceso a Combat Zone para el rol CHEMI en el directorio de miembros

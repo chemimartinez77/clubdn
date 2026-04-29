@@ -18,6 +18,11 @@ interface EmailOptions {
  * Función base para enviar emails
  */
 export const sendEmail = async (options: EmailOptions) => {
+  if (process.env.EMAIL_DISABLED === 'true') {
+    console.log(`[EMAIL SUPRIMIDO] to: ${options.to} | subject: ${options.subject}`);
+    return;
+  }
+
   try {
     if (!resendApiKey) {
       throw new Error('RESEND_API_KEY no configurada');

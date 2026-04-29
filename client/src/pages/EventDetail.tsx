@@ -838,8 +838,13 @@ export default function EventDetail() {
     && event.disputeResult !== true;
 
   // Puede girar la ruleta si es PARTIDA con al menos 2 asistentes confirmados con cuenta y el usuario es uno de ellos
+  // Ventana: desde 1h antes del inicio hasta 2h después del inicio
+  const firstPlayerWindowOpen = new Date(eventStart.getTime() - 60 * 60 * 1000);
+  const firstPlayerWindowClose = new Date(eventStart.getTime() + 2 * 60 * 60 * 1000);
+  const isInFirstPlayerWindow = now >= firstPlayerWindowOpen && now <= firstPlayerWindowClose;
   const confirmedMembersCount = (event.registrations ?? []).filter(r => r.status === 'CONFIRMED' && r.user).length;
   const canSpinFirstPlayer = isPartida
+    && isInFirstPlayerWindow
     && event.isUserRegistered
     && event.userRegistrationStatus === 'CONFIRMED'
     && confirmedMembersCount >= 2;

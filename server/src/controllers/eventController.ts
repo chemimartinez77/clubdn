@@ -670,6 +670,14 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    if (event.status === 'CANCELLED' && !isAdminLikeRole(req.user?.role)) {
+      res.status(404).json({
+        success: false,
+        message: 'Evento no encontrado'
+      });
+      return;
+    }
+
       const now = new Date();
       const activeInvitationsCount = event.invitations.filter(inv => {
         if (inv.status === 'RESERVED') return inv.expiresAt !== null && inv.expiresAt > now;
