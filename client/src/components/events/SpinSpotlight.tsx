@@ -21,54 +21,53 @@ export default function SpinSpotlight({ players, chosenId, onAnimationEnd }: Spi
   const chosenIdx = players.findIndex(p => p.id === chosenId);
 
   useEffect(() => {
-    // Fase 1: barrido rápido durante ~2.5s
+    const n = players.length;
     const FAST_INTERVAL = 80;
-    const TOTAL_FAST_MS = 2500;
+    const SLOW_INTERVALS = [160, 300, 500, 800];
 
-    // Fase 2: frenado progresivo en ~3s
-    // Se calculan de antemano todos los pasos necesarios para llegar al elegido
-    // dando al menos 2 vueltas completas, con intervalos crecientes exponencialmente
-    const SLOW_BASE = 100;
-    const SLOW_GROWTH = 1.5;
+    const sequence: { idx: number; interval: number }[] = [];
+    let cur = 0;
 
-    let elapsed = 0;
-    let currentIdx = 0;
+    // 12 vueltas rápidas
+    for (let i = 0; i < n * 12; i++) {
+      cur = (cur + 1) % n;
+      sequence.push({ idx: cur, interval: FAST_INTERVAL });
+    }
 
-    function fastStep() {
-      currentIdx = (currentIdx + 1) % players.length;
-      setActiveIdx(currentIdx);
-      elapsed += FAST_INTERVAL;
-
-      if (elapsed < TOTAL_FAST_MS) {
-        timeoutRef.current = setTimeout(fastStep, FAST_INTERVAL);
-      } else {
-        // Calcular cuántos pasos necesitamos para llegar al elegido
-        // dando al menos 2 vueltas completas desde la posición actual
-        const minSteps = players.length * 2;
-        const distToChosen = ((chosenIdx - currentIdx) % players.length + players.length) % players.length || players.length;
-        const totalSteps = minSteps + distToChosen;
-        slowStep(0, currentIdx, totalSteps);
+    // 3 vueltas lentas completas
+    for (let vuelta = 0; vuelta < 3; vuelta++) {
+      for (let i = 0; i < n; i++) {
+        cur = (cur + 1) % n;
+        sequence.push({ idx: cur, interval: SLOW_INTERVALS[vuelta]! });
       }
     }
 
-    function slowStep(step: number, idx: number, totalSteps: number) {
-      const nextIdx = (idx + 1) % players.length;
-      const interval = Math.round(SLOW_BASE * Math.pow(SLOW_GROWTH, step));
-      setActiveIdx(nextIdx);
+    // 4ª vuelta parcial: avanzar hasta el ganador
+    const stepsToChosen = ((chosenIdx - cur) % n + n) % n || n;
+    for (let i = 0; i < stepsToChosen; i++) {
+      cur = (cur + 1) % n;
+      sequence.push({ idx: cur, interval: SLOW_INTERVALS[3]! });
+    }
 
-      if (step < totalSteps - 1) {
-        timeoutRef.current = setTimeout(() => slowStep(step + 1, nextIdx, totalSteps), interval);
+    let stepIndex = 0;
+
+    function tick() {
+      const step = sequence[stepIndex]!;
+      setActiveIdx(step.idx);
+      stepIndex++;
+
+      if (stepIndex < sequence.length) {
+        timeoutRef.current = setTimeout(tick, step.interval);
       } else {
-        // Parada final en el elegido
+        // Llegamos al ganador
         timeoutRef.current = setTimeout(() => {
-          setActiveIdx(chosenIdx);
           setDone(true);
           onAnimationEnd();
-        }, interval + 150);
+        }, 300);
       }
     }
 
-    timeoutRef.current = setTimeout(fastStep, FAST_INTERVAL);
+    timeoutRef.current = setTimeout(tick, FAST_INTERVAL);
 
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
