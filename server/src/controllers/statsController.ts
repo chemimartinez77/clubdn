@@ -358,14 +358,15 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
       }
     });
 
-    // 2. Partidas jugadas (solo eventos tipo PARTIDA)
+    // 2. Partidas jugadas (solo eventos tipo PARTIDA con resultado validado)
     const gamesPlayed = await prisma.eventRegistration.count({
       where: {
         userId,
         status: RegistrationStatus.CONFIRMED,
         event: {
           type: 'PARTIDA',
-          status: EventStatus.COMPLETED
+          status: EventStatus.COMPLETED,
+          disputeResult: true
         }
       }
     });
