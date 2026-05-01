@@ -702,3 +702,35 @@ export const notifyMarketplaceOfferCountered = async (
   }
 };
 
+export const notifyAdminsGuestConflict = async (dni: string, phone: string) => {
+  try {
+    const recipients = await prisma.user.findMany({
+      where: { role: { in: ['ADMIN', 'SUPER_ADMIN', 'CHEMI'] } },
+      select: { id: true },
+    });
+    const recipientIds = recipients.map(u => u.id);
+    if (recipientIds.length > 0) {
+      await createBulkNotifications({
+        userIds: recipientIds,
+        type: NotificationType.GUEST_IDENTITY_CONFLICT,
+        title: 'Alerta: posible suplantación de invitado',
+        message: `Inconsistencia en formulario de invitado externo. DNI: ${dni} — Teléfono: ${phone}.`,
+        metadata: { dni, phone },
+      });
+    }
+
+    const alertEmail = process.env.DEFAULT_ADMIN_EMAIL;
+    if (alertEmail) {
+      const { sendEmail } = await import('./emailService');
+      await sendEmail({
+        to: alertEmail,
+        subject: 'Alerta: posible suplantación de invitado',
+        html: `<p>Se ha detectado una inconsistencia en el formulario de invitado externo.</p><p><strong>DNI:</strong> ${dni}<br><strong>Teléfono:</strong> ${phone}</p><p>Revisa el historial de invitaciones.</p>`,
+        template: 'admin_notification',
+      });
+    }
+  } catch (error) {
+    console.error('Error notificando conflicto de identidad de invitado:', error);
+  }
+};
+

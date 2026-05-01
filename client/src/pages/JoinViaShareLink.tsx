@@ -1,5 +1,5 @@
 // client/src/pages/JoinViaShareLink.tsx
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import QRCode from 'react-qr-code';
@@ -48,6 +48,14 @@ interface RegistrationResult {
 
 type Screen = 'info' | 'form' | 'qr';
 
+type LookupMatch = 'none' | 'both' | 'conflict';
+
+interface LookupResult {
+  match: LookupMatch;
+  firstName?: string;
+  lastName?: string;
+}
+
 const LOPD_TEXT = `De conformidad con el RGPD y la LOPDGDD, le informamos de que los datos personales facilitados (nombre, apellidos y teléfono) serán tratados por el "Club Dreadnought" con la finalidad de gestionar el acceso de invitados, el control de asistencia y posibilitar la comunicación necesaria ante posibles incidencias o accidentes durante la actividad.
 
 La base jurídica del tratamiento es el consentimiento del interesado al facilitar sus datos y el interés legítimo de la asociación en garantizar la seguridad y el control de acceso a sus instalaciones.
@@ -93,6 +101,7 @@ export default function JoinViaShareLink() {
   // Result state
   const [result, setResult] = useState<RegistrationResult | null>(null);
   const [showLopdModal, setShowLopdModal] = useState(false);
+  const [lookupMatch, setLookupMatch] = useState<LookupMatch | null>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['shareLink', token],
@@ -103,6 +112,44 @@ export default function JoinViaShareLink() {
     enabled: !!token,
     retry: false
   });
+
+  // Lookup de invitado por DNI + teléfono
+  const dniValid = isValidDni(dni);
+  const phoneValid = phoneNumber.trim().replace(/\s/g, '').length >= 6;
+  const fullPhone = `${phonePrefix}${phoneNumber.replace(/\s/g, '')}`;
+
+  const lookupQuery = useQuery<LookupResult>({
+    queryKey: ['guestLookup', dni, fullPhone],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<LookupResult>>('/api/share/lookup', {
+        params: { dni, phone: fullPhone },
+      });
+      return res.data.data!;
+    },
+    enabled: dniValid && phoneValid && screen === 'form',
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!lookupQuery.data) {
+      setLookupMatch(null);
+      return;
+    }
+    const result = lookupQuery.data;
+    setLookupMatch(result.match);
+    if (result.match === 'both') {
+      setFirstName(result.firstName ?? '');
+      setLastName(result.lastName ?? '');
+    } else if (result.match === 'none') {
+      setFirstName('');
+      setLastName('');
+    }
+  }, [lookupQuery.data]);
+
+  useEffect(() => {
+    setLookupMatch(null);
+  }, [dni, fullPhone]);
 
   // Si el usuario está logueado y es el propio invitador, redirigir al evento
   const storedToken = localStorage.getItem('token');
@@ -251,13 +298,23 @@ export default function JoinViaShareLink() {
 
   // Pantalla 2: formulario del invitado
   if (screen === 'form') {
-    const dniValid = isValidDni(dni);
+    const nameFieldsLocked =
+      !dniValid ||
+      !phoneValid ||
+      lookupQuery.isFetching ||
+      lookupMatch === null ||
+      lookupMatch === 'conflict';
+
+    const nameFieldsReadonly = lookupMatch === 'both';
+
     const isFormValid =
       firstName.trim().length >= 2 &&
       lastName.trim().length >= 2 &&
       dniValid &&
-      phoneNumber.trim().length >= 6 &&
-      legalAccepted;
+      phoneValid &&
+      legalAccepted &&
+      lookupMatch !== null &&
+      lookupMatch !== 'conflict';
 
     const serverError = (requestMutation.error as any)?.response?.data?.message;
 
@@ -274,28 +331,6 @@ export default function JoinViaShareLink() {
 
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Nombre</label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={e => setFirstName(e.target.value)}
-                  placeholder="Tu nombre"
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Apellidos</label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={e => setLastName(e.target.value)}
-                  placeholder="Tus apellidos"
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                />
-              </div>
-
-              <div>
                 <label className="block text-sm font-medium text-[var(--color-text)] mb-1">DNI</label>
                 <input
                   type="text"
@@ -309,12 +344,12 @@ export default function JoinViaShareLink() {
                   placeholder="12345678Z"
                   maxLength={9}
                   className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] ${
-                    dni.length > 0 && !isValidDni(dni)
+                    dni.length > 0 && !dniValid
                       ? 'border-red-500'
                       : 'border-[var(--color-cardBorder)]'
                   }`}
                 />
-                {dni.length > 0 && !isValidDni(dni) && (
+                {dni.length > 0 && !dniValid && (
                   <p className="text-xs text-red-500 mt-1">DNI no válido</p>
                 )}
               </div>
@@ -339,6 +374,64 @@ export default function JoinViaShareLink() {
                     className="flex-1 px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                   />
                 </div>
+              </div>
+
+              {dniValid && phoneValid && (
+                <div className="text-xs text-center py-1 min-h-[1.5rem]">
+                  {lookupQuery.isFetching && (
+                    <span className="text-[var(--color-textSecondary)]">Verificando datos...</span>
+                  )}
+                  {!lookupQuery.isFetching && lookupMatch === 'conflict' && (
+                    <p className="text-red-500 font-medium">
+                      No podemos procesar tu solicitud. Contacta con el organizador.
+                    </p>
+                  )}
+                  {!lookupQuery.isFetching && lookupMatch === 'both' && (
+                    <span className="text-green-600">Datos completados automáticamente.</span>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${nameFieldsLocked ? 'text-[var(--color-textSecondary)]' : 'text-[var(--color-text)]'}`}>
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={e => { if (!nameFieldsReadonly) setFirstName(e.target.value); }}
+                  placeholder={lookupQuery.isFetching ? 'Verificando...' : 'Tu nombre'}
+                  disabled={nameFieldsLocked}
+                  readOnly={nameFieldsReadonly}
+                  className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-opacity ${
+                    nameFieldsLocked
+                      ? 'border-[var(--color-cardBorder)] text-[var(--color-textSecondary)] opacity-40 cursor-not-allowed'
+                      : nameFieldsReadonly
+                      ? 'border-[var(--color-cardBorder)] text-[var(--color-text)] cursor-default'
+                      : 'border-[var(--color-cardBorder)] text-[var(--color-text)]'
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${nameFieldsLocked ? 'text-[var(--color-textSecondary)]' : 'text-[var(--color-text)]'}`}>
+                  Apellidos
+                </label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={e => { if (!nameFieldsReadonly) setLastName(e.target.value); }}
+                  placeholder={lookupQuery.isFetching ? 'Verificando...' : 'Tus apellidos'}
+                  disabled={nameFieldsLocked}
+                  readOnly={nameFieldsReadonly}
+                  className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-opacity ${
+                    nameFieldsLocked
+                      ? 'border-[var(--color-cardBorder)] text-[var(--color-textSecondary)] opacity-40 cursor-not-allowed'
+                      : nameFieldsReadonly
+                      ? 'border-[var(--color-cardBorder)] text-[var(--color-text)] cursor-default'
+                      : 'border-[var(--color-cardBorder)] text-[var(--color-text)]'
+                  }`}
+                />
               </div>
 
               {/* Honeypot oculto */}
@@ -385,7 +478,12 @@ export default function JoinViaShareLink() {
 
             <div className="flex gap-2">
               <button
-                onClick={() => setScreen('info')}
+                onClick={() => {
+                  setScreen('info');
+                  setLookupMatch(null);
+                  setFirstName('');
+                  setLastName('');
+                }}
                 className="flex-1 py-2 px-4 rounded-xl font-medium text-[var(--color-textSecondary)] border border-[var(--color-cardBorder)] hover:bg-[var(--color-background)] transition-colors text-sm"
               >
                 Volver

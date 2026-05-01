@@ -4,6 +4,41 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-01 (sesión 1)
+
+### feat: lookup de invitado por DNI + teléfono en formulario de invitación externa
+
+Nuevo mecanismo de verificación de identidad en el formulario de invitados externos (`/join/:token`). Antes de permitir rellenar nombre y apellidos, el formulario consulta al backend si la combinación DNI + teléfono ya existe en invitaciones previas y actúa en consecuencia.
+
+**Motivación:** poder identificar automáticamente a invitados recurrentes y detectar posibles suplantaciones de identidad (DNI y teléfono que no se corresponden con el mismo invitado en el historial).
+
+**Cambios en el orden del formulario:** DNI y teléfono van ahora primero. Nombre y apellidos permanecen bloqueados (deshabilitados) hasta que el lookup se resuelve, evitando que el invitado los rellene antes de la verificación.
+
+**Comportamiento según resultado del lookup:**
+- `none` (ningún campo coincide): invitado nuevo, se habilitan nombre y apellidos vacíos para rellenar libremente.
+- `both` (DNI y teléfono coinciden con el mismo invitado): nombre y apellidos se rellenan automáticamente con los datos del historial y se marcan como readonly.
+- `conflict` (uno coincide pero el otro no): el formulario queda bloqueado con un mensaje genérico "No podemos procesar tu solicitud". Se envía una notificación interna a todos los usuarios con rol ADMIN, SUPER_ADMIN o CHEMI.
+
+**Backend:**
+
+- `server/prisma/schema.prisma`: nuevo valor `GUEST_IDENTITY_CONFLICT` en el enum `NotificationType`; nuevo índice `@@index([guestDniNormalized])` en el modelo `Invitation` para acelerar las búsquedas.
+- `server/prisma/migrations/20260501000000_add_guest_identity_conflict_notification/migration.sql`: migración manual con `ALTER TYPE ... ADD VALUE` y `CREATE INDEX`.
+- `server/src/services/notificationService.ts`: nueva función `notifyAdminsGuestConflict(dni, phone)` que notifica a ADMIN, SUPER_ADMIN y CHEMI mediante el sistema de notificaciones en BD.
+- `server/src/controllers/shareLinkController.ts`: nuevo handler `lookupGuest` (`GET /api/share/lookup?dni=&phone=`). Busca en invitaciones con estado `PENDING` o `USED` usando OR sobre DNI y teléfono, detecta inconsistencias cruzadas entre registros y dispara la notificación de conflicto de forma no bloqueante (`.catch`).
+- `server/src/routes/shareLinkRoutes.ts`: nueva ruta pública `GET /api/share/lookup` registrada entre las rutas públicas existentes.
+
+**Frontend:**
+
+- `client/src/pages/JoinViaShareLink.tsx`: nuevos tipos `LookupMatch` y `LookupResult`; nuevo estado `lookupMatch`; `useQuery` con `enabled: dniValid && phoneValid && screen === 'form'` y `staleTime: Infinity`; dos `useEffect` (uno sincroniza el resultado con el estado local y rellena nombre/apellidos si `match === 'both'`, otro resetea el lookup al cambiar DNI o teléfono); campos nombre/apellidos con `disabled` y `readOnly` condicionales según el estado del lookup; bloque indicador entre teléfono y nombre que muestra "Verificando...", el mensaje de conflicto o la confirmación de datos completados; botón Volver limpia el estado del lookup al retroceder.
+
+### fix: invitados externos siempre aprobados directamente (sin PENDING_APPROVAL)
+
+Cambio de lógica en el flujo de invitación por enlace. Anteriormente, si la partida tenía `requiresApproval: true`, el invitado externo quedaba en `PENDING_APPROVAL` y nunca recibía el QR. La nueva lógica asume que el organizador ya confía en cualquier persona que reciba el enlace de un socio aprobado, por lo que los invitados externos siempre pasan a `PENDING` directamente.
+
+- `server/src/controllers/shareLinkController.ts`: `requestViaShareLink` ya no evalúa `event.requiresApproval` para determinar el estado final de la invitación — siempre usa `InvitationStatus.PENDING`. Eliminado el bloque de notificación `notifyRegistrationPending` que se disparaba para eventos con aprobación. La respuesta devuelve `requiresApproval: false` fijo. Eliminados `requiresApproval` y `createdBy` del select del evento (ya innecesarios). `PENDING_APPROVAL` eliminado del check de teléfono duplicado.
+
+---
+
 ## 2026-04-30
 
 ### feat: mejoras en el efecto spotlight del selector de primer jugador

@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { InvitationStatus } from '@prisma/client';
 import { prisma } from '../config/database';
 import { generateInvitationToken } from '../utils/invitationToken';
+import { notifyAdminsGuestConflict } from '../services/notificationService';
 
 const RESERVATION_TTL_MS = 15 * 60 * 1000; // 15 minutos
 
@@ -216,6 +217,90 @@ export const generateShareLink = async (req: Request, res: Response): Promise<vo
     res.status(200).json({ success: true, data: { url: buildInviteUrl(invitationToken) } });
   } catch (error) {
     console.error('Error al generar share link:', error);
+    res.status(500).json({ success: false, message: 'Error interno' });
+  }
+};
+
+/**
+ * GET /api/share/lookup?dni=12345678A&phone=%2B34612345678 — Lookup público de invitado por DNI + teléfono
+ * Devuelve: { match: 'none' | 'both' | 'conflict', firstName?, lastName? }
+ */
+export const lookupGuest = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { dni, phone } = req.query;
+
+    if (typeof dni !== 'string' || typeof phone !== 'string') {
+      res.status(400).json({ success: false, message: 'Parámetros inválidos' });
+      return;
+    }
+
+    const normalizedDni = dni.trim().toUpperCase().replace(/[-\s]/g, '');
+    const normalizedPhone = phone.trim().replace(/\s/g, '');
+
+    if (!isValidSpanishDni(normalizedDni) || !isValidPhone(normalizedPhone)) {
+      res.status(400).json({ success: false, message: 'DNI o teléfono no válidos' });
+      return;
+    }
+
+    const matches = await prisma.invitation.findMany({
+      where: {
+        status: { in: [InvitationStatus.PENDING, InvitationStatus.USED] },
+        OR: [
+          { guestDniNormalized: normalizedDni },
+          { guestPhone: normalizedPhone },
+        ],
+      },
+      select: {
+        guestDniNormalized: true,
+        guestPhone: true,
+        guestFirstName: true,
+        guestLastName: true,
+      },
+    });
+
+    if (matches.length === 0) {
+      res.status(200).json({ success: true, data: { match: 'none' } });
+      return;
+    }
+
+    const dniMatches = matches.some(m => m.guestDniNormalized === normalizedDni);
+    const phoneMatches = matches.some(m => m.guestPhone === normalizedPhone);
+
+    if (!dniMatches || !phoneMatches) {
+      notifyAdminsGuestConflict(normalizedDni, normalizedPhone).catch(err =>
+        console.error('Error enviando alerta de conflicto de invitado:', err)
+      );
+      res.status(200).json({ success: true, data: { match: 'conflict' } });
+      return;
+    }
+
+    const hasConflict = matches.some(m => {
+      const thisDni = m.guestDniNormalized === normalizedDni;
+      const thisPhone = m.guestPhone === normalizedPhone;
+      return thisDni !== thisPhone;
+    });
+
+    if (hasConflict) {
+      notifyAdminsGuestConflict(normalizedDni, normalizedPhone).catch(err =>
+        console.error('Error enviando alerta de conflicto de invitado:', err)
+      );
+      res.status(200).json({ success: true, data: { match: 'conflict' } });
+      return;
+    }
+
+    const known = matches.find(
+      m => m.guestDniNormalized === normalizedDni && m.guestPhone === normalizedPhone
+    );
+    res.status(200).json({
+      success: true,
+      data: {
+        match: 'both',
+        firstName: known?.guestFirstName ?? '',
+        lastName: known?.guestLastName ?? '',
+      },
+    });
+  } catch (error) {
+    console.error('Error en lookup de invitado:', error);
     res.status(500).json({ success: false, message: 'Error interno' });
   }
 };

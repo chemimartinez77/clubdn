@@ -447,6 +447,7 @@ model Invitation {
   @@index([status])
   @@index([validDate])
   @@index([guestPhone])
+  @@index([guestDniNormalized])
   @@index([usedAt])
 }
 
@@ -1084,6 +1085,7 @@ enum NotificationType {
   LIBRARY_LOAN_RETURNED        // Socio: devolución registrada
   LIBRARY_LOAN_RENEWED         // Admin: socio ha renovado un préstamo
   LIBRARY_QUEUE_AVAILABLE      // Socio: el juego que esperaba está disponible
+  GUEST_IDENTITY_CONFLICT      // Posible suplantación en formulario de invitado externo
 }
 
 // Notificaciones del sistema
