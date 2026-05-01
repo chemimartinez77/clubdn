@@ -8,6 +8,12 @@ const RESERVATION_TTL_MS = 15 * 60 * 1000; // 15 minutos
 
 const isValidPhone = (value: string) => /^\+?\d{6,15}$/.test(value.replace(/\s/g, ''));
 
+const isValidSpanishDni = (value: string): boolean => {
+  if (!/^\d{8}[A-Z]$/.test(value)) return false;
+  const LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE';
+  return value[8] === LETTERS[parseInt(value.slice(0, 8), 10) % 23];
+};
+
 const startOfDay = (date: Date) => {
   const copy = new Date(date);
   copy.setHours(0, 0, 0, 0);
@@ -221,7 +227,7 @@ export const generateShareLink = async (req: Request, res: Response): Promise<vo
 export const requestViaShareLink = async (req: Request, res: Response): Promise<void> => {
   try {
     const { token } = req.params;
-    const { guestFirstName, guestLastName, guestPhone, honeypot } = req.body;
+    const { guestFirstName, guestLastName, guestDni, guestPhone, honeypot } = req.body;
 
     // Honeypot: si está relleno es un bot
     if (honeypot) {
@@ -231,6 +237,12 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
 
     if (!guestFirstName?.trim() || !guestLastName?.trim()) {
       res.status(400).json({ success: false, message: 'Nombre y apellidos requeridos' });
+      return;
+    }
+
+    const normalizedDni = typeof guestDni === 'string' ? guestDni.trim().toUpperCase().replace(/[-\s]/g, '') : '';
+    if (!isValidSpanishDni(normalizedDni)) {
+      res.status(400).json({ success: false, message: 'DNI no válido' });
       return;
     }
 
@@ -310,6 +322,7 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
       data: {
         guestFirstName: guestFirstName.trim(),
         guestLastName: guestLastName.trim(),
+        guestDniNormalized: normalizedDni,
         guestPhone: normalizedPhone,
         status: newStatus,
         expiresAt: null

@@ -56,6 +56,14 @@ Los datos se conservarán durante el tiempo imprescindible para gestionar la asi
 
 Puede ejercer sus derechos de acceso, rectificación, supresión, oposición y limitación del tratamiento dirigiéndose a clubdreadnought.vlc@gmail.com. Asimismo, tiene derecho a presentar una reclamación ante la Agencia Española de Protección de Datos (www.aepd.es).`;
 
+function isValidDni(value: string): boolean {
+  const clean = value.trim().toUpperCase().replace(/[-\s]/g, '');
+  if (!/^\d{8}[A-Z]$/.test(clean)) return false;
+  const LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE';
+  const num = parseInt(clean.slice(0, 8), 10);
+  return clean[8] === LETTERS[num % 23];
+}
+
 function formatEventDate(dateStr: string) {
   const d = new Date(dateStr);
   return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -76,6 +84,7 @@ export default function JoinViaShareLink() {
   // Form state
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [dni, setDni] = useState('');
   const [phonePrefix, setPhonePrefix] = useState('+34');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [legalAccepted, setLegalAccepted] = useState(false);
@@ -115,6 +124,7 @@ export default function JoinViaShareLink() {
       const res = await api.post<ApiResponse<RegistrationResult>>(`/api/share/invite/${token}/request`, {
         guestFirstName: firstName.trim(),
         guestLastName: lastName.trim(),
+        guestDni: dni.trim().toUpperCase().replace(/[-\s]/g, ''),
         guestPhone: phone,
         honeypot: honeypotRef.current?.value ?? ''
       });
@@ -241,9 +251,11 @@ export default function JoinViaShareLink() {
 
   // Pantalla 2: formulario del invitado
   if (screen === 'form') {
+    const dniValid = isValidDni(dni);
     const isFormValid =
       firstName.trim().length >= 2 &&
       lastName.trim().length >= 2 &&
+      dniValid &&
       phoneNumber.trim().length >= 6 &&
       legalAccepted;
 
@@ -281,6 +293,30 @@ export default function JoinViaShareLink() {
                   placeholder="Tus apellidos"
                   className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text)] mb-1">DNI</label>
+                <input
+                  type="text"
+                  value={dni}
+                  onChange={e => {
+                    const raw = e.target.value.replace(/[-\s]/g, '').toUpperCase();
+                    const digits = raw.replace(/[^0-9]/g, '').slice(0, 8);
+                    const letter = raw.replace(/[^A-Z]/g, '').slice(0, 1);
+                    setDni(digits + letter);
+                  }}
+                  placeholder="12345678Z"
+                  maxLength={9}
+                  className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] ${
+                    dni.length > 0 && !isValidDni(dni)
+                      ? 'border-red-500'
+                      : 'border-[var(--color-cardBorder)]'
+                  }`}
+                />
+                {dni.length > 0 && !isValidDni(dni) && (
+                  <p className="text-xs text-red-500 mt-1">DNI no válido</p>
+                )}
               </div>
 
               <div>
