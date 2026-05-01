@@ -261,9 +261,7 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
             id: true,
             date: true,
             status: true,
-            title: true,
-            requiresApproval: true,
-            createdBy: true
+            title: true
           }
         }
       }
@@ -300,7 +298,7 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
         eventId: event.id,
         guestPhone: normalizedPhone,
         status: {
-          in: [InvitationStatus.PENDING, InvitationStatus.USED, InvitationStatus.PENDING_APPROVAL]
+          in: [InvitationStatus.PENDING, InvitationStatus.USED]
         }
       }
     });
@@ -313,9 +311,7 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const newStatus = event.requiresApproval
-      ? InvitationStatus.PENDING_APPROVAL
-      : InvitationStatus.PENDING;
+    const newStatus = InvitationStatus.PENDING;
 
     await prisma.invitation.update({
       where: { id: invitation.id },
@@ -329,29 +325,17 @@ export const requestViaShareLink = async (req: Request, res: Response): Promise<
       }
     });
 
-    if (event.requiresApproval && event.createdBy) {
-      const { notifyRegistrationPending } = await import('../services/notificationService');
-      await notifyRegistrationPending(
-        event.id,
-        event.title,
-        event.createdBy,
-        `${guestFirstName.trim()} ${guestLastName.trim()}`
-      );
-    }
-
     const qrUrl = buildQrUrl(token!);
 
     res.status(201).json({
       success: true,
       data: {
         qrUrl,
-        requiresApproval: event.requiresApproval,
+        requiresApproval: false,
         eventTitle: event.title,
         eventDate: event.date
       },
-      message: event.requiresApproval
-        ? 'Solicitud enviada. El organizador debe aprobarla.'
-        : 'Plaza reservada. Muestra el QR al entrar al club.'
+      message: 'Plaza reservada. Muestra el QR al entrar al club.'
     });
   } catch (error) {
     console.error('Error al solicitar plaza:', error);
