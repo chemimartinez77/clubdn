@@ -6,6 +6,8 @@ import {
   getPendingApprovals,
   approveUser,
   rejectUser,
+  revokeRegistration,
+  resendUserVerificationEmail,
 } from '../controllers/adminController';
 import {
   getMembers,
@@ -52,6 +54,8 @@ router.post('/approve/:userId', approveUser);
  * Rechazar un usuario
  */
 router.post('/reject/:userId', rejectUser);
+router.post('/revoke-registration/:userId', revokeRegistration);
+router.post('/resend-verification/:userId', resendUserVerificationEmail);
 
 /**
  * GET /api/admin/members

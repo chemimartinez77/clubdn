@@ -77,6 +77,7 @@ model User {
   emailVerified     Boolean     @default(false)
   verificationToken String?     @unique
   tokenExpiry       DateTime?
+  verificationEmailSentAt DateTime?
 
   resetPasswordToken String?    @unique
   resetPasswordExpiry DateTime?

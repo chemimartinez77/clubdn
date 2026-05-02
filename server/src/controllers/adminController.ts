@@ -1,9 +1,11 @@
 // server/src/controllers/adminController.ts
 import { Request, Response } from 'express';
+import { randomUUID } from 'crypto';
 import { prisma } from '../config/database';
 import {
   sendApprovalEmail,
   sendRejectionEmail,
+  sendVerificationEmail,
 } from '../services/emailService';
 
 /**
@@ -15,7 +17,7 @@ export const getPendingApprovals = async (_req: Request, res: Response) => {
     const pendingUsers = await prisma.user.findMany({
       where: {
         status: {
-          in: ['PENDING_APPROVAL', 'APPROVED', 'REJECTED'],
+          in: ['PENDING_VERIFICATION', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED'],
         },
       },
       select: {
@@ -24,6 +26,12 @@ export const getPendingApprovals = async (_req: Request, res: Response) => {
         email: true,
         createdAt: true,
         status: true,
+        emailVerified: true,
+        verificationEmailSentAt: true,
+        tokenExpiry: true,
+        approvedAt: true,
+        rejectedAt: true,
+        rejectionReason: true,
         approvedByAdmin: {
           select: {
             name: true,
@@ -48,6 +56,12 @@ export const getPendingApprovals = async (_req: Request, res: Response) => {
         email: user.email,
         createdAt: user.createdAt,
         status: user.status,
+        emailVerified: user.emailVerified,
+        verificationEmailSentAt: user.verificationEmailSentAt,
+        tokenExpiry: user.tokenExpiry,
+        approvedAt: user.approvedAt,
+        rejectedAt: user.rejectedAt,
+        rejectionReason: user.rejectionReason,
         approvedByName: user.approvedByAdmin?.name || null,
         rejectedByName: user.rejectedByAdmin?.name || null,
       })),
@@ -57,6 +71,149 @@ export const getPendingApprovals = async (_req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: 'Error al obtener las solicitudes pendientes',
+    });
+  }
+};
+
+/**
+ * Revocar un registro pendiente
+ * POST /api/admin/revoke-registration/:userId
+ */
+export const revokeRegistration = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId requerido',
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        status: true,
+        membership: { select: { id: true } },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado',
+      });
+    }
+
+    if (user.status !== 'PENDING_VERIFICATION' && user.status !== 'PENDING_APPROVAL') {
+      return res.status(400).json({
+        success: false,
+        message: 'Solo se pueden revocar registros pendientes',
+      });
+    }
+
+    if (user.membership) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se puede revocar un usuario que ya tenga membresía',
+      });
+    }
+
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Registro revocado correctamente',
+    });
+  } catch (error) {
+    console.error('Error al revocar registro:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al revocar el registro',
+    });
+  }
+};
+
+/**
+ * Reenviar email de verificación desde administración
+ * POST /api/admin/resend-verification/:userId
+ */
+export const resendUserVerificationEmail = async (req: Request, res: Response) => {
+  try {
+    if (process.env.EMAIL_DISABLED === 'true') {
+      return res.status(503).json({
+        success: false,
+        message: 'El reenvío de verificación está temporalmente deshabilitado. Inténtalo de nuevo en unas horas.',
+      });
+    }
+
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId requerido',
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        status: true,
+        emailVerified: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado',
+      });
+    }
+
+    if (user.status !== 'PENDING_VERIFICATION' || user.emailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Solo se puede reenviar la verificación a usuarios pendientes de verificar el email',
+      });
+    }
+
+    const verificationToken = randomUUID();
+    const tokenExpiry = new Date();
+    tokenExpiry.setHours(tokenExpiry.getHours() + 24);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationToken,
+        tokenExpiry,
+      },
+    });
+
+    await sendVerificationEmail(user.email, user.name, verificationToken);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationEmailSentAt: new Date(),
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Correo de verificación reenviado',
+    });
+  } catch (error) {
+    console.error('Error al reenviar verificación desde admin:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al reenviar el correo de verificación',
     });
   }
 };

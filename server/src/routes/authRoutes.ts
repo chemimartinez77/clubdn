@@ -8,7 +8,8 @@ import {
   getCurrentUser,
   requestPasswordReset,
   resetPassword,
-  changePassword
+  changePassword,
+  resendVerificationEmail
 } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
 
@@ -62,6 +63,7 @@ router.post(
  * Verificación de email
  */
 router.get('/verify-email', verifyEmail);
+router.post('/resend-verification', resendVerificationEmail);
 
 /**
  * GET /api/auth/me

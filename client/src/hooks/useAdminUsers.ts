@@ -8,6 +8,12 @@ interface PendingUser {
   email: string;
   createdAt: string;
   status: string;
+  emailVerified: boolean;
+  verificationEmailSentAt?: string | null;
+  tokenExpiry?: string | null;
+  approvedAt?: string | null;
+  rejectedAt?: string | null;
+  rejectionReason?: string | null;
   approvedByName?: string | null;
   rejectedByName?: string | null;
 }
@@ -60,6 +66,26 @@ export const useAdminUsers = () => {
     },
   });
 
+  const revokeMutation = useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      const response = await api.post(`/api/admin/revoke-registration/${userId}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingUsers'] });
+    },
+  });
+
+  const resendVerificationMutation = useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      const response = await api.post(`/api/admin/resend-verification/${userId}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingUsers'] });
+    },
+  });
+
   return {
     pendingUsers,
     isLoading,
@@ -67,7 +93,11 @@ export const useAdminUsers = () => {
     refetch,
     approveUser: approveMutation.mutate,
     rejectUser: rejectMutation.mutate,
+    revokeRegistration: revokeMutation.mutate,
+    resendVerification: resendVerificationMutation.mutate,
     isApproving: approveMutation.isPending,
     isRejecting: rejectMutation.isPending,
+    isRevoking: revokeMutation.isPending,
+    isResendingVerification: resendVerificationMutation.isPending,
   };
 };

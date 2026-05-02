@@ -13,6 +13,12 @@ import { notifyAdminsNewUser } from '../services/notificationService';
 import https from 'https';
 import querystring from 'querystring';
 
+function add24Hours(date = new Date()) {
+  const next = new Date(date);
+  next.setHours(next.getHours() + 24);
+  return next;
+}
+
 async function verifyHcaptcha(token: string): Promise<boolean> {
   const secret = process.env.HCAPTCHA_SECRET;
   if (!secret) {
@@ -131,8 +137,7 @@ export const register = async (req: Request, res: Response) => {
 
     // Generar token de verificación
     const verificationToken = randomUUID();
-    const tokenExpiry = new Date();
-    tokenExpiry.setHours(tokenExpiry.getHours() + 24); // 24 horas
+    const tokenExpiry = add24Hours();
 
     // Crear usuario
     const user = await prisma.user.create({
@@ -149,6 +154,10 @@ export const register = async (req: Request, res: Response) => {
     // Enviar email de verificación
     try {
       await sendVerificationEmail(email, name, verificationToken);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { verificationEmailSentAt: new Date() },
+      });
     } catch (mailError) {
       console.error('Error enviando email de verificación:', mailError);
       return res.status(201).json({
@@ -240,6 +249,88 @@ export const verifyEmail = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: 'Error al verificar el email',
+    });
+  }
+};
+
+/**
+ * Reenviar email de verificación
+ * POST /api/auth/resend-verification
+ */
+export const resendVerificationEmail = async (req: Request, res: Response) => {
+  try {
+    if (process.env.EMAIL_DISABLED === 'true') {
+      return res.status(503).json({
+        success: false,
+        message: 'El reenvío de verificación está temporalmente deshabilitado. Inténtalo de nuevo en unas horas.',
+      });
+    }
+
+    const { email } = req.body as { email?: string };
+
+    if (!email?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email requerido',
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        status: true,
+        emailVerified: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No existe ninguna cuenta asociada a ese email',
+      });
+    }
+
+    if (user.status !== 'PENDING_VERIFICATION' || user.emailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Esta cuenta ya no está pendiente de verificación de email',
+      });
+    }
+
+    const verificationToken = randomUUID();
+    const tokenExpiry = add24Hours();
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationToken,
+        tokenExpiry,
+      },
+    });
+
+    await sendVerificationEmail(user.email, user.name, verificationToken);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationEmailSentAt: new Date(),
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Se ha reenviado el correo de verificación',
+    });
+  } catch (error) {
+    console.error('Error al reenviar verificación de email:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al reenviar el correo de verificación',
     });
   }
 };

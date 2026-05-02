@@ -388,7 +388,7 @@ export default function Header() {
                         className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                         onClick={() => setIsAdminMenuOpen(false)}
                       >
-                        Aprobaciones Pendientes
+                        Seguimiento de Registros
                       </Link>
                       <Link
                         to="/admin/members"
@@ -809,7 +809,7 @@ export default function Header() {
                     className="px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                     onClick={closeAllMenus}
                   >
-                    Aprobaciones Pendientes
+                    Seguimiento de Registros
                   </Link>
                   <Link
                     to="/admin/members"

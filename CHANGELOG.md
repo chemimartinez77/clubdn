@@ -4,6 +4,35 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-02 (sesión 4)
+
+### feat: seguimiento administrativo del registro de usuarios
+
+Se amplía el panel de administración de altas para convertirlo en una vista de seguimiento de registros, no solo de aprobaciones pendientes.
+
+**Backend:**
+
+- `server/prisma/schema.prisma`: nuevo campo `verificationEmailSentAt` en `User` para registrar cuándo se envió el correo de verificación.
+- `server/prisma/migrations/20260502103000_add_registration_tracking_fields/migration.sql`: migración para añadir la trazabilidad del envío de verificación.
+- `server/src/controllers/authController.ts`: al registrar un usuario y enviar correctamente el correo de verificación, se guarda `verificationEmailSentAt`; además se añade `POST /api/auth/resend-verification` para reenviar el email de verificación a cuentas que siguen en `PENDING_VERIFICATION`.
+- `server/src/controllers/adminController.ts`: el listado admin incluye ahora usuarios en `PENDING_VERIFICATION`, `PENDING_APPROVAL`, `APPROVED` y `REJECTED`, junto con fechas y metadatos de seguimiento; se añaden acciones para `revocar` registros pendientes y `reenviar` verificaciones desde administración.
+- `server/src/routes/authRoutes.ts`: nueva ruta `POST /api/auth/resend-verification`.
+- `server/src/routes/adminRoutes.ts`: nuevas rutas admin para `revoke-registration` y `resend-verification`.
+
+**Frontend admin:**
+
+- `client/src/pages/admin/PendingApprovals.tsx`: la pantalla pasa a llamarse y comportarse como un panel de `Seguimiento de registros`, mostrando estado, fecha de registro, estado del email, caducidad del token y resolución administrativa.
+- `client/src/pages/admin/PendingApprovals.tsx`: se añaden acciones de `Reenviar verificación` para usuarios en `PENDING_VERIFICATION` y `Revocar registro` para solicitudes pendientes atascadas.
+- `client/src/hooks/useAdminUsers.ts`: nuevas mutaciones para revocar registros y reenviar el correo de verificación.
+- `client/src/components/layout/Header.tsx`: el acceso del menú admin pasa a mostrarse como `Seguimiento de Registros`.
+
+**Casos que cubre:**
+
+- detectar usuarios que nunca verificaron su email;
+- ver si consta el envío del correo de verificación y cuándo caduca;
+- revocar registros bloqueados para liberar el email y permitir un nuevo alta;
+- seguir viendo el histórico reciente de aprobaciones y rechazos desde la misma pantalla.
+
 ## 2026-05-02 (sesión 3)
 
 ### fix: scroll en modales de ludoteca y ajuste de textos de préstamo
