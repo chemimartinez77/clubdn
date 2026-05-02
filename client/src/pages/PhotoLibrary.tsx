@@ -10,7 +10,6 @@ import { useDebounce } from '../hooks/useDebounce';
 import { displayName } from '../utils/displayName';
 import type { ApiResponse } from '../types/auth';
 import type {
-  PhotoLibraryGameOption,
   PhotoLibraryParticipantOption,
   PhotoLibraryPhoto,
   PhotoLibraryResponse
@@ -51,17 +50,7 @@ export default function PhotoLibrary() {
   const [searchInput, setSearchInput] = useState(searchParams.get('search') ?? '');
   const [dateFromInput, setDateFromInput] = useState(searchParams.get('dateFrom') ?? '');
   const [dateToInput, setDateToInput] = useState(searchParams.get('dateTo') ?? '');
-  const [gameInput, setGameInput] = useState(searchParams.get('gameName') ?? '');
   const [participantInput, setParticipantInput] = useState(searchParams.get('participantName') ?? '');
-  const [selectedGame, setSelectedGame] = useState<PhotoLibraryGameOption | null>(
-    searchParams.get('bggId')
-      ? {
-          bggId: searchParams.get('bggId') ?? '',
-          gameName: searchParams.get('gameName') ?? '',
-          gameImage: null
-        }
-      : null
-  );
   const [selectedParticipant, setSelectedParticipant] = useState<PhotoLibraryParticipantOption | null>(
     searchParams.get('participantUserId')
       ? {
@@ -75,9 +64,7 @@ export default function PhotoLibrary() {
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoLibraryPhoto | null>(null);
 
   const currentPage = Math.max(Number(searchParams.get('page') ?? '1') || 1, 1);
-  const debouncedGameInput = useDebounce(gameInput, 250);
   const debouncedParticipantInput = useDebounce(participantInput, 250);
-  const canSearchGames = debouncedGameInput.trim().length >= 2 && (!selectedGame || debouncedGameInput !== selectedGame.gameName);
   const canSearchParticipants =
     debouncedParticipantInput.trim().length >= 2 &&
     (!selectedParticipant || debouncedParticipantInput !== displayName(selectedParticipant.name, selectedParticipant.nick));
@@ -86,20 +73,7 @@ export default function PhotoLibrary() {
     setSearchInput(searchParams.get('search') ?? '');
     setDateFromInput(searchParams.get('dateFrom') ?? '');
     setDateToInput(searchParams.get('dateTo') ?? '');
-    setGameInput(searchParams.get('gameName') ?? '');
     setParticipantInput(searchParams.get('participantName') ?? '');
-
-    const bggId = searchParams.get('bggId');
-    const gameName = searchParams.get('gameName') ?? '';
-    setSelectedGame(
-      bggId
-        ? {
-            bggId,
-            gameName,
-            gameImage: null
-          }
-        : null
-    );
 
     const participantUserId = searchParams.get('participantUserId');
     const participantName = searchParams.get('participantName') ?? '';
@@ -112,8 +86,8 @@ export default function PhotoLibrary() {
             avatar: null
           }
         : null
-    );
-  }, [searchParams]);
+      );
+    }, [searchParams]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['photoLibrary', searchParams.toString()],
@@ -139,18 +113,6 @@ export default function PhotoLibrary() {
     }
   });
 
-  const { data: gameOptions = [] } = useQuery({
-    queryKey: ['photoLibraryGames', debouncedGameInput],
-    queryFn: async () => {
-      const response = await api.get<ApiResponse<PhotoLibraryGameOption[]>>(
-        `/api/event-photos/games/search?q=${encodeURIComponent(debouncedGameInput.trim())}`
-      );
-      return response.data.data || [];
-    },
-    enabled: canSearchGames,
-    staleTime: 5 * 60 * 1000
-  });
-
   const { data: participantOptions = [] } = useQuery({
     queryKey: ['photoLibraryParticipants', debouncedParticipantInput],
     queryFn: async () => {
@@ -165,13 +127,11 @@ export default function PhotoLibrary() {
 
   const photos = data?.photos ?? [];
   const pagination = data?.pagination;
-  const hasActiveFilters = ['search', 'bggId', 'participantUserId', 'dateFrom', 'dateTo'].some((key) => !!searchParams.get(key));
+  const hasActiveFilters = ['search', 'participantUserId', 'dateFrom', 'dateTo'].some((key) => !!searchParams.get(key));
 
   const applyFilters = () => {
     const trimmedSearch = searchInput.trim();
-    const trimmedGameInput = gameInput.trim();
     const trimmedParticipantInput = participantInput.trim();
-    const gameFilter = selectedGame && trimmedGameInput === selectedGame.gameName ? selectedGame : null;
     const participantLabel = selectedParticipant ? displayName(selectedParticipant.name, selectedParticipant.nick) : '';
     const participantFilter = selectedParticipant && trimmedParticipantInput === participantLabel ? selectedParticipant : null;
 
@@ -179,8 +139,6 @@ export default function PhotoLibrary() {
       buildSearchParams({
         page: '1',
         search: trimmedSearch || null,
-        bggId: gameFilter?.bggId ?? null,
-        gameName: gameFilter?.gameName ?? null,
         participantUserId: participantFilter?.id ?? null,
         participantName: participantFilter ? participantLabel : null,
         dateFrom: dateFromInput || null,
@@ -193,9 +151,7 @@ export default function PhotoLibrary() {
     setSearchInput('');
     setDateFromInput('');
     setDateToInput('');
-    setGameInput('');
     setParticipantInput('');
-    setSelectedGame(null);
     setSelectedParticipant(null);
     setSearchParams(new URLSearchParams());
   };
@@ -205,8 +161,6 @@ export default function PhotoLibrary() {
       buildSearchParams({
         page: String(page),
         search: searchParams.get('search'),
-        bggId: searchParams.get('bggId'),
-        gameName: searchParams.get('gameName'),
         participantUserId: searchParams.get('participantUserId'),
         participantName: searchParams.get('participantName'),
         dateFrom: searchParams.get('dateFrom'),
@@ -237,7 +191,7 @@ export default function PhotoLibrary() {
             <CardTitle>Filtros</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="xl:col-span-2">
                 <label htmlFor="photo-search" className="mb-1 block text-sm font-medium text-[var(--color-text)]">
                   Buscar
@@ -250,50 +204,6 @@ export default function PhotoLibrary() {
                   placeholder="Juego, partida o texto de la foto"
                   className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-cardBackground)] px-4 py-2 text-[var(--color-text)] focus:border-transparent focus:ring-2 focus:ring-[var(--color-primary)]"
                 />
-              </div>
-
-              <div className="relative">
-                <label htmlFor="photo-game-filter" className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-                  Juego
-                </label>
-                <input
-                  id="photo-game-filter"
-                  type="text"
-                  value={gameInput}
-                  onChange={(e) => {
-                    setGameInput(e.target.value);
-                    setSelectedGame(null);
-                  }}
-                  placeholder="Busca un juego"
-                  autoComplete="off"
-                  className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-cardBackground)] px-4 py-2 text-[var(--color-text)] focus:border-transparent focus:ring-2 focus:ring-[var(--color-primary)]"
-                />
-                {canSearchGames && gameOptions.length > 0 && (
-                  <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] shadow-lg">
-                    {gameOptions.map((game) => (
-                      <button
-                        key={game.bggId}
-                        type="button"
-                        onClick={() => {
-                          setSelectedGame(game);
-                          setGameInput(game.gameName);
-                        }}
-                        className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-[var(--color-tableRowHover)]"
-                      >
-                        {game.gameImage ? (
-                          <img src={game.gameImage} alt={game.gameName} className="h-10 w-10 rounded-md object-cover" />
-                        ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)]">
-                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                            </svg>
-                          </div>
-                        )}
-                        <span className="min-w-0 truncate text-sm text-[var(--color-text)]">{game.gameName}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
 
               <div className="relative">
@@ -378,11 +288,6 @@ export default function PhotoLibrary() {
 
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-wrap gap-2">
-                {selectedGame && (
-                  <span className="rounded-full bg-[var(--color-primary-50)] px-3 py-1 text-sm text-[var(--color-primary)]">
-                    Juego: {selectedGame.gameName}
-                  </span>
-                )}
                 {selectedParticipant && (
                   <span className="rounded-full bg-[var(--color-primary-50)] px-3 py-1 text-sm text-[var(--color-primary)]">
                     Participante: {displayName(selectedParticipant.name, selectedParticipant.nick)}
@@ -393,7 +298,7 @@ export default function PhotoLibrary() {
                 <Button variant="outline" onClick={applyFilters}>
                   Aplicar filtros
                 </Button>
-                <Button variant="ghost" onClick={clearFilters} disabled={!hasActiveFilters && !searchInput && !gameInput && !participantInput && !dateFromInput && !dateToInput}>
+                <Button variant="ghost" onClick={clearFilters} disabled={!hasActiveFilters && !searchInput && !participantInput && !dateFromInput && !dateToInput}>
                   Limpiar
                 </Button>
               </div>

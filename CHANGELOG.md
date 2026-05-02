@@ -6,24 +6,24 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-02 (sesión 1)
 
-### feat: fototeca global en Comunidad con filtros por juego, participante y fecha
+### feat: fototeca global en Comunidad con filtros simplificados y acceso desde Comunidad
 
 Se añade una nueva `Fototeca` global del club accesible desde `Comunidad`, pensada para explorar todas las fotos de partidas sin tener que entrar en cada evento individual. La vista está orientada a descubrimiento social y mantiene la subida y el borrado de fotos exclusivamente dentro de cada partida.
 
 **Frontend:**
 
 - `client/src/pages/PhotoLibrary.tsx`: nueva página protegida `\`/comunidad/fototeca\`` con grid de miniaturas, paginación, modal de imagen ampliada y enlace directo a la partida original.
-- `client/src/pages/PhotoLibrary.tsx`: filtros persistidos en `URLSearchParams` para búsqueda libre, juego, participante confirmado y rango de fechas de la partida.
-- `client/src/pages/PhotoLibrary.tsx`: autocompletado de juego y participante con consultas específicas al backend, manteniendo el estado al recargar o compartir la URL.
-- `client/src/types/photoLibrary.ts`: nuevos tipos para la respuesta de la fototeca global, opciones de juego y opciones de participante.
+- `client/src/pages/PhotoLibrary.tsx`: filtros persistidos en `URLSearchParams` para búsqueda libre, participante confirmado y rango de fechas de la partida.
+- `client/src/pages/PhotoLibrary.tsx`: se elimina el filtro específico de `Juego` para priorizar simplicidad, ya que la caja `Buscar` ya cubre juego, partida y texto de la foto.
+- `client/src/pages/PhotoLibrary.tsx`: autocompletado de participante con consulta específica al backend, manteniendo el estado al recargar o compartir la URL.
+- `client/src/types/photoLibrary.ts`: nuevos tipos para la respuesta de la fototeca global y las opciones de participante.
 - `client/src/App.tsx`: nueva ruta protegida `\`/comunidad/fototeca\``.
-- `client/src/components/layout/Header.tsx`: nuevo acceso a `Fototeca` dentro del menú `Comunidad`, tanto en escritorio como en móvil.
+- `client/src/components/layout/Header.tsx`: nuevo acceso a `Fototeca` dentro del menú `Comunidad`, tanto en escritorio como en móvil, colocado debajo de `Mercadillo` para conservar el orden previo del resto de opciones.
 
 **Backend:**
 
 - `server/src/controllers/eventPhotoController.ts`: nuevo handler `getPhotoLibrary` para `GET /api/event-photos`, con soporte para `page`, `pageSize`, `search`, `bggId`, `participantUserId`, `dateFrom` y `dateTo`.
 - `server/src/controllers/eventPhotoController.ts`: la búsqueda libre de la fototeca consulta `caption`, `title` de la partida y `gameName`.
-- `server/src/controllers/eventPhotoController.ts`: nuevo handler `searchPhotoLibraryGames` para autocompletar juegos con fotos existentes.
 - `server/src/controllers/eventPhotoController.ts`: nuevo handler `searchPhotoLibraryParticipants` para autocompletar participantes confirmados en partidas que tienen fotos.
 - `server/src/routes/photoLibraryRoutes.ts`: nuevo router autenticado bajo `/api/event-photos`.
 - `server/src/index.ts`: registro del nuevo router global de fototeca.
@@ -31,6 +31,7 @@ Se añade una nueva `Fototeca` global del club accesible desde `Comunidad`, pens
 **Decisiones funcionales:**
 
 - “Buscar por miembro” significa `miembro que estuvo confirmado en esa partida`, no `quien subió la foto`.
+- La caja `Buscar` cubre nombre del juego, título de la partida y texto de la foto, por lo que no existe un segundo filtro específico de juego en la versión final.
 - La galería global ordena por `createdAt DESC`.
 - La fototeca no permite subir, editar ni borrar fotos en esta primera versión.
 
