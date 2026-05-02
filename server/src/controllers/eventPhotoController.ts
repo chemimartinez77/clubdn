@@ -2,7 +2,7 @@
 import { Request, Response } from 'express';
 import { v2 as cloudinary } from 'cloudinary';
 import { prisma } from '../config/database';
-import { BadgeCategory } from '@prisma/client';
+import { BadgeCategory, Prisma, RegistrationStatus } from '@prisma/client';
 import { checkAndUnlockBadges } from './badgeController';
 
 // Configurar Cloudinary
@@ -20,6 +20,10 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 // Máximo de fotos por evento
 const MAX_PHOTOS_PER_EVENT = 8;
+
+const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_SIZE = 24;
+const MAX_PAGE_SIZE = 60;
 
 // Verificar si el usuario puede subir fotos (solo SOCIO o COLABORADOR registrados en el evento)
 const canUploadPhoto = async (userId: string, eventId: string): Promise<boolean> => {
@@ -94,6 +98,313 @@ export const getEventPhotos = async (req: Request, res: Response): Promise<void>
     res.status(500).json({
       success: false,
       message: 'Error al obtener fotos'
+    });
+  }
+};
+
+/**
+ * Buscar juegos con fotos para el filtro de la fototeca
+ */
+export const searchPhotoLibraryGames = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { q } = req.query;
+    const search = typeof q === 'string' ? q.trim() : '';
+
+    if (search.length < 2) {
+      res.status(400).json({
+        success: false,
+        message: 'Escribe al menos 2 caracteres para buscar'
+      });
+      return;
+    }
+
+    const normalizedSearch = search
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    const photos = await prisma.eventPhoto.findMany({
+      where: {
+        event: {
+          type: 'PARTIDA',
+          status: { not: 'CANCELLED' },
+          OR: [
+            { gameName: { contains: search, mode: 'insensitive' } },
+            {
+              game: {
+                is: {
+                  name: { contains: search, mode: 'insensitive' }
+                }
+              }
+            }
+          ]
+        }
+      },
+      select: {
+        event: {
+          select: {
+            bggId: true,
+            gameName: true,
+            gameImage: true,
+            game: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                thumbnail: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 150
+    });
+
+    const normalize = (value: string) =>
+      value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    const uniqueGames = new Map<string, {
+      bggId: string;
+      gameName: string;
+      gameImage: string | null;
+    }>();
+
+    for (const photo of photos) {
+      const bggId = photo.event.bggId?.trim();
+      const resolvedGameName = photo.event.game?.name?.trim() || photo.event.gameName?.trim();
+
+      if (!bggId || !resolvedGameName) continue;
+      if (!normalize(resolvedGameName).includes(normalizedSearch)) continue;
+      if (uniqueGames.has(bggId)) continue;
+
+      uniqueGames.set(bggId, {
+        bggId,
+        gameName: resolvedGameName,
+        gameImage: photo.event.game?.thumbnail || photo.event.game?.image || photo.event.gameImage || null
+      });
+
+      if (uniqueGames.size >= 10) break;
+    }
+
+    res.json({
+      success: true,
+      data: Array.from(uniqueGames.values())
+    });
+  } catch (error) {
+    console.error('Error al buscar juegos para la fototeca:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al buscar juegos para la fototeca'
+    });
+  }
+};
+
+/**
+ * Buscar participantes para el filtro de la fototeca
+ */
+export const searchPhotoLibraryParticipants = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { q } = req.query;
+    const search = typeof q === 'string' ? q.trim() : '';
+
+    if (search.length < 2) {
+      res.status(400).json({
+        success: false,
+        message: 'Escribe al menos 2 caracteres para buscar'
+      });
+      return;
+    }
+
+    const matchingUsers = await prisma.user.findMany({
+      where: {
+        status: 'APPROVED',
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          {
+            profile: {
+              is: {
+                nick: { contains: search, mode: 'insensitive' }
+              }
+            }
+          }
+        ],
+        eventRegistrations: {
+          some: {
+            status: RegistrationStatus.CONFIRMED,
+            event: {
+              type: 'PARTIDA',
+              status: { not: 'CANCELLED' },
+              photos: {
+                some: {}
+              }
+            }
+          }
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        profile: {
+          select: {
+            nick: true,
+            avatar: true
+          }
+        }
+      },
+      orderBy: { name: 'asc' },
+      take: 10
+    });
+
+    res.json({
+      success: true,
+      data: matchingUsers.map((user) => ({
+        id: user.id,
+        name: user.name,
+        nick: user.profile?.nick ?? null,
+        avatar: user.profile?.avatar ?? null
+      }))
+    });
+  } catch (error) {
+    console.error('Error al buscar participantes para la fototeca:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al buscar participantes para la fototeca'
+    });
+  }
+};
+
+/**
+ * Listado global de fotos para la fototeca
+ */
+export const getPhotoLibrary = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const page = Math.max(Number(req.query.page) || DEFAULT_PAGE, 1);
+    const pageSize = Math.min(Math.max(Number(req.query.pageSize) || DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE);
+    const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+    const bggId = typeof req.query.bggId === 'string' ? req.query.bggId.trim() : '';
+    const participantUserId = typeof req.query.participantUserId === 'string' ? req.query.participantUserId.trim() : '';
+    const dateFrom = typeof req.query.dateFrom === 'string' ? req.query.dateFrom.trim() : '';
+    const dateTo = typeof req.query.dateTo === 'string' ? req.query.dateTo.trim() : '';
+
+    const eventWhere: Prisma.EventWhereInput = {
+      type: 'PARTIDA',
+      status: { not: 'CANCELLED' }
+    };
+
+    if (search) {
+      eventWhere.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { gameName: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    if (bggId) {
+      eventWhere.bggId = bggId;
+    }
+
+    if (participantUserId) {
+      eventWhere.registrations = {
+        some: {
+          userId: participantUserId,
+          status: RegistrationStatus.CONFIRMED
+        }
+      };
+    }
+
+    const eventDateFilters: Prisma.DateTimeFilter = {};
+    if (dateFrom) {
+      const parsedDateFrom = new Date(`${dateFrom}T00:00:00.000Z`);
+      if (!Number.isNaN(parsedDateFrom.getTime())) {
+        eventDateFilters.gte = parsedDateFrom;
+      }
+    }
+    if (dateTo) {
+      const parsedDateTo = new Date(`${dateTo}T23:59:59.999Z`);
+      if (!Number.isNaN(parsedDateTo.getTime())) {
+        eventDateFilters.lte = parsedDateTo;
+      }
+    }
+    if (Object.keys(eventDateFilters).length > 0) {
+      eventWhere.date = eventDateFilters;
+    }
+
+    const photoWhere: Prisma.EventPhotoWhereInput = {
+      event: eventWhere
+    };
+
+    if (search) {
+      photoWhere.OR = [
+        { caption: { contains: search, mode: 'insensitive' } },
+        { event: eventWhere }
+      ];
+    }
+
+    const [total, photos] = await Promise.all([
+      prisma.eventPhoto.count({ where: photoWhere }),
+      prisma.eventPhoto.findMany({
+        where: photoWhere,
+        select: {
+          id: true,
+          url: true,
+          thumbnailUrl: true,
+          caption: true,
+          createdAt: true,
+          uploadedBy: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          event: {
+            select: {
+              id: true,
+              title: true,
+              date: true,
+              gameName: true,
+              gameImage: true,
+              bggId: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize
+      })
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        photos: photos.map((photo) => ({
+          id: photo.id,
+          url: photo.url,
+          thumbnailUrl: photo.thumbnailUrl,
+          caption: photo.caption,
+          createdAt: photo.createdAt,
+          uploadedBy: photo.uploadedBy,
+          event: {
+            id: photo.event.id,
+            title: photo.event.title,
+            date: photo.event.date,
+            gameName: photo.event.gameName,
+            gameImage: photo.event.gameImage,
+            bggId: photo.event.bggId
+          }
+        })),
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.max(Math.ceil(total / pageSize), 1)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener la fototeca:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener la fototeca'
     });
   }
 };

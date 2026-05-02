@@ -46,6 +46,7 @@ import QuienSabeJugar from './pages/QuienSabeJugar';
 import Documentos from './pages/Documentos';
 import Feedback from './pages/Feedback';
 import UserProfile from './pages/UserProfile';
+import PhotoLibrary from './pages/PhotoLibrary';
 import AdminRoute from './components/routes/AdminRoute';
 import AzulLocal from './pages/azul/AzulLocal';
 import CombatZone from './pages/azul/CombatZone';
@@ -286,6 +287,15 @@ function App() {
           />
 
           {/* Rutas de eventos */}
+          <Route
+            path="/comunidad/fototeca"
+            element={
+              <ProtectedRoute>
+                <PhotoLibrary />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/events"
             element={

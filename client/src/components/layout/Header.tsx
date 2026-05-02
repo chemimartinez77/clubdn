@@ -301,6 +301,13 @@ export default function Header() {
                   <div className="fixed inset-0 z-10" onClick={() => setIsComunidadMenuOpen(false)} />
                   <div className="absolute left-0 mt-2 w-52 bg-[var(--color-cardBackground)] rounded-lg shadow-lg border border-[var(--color-cardBorder)] py-1 z-20">
                     <Link
+                      to="/comunidad/fototeca"
+                      className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                      onClick={() => setIsComunidadMenuOpen(false)}
+                    >
+                      Fototeca
+                    </Link>
+                    <Link
                       to="/feedback"
                       className="block px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors"
                       onClick={() => setIsComunidadMenuOpen(false)}
@@ -741,6 +748,13 @@ export default function Header() {
                 </button>
                 {isMobileComunidadOpen && (
                   <div className="ml-4 mt-1 space-y-1">
+                    <Link
+                      to="/comunidad/fototeca"
+                      className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+                      onClick={closeAllMenus}
+                    >
+                      Fototeca
+                    </Link>
                     <Link
                       to="/feedback"
                       className="block px-4 py-2 text-[var(--color-textSecondary)] hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"

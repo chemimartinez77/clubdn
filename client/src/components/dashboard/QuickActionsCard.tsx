@@ -102,7 +102,7 @@ export default function QuickActionsCard({ isAdmin }: QuickActionsCardProps) {
         {/* Consulta frecuente - Acceso rápido al calendario */}
         <QuickAction
           to="/events"
-          title="Ver Eventos"
+          title="Ver Eventos (Calendario)"
           description="Próximos encuentros del club"
           enabled={true}
           icon={
