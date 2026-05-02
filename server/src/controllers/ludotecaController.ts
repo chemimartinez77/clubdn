@@ -1,8 +1,9 @@
 // server/src/controllers/ludotecaController.ts
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
-import { GameType, GameCondition } from '@prisma/client';
+import { GameType, GameCondition, Prisma } from '@prisma/client';
 import { getRPGGeekItem } from '../services/bggService';
+import { buildClubOwnerWhere, buildParticularOwnerWhere, isClubOwnerEmail } from '../utils/libraryOwnership';
 
 /**
  * Obtener todos los items de la ludoteca con filtros opcionales
@@ -24,7 +25,8 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
     const showExpansions = includeExpansions === 'true';
 
     // Construir filtros
-    const where: any = {};
+    const andClauses: Prisma.LibraryItemWhereInput[] = [{ bajaAt: null }];
+    const where: Prisma.LibraryItemWhereInput = {};
 
     if (search && typeof search === 'string') {
       const term = search.trim();
@@ -37,37 +39,37 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
            )
       `;
       const bggIds = matchingBggIds.map((r) => r.id);
-      where.OR = [
+      andClauses.push({
+        OR: [
         { name: { contains: term, mode: 'insensitive' } },
         { bggId: { in: bggIds } },
-      ];
+        ],
+      });
     }
 
     if (gameType && typeof gameType === 'string') {
-      where.gameType = gameType as GameType;
+      andClauses.push({ gameType: gameType as GameType });
     }
 
     if (condition && typeof condition === 'string') {
-      where.condition = condition as GameCondition;
+      andClauses.push({ condition: condition as GameCondition });
     }
 
     if (ownerEmail && typeof ownerEmail === 'string') {
       if (ownerEmail === 'club') {
-        // Filtrar solo items del club (null o email del club)
-        where.OR = [
-          { ownerEmail: null },
-          { ownerEmail: 'clubdreadnought.vlc@gmail.com' }
-        ];
+        andClauses.push(buildClubOwnerWhere());
       } else {
-        where.ownerEmail = ownerEmail;
+        andClauses.push({ ownerEmail });
       }
     }
 
     // Filtrar expansiones si no se solicitan explícitamente
     if (!showExpansions) {
       const noExpansion = { OR: [{ bggId: null }, { game: { isExpansion: false } }] };
-      where.AND = where.AND ? [...where.AND, noExpansion] : [noExpansion];
+      andClauses.push(noExpansion);
     }
+
+    where.AND = andClauses;
 
     // Paginación
     const pageNum = parseInt(page as string);
@@ -89,7 +91,11 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
         orderBy,
         skip,
         take: limitNum,
-        include: { game: { select: { isExpansion: true, parentBggId: true } } }
+        include: {
+          game: { select: { isExpansion: true, parentBggId: true } },
+          ownerUser: { select: { id: true, name: true, profile: { select: { nick: true } } } },
+          donorUser: { select: { id: true, name: true, profile: { select: { nick: true } } } },
+        }
       }),
       prisma.libraryItem.count({ where })
     ]);
@@ -107,10 +113,12 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
     // Para el resto, el thumbnail ya viene en el propio item (campo de BD).
     const itemsWithThumbnails = await Promise.all(
       items.map(async (item) => {
-        const { game, ...itemWithoutGame } = item;
+        const { game, ownerUser, donorUser, ...itemWithoutGame } = item;
         const isExpansion = game?.isExpansion ?? false;
         const parentBggId = game?.parentBggId ?? null;
         const parentGameName = parentBggId ? (parentGameMap.get(parentBggId) ?? null) : null;
+        const ownerDisplayName = ownerUser?.profile?.nick || ownerUser?.name || (isClubOwnerEmail(item.ownerEmail) ? 'Club Dreadnought' : item.ownerEmail);
+        const donorDisplayName = donorUser?.profile?.nick || donorUser?.name || null;
 
         if (item.gameType === 'ROL' && item.bggId && !item.thumbnail) {
           const rpggItem = await getRPGGeekItem(item.bggId);
@@ -123,7 +131,16 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
               data: { thumbnail, image, yearPublished }
             });
           }
-          return { ...itemWithoutGame, gameThumbnail: thumbnail, isExpansion, parentBggId, parentGameName };
+          return {
+            ...itemWithoutGame,
+            gameThumbnail: thumbnail,
+            isExpansion,
+            parentBggId,
+            parentGameName,
+            ownerDisplayName,
+            donorDisplayName,
+            isDonated: !!item.donorUserId,
+          };
         }
         // Para juegos no-ROL sin thumbnail cacheado, buscar en tabla Game (sin llamada externa)
         if (item.gameType !== 'ROL' && item.bggId && !item.thumbnail) {
@@ -140,10 +157,28 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
                 yearPublished: gameData.yearPublished ?? undefined
               }
             });
-            return { ...itemWithoutGame, gameThumbnail: gameData.thumbnail, isExpansion, parentBggId, parentGameName };
+            return {
+              ...itemWithoutGame,
+              gameThumbnail: gameData.thumbnail,
+              isExpansion,
+              parentBggId,
+              parentGameName,
+              ownerDisplayName,
+              donorDisplayName,
+              isDonated: !!item.donorUserId,
+            };
           }
         }
-        return { ...itemWithoutGame, gameThumbnail: item.thumbnail || null, isExpansion, parentBggId, parentGameName };
+        return {
+          ...itemWithoutGame,
+          gameThumbnail: item.thumbnail || null,
+          isExpansion,
+          parentBggId,
+          parentGameName,
+          ownerDisplayName,
+          donorDisplayName,
+          isDonated: !!item.donorUserId,
+        };
       })
     );
 
@@ -175,8 +210,8 @@ export const getLibraryItem = async (req: Request, res: Response): Promise<void>
   try {
     const { id } = req.params;
 
-    const item = await prisma.libraryItem.findUnique({
-      where: { id }
+    const item = await prisma.libraryItem.findFirst({
+      where: { id, bajaAt: null }
     });
 
     if (!item) {
@@ -205,33 +240,42 @@ export const getLibraryItem = async (req: Request, res: Response): Promise<void>
  */
 export const getLibraryStats = async (_req: Request, res: Response): Promise<void> => {
   try {
+    const activeWhere: Prisma.LibraryItemWhereInput = { bajaAt: null };
+
     // Total de items
-    const total = await prisma.libraryItem.count();
+    const total = await prisma.libraryItem.count({ where: { bajaAt: null } });
 
     // Expansiones
     const expansions = await prisma.libraryItem.count({
-      where: { game: { isExpansion: true } }
+      where: {
+        AND: [
+          activeWhere,
+          { game: { isExpansion: true } },
+        ]
+      }
     });
 
     // Por tipo de juego
     const byGameType = await prisma.libraryItem.groupBy({
       by: ['gameType'],
-      _count: true
+      _count: true,
+      where: { bajaAt: null }
     });
 
     // Por condición
     const byCondition = await prisma.libraryItem.groupBy({
       by: ['condition'],
-      _count: true
+      _count: true,
+      where: { bajaAt: null }
     });
 
     // Items del club vs. de socios
     // Consideramos como del club: ownerEmail null O clubdreadnought.vlc@gmail.com
     const clubItems = await prisma.libraryItem.count({
       where: {
-        OR: [
-          { ownerEmail: null },
-          { ownerEmail: 'clubdreadnought.vlc@gmail.com' }
+        AND: [
+          { bajaAt: null },
+          buildClubOwnerWhere(),
         ]
       }
     });
@@ -239,8 +283,8 @@ export const getLibraryStats = async (_req: Request, res: Response): Promise<voi
     const memberItems = await prisma.libraryItem.count({
       where: {
         AND: [
-          { ownerEmail: { not: null } },
-          { ownerEmail: { not: 'clubdreadnought.vlc@gmail.com' } }
+          { bajaAt: null },
+          buildParticularOwnerWhere(),
         ]
       }
     });
@@ -250,8 +294,8 @@ export const getLibraryStats = async (_req: Request, res: Response): Promise<voi
       by: ['ownerEmail'],
       where: {
         AND: [
-          { ownerEmail: { not: null } },
-          { ownerEmail: { not: 'clubdreadnought.vlc@gmail.com' } }
+          { bajaAt: null },
+          buildParticularOwnerWhere(),
         ]
       },
       _count: true
@@ -291,8 +335,8 @@ export const getLibraryItemDetail = async (req: Request, res: Response): Promise
   try {
     const { id } = req.params;
 
-    const item = await prisma.libraryItem.findUnique({
-      where: { id },
+    const item = await prisma.libraryItem.findFirst({
+      where: { id, bajaAt: null },
       select: { id: true, name: true, gameType: true, bggId: true, description: true, image: true, thumbnail: true, yearPublished: true }
     });
 
@@ -386,31 +430,22 @@ export const getLibraryFilters = async (_req: Request, res: Response): Promise<v
     const ownerRows = await prisma.libraryItem.findMany({
       where: {
         AND: [
-          { ownerEmail: { not: null } },
-          { ownerEmail: { not: 'clubdreadnought.vlc@gmail.com' } }
+          { bajaAt: null },
+          buildParticularOwnerWhere(),
         ]
       },
-      select: { ownerEmail: true },
+      select: {
+        ownerEmail: true,
+        ownerUser: { select: { name: true, profile: { select: { nick: true } } } },
+      },
       distinct: ['ownerEmail']
     });
 
     const ownerEmails = ownerRows.map(o => o.ownerEmail).filter(Boolean) as string[];
 
-    // Buscar nick/nombre para cada email
-    const users = await prisma.user.findMany({
-      where: { email: { in: ownerEmails } },
-      select: {
-        email: true,
-        name: true,
-        profile: { select: { nick: true } }
-      }
-    });
-
-    const userByEmail = new Map(users.map(u => [u.email, u]));
-
     const owners = ownerEmails.map(email => {
-      const u = userByEmail.get(email);
-      const displayName = u?.profile?.nick || u?.name || email;
+      const row = ownerRows.find((ownerRow) => ownerRow.ownerEmail === email);
+      const displayName = row?.ownerUser?.profile?.nick || row?.ownerUser?.name || email;
       return { email, displayName };
     });
 

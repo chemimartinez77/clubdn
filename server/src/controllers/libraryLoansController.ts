@@ -101,13 +101,14 @@ export const searchItem = async (req: Request, res: Response): Promise<void> => 
     const where = internalId && name
       ? {
           AND: [
+            { bajaAt: null },
             { internalId },
             { name: { contains: name, mode: 'insensitive' as const } }
           ]
         }
       : internalId
-        ? { internalId }
-        : { name: { contains: name, mode: 'insensitive' as const } };
+        ? { AND: [{ bajaAt: null }, { internalId }] }
+        : { AND: [{ bajaAt: null }, { name: { contains: name, mode: 'insensitive' as const } }] };
 
     const items = await prisma.libraryItem.findMany({
       where,
@@ -144,8 +145,11 @@ export const requestLoan = async (req: Request, res: Response): Promise<void> =>
     const { loanEnabled, loanMaxActivePerUser } = await getLoanConfig();
     if (!loanEnabled) { res.status(503).json({ success: false, message: 'El sistema de préstamos está temporalmente desactivado' }); return; }
 
-    const item = await prisma.libraryItem.findUnique({
-      where: internalId ? { internalId } : { id: libraryItemId },
+    const item = await prisma.libraryItem.findFirst({
+      where: {
+        bajaAt: null,
+        ...(internalId ? { internalId } : { id: libraryItemId }),
+      },
       select: { id: true, internalId: true, name: true, loanStatus: true, loanPolicy: true }
     });
 
@@ -506,8 +510,8 @@ export const joinQueue = async (req: Request, res: Response): Promise<void> => {
     const { loanEnabled } = await getLoanConfig();
     if (!loanEnabled) { res.status(503).json({ success: false, message: 'El sistema de préstamos está temporalmente desactivado' }); return; }
 
-    const item = await prisma.libraryItem.findUnique({
-      where: { id: libraryItemId },
+    const item = await prisma.libraryItem.findFirst({
+      where: { id: libraryItemId, bajaAt: null },
       select: { id: true, name: true, loanStatus: true, loanPolicy: true }
     });
 
@@ -612,8 +616,8 @@ export const consultLoan = async (req: Request, res: Response): Promise<void> =>
     const { loanEnabled } = await getLoanConfig();
     if (!loanEnabled) { res.status(503).json({ success: false, message: 'El sistema de préstamos está temporalmente desactivado' }); return; }
 
-    const item = await prisma.libraryItem.findUnique({
-      where: { id: libraryItemId },
+    const item = await prisma.libraryItem.findFirst({
+      where: { id: libraryItemId, bajaAt: null },
       select: { id: true, internalId: true, name: true, loanPolicy: true }
     });
     if (!item) { res.status(404).json({ success: false, message: 'Ítem no encontrado' }); return; }

@@ -151,6 +151,11 @@ model User {
   libraryLoansLoaned       LibraryLoan[]                  @relation("LibraryLoanLoanedBy")
   libraryLoansReturned     LibraryLoan[]                  @relation("LibraryLoanReturnedBy")
   libraryQueue             LibraryQueue[]                 @relation("LibraryQueueUser")
+  libraryItemsOwned        LibraryItem[]                  @relation("LibraryItemOwner")
+  libraryItemsDonated      LibraryItem[]                  @relation("LibraryItemDonor")
+  libraryItemsBaja         LibraryItem[]                  @relation("LibraryItemBajaBy")
+  libraryDonationRequests  LibraryDonationRequest[]       @relation("LibraryDonationRequester")
+  libraryDonationReviews   LibraryDonationRequest[]       @relation("LibraryDonationReviewer")
   pushDevices              PushDevice[]
   firstPlayerSpinsAsSpinner FirstPlayerSpin[]             @relation("FirstPlayerSpinSpinner")
   firstPlayerSpinsAsChosen  FirstPlayerSpin[]             @relation("FirstPlayerSpinChosen")
@@ -767,6 +772,12 @@ enum LibraryQueueStatus {
   CANCELLED
 }
 
+enum LibraryDonationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 // Item físico en la ludoteca del club
 model LibraryItem {
   id                String                @id @default(cuid())
@@ -790,6 +801,10 @@ model LibraryItem {
 
   // Propiedad y adquisición
   ownerEmail        String?
+  ownerUserId       String?
+  ownerUser         User?                 @relation("LibraryItemOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  donorUserId       String?
+  donorUser         User?                 @relation("LibraryItemDonor", fields: [donorUserId], references: [id], onDelete: SetNull)
   acquisitionDate   DateTime?
 
   // Préstamos
@@ -797,8 +812,12 @@ model LibraryItem {
   loanPolicy        LibraryLoanPolicy     @default(NOT_LOANABLE)
   loans             LibraryLoan[]
   queue             LibraryQueue[]
+  donationRequests  LibraryDonationRequest[]
 
   // Metadatos
+  bajaAt            DateTime?
+  bajaByUserId      String?
+  bajaByUser        User?                 @relation("LibraryItemBajaBy", fields: [bajaByUserId], references: [id], onDelete: SetNull)
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
 
@@ -806,8 +825,11 @@ model LibraryItem {
   @@index([gameType])
   @@index([condition])
   @@index([ownerEmail])
+  @@index([ownerUserId])
+  @@index([donorUserId])
   @@index([bggId])
   @@index([loanStatus])
+  @@index([bajaAt])
 }
 
 model LibraryLoan {
@@ -860,6 +882,34 @@ model LibraryQueue {
 
   @@unique([libraryItemId, userId])
   @@index([libraryItemId, status])
+}
+
+model LibraryDonationRequest {
+  id                  String                @id @default(cuid())
+  requesterUserId     String
+  requesterUser       User                  @relation("LibraryDonationRequester", fields: [requesterUserId], references: [id], onDelete: Cascade)
+  reviewerUserId      String?
+  reviewerUser        User?                 @relation("LibraryDonationReviewer", fields: [reviewerUserId], references: [id], onDelete: SetNull)
+
+  bggId               String?
+  name                String
+  gameType            GameType
+  condition           GameCondition
+  notes               String?               @db.Text
+  acquisitionDate     DateTime?
+  status              LibraryDonationStatus @default(PENDING)
+  reviewedAt          DateTime?
+  rejectionReason     String?               @db.Text
+  createdLibraryItemId String?
+  createdLibraryItem  LibraryItem?          @relation(fields: [createdLibraryItemId], references: [id], onDelete: SetNull)
+
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  @@index([requesterUserId])
+  @@index([reviewerUserId])
+  @@index([status])
+  @@index([createdLibraryItemId])
 }
 
 // Visibilidad de documentos
@@ -1085,6 +1135,9 @@ enum NotificationType {
   LIBRARY_LOAN_RETURNED        // Socio: devolución registrada
   LIBRARY_LOAN_RENEWED         // Admin: socio ha renovado un préstamo
   LIBRARY_QUEUE_AVAILABLE      // Socio: el juego que esperaba está disponible
+  LIBRARY_DONATION_REQUESTED   // Admin: un socio ha propuesto una donación
+  LIBRARY_DONATION_APPROVED    // Socio: su donación fue aprobada
+  LIBRARY_DONATION_REJECTED    // Socio: su donación fue rechazada
   GUEST_IDENTITY_CONFLICT      // Posible suplantación en formulario de invitado externo
 }
 

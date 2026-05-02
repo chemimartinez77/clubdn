@@ -24,6 +24,9 @@ interface LibraryItem {
   gameType: GameType;
   condition: GameCondition;
   ownerEmail: string | null;
+  ownerDisplayName?: string | null;
+  donorDisplayName?: string | null;
+  isDonated?: boolean;
   acquisitionDate: string | null;
   createdAt: string;
   updatedAt: string;
@@ -103,7 +106,14 @@ const loanStatusColors: Record<LibraryItemLoanStatus, string> = {
 };
 
 // Helper para mostrar el nombre del propietario a partir del mapa email→displayName
-const getOwnerDisplayName = (ownerEmail: string | null, ownerMap?: Map<string, string>): string => {
+const getOwnerDisplayName = (
+  ownerEmail: string | null,
+  ownerDisplayName?: string | null,
+  ownerMap?: Map<string, string>
+): string => {
+  if (ownerDisplayName?.trim()) {
+    return ownerDisplayName;
+  }
   if (!ownerEmail || ownerEmail === 'club' || ownerEmail === 'clubdreadnought.vlc@gmail.com') {
     return 'Club Dreadnought';
   }
@@ -116,6 +126,16 @@ export default function Ludoteca() {
   const { user } = useAuth();
   const [loanActionLoading, setLoanActionLoading] = useState<string | null>(null);
   const [pendingLoanRequest, setPendingLoanRequest] = useState<LibraryItem | null>(null);
+  const [donationModalOpen, setDonationModalOpen] = useState(false);
+  const [donationSubmitting, setDonationSubmitting] = useState(false);
+  const [donationForm, setDonationForm] = useState({
+    bggId: '',
+    name: '',
+    gameType: 'MESA' as GameType,
+    condition: 'BUENO' as GameCondition,
+    notes: '',
+    acquisitionDate: '',
+  });
   const [loanEnabled, setLoanEnabled] = useState(false);
   const [showExpansions, setShowExpansions] = useState(false);
   const [myActiveItemIds, setMyActiveItemIds] = useState<Set<string>>(new Set());
@@ -346,6 +366,40 @@ export default function Ludoteca() {
     }
   };
 
+  const submitDonationRequest = async () => {
+    if (!donationForm.name.trim()) {
+      showError('Debes indicar al menos el nombre del juego.');
+      return;
+    }
+
+    setDonationSubmitting(true);
+    try {
+      await api.post('/api/ludoteca/donations', {
+        bggId: donationForm.bggId.trim() || null,
+        name: donationForm.name.trim(),
+        gameType: donationForm.gameType,
+        condition: donationForm.condition,
+        notes: donationForm.notes.trim() || null,
+        acquisitionDate: donationForm.acquisitionDate || null,
+      });
+      showSuccess('Tu propuesta de donación se ha enviado para revisión.');
+      setDonationModalOpen(false);
+      setDonationForm({
+        bggId: '',
+        name: '',
+        gameType: 'MESA',
+        condition: 'BUENO',
+        notes: '',
+        acquisitionDate: '',
+      });
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      showError(msg ?? 'Error al enviar la propuesta de donación');
+    } finally {
+      setDonationSubmitting(false);
+    }
+  };
+
   // Agrupación: expansiones aparecen justo después de su juego base
   const groupedItems = useMemo(() => {
     if (!showExpansions) return items;
@@ -376,11 +430,18 @@ export default function Ludoteca() {
     <Layout>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-[var(--color-text)]">Ludoteca del Club</h1>
             <p className="text-[var(--color-textSecondary)] mt-1">Catálogo de juegos disponibles en el club</p>
           </div>
+          <button
+            type="button"
+            onClick={() => setDonationModalOpen(true)}
+            className="hidden rounded-lg border border-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-primary)] md:inline-flex"
+          >
+            Proponer donaciÃ³n
+          </button>
         </div>
         {/* Buscador móvil sticky */}
         <div className="md:hidden sticky top-0 z-20 -mx-4 px-4 py-3 bg-[var(--color-background)] border-b border-[var(--color-cardBorder)]">
@@ -412,6 +473,13 @@ export default function Ludoteca() {
               className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg text-sm font-medium text-[var(--color-text)]"
             >
               Filtros
+            </button>
+            <button
+              type="button"
+              onClick={() => setDonationModalOpen(true)}
+              className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg text-sm font-medium text-[var(--color-text)]"
+            >
+              Donar
             </button>
             {mobileSearchActive && (
               <button
@@ -742,6 +810,13 @@ export default function Ludoteca() {
                       </div>
                     )}
 
+                    {item.isDonated && item.donorDisplayName && (
+                      <div className="mb-3 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                        <span className="rounded-full bg-amber-200 px-2 py-0.5 font-semibold text-amber-900">DonaciÃ³n</span>
+                        <span>Donado por {item.donorDisplayName}</span>
+                      </div>
+                    )}
+
                     {item.loanStatus && item.loanPolicy !== 'NOT_LOANABLE' && (
                       <div className="mb-3 flex items-center justify-between gap-2">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${loanStatusColors[item.loanStatus]}`}>
@@ -780,7 +855,7 @@ export default function Ludoteca() {
                     <div className="flex items-center justify-between pt-3 border-t border-[var(--color-cardBorder)]">
                       <div className="flex items-center gap-2 text-sm text-[var(--color-textSecondary)]">
                         <span className="text-lg">🏛️</span>
-                        <span className="text-xs font-medium">{getOwnerDisplayName(item.ownerEmail, ownerMap)}</span>
+                        <span className="text-xs font-medium">{getOwnerDisplayName(item.ownerEmail, item.ownerDisplayName, ownerMap)}</span>
                       </div>
 
                       {item.bggId && (
@@ -858,7 +933,7 @@ export default function Ludoteca() {
                   <p className="text-sm text-blue-800">
                     La ludoteca del club es un catálogo de todos los juegos que el club y los socios ponen a disposición.
                     Aquí podrás ver qué juegos están disponibles, quién es su propietario y sus características principales.
-                    Si deseas aportar tus juegos a la ludoteca, contacta con la junta directiva.
+                    Si quieres donar un juego al club, puedes enviar una propuesta desde esta misma pÃ¡gina para que la valide un administrador.
                   </p>
                 </div>
               </div>
@@ -875,6 +950,98 @@ export default function Ludoteca() {
           isOpen={!!selectedGameId}
           onClose={() => setSelectedGameId(null)}
         />
+      )}
+
+      {donationModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] shadow-xl">
+            <div className="border-b border-[var(--color-cardBorder)] p-5">
+              <h3 className="text-lg font-semibold text-[var(--color-text)]">Proponer donaciÃ³n</h3>
+              <p className="mt-1 text-sm text-[var(--color-textSecondary)]">
+                La propuesta llegarÃ¡ a administraciÃ³n para su revisiÃ³n. Si se aprueba, el juego pasarÃ¡ a la ludoteca del club con reconocimiento pÃºblico al donante.
+              </p>
+            </div>
+            <div className="grid gap-4 p-5 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">ID de BGG/RPGGeek</label>
+                <input
+                  type="text"
+                  value={donationForm.bggId}
+                  onChange={(event) => setDonationForm((current) => ({ ...current, bggId: event.target.value }))}
+                  className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Nombre</label>
+                <input
+                  type="text"
+                  value={donationForm.name}
+                  onChange={(event) => setDonationForm((current) => ({ ...current, name: event.target.value }))}
+                  className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Tipo</label>
+                <select
+                  value={donationForm.gameType}
+                  onChange={(event) => setDonationForm((current) => ({ ...current, gameType: event.target.value as GameType }))}
+                  className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+                >
+                  {Object.entries(gameTypeLabels).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Estado</label>
+                <select
+                  value={donationForm.condition}
+                  onChange={(event) => setDonationForm((current) => ({ ...current, condition: event.target.value as GameCondition }))}
+                  className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+                >
+                  {Object.entries(conditionLabels).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Fecha de adquisiciÃ³n</label>
+                <input
+                  type="date"
+                  value={donationForm.acquisitionDate}
+                  onChange={(event) => setDonationForm((current) => ({ ...current, acquisitionDate: event.target.value }))}
+                  className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Notas</label>
+                <textarea
+                  rows={3}
+                  value={donationForm.notes}
+                  onChange={(event) => setDonationForm((current) => ({ ...current, notes: event.target.value }))}
+                  className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-[var(--color-cardBorder)] p-5">
+              <button
+                type="button"
+                onClick={() => setDonationModalOpen(false)}
+                className="rounded-lg border border-[var(--color-cardBorder)] px-4 py-2 text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={submitDonationRequest}
+                disabled={donationSubmitting}
+                className="rounded-lg bg-[var(--color-primary)] px-4 py-2 text-white disabled:opacity-50"
+              >
+                {donationSubmitting ? 'Enviando...' : 'Enviar propuesta'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {pendingLoanRequest && (
