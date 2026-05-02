@@ -281,7 +281,7 @@ export default function Ludoteca() {
   useEffect(() => {
     api.get('/api/config/public').then(res => {
       setLoanEnabled(res.data.data?.loanEnabled ?? false);
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   // Cargar estadísticas y filtros
@@ -296,7 +296,7 @@ export default function Ludoteca() {
     api.get('/api/library-loans/me').then(res => {
       const active: string[] = (res.data.data?.active ?? []).map((l: { libraryItem: { id: string } }) => l.libraryItem.id);
       setMyActiveItemIds(new Set(active));
-    }).catch(() => {});
+    }).catch(() => { });
   }, [user]);
 
   // Cargar items con filtros
@@ -956,91 +956,91 @@ export default function Ludoteca() {
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-4">
           <div className="flex min-h-full items-center justify-center">
             <div className="my-6 w-full max-w-2xl max-h-[calc(100vh-3rem)] overflow-y-auto rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] shadow-xl">
-            <div className="border-b border-[var(--color-cardBorder)] p-5">
-              <h3 className="text-lg font-semibold text-[var(--color-text)]">Proponer donación</h3>
-              <p className="mt-1 text-sm text-[var(--color-textSecondary)]">
-                La propuesta llegará a administración para su revisión. Si se aprueba, el juego pasará a la ludoteca del club con reconocimiento público al donante.
-              </p>
-            </div>
-            <div className="grid gap-4 p-5 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">ID de BGG/RPGGeek</label>
-                <input
-                  type="text"
-                  value={donationForm.bggId}
-                  onChange={(event) => setDonationForm((current) => ({ ...current, bggId: event.target.value }))}
-                  className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
-                />
+              <div className="border-b border-[var(--color-cardBorder)] p-5">
+                <h3 className="text-lg font-semibold text-[var(--color-text)]">Proponer donación</h3>
+                <p className="mt-1 text-sm text-[var(--color-textSecondary)]">
+                  La propuesta llegará a administración para su revisión. Si se aprueba, el juego pasará a la ludoteca del club con reconocimiento público al donante.
+                </p>
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Nombre</label>
-                <input
-                  type="text"
-                  value={donationForm.name}
-                  onChange={(event) => setDonationForm((current) => ({ ...current, name: event.target.value }))}
-                  className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
-                />
+              <div className="grid gap-4 p-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">ID de BGG/RPGGeek</label>
+                  <input
+                    type="text"
+                    value={donationForm.bggId}
+                    onChange={(event) => setDonationForm((current) => ({ ...current, bggId: event.target.value }))}
+                    className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Nombre</label>
+                  <input
+                    type="text"
+                    value={donationForm.name}
+                    onChange={(event) => setDonationForm((current) => ({ ...current, name: event.target.value }))}
+                    className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Tipo</label>
+                  <select
+                    value={donationForm.gameType}
+                    onChange={(event) => setDonationForm((current) => ({ ...current, gameType: event.target.value as GameType }))}
+                    className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+                  >
+                    {Object.entries(gameTypeLabels).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Estado</label>
+                  <select
+                    value={donationForm.condition}
+                    onChange={(event) => setDonationForm((current) => ({ ...current, condition: event.target.value as GameCondition }))}
+                    className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+                  >
+                    {Object.entries(conditionLabels).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Fecha de adquisición</label>
+                  <input
+                    type="date"
+                    value={donationForm.acquisitionDate}
+                    onChange={(event) => setDonationForm((current) => ({ ...current, acquisitionDate: event.target.value }))}
+                    className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Notas</label>
+                  <textarea
+                    rows={3}
+                    value={donationForm.notes}
+                    onChange={(event) => setDonationForm((current) => ({ ...current, notes: event.target.value }))}
+                    className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Tipo</label>
-                <select
-                  value={donationForm.gameType}
-                  onChange={(event) => setDonationForm((current) => ({ ...current, gameType: event.target.value as GameType }))}
-                  className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+              <div className="flex justify-end gap-2 border-t border-[var(--color-cardBorder)] p-5">
+                <button
+                  type="button"
+                  onClick={() => setDonationModalOpen(false)}
+                  className="rounded-lg border border-[var(--color-cardBorder)] px-4 py-2 text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)]"
                 >
-                  {Object.entries(gameTypeLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Estado</label>
-                <select
-                  value={donationForm.condition}
-                  onChange={(event) => setDonationForm((current) => ({ ...current, condition: event.target.value as GameCondition }))}
-                  className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={submitDonationRequest}
+                  disabled={donationSubmitting}
+                  className="rounded-lg bg-[var(--color-primary)] px-4 py-2 text-white disabled:opacity-50"
                 >
-                  {Object.entries(conditionLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
+                  {donationSubmitting ? 'Enviando...' : 'Enviar propuesta'}
+                </button>
               </div>
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Fecha de adquisiciÃ³n</label>
-                <input
-                  type="date"
-                  value={donationForm.acquisitionDate}
-                  onChange={(event) => setDonationForm((current) => ({ ...current, acquisitionDate: event.target.value }))}
-                  className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Notas</label>
-                <textarea
-                  rows={3}
-                  value={donationForm.notes}
-                  onChange={(event) => setDonationForm((current) => ({ ...current, notes: event.target.value }))}
-                  className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 border-t border-[var(--color-cardBorder)] p-5">
-              <button
-                type="button"
-                onClick={() => setDonationModalOpen(false)}
-                className="rounded-lg border border-[var(--color-cardBorder)] px-4 py-2 text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)]"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={submitDonationRequest}
-                disabled={donationSubmitting}
-                className="rounded-lg bg-[var(--color-primary)] px-4 py-2 text-white disabled:opacity-50"
-              >
-                {donationSubmitting ? 'Enviando...' : 'Enviar propuesta'}
-              </button>
-            </div>
             </div>
           </div>
         </div>
