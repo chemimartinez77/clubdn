@@ -4,6 +4,43 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-02 (sesión 2)
+
+### feat: gestión administrativa de inventario, bajas lógicas y donaciones en la ludoteca
+
+Se amplía la gestión de la ludoteca física del club sobre `LibraryItem` sin tocar las ludotecas personales. A partir de ahora los administradores pueden dar de alta manualmente juegos del inventario compartido, marcar con baja lógica los ítems de particulares y revisar propuestas de donación enviadas por los socios. Las bajas no eliminan registros de base de datos: solo ocultan el juego de la ludoteca activa y conservan trazabilidad.
+
+**Backend:**
+
+- `server/prisma/schema.prisma`: nuevos campos en `LibraryItem` para `ownerUserId`, `donorUserId`, `bajaAt` y `bajaByUserId`; nuevas relaciones con usuarios; nuevo modelo `LibraryDonationRequest`; nuevos tipos de notificación para solicitudes, aprobaciones y rechazos de donación.
+- `server/prisma/migrations/20260502000000_manage_library_inventory_and_donations/migration.sql`: migración con alta del modelo de donaciones, baja lógica en inventario y backfill inicial de `ownerUserId` a partir de `ownerEmail` cuando corresponde a un socio real.
+- `server/src/utils/libraryOwnership.ts`: utilidades comunes para distinguir ítems del club frente a ítems de particulares y reutilizar esos filtros en la ludoteca.
+- `server/src/controllers/libraryInventoryController.ts`: nuevo controlador para el inventario admin y las donaciones, con endpoints para alta manual, búsqueda de miembros, baja lógica, reactivación, creación de propuestas de donación y flujo de aprobación/rechazo.
+- `server/src/controllers/ludotecaController.ts`: la ludoteca pública, estadísticas, filtros y detalle excluyen por defecto los ítems dados de baja y exponen metadatos de propiedad y donación para la interfaz.
+- `server/src/controllers/libraryLoansController.ts`: las búsquedas operativas y las acciones de préstamo/cola ya no trabajan con ítems dados de baja.
+- `server/src/routes/ludotecaRoutes.ts`: nuevas rutas autenticadas para `GET/POST /api/ludoteca/admin/items`, `PATCH /api/ludoteca/admin/items/:id/baja`, `PATCH /api/ludoteca/admin/items/:id/reactivate`, `GET /api/ludoteca/admin/members/search`, `POST /api/ludoteca/donations` y revisión admin de donaciones.
+
+**Frontend admin:**
+
+- `client/src/pages/admin/LibraryLoans.tsx`: la pantalla admin de ludoteca pasa a integrar cuatro pestañas: búsqueda operativa, préstamos activos, inventario y donaciones.
+- `client/src/pages/admin/LibraryLoans.tsx`: nuevo listado de inventario con búsqueda, filtro para incluir bajas, alta manual, reactivación y acción `Dar de baja`.
+- `client/src/pages/admin/LibraryLoans.tsx`: la baja exige confirmación en modal y avisa expresamente de que el juego no se elimina de la base de datos.
+- `client/src/pages/admin/LibraryLoans.tsx`: nueva cola de solicitudes de donación con modales de aprobación y rechazo; al aprobar se puede revisar el juego final, su política de préstamo y la fecha de adquisición antes de registrarlo.
+- `client/src/types/libraryLoans.ts`: nuevos tipos para inventario admin, búsqueda de miembros y solicitudes de donación.
+
+**Frontend público:**
+
+- `client/src/pages/Ludoteca.tsx`: la ludoteca pública muestra distintivo de `Donación` y texto `Donado por ...` en los juegos aprobados como donación.
+- `client/src/pages/Ludoteca.tsx`: nuevo formulario modal `Proponer donación` para que cualquier socio envíe un juego a revisión administrativa desde la propia ludoteca.
+- `client/src/pages/Ludoteca.tsx`: los textos informativos se actualizan para explicar el nuevo flujo de donaciones.
+
+**Decisiones funcionales:**
+
+- La baja lógica solo la puede ejecutar un admin y solo sobre ítems del inventario compartido cuyo propietario actual sea un particular.
+- Si un ítem tiene préstamo `REQUESTED` o `ACTIVE`, o cola `WAITING` o `NOTIFIED`, no puede darse de baja.
+- Al aprobar una donación, el juego pasa a ser propiedad del club pero conserva reconocimiento público al donante.
+- Las ludotecas personales `UserGame` no cambian con esta funcionalidad.
+
 ## 2026-05-02 (sesión 1)
 
 ### feat: fototeca global en Comunidad con filtros simplificados y acceso desde Comunidad
