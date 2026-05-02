@@ -29,7 +29,7 @@ const gameTypeLabels: Record<LibraryGameType, string> = {
 };
 const loanPolicyLabels: Record<LibraryLoanPolicy, string> = {
   LOANABLE: 'Prestable',
-  CONSULT: 'Consulta',
+  CONSULT: 'Consultar',
   NOT_LOANABLE: 'No prestable'
 };
 const loanStatusLabels: Record<LibraryItemLoanStatus, string> = {
@@ -84,9 +84,11 @@ function ModalShell({
   maxWidth?: string;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className={`w-full ${maxWidth} rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] shadow-xl`}>
-        {children}
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-4">
+      <div className="flex min-h-full items-center justify-center">
+        <div className={`my-6 w-full ${maxWidth} max-h-[calc(100vh-3rem)] overflow-y-auto rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] shadow-xl`}>
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -1488,7 +1490,7 @@ export default function LibraryLoansAdmin() {
     <Layout>
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-text)]">Ludoteca: préstamos e inventario</h1>
+          <h1 className="text-2xl font-bold text-[var(--color-text)]">Ludoteca: Préstamos e inventario</h1>
           <p className="mt-1 text-sm text-[var(--color-textSecondary)]">
             Gestiona préstamos, inventario compartido, bajas lógicas y validación de donaciones.
           </p>

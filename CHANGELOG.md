@@ -4,6 +4,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-02 (sesión 3)
+
+### fix: scroll en modales de ludoteca y ajuste de textos de préstamo
+
+Se corrigen varios detalles de experiencia de uso en la ludoteca pública y en la administración de préstamos e inventario.
+
+**Frontend:**
+
+- `client/src/pages/Ludoteca.tsx`: la modal `Proponer donación` ahora permite scroll interno cuando su contenido no cabe en pantalla, manteniendo el fondo bloqueado hasta cerrar la ventana.
+- `client/src/pages/Ludoteca.tsx`: corrección de textos visibles en UTF-8 dentro de la ludoteca pública y la modal de propuesta de donación.
+- `client/src/pages/admin/LibraryLoans.tsx`: las modales de administración de inventario reutilizan un contenedor con scroll interno para evitar que el contenido quede cortado en pantallas bajas.
+- `client/src/pages/admin/LibraryLoans.tsx`: el encabezado de la sección admin pasa a mostrarse como `Ludoteca: Préstamos e inventario`.
+- `client/src/pages/admin/LibraryLoans.tsx`: la política de préstamo `CONSULT` pasa a mostrarse como `Consultar` en lugar de `Consulta`, para reflejar que requiere validación previa del préstamo y no disponibilidad para consulta en sala.
+
 ## 2026-05-02 (sesión 2)
 
 ### feat: gestión administrativa de inventario, bajas lógicas y donaciones en la ludoteca

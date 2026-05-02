@@ -357,7 +357,7 @@ export default function Ludoteca() {
     setLoanActionLoading(item.id);
     try {
       await api.post('/api/library-loans/consult', { libraryItemId: item.id });
-      showSuccess('Consulta enviada a administracion');
+      showSuccess('Consulta enviada a administración');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       showError(msg ?? 'Error al enviar la consulta');
@@ -440,7 +440,7 @@ export default function Ludoteca() {
             onClick={() => setDonationModalOpen(true)}
             className="hidden rounded-lg border border-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-primary)] md:inline-flex"
           >
-            Proponer donaciÃ³n
+            Proponer donación
           </button>
         </div>
         {/* Buscador móvil sticky */}
@@ -933,7 +933,7 @@ export default function Ludoteca() {
                   <p className="text-sm text-blue-800">
                     La ludoteca del club es un catálogo de todos los juegos que el club y los socios ponen a disposición.
                     Aquí podrás ver qué juegos están disponibles, quién es su propietario y sus características principales.
-                    Si quieres donar un juego al club, puedes enviar una propuesta desde esta misma pÃ¡gina para que la valide un administrador.
+                    Si quieres donar un juego al club, puedes enviar una propuesta desde esta misma página para que la valide un administrador.
                   </p>
                 </div>
               </div>
@@ -953,12 +953,13 @@ export default function Ludoteca() {
       )}
 
       {donationModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] shadow-xl">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-4">
+          <div className="flex min-h-full items-center justify-center">
+            <div className="my-6 w-full max-w-2xl max-h-[calc(100vh-3rem)] overflow-y-auto rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] shadow-xl">
             <div className="border-b border-[var(--color-cardBorder)] p-5">
-              <h3 className="text-lg font-semibold text-[var(--color-text)]">Proponer donaciÃ³n</h3>
+              <h3 className="text-lg font-semibold text-[var(--color-text)]">Proponer donación</h3>
               <p className="mt-1 text-sm text-[var(--color-textSecondary)]">
-                La propuesta llegarÃ¡ a administraciÃ³n para su revisiÃ³n. Si se aprueba, el juego pasarÃ¡ a la ludoteca del club con reconocimiento pÃºblico al donante.
+                La propuesta llegará a administración para su revisión. Si se aprueba, el juego pasará a la ludoteca del club con reconocimiento público al donante.
               </p>
             </div>
             <div className="grid gap-4 p-5 md:grid-cols-2">
@@ -1040,6 +1041,7 @@ export default function Ludoteca() {
                 {donationSubmitting ? 'Enviando...' : 'Enviar propuesta'}
               </button>
             </div>
+            </div>
           </div>
         </div>
       )}
@@ -1053,10 +1055,10 @@ export default function Ludoteca() {
             </div>
             <div className="p-5 space-y-3">
               <p className="text-sm text-[var(--color-text)]">
-                Al enviar la solicitud, el juego quedara reservado para ti durante 48 horas. Si no se confirma la entrega en ese plazo, la solicitud se cancelara automaticamente.
+                Al enviar la solicitud, el juego quedará reservado para ti durante 48 horas. Si no se confirma la entrega en ese plazo, la solicitud se cancelará automáticamente.
               </p>
               <p className="text-xs text-[var(--color-textSecondary)]">
-                El prestamo empieza a contar cuando administracion confirme la entrega fisica.
+                El préstamo empieza a contar cuando administración confirme la entrega física.
               </p>
             </div>
             <div className="flex justify-end gap-2 p-5 border-t border-[var(--color-cardBorder)]">
