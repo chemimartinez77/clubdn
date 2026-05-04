@@ -6,6 +6,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-04
 
+### fix: compatibilidad de build en Railway con Node 20
+
+Se ajusta la configuración del backend para evitar fallos de compilación en Railway y alinear la versión de Node requerida por varias dependencias actuales.
+
+**Backend:**
+
+- `server/src/services/notificationService.ts`: se tipa la lista de roles administrativos compartidos con `UserRole[]` para que Prisma acepte correctamente el filtro `in` durante la compilación de TypeScript.
+- `server/package.json`: se declara `engines.node` con valor `20` para dejar explícita la versión mínima esperada por el servicio backend.
+- `server/.nvmrc`: nuevo fichero con `20` para alinear el entorno local con la versión de Node usada en despliegue.
+
+**Resultado técnico:**
+
+- El backend deja de fallar en compilación por el tipo `readonly` de la lista de roles administrativos.
+- Queda preparada la base del proyecto para desplegar el servicio `server` sobre Node 20 en Railway y reproducir ese entorno también en local.
+
+## 2026-05-04
+
 ### fix: CHEMI hereda todas las notificaciones y accesos administrativos compartidos
 
 Se corrige una desalineación de permisos y destinatarios para que el rol CHEMI reciba y acceda a todo lo que ya compartían ADMIN y SUPER_ADMIN, sin tocar las capacidades exclusivas de CHEMI.

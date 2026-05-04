@@ -1,8 +1,12 @@
 // server/src/services/notificationService.ts
 import { prisma } from '../config/database';
-import { NotificationType, Prisma } from '@prisma/client';
+import { NotificationType, Prisma, UserRole } from '@prisma/client';
 
-const ADMIN_LIKE_NOTIFICATION_ROLES = ['ADMIN', 'SUPER_ADMIN', 'CHEMI'] as const;
+const ADMIN_LIKE_NOTIFICATION_ROLES: UserRole[] = [
+  UserRole.ADMIN,
+  UserRole.SUPER_ADMIN,
+  UserRole.CHEMI,
+];
 
 const formatDateEs = (date: Date): string => {
   const d = date.getUTCDate();
