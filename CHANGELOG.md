@@ -6,6 +6,24 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-04
 
+### feat: permitir invitaciones tardías con notificación a admins
+
+Se amplía la ventana de generación de invitaciones para cubrir casos de dejadez sin romper la lógica de plazas. Hasta ahora, al iniciarse una partida el botón de invitación desaparecía. Ahora se puede invitar mientras la partida está en curso y hasta 3 horas después de que termine. Cualquier uso de esta ventana tardía genera una notificación en app y un email a los admins, dejando trazabilidad de quién y cuándo lo usó.
+
+**Backend:**
+
+- `server/prisma/schema.prisma`: nuevo valor `LATE_INVITATION` en el enum `NotificationType`.
+- `server/prisma/migrations/20260504000001_add_late_invitation_notification_type/migration.sql`: migración con `ALTER TYPE "NotificationType" ADD VALUE 'LATE_INVITATION'`.
+- `server/src/controllers/invitationController.ts`: se elimina el bloqueo en estado `ONGOING` y se añade lógica para `COMPLETED` con ventana de 3 horas. Si se supera esa ventana se devuelve 400. Se elimina `eventAllowsLateJoin` que quedaba sin uso. Tras crear la invitación tardía, se llama a `notifyAdminsLateInvitation` indicando si fue en curso (`null`) o cuántos minutos después de terminar.
+- `server/src/services/notificationService.ts`: nueva función `notifyAdminsLateInvitation` que notifica a todos los roles admin/CHEMI en app y envía email a `DEFAULT_ADMIN_EMAIL` con el nombre del invitador, la partida y el timing.
+
+**Resultado funcional:**
+
+- Un socio puede generar un enlace de invitación aunque la partida ya haya empezado o terminado hace menos de 3 horas.
+- Los admins reciben un aviso automático cada vez que esto ocurre, sin bloquear al socio pero dejando registro de la incidencia.
+
+---
+
 ### feat: nuevo estado NOT_ATTENDED para invitaciones y cron cada 30 minutos
 
 Se añade el estado `NOT_ATTENDED` al enum `InvitationStatus` para reflejar que el invitado completó el registro y obtuvo su QR, pero el socio nunca lo validó al terminar el evento. El job de cierre de eventos ahora detecta automáticamente estos casos y actualiza el estado en base de datos.

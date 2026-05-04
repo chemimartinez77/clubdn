@@ -9,7 +9,6 @@ import {
   findInvitationIdsByPersonSearch,
   normalizeSearchTerm,
 } from '../utils/personSearch';
-import { isMagicTheGatheringBggId } from '../utils/eventRules';
 import { isAdminLikeRole } from '../utils/roles';
 const DNI_REGEX = /^\d{8}[A-HJ-NP-TV-Z]$/i;
 const NIE_REGEX = /^[XYZ]\d{7}[A-HJ-NP-TV-Z]$/i;
@@ -95,8 +94,6 @@ const getEffectiveEventStatus = (event: {
   return 'SCHEDULED';
 };
 
-const eventAllowsLateJoin = (event: { allowLateJoin?: boolean | null; bggId?: string | null }) =>
-  Boolean(event.allowLateJoin) || isMagicTheGatheringBggId(event.bggId);
 
 // Devuelve el timestamp UTC de las 06:00:00 AM hora Madrid del "día de contador" de now.
 // Si en Madrid son menos de las 6AM, el día de referencia es el anterior.
@@ -243,18 +240,31 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
     }
 
     const effectiveStatus = getEffectiveEventStatus(event);
+    const now = new Date();
 
-    if (effectiveStatus === 'CANCELLED' || effectiveStatus === 'COMPLETED') {
+    if (effectiveStatus === 'CANCELLED') {
       res.status(400).json({ success: false, message: 'Evento no disponible' });
       return;
     }
 
-    if (effectiveStatus === 'ONGOING' && !eventAllowsLateJoin(event)) {
-      res.status(400).json({ success: false, message: 'No se pueden registrar invitados una vez iniciada la partida' });
-      return;
+    const LATE_INVITE_HOURS = 3;
+    let lateInviteMinutesAfterEnd: number | null = null;
+
+    if (effectiveStatus === 'COMPLETED') {
+      const durationMinutes = ((event.durationHours ?? 0) * 60) + (event.durationMinutes ?? 0);
+      const endTime = new Date(event.date.getTime() + durationMinutes * 60 * 1000);
+      const minutesAfterEnd = Math.floor((now.getTime() - endTime.getTime()) / 60000);
+      if (minutesAfterEnd > LATE_INVITE_HOURS * 60) {
+        res.status(400).json({ success: false, message: 'Evento no disponible' });
+        return;
+      }
+      lateInviteMinutesAfterEnd = minutesAfterEnd;
     }
 
-    const now = new Date();
+    if (effectiveStatus === 'ONGOING') {
+      lateInviteMinutesAfterEnd = null; // en curso, no post-fin
+    }
+
     const eventDay = startOfDay(new Date(event.date));
     const today = startOfDay(now);
 
@@ -369,6 +379,16 @@ export const createInvitation = async (req: Request, res: Response): Promise<voi
         targetGuestId: invitationResult.guest?.id ?? null
       }
     });
+
+    if (lateInviteMinutesAfterEnd !== null || effectiveStatus === 'ONGOING') {
+      const { notifyAdminsLateInvitation } = await import('../services/notificationService');
+      await notifyAdminsLateInvitation(
+        invitationResult.created.member?.name ?? 'Socio desconocido',
+        event.title,
+        event.id,
+        lateInviteMinutesAfterEnd
+      );
+    }
 
     if (needsApproval) {
       const { notifyRegistrationPending } = await import('../services/notificationService');

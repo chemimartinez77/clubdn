@@ -740,3 +740,43 @@ export const notifyAdminsGuestConflict = async (dni: string, phone: string) => {
   }
 };
 
+export const notifyAdminsLateInvitation = async (
+  inviterName: string,
+  eventTitle: string,
+  eventId: string,
+  minutesAfterEnd: number | null
+) => {
+  try {
+    const recipients = await prisma.user.findMany({
+      where: { role: { in: ADMIN_LIKE_NOTIFICATION_ROLES } },
+      select: { id: true },
+    });
+    const recipientIds = recipients.map(u => u.id);
+    if (recipientIds.length === 0) return;
+
+    const timing = minutesAfterEnd === null
+      ? 'con la partida en curso'
+      : `${minutesAfterEnd} minutos después de terminar la partida`;
+
+    await createBulkNotifications({
+      userIds: recipientIds,
+      type: NotificationType.LATE_INVITATION,
+      title: 'Invitación tardía generada',
+      message: `${inviterName} ha generado una invitación para "${eventTitle}" ${timing}.`,
+      metadata: { inviterName, eventTitle, eventId, minutesAfterEnd },
+    });
+
+    const alertEmail = process.env.DEFAULT_ADMIN_EMAIL;
+    if (alertEmail) {
+      const { sendEmail } = await import('./emailService');
+      await sendEmail({
+        to: alertEmail,
+        subject: 'Invitación tardía generada',
+        html: `<p><strong>${inviterName}</strong> ha generado una invitación para la partida "<strong>${eventTitle}</strong>" ${timing}.</p><p>Revisa el historial de invitaciones si lo consideras necesario.</p>`,
+        template: 'admin_notification',
+      });
+    }
+  } catch (error) {
+    console.error('Error notificando invitación tardía:', error);
+  }
+};

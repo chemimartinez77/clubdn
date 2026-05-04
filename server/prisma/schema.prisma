@@ -1141,6 +1141,7 @@ enum NotificationType {
   LIBRARY_DONATION_APPROVED    // Socio: su donación fue aprobada
   LIBRARY_DONATION_REJECTED    // Socio: su donación fue rechazada
   GUEST_IDENTITY_CONFLICT      // Posible suplantación en formulario de invitado externo
+  LATE_INVITATION              // Admin: invitación generada con la partida en curso o tras finalizar
 }
 
 // Notificaciones del sistema
