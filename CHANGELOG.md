@@ -6,6 +6,25 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-04
 
+### feat: nuevo estado NOT_ATTENDED para invitaciones y cron cada 30 minutos
+
+Se añade el estado `NOT_ATTENDED` al enum `InvitationStatus` para reflejar que el invitado completó el registro y obtuvo su QR, pero el socio nunca lo validó al terminar el evento. El job de cierre de eventos ahora detecta automáticamente estos casos y actualiza el estado en base de datos.
+
+**Backend:**
+
+- `server/prisma/schema.prisma`: nuevo valor `NOT_ATTENDED` en el enum `InvitationStatus`.
+- `server/prisma/migrations/20260504000000_add_not_attended_invitation_status/migration.sql`: migración que aplica `ALTER TYPE "InvitationStatus" ADD VALUE 'NOT_ATTENDED'` en PostgreSQL.
+- `server/src/jobs/eventCompletionJob.ts`: nueva función `markNotAttendedInvitations` que busca invitaciones en estado `PENDING` cuyo evento ya ha terminado (calculando `endTime` a partir de `date + startHour + startMinute + durationHours + durationMinutes`) y las actualiza a `NOT_ATTENDED`. La frecuencia del cron pasa de cada hora en punto (`0 12-23,0-2`) a cada 30 minutos (`0,30 12-23,0-2`) para ajustarse a las horas de finalización habituales de los eventos.
+
+**Resultado funcional:**
+
+- Las invitaciones con QR generado pero no escaneado quedan registradas como `NOT_ATTENDED` automáticamente tras el fin del evento, sin intervención manual.
+- El historial de invitaciones refleja con precisión si el invitado asistió realmente o solo completó el registro.
+
+---
+
+## 2026-05-04
+
 ### fix: compatibilidad de build en Railway con Node 20
 
 Se ajusta la configuración del backend para evitar fallos de compilación en Railway y alinear la versión de Node requerida por varias dependencias actuales.

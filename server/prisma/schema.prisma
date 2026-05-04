@@ -331,6 +331,7 @@ enum InvitationStatus {
   USED
   EXPIRED
   CANCELLED
+  NOT_ATTENDED       // El invitado se registró pero el QR no fue validado al terminar el evento
 }
 
 // Modelo de Evento
