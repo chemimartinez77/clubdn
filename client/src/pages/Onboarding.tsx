@@ -39,7 +39,8 @@ const EMPTY: OnboardingForm = {
 
 const TERMS_TEXT = `FORMULARIO DE COLABORACIÓN
 Club Dreadnought - Asociación de Juegos de Mesa, Estrategia y Miniaturas DN1984
-CIF: G02953248 — Inscrita en el Registro de la Generalitat Valenciana con número CV-01-061786-V
+CIF: G02953248
+Inscrita en el Registro de la Generalitat Valenciana con número CV-01-061786-V
 Domicilio: Calle Campos Crespo 90, Valencia
 
 1. OBJETO
@@ -313,13 +314,13 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
               ))}
             </div>
 
-            {/* Foto carnet */}
+            {/* Foto */}
             <div className="mt-6">
               <p className="text-sm font-medium mb-2" style={{ color: colors.text }}>
-                Foto carnet <span style={{ color: colors.accent }}>*</span>
+                Foto (reconocible) <span style={{ color: colors.accent }}>*</span>
               </p>
               <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
-                Fotografía de carnet para uso administrativo interno de la asociación.
+                Fotografía para uso administrativo interno de la asociación.
               </p>
 
               <div className="flex items-start gap-4">
@@ -384,8 +385,8 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
                   style={{ backgroundColor: form.termsAccepted ? colors.primary : colors.cardBorder }}
                 >
                   <span
-                    className="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
-                    style={{ transform: form.termsAccepted ? 'translateX(20px)' : 'translateX(4px)' }}
+                    className="absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
+                    style={{ transform: form.termsAccepted ? 'translateX(16px)' : 'translateX(0)' }}
                   />
                 </button>
                 <span className="text-sm" style={{ color: colors.textSecondary }}>
@@ -394,7 +395,7 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
                     type="button"
                     onClick={e => { e.preventDefault(); setShowTerms(true); }}
                     className="underline font-medium focus:outline-none"
-                    style={{ color: colors.primary }}
+                    style={{ color: colors.accent }}
                   >
                     condiciones del formulario de colaboración
                   </button>
