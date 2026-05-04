@@ -51,16 +51,6 @@ const STATUS_STYLES: Record<InvitationStatus, string> = {
   NOT_ATTENDED: 'bg-orange-100 text-orange-800',
 };
 
-function useDebounced(delay = 400) {
-  const [debounced, setDebounced] = useState('');
-  const update = (v: string) => {
-    clearTimeout((window as any)._invDebounceTimer);
-    (window as any)._invDebounceTimer = setTimeout(() => setDebounced(v), delay);
-    return v;
-  };
-  return [debounced, update] as const;
-}
-
 export default function InvitationHistory() {
   const [guestName, setGuestName] = useState('');
   const [guestDni, setGuestDni] = useState('');
