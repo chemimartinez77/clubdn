@@ -12,7 +12,8 @@ interface InvitationRecord {
   id: string;
   guestFirstName: string;
   guestLastName: string;
-  guestDniMasked: string;
+  guestDni: string | null;
+  guestPhone: string | null;
   status: InvitationStatus;
   validDate: string;
   createdAt: string;
@@ -50,30 +51,57 @@ const STATUS_STYLES: Record<InvitationStatus, string> = {
   NOT_ATTENDED: 'bg-orange-100 text-orange-800',
 };
 
-export default function InvitationHistory() {
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+function useDebounced(delay = 400) {
+  const [debounced, setDebounced] = useState('');
+  const update = (v: string) => {
+    clearTimeout((window as any)._invDebounceTimer);
+    (window as any)._invDebounceTimer = setTimeout(() => setDebounced(v), delay);
+    return v;
+  };
+  return [debounced, update] as const;
+}
 
-  // Debounce simple
-  const handleSearch = (value: string) => {
-    setSearch(value);
-    setPage(1);
-    clearTimeout((window as any)._invSearchTimer);
-    (window as any)._invSearchTimer = setTimeout(() => setDebouncedSearch(value), 400);
+export default function InvitationHistory() {
+  const [guestName, setGuestName] = useState('');
+  const [guestDni, setGuestDni] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
+  const [memberName, setMemberName] = useState('');
+  const [page, setPage] = useState(1);
+
+  const [debouncedGuestName, setDebouncedGuestName] = useState('');
+  const [debouncedGuestDni, setDebouncedGuestDni] = useState('');
+  const [debouncedGuestPhone, setDebouncedGuestPhone] = useState('');
+  const [debouncedMemberName, setDebouncedMemberName] = useState('');
+
+  const debounce = (setter: (v: string) => void, value: string) => {
+    clearTimeout((window as any)._invDebounceTimer);
+    (window as any)._invDebounceTimer = setTimeout(() => setter(value), 400);
   };
 
+  const handleFilter = (
+    field: 'guestName' | 'guestDni' | 'guestPhone' | 'memberName',
+    value: string,
+  ) => {
+    setPage(1);
+    if (field === 'guestName') { setGuestName(value); debounce(setDebouncedGuestName, value); }
+    if (field === 'guestDni') { setGuestDni(value); debounce(setDebouncedGuestDni, value); }
+    if (field === 'guestPhone') { setGuestPhone(value); debounce(setDebouncedGuestPhone, value); }
+    if (field === 'memberName') { setMemberName(value); debounce(setDebouncedMemberName, value); }
+  };
+
+  const hasFilters = !!(debouncedGuestName || debouncedGuestDni || debouncedGuestPhone || debouncedMemberName);
+
   const { data, isLoading } = useQuery({
-    queryKey: ['invitationHistory', page, debouncedSearch],
+    queryKey: ['invitationHistory', page, debouncedGuestName, debouncedGuestDni, debouncedGuestPhone, debouncedMemberName],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), limit: '50' });
-      if (debouncedSearch) params.set('search', debouncedSearch);
+      if (debouncedGuestName) params.set('guestName', debouncedGuestName);
+      if (debouncedGuestDni) params.set('guestDni', debouncedGuestDni);
+      if (debouncedGuestPhone) params.set('guestPhone', debouncedGuestPhone);
+      if (debouncedMemberName) params.set('memberName', debouncedMemberName);
       const response = await api.get<ApiResponse<HistoryResponse>>(`/api/invitations/admin/history?${params}`);
       const payload = response.data.data as any;
-      if (payload?.data && payload?.pagination) {
-        return payload as HistoryResponse;
-      }
-
+      if (payload?.data && payload?.pagination) return payload as HistoryResponse;
       return {
         data: Array.isArray(payload) ? payload : [],
         pagination: (response.data as any).pagination ?? null,
@@ -83,6 +111,12 @@ export default function InvitationHistory() {
 
   const invitations = data?.data ?? [];
   const pagination = data?.pagination;
+
+  const clearFilters = () => {
+    setGuestName(''); setGuestDni(''); setGuestPhone(''); setMemberName('');
+    setDebouncedGuestName(''); setDebouncedGuestDni(''); setDebouncedGuestPhone(''); setDebouncedMemberName('');
+    setPage(1);
+  };
 
   return (
     <Layout>
@@ -94,17 +128,48 @@ export default function InvitationHistory() {
 
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
               <CardTitle>
                 {pagination ? `${pagination.total} invitaciones` : 'Invitaciones'}
               </CardTitle>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Buscar por nombre, DNI, teléfono del invitado o nombre/nick del socio..."
-                className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent w-72"
-              />
+              <div className="flex gap-3 flex-wrap items-center">
+                <input
+                  type="text"
+                  value={guestName}
+                  onChange={(e) => handleFilter('guestName', e.target.value)}
+                  placeholder="Nombre del invitado"
+                  className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent w-44 text-sm"
+                />
+                <input
+                  type="text"
+                  value={guestDni}
+                  onChange={(e) => handleFilter('guestDni', e.target.value)}
+                  placeholder="DNI del invitado"
+                  className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent w-36 text-sm"
+                />
+                <input
+                  type="text"
+                  value={guestPhone}
+                  onChange={(e) => handleFilter('guestPhone', e.target.value)}
+                  placeholder="Teléfono del invitado"
+                  className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent w-44 text-sm"
+                />
+                <input
+                  type="text"
+                  value={memberName}
+                  onChange={(e) => handleFilter('memberName', e.target.value)}
+                  placeholder="Nombre o nick del socio"
+                  className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent w-44 text-sm"
+                />
+                {hasFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="px-3 py-2 text-sm border border-[var(--color-inputBorder)] rounded-lg hover:bg-[var(--color-tableRowHover)] transition-colors"
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -121,6 +186,7 @@ export default function InvitationHistory() {
                     <tr className="border-b border-[var(--color-cardBorder)] text-[var(--color-textSecondary)]">
                       <th className="text-left py-3 px-3 font-semibold">Invitado</th>
                       <th className="text-left py-3 px-3 font-semibold">DNI</th>
+                      <th className="text-left py-3 px-3 font-semibold">Teléfono</th>
                       <th className="text-left py-3 px-3 font-semibold">Socio</th>
                       <th className="text-left py-3 px-3 font-semibold">Evento</th>
                       <th className="text-left py-3 px-3 font-semibold">Válida para</th>
@@ -138,7 +204,10 @@ export default function InvitationHistory() {
                           {inv.guestFirstName} {inv.guestLastName}
                         </td>
                         <td className="py-3 px-3 text-[var(--color-textSecondary)]">
-                          {inv.guestDniMasked || '-'}
+                          {inv.guestDni || '-'}
+                        </td>
+                        <td className="py-3 px-3 text-[var(--color-textSecondary)]">
+                          {inv.guestPhone || '-'}
                         </td>
                         <td className="py-3 px-3">
                           <span className="text-[var(--color-text)]">{inv.member.name}</span>
@@ -153,8 +222,8 @@ export default function InvitationHistory() {
                           {new Date(inv.validDate).toLocaleDateString('es-ES')}
                         </td>
                         <td className="py-3 px-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[inv.status]}`}>
-                            {STATUS_LABELS[inv.status]}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[inv.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                            {STATUS_LABELS[inv.status] ?? inv.status}
                           </span>
                         </td>
                         <td className="py-3 px-3 text-[var(--color-textSecondary)]">
@@ -167,7 +236,6 @@ export default function InvitationHistory() {
               </div>
             )}
 
-            {/* Paginación */}
             {pagination && pagination.totalPages > 1 && (
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-[var(--color-cardBorder)]">
                 <p className="text-sm text-[var(--color-textSecondary)]">

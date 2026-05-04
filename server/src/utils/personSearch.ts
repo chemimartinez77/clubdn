@@ -216,3 +216,144 @@ export const countInvitationsByPersonSearch = async ({
 
   return Number(rows[0]?.count ?? 0n);
 };
+
+// Filtros por campo individual para el historial de invitaciones (se combinan con AND)
+export const filterInvitationIdsByFields = async ({
+  guestName,
+  guestDni,
+  guestPhone,
+  memberName,
+  memberId,
+  limit,
+  offset = 0,
+}: {
+  guestName?: string;
+  guestDni?: string;
+  guestPhone?: string;
+  memberName?: string;
+  memberId?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<string[]> => {
+  const whereClauses: Prisma.Sql[] = [];
+
+  if (memberId) {
+    whereClauses.push(Prisma.sql`i."memberId" = ${memberId}`);
+  }
+
+  if (guestName) {
+    const n = normalizeSearchTerm(guestName);
+    const firstNameExpr = Prisma.sql`${column('i', 'guestFirstName')}`;
+    const lastNameExpr = Prisma.sql`${column('i', 'guestLastName')}`;
+    const fullNameExpr = Prisma.raw(`concat_ws(' ', NULLIF(BTRIM(i."guestFirstName"), ''), NULLIF(BTRIM(i."guestLastName"), ''))`);
+    whereClauses.push(Prisma.sql`(${sqlOr([
+      buildUnaccentContains(firstNameExpr, n),
+      buildUnaccentContains(lastNameExpr, n),
+      buildUnaccentContains(fullNameExpr, n),
+    ])})`);
+  }
+
+  if (guestDni) {
+    const d = normalizeSearchTerm(guestDni);
+    whereClauses.push(buildUnaccentContains(Prisma.sql`${column('i', 'guestDniNormalized')}`, d));
+  }
+
+  if (guestPhone) {
+    const p = normalizeSearchTerm(guestPhone);
+    whereClauses.push(buildUnaccentContains(Prisma.sql`${column('i', 'guestPhone')}`, p));
+  }
+
+  if (memberName) {
+    const m = normalizeSearchTerm(memberName);
+    whereClauses.push(Prisma.sql`(${buildUserPersonSearchCondition({
+      search: m,
+      userAlias: 'u',
+      profileAlias: 'up',
+      includeNick: true,
+      includeEmail: false,
+    })})`);
+  }
+
+  if (whereClauses.length === 0) return [];
+
+  const limitSql = typeof limit === 'number' ? Prisma.sql` LIMIT ${limit}` : Prisma.empty;
+  const offsetSql = offset > 0 ? Prisma.sql` OFFSET ${offset}` : Prisma.empty;
+
+  const rows = await prisma.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+    SELECT i.id
+    FROM "Invitation" i
+    INNER JOIN "User" u ON u.id = i."memberId"
+    LEFT JOIN "UserProfile" up ON up."userId" = u.id
+    WHERE ${sqlAnd(whereClauses)}
+    ORDER BY i."createdAt" DESC
+    ${limitSql}
+    ${offsetSql}
+  `);
+
+  return rows.map(row => row.id);
+};
+
+export const countInvitationsByFields = async ({
+  guestName,
+  guestDni,
+  guestPhone,
+  memberName,
+  memberId,
+}: {
+  guestName?: string;
+  guestDni?: string;
+  guestPhone?: string;
+  memberName?: string;
+  memberId?: string;
+}): Promise<number> => {
+  const whereClauses: Prisma.Sql[] = [];
+
+  if (memberId) {
+    whereClauses.push(Prisma.sql`i."memberId" = ${memberId}`);
+  }
+
+  if (guestName) {
+    const n = normalizeSearchTerm(guestName);
+    const firstNameExpr = Prisma.sql`${column('i', 'guestFirstName')}`;
+    const lastNameExpr = Prisma.sql`${column('i', 'guestLastName')}`;
+    const fullNameExpr = Prisma.raw(`concat_ws(' ', NULLIF(BTRIM(i."guestFirstName"), ''), NULLIF(BTRIM(i."guestLastName"), ''))`);
+    whereClauses.push(Prisma.sql`(${sqlOr([
+      buildUnaccentContains(firstNameExpr, n),
+      buildUnaccentContains(lastNameExpr, n),
+      buildUnaccentContains(fullNameExpr, n),
+    ])})`);
+  }
+
+  if (guestDni) {
+    const d = normalizeSearchTerm(guestDni);
+    whereClauses.push(buildUnaccentContains(Prisma.sql`${column('i', 'guestDniNormalized')}`, d));
+  }
+
+  if (guestPhone) {
+    const p = normalizeSearchTerm(guestPhone);
+    whereClauses.push(buildUnaccentContains(Prisma.sql`${column('i', 'guestPhone')}`, p));
+  }
+
+  if (memberName) {
+    const m = normalizeSearchTerm(memberName);
+    whereClauses.push(Prisma.sql`(${buildUserPersonSearchCondition({
+      search: m,
+      userAlias: 'u',
+      profileAlias: 'up',
+      includeNick: true,
+      includeEmail: false,
+    })})`);
+  }
+
+  if (whereClauses.length === 0) return 0;
+
+  const rows = await prisma.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`
+    SELECT COUNT(*)::bigint AS count
+    FROM "Invitation" i
+    INNER JOIN "User" u ON u.id = i."memberId"
+    LEFT JOIN "UserProfile" up ON up."userId" = u.id
+    WHERE ${sqlAnd(whereClauses)}
+  `);
+
+  return Number(rows[0]?.count ?? 0n);
+};

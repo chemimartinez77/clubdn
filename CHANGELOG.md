@@ -6,22 +6,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-04
 
-### feat: búsqueda por DNI y teléfono en historial de invitaciones y estado NOT_ATTENDED en frontend
+### feat: filtros separados por campo en historial de invitaciones y datos del invitado sin máscara
 
-Nacho había pedido poder filtrar el historial de invitaciones por DNI y teléfono del invitado para llevar el control de las veces que viene una misma persona. La búsqueda existente ya cubría nombre del invitado y nombre/nick del socio, pero no DNI ni teléfono. Se extiende la condición SQL de búsqueda para incluirlos, sin necesidad de nuevos endpoints ni parámetros.
+Nacho había pedido poder filtrar el historial de invitaciones por nombre, DNI y teléfono del invitado para llevar el control de las veces que viene una misma persona. La implementación anterior usaba un único campo de búsqueda unificado. Se reemplaza por cuatro filtros independientes (nombre invitado, DNI, teléfono, nombre/nick del socio) que se combinan con AND, y se corrige que `guestPhone` almacena el teléfono real (introducido por el invitado en `/join/:token`) mientras que `guestDniNormalized` almacena el DNI — confusión heredada del nombre del campo.
 
 **Backend:**
 
-- `server/src/utils/personSearch.ts` (`buildInvitationGuestSearchCondition`): se añaden `guestPhone` y `guestDniNormalized` a la cláusula `OR` de búsqueda, usando el mismo helper `buildUnaccentContains` que ya usaban los campos de nombre.
+- `server/src/utils/personSearch.ts`: nuevas funciones `filterInvitationIdsByFields` y `countInvitationsByFields` que construyen cláusulas `AND` independientes por campo. El filtro `guestDni` busca en `guestDniNormalized`; el filtro `guestPhone` busca en `guestPhone`. Se mantiene `buildInvitationGuestSearchCondition` (búsqueda unificada legacy) con `guestPhone` y `guestDniNormalized` en el `OR`.
+- `server/src/controllers/invitationController.ts` (`getInvitationHistory`): acepta los nuevos parámetros `guestName`, `guestDni`, `guestPhone` y `memberName`. Cuando alguno está presente usa `filterInvitationIdsByFields`; si no, cae al `search` unificado existente. Devuelve `guestDni` (desde `guestDniNormalized`) y `guestPhone` sin máscara — vista admin tiene acceso a los datos completos.
 
 **Frontend:**
 
-- `client/src/pages/admin/InvitationHistory.tsx`: se añade `NOT_ATTENDED` al tipo `InvitationStatus` con etiqueta "No asistió" y estilo naranja. Placeholder del buscador actualizado para reflejar que también busca por DNI y teléfono.
+- `client/src/pages/admin/InvitationHistory.tsx`: reemplaza el input único por cuatro inputs separados con debounce independiente y botón "Limpiar" condicional. La tabla añade columna "Teléfono" junto a "DNI". Se añade `NOT_ATTENDED` al tipo con etiqueta "No asistió" y estilo naranja.
 
 **Resultado funcional:**
 
-- El buscador del historial de invitaciones ya localiza registros escribiendo el DNI completo o parcial, o el teléfono del invitado.
-- El estado `NOT_ATTENDED` (generado automáticamente por el cron) ya se muestra correctamente en la tabla en lugar de quedar en blanco.
+- El admin puede filtrar combinando cualquiera de los cuatro campos; se muestran solo las filas que cumplen todos los filtros activos.
+- DNI y teléfono se muestran completos (sin máscara) en la vista de administración.
 
 ---
 

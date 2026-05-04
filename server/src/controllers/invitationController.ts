@@ -6,7 +6,9 @@ import { generateInvitationToken } from '../utils/invitationToken';
 import { checkAndUnlockBadges } from './badgeController';
 import {
   countInvitationsByPersonSearch,
+  countInvitationsByFields,
   findInvitationIdsByPersonSearch,
+  filterInvitationIdsByFields,
   normalizeSearchTerm,
 } from '../utils/personSearch';
 import { isAdminLikeRole } from '../utils/roles';
@@ -912,45 +914,77 @@ export const rejectInvitation = async (req: Request, res: Response): Promise<voi
 // -------- Historial de invitados (admin) --------
 export const getInvitationHistory = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { page = '1', limit = '50', search = '', memberId = '' } = req.query as Record<string, string>;
+    const {
+      page = '1', limit = '50',
+      search = '',
+      guestName = '', guestDni = '', guestPhone = '', memberName = '',
+      memberId = '',
+    } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
     const skip = (pageNum - 1) * limitNum;
+
+    const hasFieldFilters = !!(guestName || guestDni || guestPhone || memberName);
     const normalizedSearch = normalizeSearchTerm(search);
 
     const where: any = {};
     if (memberId) where.memberId = memberId;
-    const [matchedInvitationIds, total] = normalizedSearch
-      ? await Promise.all([
-          findInvitationIdsByPersonSearch({
-            search: normalizedSearch,
-            memberId: memberId || undefined,
-            limit: limitNum,
-            offset: skip,
-          }),
-          countInvitationsByPersonSearch({
-            search: normalizedSearch,
-            memberId: memberId || undefined,
-          }),
-        ])
-      : await Promise.all([
-          Promise.resolve<string[]>([]),
-          prisma.invitation.count({ where }),
-        ]);
 
-    if (normalizedSearch) {
+    let matchedInvitationIds: string[] = [];
+    let total: number;
+
+    if (hasFieldFilters) {
+      [matchedInvitationIds, total] = await Promise.all([
+        filterInvitationIdsByFields({
+          guestName: guestName || undefined,
+          guestDni: guestDni || undefined,
+          guestPhone: guestPhone || undefined,
+          memberName: memberName || undefined,
+          memberId: memberId || undefined,
+          limit: limitNum,
+          offset: skip,
+        }),
+        countInvitationsByFields({
+          guestName: guestName || undefined,
+          guestDni: guestDni || undefined,
+          guestPhone: guestPhone || undefined,
+          memberName: memberName || undefined,
+          memberId: memberId || undefined,
+        }),
+      ]);
+    } else if (normalizedSearch) {
+      [matchedInvitationIds, total] = await Promise.all([
+        findInvitationIdsByPersonSearch({
+          search: normalizedSearch,
+          memberId: memberId || undefined,
+          limit: limitNum,
+          offset: skip,
+        }),
+        countInvitationsByPersonSearch({
+          search: normalizedSearch,
+          memberId: memberId || undefined,
+        }),
+      ]);
+    } else {
+      matchedInvitationIds = [];
+      total = await prisma.invitation.count({ where });
+    }
+
+    const useIds = hasFieldFilters || !!normalizedSearch;
+    if (useIds) {
       where.id = { in: matchedInvitationIds };
     }
 
     const invitations = await prisma.invitation.findMany({
       where,
-      ...(normalizedSearch ? {} : { skip, take: limitNum }),
+      ...(useIds ? {} : { skip, take: limitNum }),
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         guestFirstName: true,
         guestLastName: true,
         guestPhone: true,
+        guestDniNormalized: true,
         status: true,
         validDate: true,
         createdAt: true,
@@ -968,7 +1002,7 @@ export const getInvitationHistory = async (req: Request, res: Response): Promise
       },
     });
 
-    const orderedInvitations = normalizedSearch
+    const orderedInvitations = useIds
       ? matchedInvitationIds
           .map(id => invitations.find(invitation => invitation.id === id))
           .filter((invitation): invitation is typeof invitations[number] => !!invitation)
@@ -979,8 +1013,9 @@ export const getInvitationHistory = async (req: Request, res: Response): Promise
       data: {
         data: orderedInvitations.map(inv => ({
           ...inv,
-          guestDniMasked: maskDni(inv.guestPhone),
-          guestPhone: undefined,
+          guestDni: inv.guestDniNormalized ?? null,
+          guestPhone: inv.guestPhone ?? null,
+          guestDniNormalized: undefined,
         })),
         pagination: {
           page: pageNum,
