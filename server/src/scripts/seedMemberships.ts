@@ -104,7 +104,7 @@ async function main() {
   // Obtener el admin para registrar como quien aprobó y registró pagos
   const admin = await prisma.user.findFirst({
     where: {
-      role: { in: ['ADMIN', 'SUPER_ADMIN'] }
+      role: { in: ['ADMIN', 'SUPER_ADMIN', 'CHEMI'] }
     }
   });
 

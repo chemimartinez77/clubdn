@@ -119,7 +119,7 @@ export const createReport = async (req: Request, res: Response): Promise<void> =
     // Notificar a todos los admins sobre nuevo reporte
     const adminUsers = await prisma.user.findMany({
       where: {
-        role: { in: ['ADMIN', 'SUPER_ADMIN'] }
+        role: { in: ['ADMIN', 'SUPER_ADMIN', 'CHEMI'] }
       },
       select: { id: true, email: true, name: true }
     });

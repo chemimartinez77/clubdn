@@ -2,6 +2,8 @@
 import { prisma } from '../config/database';
 import { NotificationType, Prisma } from '@prisma/client';
 
+const ADMIN_LIKE_NOTIFICATION_ROLES = ['ADMIN', 'SUPER_ADMIN', 'CHEMI'] as const;
+
 const formatDateEs = (date: Date): string => {
   const d = date.getUTCDate();
   const m = date.getUTCMonth() + 1;
@@ -153,7 +155,7 @@ export const notifyAdminsNewUser = async (newUserName: string, newUserEmail: str
     const admins = await prisma.user.findMany({
       where: {
         role: {
-          in: ['ADMIN', 'SUPER_ADMIN'],
+          in: ADMIN_LIKE_NOTIFICATION_ROLES,
         },
       },
       select: {
@@ -186,7 +188,7 @@ export const notifyAdminsNewUser = async (newUserName: string, newUserEmail: str
 export const notifyAdminsOnboardingCompleted = async (userName: string, userEmail: string) => {
   try {
     const admins = await prisma.user.findMany({
-      where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } },
+      where: { role: { in: ADMIN_LIKE_NOTIFICATION_ROLES } },
       select: { id: true },
     });
 
@@ -397,7 +399,7 @@ export const notifyReportCreated = async (
     const admins = await prisma.user.findMany({
       where: {
         role: {
-          in: ['ADMIN', 'SUPER_ADMIN'],
+          in: ADMIN_LIKE_NOTIFICATION_ROLES,
         },
       },
       select: {
@@ -488,7 +490,7 @@ export const notifyReportComment = async (
         const admins = await prisma.user.findMany({
           where: {
             role: {
-              in: ['ADMIN', 'SUPER_ADMIN'],
+              in: ADMIN_LIKE_NOTIFICATION_ROLES,
             },
           },
           select: {
@@ -532,7 +534,7 @@ export const notifyReportComment = async (
 export const notifyAdminsMemberPromoted = async (userName: string, userEmail: string, userId: string) => {
   try {
     const admins = await prisma.user.findMany({
-      where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } },
+      where: { role: { in: ADMIN_LIKE_NOTIFICATION_ROLES } },
       select: { id: true },
     });
 

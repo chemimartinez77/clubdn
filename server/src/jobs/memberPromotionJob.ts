@@ -38,7 +38,7 @@ export async function promoteTrialMembers(): Promise<void> {
 
   // Obtener admins con sus emails para el envío de email
   const admins = await prisma.user.findMany({
-    where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] }, status: 'APPROVED' },
+    where: { role: { in: ['ADMIN', 'SUPER_ADMIN', 'CHEMI'] }, status: 'APPROVED' },
     select: { id: true, name: true, email: true },
   });
 

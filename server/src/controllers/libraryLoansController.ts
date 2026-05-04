@@ -48,7 +48,7 @@ const ITEM_SEARCH_SELECT = {
 
 async function notifyAdmins(title: string, message: string, type: 'LIBRARY_LOAN_REQUESTED' | 'LIBRARY_LOAN_CONSULT_REQUESTED' | 'LIBRARY_LOAN_RENEWED', metadata: object) {
   const admins = await prisma.user.findMany({
-    where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] }, status: 'APPROVED' },
+    where: { role: { in: ['ADMIN', 'SUPER_ADMIN', 'CHEMI'] }, status: 'APPROVED' },
     select: { id: true }
   });
   if (admins.length === 0) return;
