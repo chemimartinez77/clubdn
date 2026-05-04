@@ -18,7 +18,7 @@ router.put('/me', authenticate, updateMyProfile);
 router.patch('/me', authenticate, updateMyProfile);
 router.post('/me/avatar', authenticate, upload.single('avatar'), uploadAvatar);
 router.patch('/me/tour-dismiss', authenticate, dismissTour);
-router.patch('/me/onboarding', authenticate, completeOnboarding);
+router.patch('/me/onboarding', authenticate, upload.single('idPhoto'), completeOnboarding);
 router.get('/:userId', authenticate, getUserProfile);
 
 export default router;

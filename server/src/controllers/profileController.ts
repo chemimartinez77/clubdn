@@ -504,7 +504,7 @@ export const dismissTour = async (req: Request, res: Response): Promise<void> =>
 };
 
 /**
- * Completar onboarding — marca onboardingCompleted = true y notifica a admins
+ * Completar onboarding — acepta multipart/form-data con foto carnet obligatoria
  */
 export const completeOnboarding = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -526,7 +526,10 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
       iban,
       imageConsentActivities,
       imageConsentSocial,
+      termsAccepted,
     } = req.body;
+
+    const file = req.file;
 
     // Validar campos obligatorios
     const missing = [];
@@ -539,11 +542,29 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
     if (!province?.trim()) missing.push('province');
     if (!postalCode?.trim()) missing.push('postalCode');
     if (!iban?.trim()) missing.push('iban');
+    if (!file) missing.push('idPhoto');
+    if (termsAccepted !== 'true' && termsAccepted !== true) missing.push('termsAccepted');
 
     if (missing.length > 0) {
       res.status(400).json({ success: false, message: `Faltan campos obligatorios: ${missing.join(', ')}` });
       return;
     }
+
+    // Subir foto carnet a Cloudinary
+    const idPhotoUrl = await new Promise<string>((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'clubdn/id-photos',
+          public_id: `${userId}_id`,
+          transformation: [{ width: 400, height: 500, crop: 'fill' }, { quality: 'auto:good' }],
+        },
+        (error, result) => {
+          if (error || !result) reject(error ?? new Error('Upload failed'));
+          else resolve(result.secure_url);
+        }
+      );
+      uploadStream.end(file!.buffer);
+    });
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -551,6 +572,9 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
     });
 
     const dniNormalized = dni.trim().toUpperCase().replace(/\s/g, '');
+
+    const consentActivities = imageConsentActivities === true || imageConsentActivities === 'true';
+    const consentSocial = imageConsentSocial === true || imageConsentSocial === 'true';
 
     await prisma.userProfile.upsert({
       where: { userId },
@@ -565,8 +589,10 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
         province: province.trim(),
         postalCode: postalCode.trim(),
         iban: iban.trim(),
-        imageConsentActivities: imageConsentActivities === true,
-        imageConsentSocial: imageConsentSocial === true,
+        imageConsentActivities: consentActivities,
+        imageConsentSocial: consentSocial,
+        idPhotoUrl,
+        termsAccepted: true,
         onboardingCompleted: true,
       },
       create: {
@@ -581,8 +607,10 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
         province: province.trim(),
         postalCode: postalCode.trim(),
         iban: iban.trim(),
-        imageConsentActivities: imageConsentActivities === true,
-        imageConsentSocial: imageConsentSocial === true,
+        imageConsentActivities: consentActivities,
+        imageConsentSocial: consentSocial,
+        idPhotoUrl,
+        termsAccepted: true,
         onboardingCompleted: true,
         favoriteGames: [],
         emailUpdates: false,

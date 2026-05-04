@@ -13,7 +13,7 @@ import type { Tip } from './data/tips';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Register from './pages/Register';
 import Login from './pages/Login';
-import Onboarding from './pages/Onboarding';
+import Onboarding, { OnboardingInner } from './pages/Onboarding';
 import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -242,6 +242,7 @@ function App() {
           />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+          <Route path="/onboarding-preview" element={<OnboardingInner isPreview />} />
           {/* Enlace de invitación por WhatsApp — público (el invitado no tiene cuenta) */}
           <Route path="/join/:token" element={<JoinViaShareLink />} />
           {/* QR del invitado — público (el invitado lo muestra; el socio lo abre al escanear) */}

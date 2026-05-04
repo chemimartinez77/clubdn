@@ -4,7 +4,34 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
-## 2026-05-04
+## 2026-05-04 (sesión 2)
+
+### feat: foto carnet, aceptación de condiciones y previsualización del formulario de onboarding
+
+El formulario de onboarding digital carecía de dos elementos obligatorios del formulario en papel: la foto carnet y la aceptación explícita de las condiciones de colaboración (objeto, condiciones, duración, jurisdicción, RGPD y derechos de imagen). Se añaden ambos, junto con una ruta pública de previsualización para poder revisar el formulario sin necesitar un usuario nuevo.
+
+**Base de datos:**
+
+- `server/prisma/schema.prisma`: dos nuevos campos en `UserProfile` — `idPhotoUrl String?` (URL de Cloudinary) y `termsAccepted Boolean @default(false)`.
+- `server/prisma/migrations/20260504100000_add_id_photo_and_terms_to_profile/migration.sql`: migración aplicada con `prisma migrate deploy` para evitar el reset del drift de desarrollo.
+
+**Backend:**
+
+- `server/src/controllers/profileController.ts` (`completeOnboarding`): el endpoint pasa de aceptar JSON a aceptar `multipart/form-data`. Valida que vengan la foto (`idPhoto`) y que `termsAccepted === 'true'`. Sube la foto a Cloudinary en la carpeta `clubdn/id-photos` con transformación 400×500 crop fill. Corrige la conversión de `imageConsentActivities` e `imageConsentSocial` para aceptar tanto booleano como string `'true'` (necesario en FormData).
+- `server/src/routes/profileRoutes.ts`: la ruta `PATCH /me/onboarding` añade `upload.single('idPhoto')` antes del controlador.
+
+**Frontend:**
+
+- `client/src/pages/Onboarding.tsx`: reescritura completa. El formulario envía `FormData` en lugar de JSON. Nuevos elementos:
+  - Campo de foto carnet con previsualización (recuadro carnet 24×28), botón "Seleccionar foto" y validación obligatoria.
+  - Toggle de aceptación de condiciones (desactivado por defecto) con texto enlazado que abre una modal.
+  - `TermsModal`: modal con scroll que contiene el texto completo de las 7 cláusulas del PDF original (objeto, condiciones, duración, jurisdicción, protección de datos, derechos de imagen, duración y extinción). Se cierra haciendo clic fuera o con el botón "Cerrar".
+  - El componente se exporta también como `OnboardingInner` con prop `isPreview` para reutilizarlo sin lógica de envío.
+- `client/src/App.tsx`: nueva ruta pública `/onboarding-preview` que renderiza `<OnboardingInner isPreview />` sin `ProtectedRoute`. En modo previsualización el botón de envío está deshabilitado y aparece un banner explicativo.
+
+---
+
+## 2026-05-04 (sesión 1)
 
 ### feat: filtros separados por campo en historial de invitaciones y datos del invitado sin máscara
 
