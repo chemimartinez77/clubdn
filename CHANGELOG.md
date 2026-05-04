@@ -1,8 +1,27 @@
-# 📋 Changelog - Club Dreadnought
+﻿# 📋 Changelog - Club Dreadnought
 
 Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
+
+## 2026-05-04
+
+### fix: CHEMI hereda todas las notificaciones y accesos administrativos compartidos
+
+Se corrige una desalineación de permisos y destinatarios para que el rol CHEMI reciba y acceda a todo lo que ya compartían ADMIN y SUPER_ADMIN, sin tocar las capacidades exclusivas de CHEMI.
+
+**Backend:**
+
+- server/src/services/notificationService.ts: se unifican los destinatarios administrativos de notificaciones para incluir a CHEMI en altas pendientes, onboarding completado, reportes, comentarios de reportes y promociones automáticas de membresía.
+- server/src/controllers/libraryLoansController.ts: las notificaciones administrativas de solicitudes y renovaciones de préstamos de ludoteca pasan a enviarse también a CHEMI.
+- server/src/controllers/reportController.ts: los correos y avisos asociados a nuevos reportes incluyen ahora a CHEMI junto a ADMIN y SUPER_ADMIN.
+- server/src/jobs/memberPromotionJob.ts: los avisos por promoción automática de miembros en pruebas incluyen también a CHEMI en el circuito administrativo.
+- server/src/scripts/seedMemberships.ts: los procesos auxiliares que buscan un usuario administrativo aceptan igualmente el rol CHEMI.
+
+**Resultado funcional:**
+
+- CHEMI deja de quedarse fuera en varios flujos que seguían filtrando solo por ADMIN y SUPER_ADMIN.
+- Se mantiene intacto todo lo que era exclusivo de CHEMI, pero se iguala su acceso en los circuitos administrativos compartidos.
 
 ## 2026-05-02 (sesión 4)
 
