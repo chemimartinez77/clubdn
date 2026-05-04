@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { api } from '../../api/axios';
 import type { ApiResponse } from '../../types/auth';
 
-type InvitationStatus = 'PENDING' | 'PENDING_APPROVAL' | 'USED' | 'EXPIRED' | 'CANCELLED';
+type InvitationStatus = 'PENDING' | 'PENDING_APPROVAL' | 'USED' | 'EXPIRED' | 'CANCELLED' | 'NOT_ATTENDED';
 
 interface InvitationRecord {
   id: string;
@@ -38,6 +38,7 @@ const STATUS_LABELS: Record<InvitationStatus, string> = {
   USED: 'Usada',
   EXPIRED: 'Expirada',
   CANCELLED: 'Cancelada',
+  NOT_ATTENDED: 'No asistió',
 };
 
 const STATUS_STYLES: Record<InvitationStatus, string> = {
@@ -46,6 +47,7 @@ const STATUS_STYLES: Record<InvitationStatus, string> = {
   USED: 'bg-green-100 text-green-800',
   EXPIRED: 'bg-gray-100 text-gray-600',
   CANCELLED: 'bg-red-100 text-red-800',
+  NOT_ATTENDED: 'bg-orange-100 text-orange-800',
 };
 
 export default function InvitationHistory() {
@@ -100,7 +102,7 @@ export default function InvitationHistory() {
                 type="text"
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Buscar por invitado o por nombre, apellidos o nick del socio..."
+                placeholder="Buscar por nombre, DNI, teléfono del invitado o nombre/nick del socio..."
                 className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent w-72"
               />
             </div>

@@ -75,11 +75,15 @@ const buildInvitationGuestSearchCondition = (search: string, invitationAlias: st
   const guestFullNameExpr = Prisma.raw(
     `concat_ws(' ', NULLIF(BTRIM(${invitationAlias}."guestFirstName"), ''), NULLIF(BTRIM(${invitationAlias}."guestLastName"), ''))`
   );
+  const guestPhoneExpr = Prisma.sql`${column(invitationAlias, 'guestPhone')}`;
+  const guestDniExpr = Prisma.sql`${column(invitationAlias, 'guestDniNormalized')}`;
 
   return Prisma.sql`(${sqlOr([
     buildUnaccentContains(guestFirstNameExpr, search),
     buildUnaccentContains(guestLastNameExpr, search),
     buildUnaccentContains(guestFullNameExpr, search),
+    buildUnaccentContains(guestPhoneExpr, search),
+    buildUnaccentContains(guestDniExpr, search),
   ])})`;
 };
 

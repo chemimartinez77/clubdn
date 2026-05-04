@@ -6,6 +6,25 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-04
 
+### feat: búsqueda por DNI y teléfono en historial de invitaciones y estado NOT_ATTENDED en frontend
+
+Nacho había pedido poder filtrar el historial de invitaciones por DNI y teléfono del invitado para llevar el control de las veces que viene una misma persona. La búsqueda existente ya cubría nombre del invitado y nombre/nick del socio, pero no DNI ni teléfono. Se extiende la condición SQL de búsqueda para incluirlos, sin necesidad de nuevos endpoints ni parámetros.
+
+**Backend:**
+
+- `server/src/utils/personSearch.ts` (`buildInvitationGuestSearchCondition`): se añaden `guestPhone` y `guestDniNormalized` a la cláusula `OR` de búsqueda, usando el mismo helper `buildUnaccentContains` que ya usaban los campos de nombre.
+
+**Frontend:**
+
+- `client/src/pages/admin/InvitationHistory.tsx`: se añade `NOT_ATTENDED` al tipo `InvitationStatus` con etiqueta "No asistió" y estilo naranja. Placeholder del buscador actualizado para reflejar que también busca por DNI y teléfono.
+
+**Resultado funcional:**
+
+- El buscador del historial de invitaciones ya localiza registros escribiendo el DNI completo o parcial, o el teléfono del invitado.
+- El estado `NOT_ATTENDED` (generado automáticamente por el cron) ya se muestra correctamente en la tabla en lugar de quedar en blanco.
+
+---
+
 ### feat: permitir invitaciones tardías con notificación a admins
 
 Se amplía la ventana de generación de invitaciones para cubrir casos de dejadez sin romper la lógica de plazas. Hasta ahora, al iniciarse una partida el botón de invitación desaparecía. Ahora se puede invitar mientras la partida está en curso y hasta 3 horas después de que termine. Cualquier uso de esta ventana tardía genera una notificación en app y un email a los admins, dejando trazabilidad de quién y cuándo lo usó.
