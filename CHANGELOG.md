@@ -6,6 +6,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-05
 
+### style: mejorar la claridad visual de los intereses seleccionados en onboarding
+
+Se refuerza la diferenciación entre intereses seleccionados y no seleccionados en el bloque `Intereses dentro del club` del onboarding. El estado activo deja de depender sólo del color de fondo y pasa a mostrarse con una señal visual más clara y consistente entre temas, especialmente en el tema verde.
+
+**Frontend:**
+
+- `client/src/pages/Onboarding.tsx`: los chips seleccionados muestran ahora un `✓` visible al inicio.
+- `client/src/pages/Onboarding.tsx`: los chips seleccionados usan borde más marcado y un fondo distinto del estado inactivo.
+- `client/src/pages/Onboarding.tsx`: los chips no seleccionados pasan a un estilo más neutro, con menor protagonismo visual y mejor contraste frente al estado activo.
+- `client/src/pages/Onboarding.tsx`: la previsualización `/onboarding-preview` sigue reflejando exactamente este comportamiento.
+
+**Verificación:**
+
+- `client`: `npm run build` correcto.
+
+---
+
 ### feat: semanas completas en calendario mensual e intereses controlados en onboarding y administración
 
 Se mejora la planificación mensual del calendario mostrando siempre semanas completas, incluidos los días visibles del mes anterior y del siguiente, con navegación directa al pulsarlos. Además, se introduce un sistema de intereses controlados para onboarding y administración: catálogo editable desde configuración, selección por chips en la ficha de alta, persistencia en perfil y filtros administrativos con resumen de conteos.
