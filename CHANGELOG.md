@@ -6,6 +6,25 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-05
 
+### fix: aclarar si el aforo incluye al organizador en crear y editar partida
+
+Se corrige un punto de confusión en los formularios de partida: el texto del aforo ya no da por hecho que el organizador siempre ocupa plaza. Ahora el mensaje explica de forma explícita si el número máximo incluye o no al organizador según su asistencia real.
+
+**Frontend:**
+
+- `client/src/pages/CreatePartida.tsx`: el campo de capacidad pasa a titularse `Aforo máximo de jugadores`.
+- `client/src/pages/CreatePartida.tsx`: el texto de ayuda bajo el aforo cambia dinámicamente según la casilla `Asistiré a la partida`:
+  - `Incluye al organizador en este número.`
+  - `No incluye al organizador, porque has indicado que no asistirás.`
+- `client/src/pages/EventDetail.tsx`: el modal de edición usa el mismo título `Aforo máximo de jugadores`.
+- `client/src/pages/EventDetail.tsx`: el texto de ayuda del aforo se ajusta al estado actual del organizador dentro de la partida para mantener el mismo criterio que en creación.
+
+**Verificación:**
+
+- `client`: `npm run build` correcto.
+
+---
+
 ### style: mejorar la claridad visual de los intereses seleccionados en onboarding
 
 Se refuerza la diferenciación entre intereses seleccionados y no seleccionados en el bloque `Intereses dentro del club` del onboarding. El estado activo deja de depender sólo del color de fondo y pasa a mostrarse con una señal visual más clara y consistente entre temas, especialmente en el tema verde.

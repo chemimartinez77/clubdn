@@ -1,4 +1,4 @@
-// client/src/pages/CreatePartida.tsx
+﻿// client/src/pages/CreatePartida.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -257,6 +257,7 @@ export default function CreatePartida() {
     : '0';
   const requiresApprovalDefaultValue = clonePrefill?.requiresApproval ?? true;
   const attendDefaultValue = cloneState ? currentUserWasConfirmed : true;
+  const [willAttend, setWillAttend] = useState<boolean>(attendDefaultValue);
   const isMagicSelected = isMagicTheGatheringBggId(selectedGame?.id);
   const canConfigureLateJoin = isChemi || isMagicSelected;
 
@@ -294,7 +295,7 @@ export default function CreatePartida() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {cloneState && (
                 <div className="rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
-                  Se ha copiado la ficha, la hora y la duración de la partida original. La fecha no se copia y debes elegir una nueva.
+                  Se ha copiado la ficha, la hora y la duraciÃ³n de la partida original. La fecha no se copia y debes elegir una nueva.
                 </div>
               )}
 
@@ -348,11 +349,11 @@ export default function CreatePartida() {
                     <div>
                       <h3 className="text-sm font-medium text-[var(--color-text)]">Expansiones</h3>
                       <p className="text-xs text-[var(--color-textSecondary)]">
-                        Añade una o varias expansiones que se jugarán junto al juego base.
+                        AÃ±ade una o varias expansiones que se jugarÃ¡n junto al juego base.
                       </p>
                     </div>
                     <Button type="button" variant="outline" onClick={() => setIsExpansionModalOpen(true)}>
-                      Añadir expansión desde la BGG
+                      AÃ±adir expansiÃ³n desde la BGG
                     </Button>
                   </div>
 
@@ -371,13 +372,13 @@ export default function CreatePartida() {
                           )}
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-[var(--color-text)]">{expansion.name}</p>
-                            <p className="text-xs text-amber-600">Expansión</p>
+                            <p className="text-xs text-amber-600">ExpansiÃ³n</p>
                           </div>
                           <button
                             type="button"
                             onClick={() => handleRemoveExpansion(expansion.id)}
                             className="text-red-500 hover:text-red-600 transition-colors"
-                            aria-label={`Eliminar expansión ${expansion.name}`}
+                            aria-label={`Eliminar expansiÃ³n ${expansion.name}`}
                           >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -387,7 +388,7 @@ export default function CreatePartida() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-[var(--color-textSecondary)]">No has añadido expansiones todavía.</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">No has aÃ±adido expansiones todavÃ­a.</p>
                   )}
                 </div>
               )}
@@ -403,7 +404,7 @@ export default function CreatePartida() {
                   disabled={!!confirmedCategory}
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <option value="">Sin categoría</option>
+                  <option value="">Sin categorÃ­a</option>
                   <option value="EUROGAMES">{getCategoryIcon('EUROGAMES')} {getCategoryDisplayName('EUROGAMES')}</option>
                   <option value="TEMATICOS">{getCategoryIcon('TEMATICOS')} {getCategoryDisplayName('TEMATICOS')}</option>
                   <option value="WARGAMES">{getCategoryIcon('WARGAMES')} {getCategoryDisplayName('WARGAMES')}</option>
@@ -416,13 +417,13 @@ export default function CreatePartida() {
                 </select>
                 {!selectedCategory && !confirmedCategory ? (
                   <p className="text-xs mt-1 text-amber-600">
-                    Sin categoría, esta partida no contará para los logros de género ni para el logro Catalogador.
+                    Sin categorÃ­a, esta partida no contarÃ¡ para los logros de gÃ©nero ni para el logro Catalogador.
                   </p>
                 ) : (
                   <p className="text-xs text-[var(--color-textSecondary)] mt-1">
                     {confirmedCategory
-                      ? 'Categoría fijada por la comunidad. Contacta con un admin para cambiarla.'
-                      : 'Categoría cargada automáticamente. Puedes cambiarla si es incorrecta.'}
+                      ? 'CategorÃ­a fijada por la comunidad. Contacta con un admin para cambiarla.'
+                      : 'CategorÃ­a cargada automÃ¡ticamente. Puedes cambiarla si es incorrecta.'}
                   </p>
                 )}
               </div>
@@ -432,7 +433,8 @@ export default function CreatePartida() {
                   id="attend"
                   name="attend"
                   type="checkbox"
-                  defaultChecked={attendDefaultValue}
+                  checked={willAttend}
+                  onChange={(e) => setWillAttend(e.target.checked)}
                   className="h-4 w-4 rounded border-[var(--color-inputBorder)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                 />
                 <label htmlFor="attend" className="text-sm text-[var(--color-textSecondary)]">
@@ -449,7 +451,7 @@ export default function CreatePartida() {
                   className="h-4 w-4 rounded border-[var(--color-inputBorder)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                 />
                 <label htmlFor="requiresApproval" className="text-sm text-[var(--color-textSecondary)]">
-                  Requiere aprobación del organizador
+                  Requiere aprobaciÃ³n del organizador
                 </label>
               </div>
 
@@ -470,15 +472,15 @@ export default function CreatePartida() {
                   </div>
                   <p className="text-xs text-[var(--color-textSecondary)]">
                     {isMagicSelected
-                      ? 'En Magic: The Gathering esta opción se activa automáticamente.'
-                      : 'Permite apuntar o invitar jugadores cuando la sesión ya está en curso.'}
+                      ? 'En Magic: The Gathering esta opciÃ³n se activa automÃ¡ticamente.'
+                      : 'Permite apuntar o invitar jugadores cuando la sesiÃ³n ya estÃ¡ en curso.'}
                   </p>
                 </div>
               )}
 
               <div id="create-partida-title">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
-                  Título de la partida *
+                  TÃ­tulo de la partida *
                 </label>
                 <input
                   type="text"
@@ -494,20 +496,20 @@ export default function CreatePartida() {
 
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
-                  Descripción de la partida (opcional)
+                  DescripciÃ³n de la partida (opcional)
                 </label>
                 <textarea
                   name="description"
                   rows={4}
                   defaultValue={descriptionDefaultValue}
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent resize-none bg-[var(--color-inputBackground)] text-[var(--color-inputText)] placeholder:text-gray-500"
-                  placeholder="Dale a los jugadores más información acerca de la partida..."
+                  placeholder="Dale a los jugadores mÃ¡s informaciÃ³n acerca de la partida..."
                 />
               </div>
 
               <div id="create-partida-datetime">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
-                  ¿Cuándo será la partida? *
+                  Â¿CuÃ¡ndo serÃ¡ la partida? *
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -555,7 +557,7 @@ export default function CreatePartida() {
 
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
-                  Duración estimada (opcional)
+                  DuraciÃ³n estimada (opcional)
                 </label>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -592,12 +594,12 @@ export default function CreatePartida() {
                     <div>
                       <h3 className="text-sm font-medium text-[var(--color-text)]">Segunda partida enlazada</h3>
                       <p className="text-xs text-[var(--color-textSecondary)]">
-                        Se mostrará como continuación de esta partida y tendrá resultados propios.
+                        Se mostrarÃ¡ como continuaciÃ³n de esta partida y tendrÃ¡ resultados propios.
                       </p>
                     </div>
                     {!linkedNextGame && (
                       <Button type="button" variant="outline" onClick={() => setIsLinkedGameModalOpen(true)}>
-                        Añadir segunda partida enlazada
+                        AÃ±adir segunda partida enlazada
                       </Button>
                     )}
                   </div>
@@ -616,7 +618,7 @@ export default function CreatePartida() {
                         )}
                         <div className="flex-1 min-w-0">
                           <h4 className="truncate font-medium text-[var(--color-text)]">{linkedNextGame.name}</h4>
-                          <p className="text-xs text-[var(--color-textSecondary)]">Se jugará al terminar la partida principal</p>
+                          <p className="text-xs text-[var(--color-textSecondary)]">Se jugarÃ¡ al terminar la partida principal</p>
                         </div>
                         <button
                           type="button"
@@ -666,7 +668,7 @@ export default function CreatePartida() {
 
               <div id="create-partida-attendees">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
-                  ¿Cuántos jugadores o jugadoras seréis en la partida? *
+                  Aforo máximo de jugadores *
                 </label>
                 <input
                   type="number"
@@ -678,10 +680,11 @@ export default function CreatePartida() {
                   className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
                 />
                 <p className="text-xs text-[var(--color-textSecondary)] mt-1">
-                  Incluye el organizador en este número
+                  {willAttend
+                    ? 'Incluye al organizador en este número.'
+                    : 'No incluye al organizador, porque has indicado que no asistirás.'}
                 </p>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
                   Ubicación (opcional)
@@ -698,7 +701,7 @@ export default function CreatePartida() {
 
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
-                  Dirección (opcional)
+                  DirecciÃ³n (opcional)
                 </label>
                 <input
                   type="text"
@@ -714,17 +717,17 @@ export default function CreatePartida() {
                   <div>
                     <h2 className="text-lg font-semibold text-[var(--color-text)]">Asistentes clonados</h2>
                     <p className="text-sm text-[var(--color-textSecondary)]">
-                      Los miembros seleccionados se apuntarán a la nueva partida y recibirán la notificación habitual.
+                      Los miembros seleccionados se apuntarÃ¡n a la nueva partida y recibirÃ¡n la notificaciÃ³n habitual.
                     </p>
                     {cloneState.hadExternalGuests && (
                       <p className="mt-2 text-sm text-amber-700">
-                        La partida original tenía invitados externos. No se copian y tendrás que volver a invitarlos manualmente.
+                        La partida original tenÃ­a invitados externos. No se copian y tendrÃ¡s que volver a invitarlos manualmente.
                       </p>
                     )}
                   </div>
 
                   {cloneAttendees.length === 0 ? (
-                    <p className="text-sm text-[var(--color-textSecondary)]">La partida original no tenía asistentes confirmados para clonar.</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">La partida original no tenÃ­a asistentes confirmados para clonar.</p>
                   ) : (
                     <div className="space-y-2">
                       {cloneAttendees.map((attendee) => (
@@ -794,8 +797,8 @@ export default function CreatePartida() {
         isOpen={isExpansionModalOpen}
         onClose={() => setIsExpansionModalOpen(false)}
         onSelect={handleExpansionSelect}
-        title="Añadir expansión desde la BGG"
-        searchPlaceholder="Busca una expansión..."
+        title="AÃ±adir expansiÃ³n desde la BGG"
+        searchPlaceholder="Busca una expansiÃ³n..."
         allowRPGG={false}
         filterExpansionOnly
       />

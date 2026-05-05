@@ -1,4 +1,4 @@
-// client/src/pages/EventDetail.tsx
+﻿// client/src/pages/EventDetail.tsx
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -111,7 +111,7 @@ export default function EventDetail() {
     setIsOptionsOpen(prev => !prev);
   };
 
-  // Estado modal edición
+  // Estado modal ediciÃ³n
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isEditGameModalOpen, setIsEditGameModalOpen] = useState(false);
   const [isEditExpansionModalOpen, setIsEditExpansionModalOpen] = useState(false);
@@ -138,14 +138,14 @@ export default function EventDetail() {
     allowLateJoin: false,
   });
 
-  // Estado QR de validación de partida
+  // Estado QR de validaciÃ³n de partida
   const [showValidationQr, setShowValidationQr] = useState(false);
   const [resultEditing, setResultEditing] = useState(false);
   const [resultRows, setResultRows] = useState<ResultRow[]>([]);
   const [tiebreakModal, setTiebreakModal] = useState<{ rowIndex: number } | null>(null);
   const [tiebreakNotes, setTiebreakNotes] = useState('');
 
-  // Configuración pública del club (para spinEffect)
+  // ConfiguraciÃ³n pÃºblica del club (para spinEffect)
   const { data: publicConfig } = useQuery({
     queryKey: ['publicConfig'],
     queryFn: async () => {
@@ -177,6 +177,9 @@ export default function EventDetail() {
   });
 
   const useMulticolorButtons = (profileData?.eventButtonStyle ?? 'dropdown') === 'multicolor';
+  const organizerAttendsEvent = !!event?.registrations?.some(
+    (registration) => registration.userId === event.createdBy && registration.status === 'CONFIRMED'
+  );
 
   // Resultados de partida
   const { data: existingResults, isLoading: resultsLoading } = useQuery({
@@ -548,10 +551,10 @@ export default function EventDetail() {
       queryClient.invalidateQueries({ queryKey: ['pending-invitations', id] });
       queryClient.invalidateQueries({ queryKey: ['invitations', id] });
       refetchPendingInvitations();
-      success(data.message || 'Invitación aprobada');
+      success(data.message || 'InvitaciÃ³n aprobada');
     },
     onError: (err: unknown) => {
-      showError(getErrorMessage(err, 'Error al aprobar la invitación'));
+      showError(getErrorMessage(err, 'Error al aprobar la invitaciÃ³n'));
     }
   });
 
@@ -564,10 +567,10 @@ export default function EventDetail() {
       queryClient.invalidateQueries({ queryKey: ['event', id] });
       queryClient.invalidateQueries({ queryKey: ['pending-invitations', id] });
       refetchPendingInvitations();
-      success(data.message || 'Invitación rechazada');
+      success(data.message || 'InvitaciÃ³n rechazada');
     },
     onError: (err: unknown) => {
-      showError(getErrorMessage(err, 'Error al rechazar la invitación'));
+      showError(getErrorMessage(err, 'Error al rechazar la invitaciÃ³n'));
     }
   });
 
@@ -601,7 +604,7 @@ export default function EventDetail() {
       queryClient.invalidateQueries({ queryKey: ['event', id] });
     },
     onError: (err: unknown) => {
-      showError(getErrorMessage(err, 'Error al generar el enlace de invitación'));
+      showError(getErrorMessage(err, 'Error al generar el enlace de invitaciÃ³n'));
     }
   });
 
@@ -748,17 +751,17 @@ export default function EventDetail() {
   };
   const invitationStatusLabels: Record<string, string> = {
     PENDING: 'Pendiente',
-    PENDING_APPROVAL: 'Pend. aprobación',
+    PENDING_APPROVAL: 'Pend. aprobaciÃ³n',
     USED: 'Usada',
     EXPIRED: 'Expirada',
     CANCELLED: 'Cancelada'
   };
   const invitationStatusTooltips: Record<string, string> = {
-    PENDING: 'La invitación está lista para ser usada en la entrada',
-    PENDING_APPROVAL: 'El organizador debe aprobar esta invitación antes de que sea válida',
-    USED: 'El invitado ya accedió al evento con esta invitación',
-    EXPIRED: 'La invitación caducó sin ser utilizada',
-    CANCELLED: 'La invitación fue cancelada'
+    PENDING: 'La invitaciÃ³n estÃ¡ lista para ser usada en la entrada',
+    PENDING_APPROVAL: 'El organizador debe aprobar esta invitaciÃ³n antes de que sea vÃ¡lida',
+    USED: 'El invitado ya accediÃ³ al evento con esta invitaciÃ³n',
+    EXPIRED: 'La invitaciÃ³n caducÃ³ sin ser utilizada',
+    CANCELLED: 'La invitaciÃ³n fue cancelada'
   };
   const invitationStatusStyles: Record<string, string> = {
     PENDING: 'text-amber-700 bg-amber-100',
@@ -821,7 +824,7 @@ export default function EventDetail() {
   const isEditMagicSelected = isMagicTheGatheringBggId(editSelectedGame?.id);
   const canConfigureLateJoin = isChemi || isEditMagicSelected;
 
-  // Ventana de validación QR: desde 1h antes del inicio hasta 24h tras el fin estimado
+  // Ventana de validaciÃ³n QR: desde 1h antes del inicio hasta 24h tras el fin estimado
   const validationWindowOpen = new Date(eventStart.getTime() - 60 * 60 * 1000);
   const durationMinutes = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
   const eventEndTime = new Date(eventStart.getTime() + durationMinutes * 60 * 1000);
@@ -833,10 +836,10 @@ export default function EventDetail() {
   const isSuperAdmin = isElevatedRole(user?.role);
   const resultsWindowClose = new Date(eventEndTime.getTime() + 24 * 60 * 60 * 1000);
   const isInResultsWindow = isSuperAdmin || (isPartida && now >= eventStart && now <= resultsWindowClose);
-  // Pueden añadir/editar resultados: organizador, admin, o participante confirmado; dentro de la ventana temporal
+  // Pueden aÃ±adir/editar resultados: organizador, admin, o participante confirmado; dentro de la ventana temporal
   const canAddResults = isInResultsWindow && (isAdmin || user?.id === event.createdBy || (event.isUserRegistered && event.userRegistrationStatus === 'CONFIRMED'));
 
-  // El usuario puede validar si: es PARTIDA, está inscrito como CONFIRMED, está en la ventana temporal, y la partida no está ya validada
+  // El usuario puede validar si: es PARTIDA, estÃ¡ inscrito como CONFIRMED, estÃ¡ en la ventana temporal, y la partida no estÃ¡ ya validada
   const canValidateQr = isPartida
     && isInValidationWindow
     && event.isUserRegistered
@@ -844,7 +847,7 @@ export default function EventDetail() {
     && event.disputeResult !== true;
 
   // Puede girar la ruleta si es PARTIDA con al menos 2 asistentes confirmados con cuenta y el usuario es uno de ellos
-  // Ventana: desde 1h antes del inicio hasta 2h después del inicio
+  // Ventana: desde 1h antes del inicio hasta 2h despuÃ©s del inicio
   const firstPlayerWindowOpen = new Date(eventStart.getTime() - 60 * 60 * 1000);
   const firstPlayerWindowClose = new Date(eventStart.getTime() + 2 * 60 * 60 * 1000);
   const isInFirstPlayerWindow = now >= firstPlayerWindowOpen && now <= firstPlayerWindowClose;
@@ -855,7 +858,7 @@ export default function EventDetail() {
     && event.userRegistrationStatus === 'CONFIRMED'
     && confirmedMembersCount >= 2;
 
-  // URL que codifica el QR de validación de este usuario en esta partida
+  // URL que codifica el QR de validaciÃ³n de este usuario en esta partida
   const validationQrData = id && user?.id
     ? `${window.location.origin}/validate-game/${id}/${user.id}`
     : null;
@@ -961,18 +964,18 @@ export default function EventDetail() {
     const dateTextCapitalized = capitalizeFirst(eventDateText);
 
     const buildMessage = (shareUrl: string) => {
-      // Título: solo si no hay imagen (si hay imagen ya sale en la previsualización)
+      // TÃ­tulo: solo si no hay imagen (si hay imagen ya sale en la previsualizaciÃ³n)
       let message = '';
       if (!gameImageUrl) {
         message += `*${event.title}*\n\n`;
       }
 
       // Fecha y hora
-      message += `· ${dateTextCapitalized}\n`;
-      message += `· ${shareTimeText}\n`;
+      message += `Â· ${dateTextCapitalized}\n`;
+      message += `Â· ${shareTimeText}\n`;
 
       if (event.type !== 'PARTIDA' && event.location) {
-        message += `· Lugar: ${event.location}\n`;
+        message += `Â· Lugar: ${event.location}\n`;
       }
 
       if (event.description) {
@@ -984,7 +987,7 @@ export default function EventDetail() {
       }
 
       if (event.linkedNextEvent?.gameName) {
-        message += `\nDespués se jugará: ${event.linkedNextEvent.gameName}\n`;
+        message += `\nDespuÃ©s se jugarÃ¡: ${event.linkedNextEvent.gameName}\n`;
       }
 
       message += `\n${spotsText}\n`;
@@ -997,12 +1000,12 @@ export default function EventDetail() {
         message += `\nHay socios apuntados\n`;
       }
 
-      message += `\nMás info aquí: ${shareUrl}`;
+      message += `\nMÃ¡s info aquÃ­: ${shareUrl}`;
       return message;
     };
 
     // Usamos la URL de preview como enlace del mensaje: genera los meta tags OG (imagen)
-    // y redirige automáticamente a los usuarios a la app
+    // y redirige automÃ¡ticamente a los usuarios a la app
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
     const previewUrl = `${apiBase}/preview/events/${event.id}?v=${Date.now()}`;
 
@@ -1135,9 +1138,9 @@ export default function EventDetail() {
                           : 'bg-gray-100 text-gray-800'
                       }`}>
                         {event.userRegistrationStatus === 'CONFIRMED'
-                          ? 'Estás registrado'
+                          ? 'EstÃ¡s registrado'
                           : event.userRegistrationStatus === 'PENDING_APPROVAL'
-                          ? 'Pendiente de aprobación'
+                          ? 'Pendiente de aprobaciÃ³n'
                           : event.userRegistrationStatus === 'WAITLIST'
                           ? 'En lista de espera'
                           : event.userRegistrationStatus}
@@ -1155,7 +1158,7 @@ export default function EventDetail() {
                       className="w-full sm:w-auto !bg-blue-600 hover:!bg-blue-700 !text-white transition-all duration-300"
                     >
                       <span className="flex items-center justify-center gap-2">
-                        <span>{registerMutation.isPending ? 'Apuntándote...' : 'Apuntarme'}</span>
+                        <span>{registerMutation.isPending ? 'ApuntÃ¡ndote...' : 'Apuntarme'}</span>
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
@@ -1170,7 +1173,7 @@ export default function EventDetail() {
                       className="w-full sm:w-auto !bg-slate-500 hover:!bg-slate-600 !text-white transition-all duration-300"
                     >
                       <span className="flex items-center justify-center gap-2">
-                        <span>{unregisterMutation.isPending ? 'Cancelando...' : isPendingApproval ? 'Cancelar solicitud' : 'No asistiré'}</span>
+                        <span>{unregisterMutation.isPending ? 'Cancelando...' : isPendingApproval ? 'Cancelar solicitud' : 'No asistirÃ©'}</span>
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
@@ -1183,7 +1186,7 @@ export default function EventDetail() {
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="text-sm font-medium">Pendiente de aprobación</span>
+                      <span className="text-sm font-medium">Pendiente de aprobaciÃ³n</span>
                     </div>
                   )}
 
@@ -1196,7 +1199,7 @@ export default function EventDetail() {
                     </div>
                   )}
 
-                  {/* Botones secundarios: dropdown u multicolor según preferencia del usuario */}
+                  {/* Botones secundarios: dropdown u multicolor segÃºn preferencia del usuario */}
                   {useMulticolorButtons ? (
                     <>
                       <Button
@@ -1221,7 +1224,7 @@ export default function EventDetail() {
                             <span className="flex items-center gap-1">
                               <span>Apuntar miembro</span>
                               {showChemiAddMemberIndicator && (
-                                <span title="Habilitado por override de rol CHEMI">‼️</span>
+                                <span title="Habilitado por override de rol CHEMI">â€¼ï¸</span>
                               )}
                             </span>
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1236,7 +1239,7 @@ export default function EventDetail() {
                         className="w-full sm:w-auto transition-all duration-300"
                       >
                         <span className="flex items-center justify-center gap-2">
-                          <span>Añadir al calendario</span>
+                          <span>AÃ±adir al calendario</span>
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
@@ -1338,7 +1341,7 @@ export default function EventDetail() {
                         </svg>
                       </span>
                     </Button>
-                    {/* Bottom sheet en móvil */}
+                    {/* Bottom sheet en mÃ³vil */}
                     {isOptionsOpen && (
                       <div
                         className="sm:hidden fixed inset-0 z-[9999]"
@@ -1364,7 +1367,7 @@ export default function EventDetail() {
                                 <span className="flex items-center gap-1">
                                   <span>Apuntar miembro</span>
                                   {showChemiAddMemberIndicator && (
-                                    <span title="Habilitado por override de rol CHEMI">‼️</span>
+                                    <span title="Habilitado por override de rol CHEMI">â€¼ï¸</span>
                                   )}
                                 </span>
                               </button>
@@ -1418,7 +1421,7 @@ export default function EventDetail() {
                               className="w-full text-left px-4 py-3 text-sm hover:bg-[var(--color-cardBorder)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-3 rounded-lg"
                             >
                               <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                              Añadir al calendario
+                              AÃ±adir al calendario
                             </button>
                             {canClone && (
                               <button
@@ -1471,7 +1474,7 @@ export default function EventDetail() {
                             <span className="flex items-center gap-1">
                               <span>Apuntar miembro</span>
                               {showChemiAddMemberIndicator && (
-                                <span title="Habilitado por override de rol CHEMI">‼️</span>
+                                <span title="Habilitado por override de rol CHEMI">â€¼ï¸</span>
                               )}
                             </span>
                           </button>
@@ -1533,7 +1536,7 @@ export default function EventDetail() {
                           <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                          Añadir al calendario
+                          AÃ±adir al calendario
                         </button>
                         {canClone && (
                           <button
@@ -1601,7 +1604,7 @@ export default function EventDetail() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   <div>
-                    <p className="text-sm text-[var(--color-textSecondary)]">Ubicación</p>
+                    <p className="text-sm text-[var(--color-textSecondary)]">UbicaciÃ³n</p>
                     <p className="font-medium text-[var(--color-text)]">{event.location}</p>
                     {event.address && (
                       <p className="text-sm text-[var(--color-textSecondary)]">{event.address}</p>
@@ -1654,12 +1657,12 @@ export default function EventDetail() {
 
             {/* Description */}
             <div>
-              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Descripción</h3>
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">DescripciÃ³n</h3>
               {event.description ? (
                 <p className="text-[var(--color-textSecondary)] whitespace-pre-line">{event.description}</p>
               ) : (
                 <p className="text-[var(--color-textSecondary)] italic">
-                  {event.organizer?.profile?.nick || event.organizer?.name || 'El organizador'} no ha considerado necesario proporcionar una descripción para esta partida
+                  {event.organizer?.profile?.nick || event.organizer?.name || 'El organizador'} no ha considerado necesario proporcionar una descripciÃ³n para esta partida
                 </p>
               )}
             </div>
@@ -1676,7 +1679,7 @@ export default function EventDetail() {
 
                 {inheritsRegistrationsFromPrevious && (
                   <p className="mt-3 text-sm text-[var(--color-textSecondary)]">
-                    Los asistentes de esta partida enlazada se gestionan automáticamente desde la partida principal. No puedes apuntarte ni borrarte aquí por separado.
+                    Los asistentes de esta partida enlazada se gestionan automÃ¡ticamente desde la partida principal. No puedes apuntarte ni borrarte aquÃ­ por separado.
                   </p>
                 )}
               </div>
@@ -1684,7 +1687,7 @@ export default function EventDetail() {
 
             {event.linkedNextEvent && (
               <div>
-                <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Después se jugará</h3>
+                <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">DespuÃ©s se jugarÃ¡</h3>
                 <button
                   type="button"
                   onClick={() => navigate(`/events/${event.linkedNextEvent!.id}`)}
@@ -1732,11 +1735,11 @@ export default function EventDetail() {
           </CardContent>
         </Card>
 
-        {/* Validación QR de partida */}
+        {/* ValidaciÃ³n QR de partida */}
         {(canValidateQr || event.disputeResult === true) && isPartida && event.isUserRegistered && event.userRegistrationStatus === 'CONFIRMED' && (
           <Card>
             <CardHeader>
-              <CardTitle>Validación de partida</CardTitle>
+              <CardTitle>ValidaciÃ³n de partida</CardTitle>
             </CardHeader>
             <CardContent>
               {event.disputeResult === true ? (
@@ -1756,7 +1759,7 @@ export default function EventDetail() {
                   </div>
                   {showValidationQr && validationQrImageUrl && (
                     <div className="flex flex-col items-center gap-2 pt-2">
-                      <img src={validationQrImageUrl} alt="QR de validación" className="rounded-lg" width={180} height={180} />
+                      <img src={validationQrImageUrl} alt="QR de validaciÃ³n" className="rounded-lg" width={180} height={180} />
                       <p className="text-xs text-[var(--color-textSecondary)]">Pide a otro participante que lo escanee</p>
                     </div>
                   )}
@@ -1766,15 +1769,15 @@ export default function EventDetail() {
           </Card>
         )}
 
-        {/* Confirmación de disputa por el organizador */}
+        {/* ConfirmaciÃ³n de disputa por el organizador */}
         {isOrganizerOrAdmin && isPartida && event.status === 'COMPLETED' && event.disputeResult === null && (
           <Card>
             <CardHeader>
-              <CardTitle>¿Se celebró esta partida?</CardTitle>
+              <CardTitle>Â¿Se celebrÃ³ esta partida?</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-[var(--color-textSecondary)]">
-                Solo podrás marcarlo una vez y no podrá deshacerse.
+                Solo podrÃ¡s marcarlo una vez y no podrÃ¡ deshacerse.
               </p>
               <div className="flex gap-3">
                 <Button
@@ -1782,13 +1785,13 @@ export default function EventDetail() {
                   onClick={() => setDisputeConfirmModal('played')}
                   className="flex-1"
                 >
-                  Sí, se jugó
+                  SÃ­, se jugÃ³
                 </Button>
                 <Button
                   onClick={() => setDisputeConfirmModal('not-played')}
                   className="flex-1"
                 >
-                  No llegó a jugarse
+                  No llegÃ³ a jugarse
                 </Button>
               </div>
             </CardContent>
@@ -1806,7 +1809,7 @@ export default function EventDetail() {
             </CardHeader>
             <CardContent>
               {confirmed.length === 0 && (!event.invitations || event.invitations.length === 0) ? (
-                <p className="text-[var(--color-textSecondary)] text-sm">Aún no hay asistentes ni invitados</p>
+                <p className="text-[var(--color-textSecondary)] text-sm">AÃºn no hay asistentes ni invitados</p>
               ) : (
                 <ul className="space-y-2">
                   {confirmed.map((registration) => (
@@ -1877,7 +1880,7 @@ export default function EventDetail() {
                       {guest.status !== 'RESERVED' && (invitationStatusTooltips[guest.status] ? (
                         <InfoTooltip
                           content={invitationStatusTooltips[guest.status]}
-                          ariaLabel={`Información del estado ${invitationStatusLabels[guest.status] || guest.status}`}
+                          ariaLabel={`InformaciÃ³n del estado ${invitationStatusLabels[guest.status] || guest.status}`}
                         >
                           <span
                             className={`text-xs px-2 py-0.5 rounded-full cursor-help select-none ${
@@ -2018,7 +2021,7 @@ export default function EventDetail() {
                           {displayName(registration.user.name, registration.user.profile?.nick)}
                         </p>
                         <p className="text-xs text-[var(--color-textSecondary)]">
-                          Solicitó el {new Date(registration.updatedAt ?? registration.createdAt).toLocaleDateString('es-ES', {
+                          SolicitÃ³ el {new Date(registration.updatedAt ?? registration.createdAt).toLocaleDateString('es-ES', {
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric',
@@ -2055,13 +2058,13 @@ export default function EventDetail() {
           </Card>
         )}
 
-        {/* Invitados pendientes de aprobación - visible para todos los asistentes */}
+        {/* Invitados pendientes de aprobaciÃ³n - visible para todos los asistentes */}
         {event.requiresApproval && pendingInvitations.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>Invitados pendientes de aprobación ({pendingInvitations.length})</span>
-                <span className="text-sm font-normal text-[var(--color-textSecondary)]">Por orden de invitación</span>
+                <span>Invitados pendientes de aprobaciÃ³n ({pendingInvitations.length})</span>
+                <span className="text-sm font-normal text-[var(--color-textSecondary)]">Por orden de invitaciÃ³n</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -2081,7 +2084,7 @@ export default function EventDetail() {
                         </p>
                         <p className="text-xs text-[var(--color-textSecondary)]">
                           Invitado por <span className="font-medium">{inv.inviter.name}</span>
-                          {' · '}
+                          {' Â· '}
                           {new Date(inv.createdAt).toLocaleString('es-ES', {
                             day: '2-digit', month: '2-digit', year: 'numeric',
                             hour: '2-digit', minute: '2-digit'
@@ -2133,7 +2136,7 @@ export default function EventDetail() {
                 <div className="space-y-2">
                   {existingResults.map((r) => (
                     <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg bg-[var(--color-tableRowHover)]">
-                      {r.isWinner && <span title="Ganador">🏆</span>}
+                      {r.isWinner && <span title="Ganador">ðŸ†</span>}
                       <span className="flex-1 text-sm text-[var(--color-text)] font-medium">
                         {r.user ? (
                           <UserPopover
@@ -2167,7 +2170,7 @@ export default function EventDetail() {
                   <p className="text-sm text-[var(--color-textSecondary)] mb-3">No hay resultados registrados.</p>
                   {canAddResults && (
                     <Button onClick={startResultEditing} className="!bg-[var(--color-primary)] !text-white">
-                      Añadir resultados
+                      AÃ±adir resultados
                     </Button>
                   )}
                 </div>
@@ -2206,7 +2209,7 @@ export default function EventDetail() {
                           const newScore = e.target.value;
                           setResultRows((prev) => {
                             const updated = prev.map((r, idx) => idx === i ? { ...r, score: newScore } : r);
-                            // Recalcular ganador automáticamente
+                            // Recalcular ganador automÃ¡ticamente
                             const scores = updated.map((r) => r.score !== '' ? parseInt(r.score) : NaN).filter((s) => !isNaN(s));
                             if (scores.length === 0) return updated;
                             const maxScore = Math.max(...scores);
@@ -2228,7 +2231,7 @@ export default function EventDetail() {
                             if (checked) {
                               const currentWinners = resultRows.filter((r, idx) => idx !== i && r.isWinner);
                               if (currentWinners.length > 0) {
-                                // Ya hay otro ganador → pedir motivo de empate
+                                // Ya hay otro ganador â†’ pedir motivo de empate
                                 setTiebreakModal({ rowIndex: i });
                                 setTiebreakNotes('');
                                 return;
@@ -2278,7 +2281,7 @@ export default function EventDetail() {
                       type="text"
                       value={tiebreakNotes}
                       onChange={(e) => setTiebreakNotes(e.target.value)}
-                      placeholder="Ej: Puntuación de criterio de desempate"
+                      placeholder="Ej: PuntuaciÃ³n de criterio de desempate"
                       className="w-full px-3 py-2 text-sm border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)]"
                     />
                     <div className="flex justify-end gap-3">
@@ -2338,8 +2341,8 @@ export default function EventDetail() {
         <div className="space-y-4">
           <p className="text-sm text-[var(--color-textSecondary)]">
             {removeTarget?.name
-              ? `¿Seguro que quieres eliminar a ${removeTarget.name} de la partida?`
-              : '¿Seguro que quieres eliminar a este asistente de la partida?'}
+              ? `Â¿Seguro que quieres eliminar a ${removeTarget.name} de la partida?`
+              : 'Â¿Seguro que quieres eliminar a este asistente de la partida?'}
           </p>
           <div>
             <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
@@ -2351,7 +2354,7 @@ export default function EventDetail() {
               className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-red-500"
             >
               <option value="">Selecciona un motivo...</option>
-              <option value="No se presentó">No se presentó</option>
+              <option value="No se presentÃ³">No se presentÃ³</option>
               <option value="Comportamiento inadecuado">Comportamiento inadecuado</option>
               <option value="Solicitud del propio jugador">Solicitud del propio jugador</option>
               <option value="Aforo reducido">Aforo reducido</option>
@@ -2402,9 +2405,9 @@ export default function EventDetail() {
             className="bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4"
             onClick={e => e.stopPropagation()}
           >
-            <h2 className="text-base font-bold text-[var(--color-text)]">¿Estás seguro?</h2>
+            <h2 className="text-base font-bold text-[var(--color-text)]">Â¿EstÃ¡s seguro?</h2>
             <p className="text-sm text-[var(--color-textSecondary)]">
-              Esta acción es irreversible. Una vez confirmada no podrás cambiarla.
+              Esta acciÃ³n es irreversible. Una vez confirmada no podrÃ¡s cambiarla.
             </p>
             <div className="flex gap-3 mt-2">
               <Button
@@ -2437,10 +2440,10 @@ export default function EventDetail() {
       >
         <div className="space-y-5">
           <p className="text-sm text-[var(--color-textSecondary)]">
-            Genera un enlace único y envíaselo a tu invitado por WhatsApp. Él rellenará sus datos y recibirá un QR para entrar al club. Al generar el enlace se creará una reserva de plaza por 15 minutos para que el invitado pueda apuntarse.
+            Genera un enlace Ãºnico y envÃ­aselo a tu invitado por WhatsApp. Ã‰l rellenarÃ¡ sus datos y recibirÃ¡ un QR para entrar al club. Al generar el enlace se crearÃ¡ una reserva de plaza por 15 minutos para que el invitado pueda apuntarse.
           </p>
           <p className="text-sm text-[var(--color-textSecondary)]">
-            Cuando tu invitado acepte, recarga la página para ver su nombre en la lista de asistentes.
+            Cuando tu invitado acepte, recarga la pÃ¡gina para ver su nombre en la lista de asistentes.
           </p>
 
           {shareLinkUrl && (
@@ -2459,7 +2462,7 @@ export default function EventDetail() {
                 </button>
               </div>
               <p className="text-xs text-[var(--color-textSecondary)]">
-                Envía este enlace a tu invitado por WhatsApp. El enlace es reutilizable para esta partida.
+                EnvÃ­a este enlace a tu invitado por WhatsApp. El enlace es reutilizable para esta partida.
               </p>
             </div>
           )}
@@ -2472,7 +2475,7 @@ export default function EventDetail() {
           >
             {generateShareLinkMutation.isPending
               ? 'Generando...'
-              : shareLinkUrl ? 'Reservar otra plaza' : 'Generar enlace de invitación'}
+              : shareLinkUrl ? 'Reservar otra plaza' : 'Generar enlace de invitaciÃ³n'}
           </Button>
 
           {!canInvite && (
@@ -2488,7 +2491,7 @@ export default function EventDetail() {
             ) : isInvitesError ? (
               <p className="text-sm text-[var(--color-textSecondary)]">No tienes permisos para ver invitaciones.</p>
             ) : invitations.length === 0 ? (
-              <p className="text-sm text-[var(--color-textSecondary)]">Aún no hay invitaciones para esta partida.</p>
+              <p className="text-sm text-[var(--color-textSecondary)]">AÃºn no hay invitaciones para esta partida.</p>
             ) : (
               <div className="space-y-2">
                 {invitations.map((invite) => (
@@ -2507,7 +2510,7 @@ export default function EventDetail() {
                     {invitationStatusTooltips[invite.status] ? (
                       <InfoTooltip
                         content={invitationStatusTooltips[invite.status]}
-                        ariaLabel={`Información del estado ${invitationStatusLabels[invite.status] || invite.status}`}
+                        ariaLabel={`InformaciÃ³n del estado ${invitationStatusLabels[invite.status] || invite.status}`}
                       >
                         <span className={`px-2 py-1 rounded-full text-xs font-medium cursor-help select-none ${
                           invite.status === 'USED'
@@ -2611,7 +2614,7 @@ export default function EventDetail() {
         </div>
       </Modal>
 
-      {/* Modal de edición */}
+      {/* Modal de ediciÃ³n */}
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
@@ -2646,10 +2649,10 @@ export default function EventDetail() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-sm font-medium text-[var(--color-text)]">Expansiones</h3>
-                  <p className="text-xs text-[var(--color-textSecondary)]">Se mostrarán junto al juego principal.</p>
+                  <p className="text-xs text-[var(--color-textSecondary)]">Se mostrarÃ¡n junto al juego principal.</p>
                 </div>
                 <Button type="button" variant="outline" onClick={() => setIsEditExpansionModalOpen(true)}>
-                  Añadir expansión desde la BGG
+                  AÃ±adir expansiÃ³n desde la BGG
                 </Button>
               </div>
               {editSelectedExpansions.length > 0 ? (
@@ -2659,7 +2662,7 @@ export default function EventDetail() {
                       <GameImage src={expansion.image || expansion.thumbnail} alt={expansion.name} size="sm" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium text-[var(--color-text)]">{expansion.name}</p>
-                        <p className="text-xs text-amber-600">Expansión</p>
+                        <p className="text-xs text-amber-600">ExpansiÃ³n</p>
                       </div>
                       <button type="button" onClick={() => handleRemoveEditExpansion(expansion.id)} className="text-red-500 hover:text-red-600">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -2668,7 +2671,7 @@ export default function EventDetail() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[var(--color-textSecondary)]">No hay expansiones añadidas.</p>
+                <p className="text-sm text-[var(--color-textSecondary)]">No hay expansiones aÃ±adidas.</p>
               )}
             </div>
           )}
@@ -2678,11 +2681,11 @@ export default function EventDetail() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-sm font-medium text-[var(--color-text)]">Segunda partida enlazada</h3>
-                  <p className="text-xs text-[var(--color-textSecondary)]">Se mantendrá como evento separado enlazado a esta partida.</p>
+                  <p className="text-xs text-[var(--color-textSecondary)]">Se mantendrÃ¡ como evento separado enlazado a esta partida.</p>
                 </div>
                 {!editLinkedNextGame && (
                   <Button type="button" variant="outline" onClick={() => setIsEditLinkedGameModalOpen(true)}>
-                    Añadir segunda partida enlazada
+                    AÃ±adir segunda partida enlazada
                   </Button>
                 )}
               </div>
@@ -2692,7 +2695,7 @@ export default function EventDetail() {
                     <GameImage src={editLinkedNextGame.image || editLinkedNextGame.thumbnail} alt={editLinkedNextGame.name} size="sm" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium text-[var(--color-text)]">{editLinkedNextGame.name}</p>
-                      <p className="text-xs text-[var(--color-textSecondary)]">Se jugará al terminar la partida principal</p>
+                      <p className="text-xs text-[var(--color-textSecondary)]">Se jugarÃ¡ al terminar la partida principal</p>
                     </div>
                     <button type="button" onClick={() => setEditLinkedNextGame(null)} className="text-red-500 hover:text-red-600">
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -2720,11 +2723,11 @@ export default function EventDetail() {
             </div>
           )}
 
-          {/* Categoría */}
+          {/* CategorÃ­a */}
           <div>
-            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Categoría del juego (opcional)</label>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">CategorÃ­a del juego (opcional)</label>
             <select value={editSelectedCategory} onChange={(e) => setEditSelectedCategory(e.target.value)} disabled={!!editConfirmedCategory} className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)] disabled:opacity-60 disabled:cursor-not-allowed">
-              <option value="">Sin categoría</option>
+              <option value="">Sin categorÃ­a</option>
               <option value="EUROGAMES">{getCategoryIcon('EUROGAMES')} {getCategoryDisplayName('EUROGAMES')}</option>
               <option value="TEMATICOS">{getCategoryIcon('TEMATICOS')} {getCategoryDisplayName('TEMATICOS')}</option>
               <option value="WARGAMES">{getCategoryIcon('WARGAMES')} {getCategoryDisplayName('WARGAMES')}</option>
@@ -2736,14 +2739,14 @@ export default function EventDetail() {
               <option value="ABSTRACTOS">{getCategoryIcon('ABSTRACTOS')} {getCategoryDisplayName('ABSTRACTOS')}</option>
             </select>
             {editConfirmedCategory && (
-              <p className="text-xs text-[var(--color-textSecondary)] mt-1">Categoría fijada por la comunidad. Contacta con un admin para cambiarla.</p>
+              <p className="text-xs text-[var(--color-textSecondary)] mt-1">CategorÃ­a fijada por la comunidad. Contacta con un admin para cambiarla.</p>
             )}
           </div>
 
-          {/* Requiere aprobación */}
+          {/* Requiere aprobaciÃ³n */}
           <div className="flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] px-4 py-3">
             <input id="edit-requiresApproval" type="checkbox" checked={editFormData.requiresApproval} onChange={(e) => setEditFormData(prev => ({ ...prev, requiresApproval: e.target.checked }))} className="h-4 w-4 rounded border-[var(--color-inputBorder)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]" />
-            <label htmlFor="edit-requiresApproval" className="text-sm text-[var(--color-textSecondary)]">Requiere aprobación del organizador</label>
+            <label htmlFor="edit-requiresApproval" className="text-sm text-[var(--color-textSecondary)]">Requiere aprobaciÃ³n del organizador</label>
           </div>
 
           {canConfigureLateJoin && (
@@ -2761,21 +2764,21 @@ export default function EventDetail() {
               </div>
               <p className="text-xs text-[var(--color-textSecondary)]">
                 {isEditMagicSelected
-                  ? 'En Magic: The Gathering esta opción se activa automáticamente.'
-                  : 'Permite apuntar o invitar jugadores cuando la sesión ya está en curso.'}
+                  ? 'En Magic: The Gathering esta opciÃ³n se activa automÃ¡ticamente.'
+                  : 'Permite apuntar o invitar jugadores cuando la sesiÃ³n ya estÃ¡ en curso.'}
               </p>
             </div>
           )}
 
-          {/* Título */}
+          {/* TÃ­tulo */}
           <div>
-            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Título *</label>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">TÃ­tulo *</label>
             <input type="text" required minLength={3} maxLength={100} value={editFormData.title} onChange={(e) => setEditFormData(prev => ({ ...prev, title: e.target.value }))} className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]" />
           </div>
 
-          {/* Descripción */}
+          {/* DescripciÃ³n */}
           <div>
-            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Descripción (opcional)</label>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">DescripciÃ³n (opcional)</label>
             <textarea rows={3} value={editFormData.description} onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))} className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] resize-none bg-[var(--color-inputBackground)] text-[var(--color-inputText)]" />
           </div>
 
@@ -2803,9 +2806,9 @@ export default function EventDetail() {
             </div>
           </div>
 
-          {/* Duración */}
+          {/* DuraciÃ³n */}
           <div>
-            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Duración estimada (opcional)</label>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">DuraciÃ³n estimada (opcional)</label>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Horas</label>
@@ -2825,19 +2828,24 @@ export default function EventDetail() {
 
           {/* Capacidad */}
           <div>
-            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Número máximo de jugadores *</label>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Aforo máximo de jugadores *</label>
             <input type="number" required min={1} max={100} value={editFormData.maxAttendees} onChange={(e) => setEditFormData(prev => ({ ...prev, maxAttendees: parseInt(e.target.value) }))} className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]" />
+            <p className="text-xs text-[var(--color-textSecondary)] mt-1">
+              {organizerAttendsEvent
+                ? 'Incluye al organizador en este número.'
+                : 'No incluye al organizador, porque has indicado que no asistirás.'}
+            </p>
           </div>
 
-          {/* Ubicación */}
+          {/* UbicaciÃ³n */}
           <div>
-            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Ubicación</label>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">UbicaciÃ³n</label>
             <input type="text" value={editFormData.location} onChange={(e) => setEditFormData(prev => ({ ...prev, location: e.target.value }))} placeholder="Club Dreadnought" className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]" />
           </div>
 
-          {/* Dirección */}
+          {/* DirecciÃ³n */}
           <div>
-            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Dirección (opcional)</label>
+            <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">DirecciÃ³n (opcional)</label>
             <input type="text" value={editFormData.address} onChange={(e) => setEditFormData(prev => ({ ...prev, address: e.target.value }))} className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-inputBackground)] text-[var(--color-inputText)]" />
           </div>
 
@@ -2879,8 +2887,8 @@ export default function EventDetail() {
           await handleEditExpansionSelect(game);
           setIsEditExpansionModalOpen(false);
         }}
-        title="Añadir expansión desde la BGG"
-        searchPlaceholder="Busca una expansión..."
+        title="AÃ±adir expansiÃ³n desde la BGG"
+        searchPlaceholder="Busca una expansiÃ³n..."
         allowRPGG={false}
         filterExpansionOnly
       />
@@ -2895,7 +2903,7 @@ export default function EventDetail() {
         title="Seleccionar segunda partida enlazada"
       />
 
-      {/* Modal de confirmación de cerrar plazas */}
+      {/* Modal de confirmaciÃ³n de cerrar plazas */}
       <Modal
         isOpen={isCloseCapacityModalOpen}
         onClose={() => setIsCloseCapacityModalOpen(false)}
@@ -2903,7 +2911,7 @@ export default function EventDetail() {
       >
         <div className="space-y-4">
           <p className="text-[var(--color-textSecondary)]">
-            ¿Quieres cerrar la partida al número actual de asistentes?
+            Â¿Quieres cerrar la partida al nÃºmero actual de asistentes?
           </p>
           <div className="flex gap-3 justify-end">
             <Button
@@ -2925,7 +2933,7 @@ export default function EventDetail() {
         </div>
       </Modal>
 
-      {/* Modal de confirmación de eliminación */}
+      {/* Modal de confirmaciÃ³n de eliminaciÃ³n */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => { setIsDeleteModalOpen(false); setCancellationReason(''); }}
@@ -2933,11 +2941,11 @@ export default function EventDetail() {
       >
         <div className="space-y-4">
           <p className="text-[var(--color-textSecondary)]">
-            ¿Estás seguro de que quieres cancelar esta partida? Se notificará a todos los participantes.
+            Â¿EstÃ¡s seguro de que quieres cancelar esta partida? Se notificarÃ¡ a todos los participantes.
           </p>
           <div>
             <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
-              Motivo de cancelación <span className="text-red-500">*</span>
+              Motivo de cancelaciÃ³n <span className="text-red-500">*</span>
             </label>
             <select
               value={cancellationReason}
@@ -2974,7 +2982,7 @@ export default function EventDetail() {
         </div>
       </Modal>
 
-      {/* Modal de confirmación de abandono */}
+      {/* Modal de confirmaciÃ³n de abandono */}
       <Modal
         isOpen={isUnregisterModalOpen}
         onClose={() => setIsUnregisterModalOpen(false)}
@@ -2983,8 +2991,8 @@ export default function EventDetail() {
         <div className="space-y-4">
           <p className="text-[var(--color-textSecondary)]">
             {isPendingApproval
-              ? '¿Estás seguro de que quieres cancelar tu solicitud? Se notificará al organizador.'
-              : '¿Estás seguro de que quieres abandonar esta partida? Se notificará al organizador y al resto de jugadores.'}
+              ? 'Â¿EstÃ¡s seguro de que quieres cancelar tu solicitud? Se notificarÃ¡ al organizador.'
+              : 'Â¿EstÃ¡s seguro de que quieres abandonar esta partida? Se notificarÃ¡ al organizador y al resto de jugadores.'}
           </p>
           <div className="flex gap-3 justify-end">
             <Button
