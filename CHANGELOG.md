@@ -6,6 +6,37 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-05
 
+### feat: chat por evento para que los inscritos puedan coordinarse
+
+Se añade un chat por evento visible solo para inscritos (CONFIRMED, PENDING_APPROVAL, WAITLIST) y administradores. La motivación es que los socios no tenían forma de contactar con otros asistentes a una partida sin exponer datos de contacto.
+
+El chat se activa bajo demanda con un botón "Iniciar chat del evento" — no hay polling hasta que alguien lo abre. Una vez activo, se actualiza cada 10 segundos. El chat se cierra automáticamente a la escritura 3 horas después de la hora de fin estimada del evento (si el evento no tiene hora/duración definida, nunca cierra).
+
+En desktop el chat ocupa la columna derecha del grid junto a la lista de asistentes. En móvil aparece debajo de los asistentes.
+
+**Backend:**
+
+- `server/prisma/schema.prisma`: nuevo modelo `EventMessage` con campos `id`, `eventId`, `userId`, `content`, `createdAt` e índice compuesto `(eventId, createdAt)`. Relaciones inversas añadidas en `Event` y `User`.
+- `server/prisma/migrations/20260505140000_add_event_messages/migration.sql`: migración SQL lista para aplicar en Railway.
+- `server/src/controllers/eventMessageController.ts`: nuevo controlador con `getMessages` (GET, devuelve últimos 100 mensajes con avatar y nick) y `postMessage` (POST, valida acceso, cierre temporal y límite de 500 caracteres).
+- `server/src/routes/eventRoutes.ts`: rutas `GET /:id/messages` y `POST /:id/messages` con middleware `authenticate`.
+
+**Frontend:**
+
+- `client/src/components/events/EventChat.tsx`: nuevo componente con estado `isActive`, polling con `refetchInterval: 10_000`, burbujas diferenciando mensajes propios y ajenos, textarea con envío por Enter.
+- `client/src/pages/EventDetail.tsx`: integración del chat en el grid de asistentes. Variables `canAccessChat`, `isChatClosed`, `canWriteChat`. El chat solo se renderiza si el usuario tiene acceso.
+
+### fix: corregir encoding de EventDetail.tsx (UTF-8 BOM → UTF-8, caracteres corruptos)
+
+El fichero `client/src/pages/EventDetail.tsx` estaba guardado con BOM (UTF-8 with BOM) y tenía numerosos caracteres corruptos por doble codificación Latin-1/UTF-8 (secuencias `Ã³`, `Â¿`, etc.) y caracteres de reemplazo U+FFFD en emojis y textos.
+
+Se convierte el fichero a UTF-8 sin BOM y se corrigen todos los casos:
+
+- Tildes y eñes: `edición`, `validación`, `aprobación`, `descripción`, `Invitación`, `Él rellenará`, `Añadir resultados`, `máximo`, `número`, `asistirás`, etc.
+- Emojis rotos: `‼️` en los tres indicadores de override de rol CHEMI, `🏆` en el ganador de resultados, `⚠️` en el comentario de empate.
+
+---
+
 ### fix: aclarar si el aforo incluye al organizador en crear y editar partida
 
 Se corrige un punto de confusión en los formularios de partida: el texto del aforo ya no da por hecho que el organizador siempre ocupa plaza. Ahora el mensaje explica de forma explícita si el número máximo incluye o no al organizador según su asistencia real.

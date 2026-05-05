@@ -160,6 +160,7 @@ model User {
   pushDevices              PushDevice[]
   firstPlayerSpinsAsSpinner FirstPlayerSpin[]             @relation("FirstPlayerSpinSpinner")
   firstPlayerSpinsAsChosen  FirstPlayerSpin[]             @relation("FirstPlayerSpinChosen")
+  eventMessages             EventMessage[]
 
   @@index([email])
   @@index([status])
@@ -402,6 +403,7 @@ model Event {
   organizer       User     @relation("EventOrganizer", fields: [createdBy], references: [id])
 
   results         EventResult[]
+  messages        EventMessage[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -1757,4 +1759,17 @@ model FirstPlayerSpin {
   @@index([eventId])
   @@index([spinnerId])
   @@index([chosenId])
+}
+
+model EventMessage {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([eventId, createdAt])
+  @@index([userId])
 }
