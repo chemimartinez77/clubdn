@@ -336,7 +336,7 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
                         key={interest.key}
                         type="button"
                         onClick={() => toggleInterest(interest.key)}
-                        className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+                        className="inline-flex items-center rounded-full border px-4 py-2 text-sm font-medium transition-colors"
                         style={{
                           borderColor: selected ? colors.primaryLight : colors.inputBorder,
                           borderWidth: selected ? '2px' : '1px',
@@ -344,18 +344,6 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
                           color: selected ? colors.text : colors.textSecondary,
                         }}
                       >
-                        {selected && (
-                          <span
-                            aria-hidden="true"
-                            className="inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold"
-                            style={{
-                              backgroundColor: colors.primary,
-                              color: '#fff',
-                            }}
-                          >
-                            ✓
-                          </span>
-                        )}
                         {interest.label}
                       </button>
                     );
