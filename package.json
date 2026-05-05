@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "stats:project": "node scripts/project-stats.cjs",
+    "stats:project:checks": "node scripts/project-stats.cjs --with-checks"
+  },
   "devDependencies": {
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"

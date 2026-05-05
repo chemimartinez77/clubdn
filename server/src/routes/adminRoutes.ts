@@ -116,7 +116,7 @@ router.patch('/members/:memberId/combat-zone', toggleCombatZoneAccess);
  * POST /api/admin/members/:memberId/impersonate
  * Generar token de impersonación (solo SUPER_ADMIN)
  */
-router.post('/members/:memberId/impersonate', impersonateMember);
+router.post('/members/:memberId/impersonate', authenticate, impersonateMember);
 
 /**
  * GET /api/admin/members/export/csv

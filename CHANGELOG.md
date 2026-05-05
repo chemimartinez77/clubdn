@@ -6,6 +6,16 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-05
 
+### fix: el endpoint de impersonación devolvía 403 porque faltaba authenticate
+
+La ruta `POST /api/admin/members/:memberId/impersonate` no tenía el middleware `authenticate`, por lo que `req.user` llegaba `undefined` al controlador. El check `actorRole !== 'CHEMI'` fallaba siempre devolviendo 403, haciendo que el botón "Login as" en el directorio de miembros no funcionara en staging.
+
+**Backend:**
+
+- `server/src/routes/adminRoutes.ts`: añadido `authenticate` a la ruta de impersonación.
+
+---
+
 ### feat: chat por evento para que los inscritos puedan coordinarse
 
 Se añade un chat por evento visible solo para inscritos (CONFIRMED, PENDING_APPROVAL, WAITLIST) y administradores. La motivación es que los socios no tenían forma de contactar con otros asistentes a una partida sin exponer datos de contacto.
