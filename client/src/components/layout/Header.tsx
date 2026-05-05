@@ -91,13 +91,12 @@ export default function Header() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center">
             <img
               src={themeMode === 'dark' ? '/logowhite.png' : '/logo.png'}
               alt="Club DN Logo"
               className="w-32 h-16 rounded-lg"
             />
-            <span className="text-xl font-bold text-[var(--color-text)]">Club Dreadnought</span>
           </Link>
 
           {/* Desktop Navigation */}

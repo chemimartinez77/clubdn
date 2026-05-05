@@ -56,6 +56,11 @@ interface LookupResult {
   lastName?: string;
 }
 
+interface KnownGuestIdentity {
+  firstName: string;
+  lastName: string;
+}
+
 interface JoinViaShareLinkProps {
   isPreview?: boolean;
 }
@@ -157,6 +162,8 @@ export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLink
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [isCheckingLookup, setIsCheckingLookup] = useState(false);
   const [previewNotice, setPreviewNotice] = useState<string | null>(null);
+  const [knownGuestIdentity, setKnownGuestIdentity] = useState<KnownGuestIdentity | null>(null);
+  const [showKnownGuestConfirmModal, setShowKnownGuestConfirmModal] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['shareLink', token],
@@ -178,7 +185,7 @@ export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLink
   const confirmFullPhone = `${phonePrefix}${normalizedConfirmPhoneNumber}`;
   const dniValid = isValidDni(dni);
   const phoneValid = isValidPhone(fullPhone);
-  const nameValid = firstName.trim().length >= 2 && lastName.trim().length >= 2;
+  const nameValid = !isFirstVisit || (firstName.trim().length >= 2 && lastName.trim().length >= 2);
   const confirmationsValid = !isFirstVisit || (
     normalizedDni === normalizedConfirmDni &&
     fullPhone === confirmFullPhone &&
@@ -201,10 +208,10 @@ export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLink
   }
 
   const requestMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (guestIdentity: KnownGuestIdentity) => {
       const res = await api.post<ApiResponse<RegistrationResult>>(`/api/share/invite/${token}/request`, {
-        guestFirstName: firstName.trim(),
-        guestLastName: lastName.trim(),
+        guestFirstName: guestIdentity.firstName.trim(),
+        guestLastName: guestIdentity.lastName.trim(),
         guestDni: normalizedDni,
         guestPhone: fullPhone,
         honeypot: honeypotRef.current?.value ?? ''
@@ -223,12 +230,17 @@ export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLink
     event.preventDefault();
   };
 
+  const submitGuestRequest = async (guestIdentity: KnownGuestIdentity) => {
+    await requestMutation.mutateAsync(guestIdentity);
+  };
+
   const handleSubmit = async () => {
     if (requestMutation.isPending || isCheckingLookup) return;
 
     requestMutation.reset();
     setLookupError(null);
     setPreviewNotice(null);
+    setKnownGuestIdentity(null);
 
     if (!dniValid) {
       setLookupError('DNI no válido');
@@ -240,7 +252,7 @@ export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLink
       return;
     }
 
-    if (!nameValid) {
+    if (isFirstVisit && !nameValid) {
       setLookupError('Nombre y apellidos requeridos');
       return;
     }
@@ -263,6 +275,11 @@ export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLink
     }
 
     if (isPreview) {
+      if (!isFirstVisit) {
+        setKnownGuestIdentity({ firstName: 'Invitado', lastName: 'De prueba' });
+        setShowKnownGuestConfirmModal(true);
+        return;
+      }
       setPreviewNotice('Vista previa activa: este formulario no realiza ninguna validación remota ni envía datos.');
       return;
     }
@@ -286,16 +303,33 @@ export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLink
       }
 
       if (isFirstVisit && lookupResult.match === 'both') {
-        setLookupError('Este invitado ya aparece en el historial. Desmarca "Es la primera vez que viene invitado" si los datos son correctos.');
+        setLookupError('Este invitado ya aparece en el historial. Desmarca "Es mi primera vez como invitado" si los datos son correctos.');
         return;
       }
 
       if (!isFirstVisit && lookupResult.match === 'none') {
-        setLookupError('No existe historial para este DNI y teléfono. Marca "Es la primera vez que viene invitado" y confirma ambos datos.');
+        setLookupError('No existe historial para este DNI y teléfono. Marca "Es mi primera vez como invitado" y confirma ambos datos.');
         return;
       }
 
-      await requestMutation.mutateAsync();
+      if (!isFirstVisit) {
+        if (!lookupResult.firstName?.trim() || !lookupResult.lastName?.trim()) {
+          setLookupError('No se han podido recuperar el nombre y los apellidos del invitado desde el historial.');
+          return;
+        }
+
+        setKnownGuestIdentity({
+          firstName: lookupResult.firstName.trim(),
+          lastName: lookupResult.lastName.trim(),
+        });
+        setShowKnownGuestConfirmModal(true);
+        return;
+      }
+
+      await submitGuestRequest({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+      });
     } catch (error: any) {
       const serverMessage = error?.response?.data?.message;
       setLookupError(serverMessage || 'No se ha podido validar el historial del invitado.');
@@ -447,7 +481,7 @@ export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLink
                     }}
                     className="mt-1 h-4 w-4 rounded border-[var(--color-cardBorder)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                   />
-                  <span className="text-sm text-[var(--color-text)]">Es la primera vez que viene invitado</span>
+                  <span className="text-sm text-[var(--color-text)]">Es mi primera vez como invitado en el club</span>
                 </label>
               </div>
 
@@ -462,9 +496,8 @@ export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLink
                   }}
                   placeholder="12345678Z"
                   maxLength={9}
-                  className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] ${
-                    dni.length > 0 && !dniValid ? 'border-red-500' : 'border-[var(--color-cardBorder)]'
-                  }`}
+                  className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] ${dni.length > 0 && !dniValid ? 'border-red-500' : 'border-[var(--color-cardBorder)]'
+                    }`}
                 />
                 {dni.length > 0 && !dniValid && (
                   <p className="text-xs text-red-500 mt-1">DNI no válido</p>
@@ -484,11 +517,10 @@ export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLink
                     onPaste={handlePasteBlock}
                     placeholder="12345678Z"
                     maxLength={9}
-                    className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] ${
-                      confirmDni.length > 0 && normalizedDni !== normalizedConfirmDni
+                    className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] ${confirmDni.length > 0 && normalizedDni !== normalizedConfirmDni
                         ? 'border-red-500'
                         : 'border-[var(--color-cardBorder)]'
-                    }`}
+                      }`}
                   />
                   {confirmDni.length > 0 && normalizedDni !== normalizedConfirmDni && (
                     <p className="text-xs text-red-500 mt-1">Los DNIs no coinciden.</p>
@@ -519,9 +551,8 @@ export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLink
                       setPhoneNumber(sanitizePhoneInput(e.target.value));
                     }}
                     placeholder="612 345 678"
-                    className={`flex-1 px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] ${
-                      phoneNumber.length > 0 && !phoneValid ? 'border-red-500' : 'border-[var(--color-cardBorder)]'
-                    }`}
+                    className={`flex-1 px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] ${phoneNumber.length > 0 && !phoneValid ? 'border-red-500' : 'border-[var(--color-cardBorder)]'
+                      }`}
                   />
                 </div>
                 {phoneNumber.length > 0 && !phoneValid && (
@@ -541,11 +572,10 @@ export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLink
                     }}
                     onPaste={handlePasteBlock}
                     placeholder="612 345 678"
-                    className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] ${
-                      confirmPhoneNumber.length > 0 && fullPhone !== confirmFullPhone
+                    className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] ${confirmPhoneNumber.length > 0 && fullPhone !== confirmFullPhone
                         ? 'border-red-500'
                         : 'border-[var(--color-cardBorder)]'
-                    }`}
+                      }`}
                   />
                   {confirmPhoneNumber.length > 0 && fullPhone !== confirmFullPhone && (
                     <p className="text-xs text-red-500 mt-1">Los teléfonos no coinciden.</p>
@@ -553,37 +583,41 @@ export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLink
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium mb-1 text-[var(--color-text)]">
-                  Nombre
-                </label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={e => {
-                    setLookupError(null);
-                    setFirstName(e.target.value);
-                  }}
-                  placeholder="Tu nombre"
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                />
-              </div>
+              {isFirstVisit && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-[var(--color-text)]">
+                      Nombre
+                    </label>
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={e => {
+                        setLookupError(null);
+                        setFirstName(e.target.value);
+                      }}
+                      placeholder="Tu nombre"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-1 text-[var(--color-text)]">
-                  Apellidos
-                </label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={e => {
-                    setLookupError(null);
-                    setLastName(e.target.value);
-                  }}
-                  placeholder="Tus apellidos"
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-[var(--color-text)]">
+                      Apellidos
+                    </label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={e => {
+                        setLookupError(null);
+                        setLastName(e.target.value);
+                      }}
+                      placeholder="Tus apellidos"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    />
+                  </div>
+                </>
+              )}
 
               {/* Honeypot oculto */}
               <input
@@ -689,6 +723,52 @@ export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLink
               >
                 Cerrar
               </button>
+            </div>
+          </div>
+        )}
+
+        {showKnownGuestConfirmModal && knownGuestIdentity && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.75)' }}
+            onClick={() => setShowKnownGuestConfirmModal(false)}
+          >
+            <div
+              className="bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <h2 className="text-base font-bold text-[var(--color-text)]">Confirmación de datos</h2>
+              <div className="space-y-2 text-sm text-[var(--color-textSecondary)]">
+                <p><span className="font-semibold text-[var(--color-text)]">Nombre:</span> {knownGuestIdentity.firstName}</p>
+                <p><span className="font-semibold text-[var(--color-text)]">Apellidos:</span> {knownGuestIdentity.lastName}</p>
+                <p><span className="font-semibold text-[var(--color-text)]">DNI:</span> {normalizedDni}</p>
+                <p><span className="font-semibold text-[var(--color-text)]">Teléfono:</span> {fullPhone}</p>
+              </div>
+              <p className="text-sm text-[var(--color-text)]">¿Confirmas que tus datos de invitado son correctos?</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowKnownGuestConfirmModal(false)}
+                  className="flex-1 py-2 px-4 rounded-xl font-medium text-[var(--color-textSecondary)] border border-[var(--color-cardBorder)] hover:bg-[var(--color-background)] transition-colors text-sm"
+                >
+                  Revisar
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setShowKnownGuestConfirmModal(false);
+                    if (isPreview) {
+                      setPreviewNotice('Vista previa activa: esta confirmación no envía ningún dato real.');
+                      return;
+                    }
+                    await submitGuestRequest(knownGuestIdentity);
+                  }}
+                  disabled={requestMutation.isPending}
+                  className="flex-1 py-2 px-4 rounded-xl font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
+                >
+                  Confirmar
+                </button>
+              </div>
             </div>
           </div>
         )}
