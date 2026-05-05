@@ -508,6 +508,7 @@ function getCategoryDisplayName(category: BadgeCategory): string {
     [BadgeCategory.WARHAMMER]: 'Warhammer',
     [BadgeCategory.FILLERS_PARTY]: 'Fillers / Party',
     [BadgeCategory.CARTAS_LCG_TCG]: 'Cartas / LCG / TCG',
+    [BadgeCategory.ABSTRACTOS]: 'Abstractos',
     [BadgeCategory.CATALOGADOR]: 'Catalogador',
     [BadgeCategory.ORGANIZADOR]: 'Organizador',
     [BadgeCategory.REPETIDOR]: 'Repetidor',

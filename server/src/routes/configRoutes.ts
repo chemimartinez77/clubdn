@@ -4,6 +4,7 @@ import { authenticate, requireAdmin } from '../middleware/auth';
 import {
   getClubConfig,
   getPublicConfig,
+  getOnboardingConfig,
   updateClubConfig,
   getMembershipTypes
 } from '../controllers/configController';
@@ -15,6 +16,7 @@ router.get('/public', getPublicConfig);
 
 // Rutas públicas (autenticadas)
 router.get('/membership-types', authenticate, getMembershipTypes);
+router.get('/onboarding-options', authenticate, getOnboardingConfig);
 
 // Rutas de administración
 router.get('/', authenticate, requireAdmin, getClubConfig);

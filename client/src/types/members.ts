@@ -14,6 +14,7 @@ export interface MemberData {
   fechaBaja: string | null;
   paymentStatus: PaymentStatusType;
   phone: string | null;
+  clubInterests: string[];
   lastPaymentDate: string | null;
   showTrialPromotionWarning: boolean;
   trialPromotionWarningDate: string | null;
@@ -31,6 +32,7 @@ export interface MemberProfileInfo {
   province: string | null;
   postalCode: string | null;
   iban: string | null;
+  clubInterests: string[];
   imageConsentActivities: boolean;
   imageConsentSocial: boolean;
   accessCombatZone: boolean;
@@ -67,6 +69,7 @@ export interface MemberProfileResponse {
 export interface MemberFilters {
   search: string;
   membershipType: MembershipTypeFilter;
+  interests: string[];
   dateFrom: string;
   dateTo: string;
   paymentStatus: PaymentStatusFilter;
@@ -85,5 +88,9 @@ export interface PaginationData {
 
 export interface MembersResponse {
   members: MemberData[];
+  interestCounts: Array<{
+    key: string;
+    count: number;
+  }>;
   pagination: PaginationData;
 }

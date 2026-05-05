@@ -6,6 +6,39 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-05
 
+### feat: semanas completas en calendario mensual e intereses controlados en onboarding y administración
+
+Se mejora la planificación mensual del calendario mostrando siempre semanas completas, incluidos los días visibles del mes anterior y del siguiente, con navegación directa al pulsarlos. Además, se introduce un sistema de intereses controlados para onboarding y administración: catálogo editable desde configuración, selección por chips en la ficha de alta, persistencia en perfil y filtros administrativos con resumen de conteos.
+
+**Frontend:**
+
+- `client/src/components/events/EventCalendar.tsx`: la vista mensual deja de mostrar huecos vacíos y renderiza celdas de fecha reales para toda la rejilla visible.
+- `client/src/components/events/calendarMonthRange.ts`: nueva utilidad compartida para calcular el rango visible completo del mes.
+- `client/src/pages/Events.tsx`: la consulta mensual se amplía del rango estricto del mes al rango completo de la rejilla visible, incluyendo días adyacentes.
+- `client/src/components/events/EventCalendar.tsx`: los días del mes anterior y siguiente se distinguen con texto del tipo `29 jun` o `1 ago` y estilo visual atenuado.
+- `client/src/components/events/EventCalendar.tsx`: al pulsar un día adyacente se abre su detalle y se actualiza automáticamente el mes actual al mes real de la celda.
+- `client/src/pages/Onboarding.tsx`: nuevo bloque opcional `Intereses dentro del club` con chips multiselección cargados desde configuración.
+- `client/src/pages/admin/ClubConfig.tsx`: nueva gestión del catálogo de intereses del club con edición de `key` y `label`, alta, borrado y reordenación.
+- `client/src/pages/admin/Members.tsx`: nuevos filtros por intereses, resumen de conteos por interés y visualización de intereses en la ficha del miembro.
+- `client/src/hooks/useMembers.ts`, `client/src/types/config.ts` y `client/src/types/members.ts`: ampliación de tipos y parámetros de consulta para soportar catálogo, selección y filtros de intereses.
+
+**Backend:**
+
+- `server/prisma/schema.prisma`: nuevo campo `clubInterests` en `UserProfile` y nuevo campo `clubInterestsCatalog` en `ClubConfig`.
+- `server/prisma/migrations/20260505120000_add_club_interests_catalog_and_profile_field/migration.sql`: migración para persistir catálogo e intereses seleccionados.
+- `server/src/utils/clubInterests.ts`: nueva utilidad para catálogo inicial, normalización y validación de claves de intereses.
+- `server/src/controllers/configController.ts`: la configuración del club normaliza y persiste el catálogo de intereses, y expone un endpoint específico para opciones de onboarding.
+- `server/src/routes/configRoutes.ts`: nueva ruta autenticada `/api/config/onboarding-options`.
+- `server/src/controllers/profileController.ts`: el onboarding valida que los intereses enviados pertenezcan al catálogo activo antes de guardarlos.
+- `server/src/controllers/memberController.ts` y `server/src/types/members.ts`: soporte para intereses en listado, ficha, filtros y exportación CSV de miembros.
+
+**Verificación:**
+
+- `client`: `npm run build` correcto.
+- `server`: `cmd /c npx tsc --noEmit` correcto tras regenerar tipos de Prisma con `npx prisma generate --no-engine`.
+
+---
+
 ### feat: validación final del formulario público de invitados, ruta de preview y marcador visual para override CHEMI
 
 Se refuerza el flujo público de invitaciones externas para evitar comprobaciones en vivo que generaban alertas repetidas mientras se escribía el teléfono. La validación del historial pasa a ejecutarse sólo al confirmar el formulario, con un modo explícito para primeras visitas, confirmación manual de DNI y teléfono, y una ruta pública de preview sin backend para revisar la UX sin riesgo de envío real. Además, se añade una marca visual en `Apuntar miembro` cuando esa acción está habilitada únicamente por el override del rol `CHEMI`.

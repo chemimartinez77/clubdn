@@ -11,6 +11,7 @@ export const useMembers = (filters: MemberFilters) => {
   const queryString = new URLSearchParams({
     search: filters.search || '',
     membershipType: filters.membershipType || 'all',
+    interests: filters.interests.join(','),
     dateFrom: filters.dateFrom || '',
     dateTo: filters.dateTo || '',
     paymentStatus: filters.paymentStatus || 'all',
@@ -56,6 +57,7 @@ export const useMembers = (filters: MemberFilters) => {
     const exportQueryString = new URLSearchParams({
       search: filters.search || '',
       membershipType: filters.membershipType || 'all',
+      interests: filters.interests.join(','),
       dateFrom: filters.dateFrom || '',
       dateTo: filters.dateTo || '',
       paymentStatus: filters.paymentStatus || 'all',

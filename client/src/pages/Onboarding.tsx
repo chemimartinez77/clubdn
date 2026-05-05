@@ -1,10 +1,12 @@
 // client/src/pages/Onboarding.tsx
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/axios';
 import { useTheme } from '../hooks/useTheme';
 import type { ThemeColors } from '../config/themes';
+import type { ApiResponse } from '../types/auth';
+import type { OnboardingConfig } from '../types/config';
 
 interface OnboardingForm {
   firstName: string;
@@ -16,6 +18,7 @@ interface OnboardingForm {
   province: string;
   postalCode: string;
   iban: string;
+  clubInterests: string[];
   imageConsentActivities: boolean;
   imageConsentSocial: boolean;
   idPhoto: File | null;
@@ -32,6 +35,7 @@ const EMPTY: OnboardingForm = {
   province: '',
   postalCode: '',
   iban: '',
+  clubInterests: [],
   imageConsentActivities: false,
   imageConsentSocial: false,
   idPhoto: null,
@@ -147,6 +151,15 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showTerms, setShowTerms] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data: onboardingConfig } = useQuery({
+    queryKey: ['onboardingConfig'],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<OnboardingConfig>>('/api/config/onboarding-options');
+      return response.data.data;
+    },
+    enabled: !isPreview,
+  });
+  const clubInterestsCatalog = onboardingConfig?.clubInterestsCatalog ?? [];
 
   const mutation = useMutation({
     mutationFn: (data: OnboardingForm) => {
@@ -160,6 +173,7 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
       fd.append('province', data.province);
       fd.append('postalCode', data.postalCode);
       fd.append('iban', data.iban);
+      fd.append('clubInterests', JSON.stringify(data.clubInterests));
       fd.append('imageConsentActivities', String(data.imageConsentActivities));
       fd.append('imageConsentSocial', String(data.imageConsentSocial));
       fd.append('termsAccepted', 'true');
@@ -240,6 +254,15 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
     );
   }
 
+  const toggleInterest = (interestKey: string) => {
+    setForm((current) => ({
+      ...current,
+      clubInterests: current.clubInterests.includes(interestKey)
+        ? current.clubInterests.filter((key) => key !== interestKey)
+        : [...current.clubInterests, interestKey]
+    }));
+  };
+
   return (
     <>
       {showTerms && <TermsModal colors={colors} onClose={() => setShowTerms(false)} />}
@@ -282,6 +305,37 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
               {field('postalCode', 'Código Postal', { half: true })}
               {field('iban', 'IBAN')}
             </div>
+
+            {clubInterestsCatalog.length > 0 && (
+              <div className="mt-6">
+                <p className="text-sm font-medium mb-1" style={{ color: colors.text }}>
+                  Intereses dentro del club
+                </p>
+                <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
+                  Opcional. Selecciona todos los temas que te interesen para que podamos conocer mejor los gustos de la comunidad.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {clubInterestsCatalog.map((interest) => {
+                    const selected = form.clubInterests.includes(interest.key);
+                    return (
+                      <button
+                        key={interest.key}
+                        type="button"
+                        onClick={() => toggleInterest(interest.key)}
+                        className="rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+                        style={{
+                          borderColor: selected ? colors.primary : colors.cardBorder,
+                          backgroundColor: selected ? colors.primary : colors.hover,
+                          color: selected ? '#fff' : colors.text,
+                        }}
+                      >
+                        {interest.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Consentimientos de imagen */}
             <div className="mt-6 space-y-3">

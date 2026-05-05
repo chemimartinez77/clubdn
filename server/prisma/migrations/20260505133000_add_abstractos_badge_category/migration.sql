@@ -1,0 +1,1 @@
+ALTER TYPE "BadgeCategory" ADD VALUE 'ABSTRACTOS';

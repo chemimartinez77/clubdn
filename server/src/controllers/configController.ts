@@ -1,8 +1,10 @@
 // server/src/controllers/configController.ts
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { DEFAULT_CLUB_INTERESTS, normalizeClubInterestCatalog } from '../utils/clubInterests';
 
 const prisma = new PrismaClient();
+const DEFAULT_CLUB_INTERESTS_JSON = DEFAULT_CLUB_INTERESTS as unknown as Prisma.InputJsonValue;
 
 /**
  * Obtener la configuración del club
@@ -56,6 +58,7 @@ export const getClubConfig = async (_req: Request, res: Response) => {
               description: 'Usuario dado de baja'
             }
           ],
+          clubInterestsCatalog: DEFAULT_CLUB_INTERESTS_JSON,
           defaultCurrency: 'EUR',
           inviteMaxActive: 5,
           inviteMaxMonthly: 10,
@@ -69,7 +72,8 @@ export const getClubConfig = async (_req: Request, res: Response) => {
     // Normalizar membershipTypes a array por si el campo Json está corrompido
     const data = {
       ...config,
-      membershipTypes: Array.isArray(config.membershipTypes) ? config.membershipTypes : []
+      membershipTypes: Array.isArray(config.membershipTypes) ? config.membershipTypes : [],
+      clubInterestsCatalog: normalizeClubInterestCatalog(config.clubInterestsCatalog)
     };
 
     return res.json({
@@ -124,6 +128,7 @@ export const updateClubConfig = async (req: Request, res: Response) => {
       clubPhone,
       clubAddress,
       membershipTypes,
+      clubInterestsCatalog,
       defaultCurrency,
       inviteMaxActive,
       inviteMaxMonthly,
@@ -138,6 +143,10 @@ export const updateClubConfig = async (req: Request, res: Response) => {
       spinEffect
     } = req.body;
 
+    const normalizedClubInterestsCatalog = clubInterestsCatalog !== undefined
+      ? normalizeClubInterestCatalog(clubInterestsCatalog)
+      : undefined;
+
     const config = await prisma.clubConfig.upsert({
       where: { id: 'club_config' },
       update: {
@@ -146,6 +155,9 @@ export const updateClubConfig = async (req: Request, res: Response) => {
         ...(clubPhone !== undefined && { clubPhone }),
         ...(clubAddress !== undefined && { clubAddress }),
         ...(membershipTypes && { membershipTypes }),
+        ...(normalizedClubInterestsCatalog !== undefined && {
+          clubInterestsCatalog: normalizedClubInterestsCatalog as unknown as Prisma.InputJsonValue
+        }),
         ...(defaultCurrency && { defaultCurrency }),
         ...(inviteMaxActive !== undefined && { inviteMaxActive }),
         ...(inviteMaxMonthly !== undefined && { inviteMaxMonthly }),
@@ -166,6 +178,7 @@ export const updateClubConfig = async (req: Request, res: Response) => {
         clubPhone,
         clubAddress,
         membershipTypes: membershipTypes || [],
+        clubInterestsCatalog: (normalizedClubInterestsCatalog ?? DEFAULT_CLUB_INTERESTS) as unknown as Prisma.InputJsonValue,
         defaultCurrency: defaultCurrency || 'EUR',
         inviteMaxActive: inviteMaxActive ?? 5,
         inviteMaxMonthly: inviteMaxMonthly ?? 10,
@@ -183,7 +196,11 @@ export const updateClubConfig = async (req: Request, res: Response) => {
 
     return res.json({
       success: true,
-      data: config,
+      data: {
+        ...config,
+        membershipTypes: Array.isArray(config.membershipTypes) ? config.membershipTypes : [],
+        clubInterestsCatalog: normalizeClubInterestCatalog(config.clubInterestsCatalog)
+      },
       message: 'Configuración actualizada correctamente'
     });
   } catch (error) {
@@ -191,6 +208,28 @@ export const updateClubConfig = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: 'Error al actualizar la configuración del club'
+    });
+  }
+};
+
+export const getOnboardingConfig = async (_req: Request, res: Response) => {
+  try {
+    const config = await prisma.clubConfig.findUnique({
+      where: { id: 'club_config' },
+      select: { clubInterestsCatalog: true }
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        clubInterestsCatalog: normalizeClubInterestCatalog(config?.clubInterestsCatalog)
+      }
+    });
+  } catch (error) {
+    console.error('[CONFIG] Error al obtener configuración de onboarding:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener la configuración de onboarding'
     });
   }
 };

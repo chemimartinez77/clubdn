@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import Button from '../../components/ui/Button';
 import { useToast } from '../../hooks/useToast';
 import { api } from '../../api/axios';
-import type { ClubConfig, ClubConfigUpdate, MembershipTypeConfig, LoginParticleStyle } from '../../types/config';
+import type { ClubConfig, ClubConfigUpdate, MembershipTypeConfig, LoginParticleStyle, ClubInterestConfig } from '../../types/config';
 import type { ApiResponse } from '../../types/auth';
 
 function Tooltip({ text }: { text: string }) {
@@ -105,6 +105,7 @@ export default function ClubConfigPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<ClubConfigUpdate>({});
   const [membershipTypes, setMembershipTypes] = useState<MembershipTypeConfig[]>([]);
+  const [clubInterestsCatalog, setClubInterestsCatalog] = useState<ClubInterestConfig[]>([]);
 
   const { data: config, isLoading } = useQuery({
     queryKey: ['clubConfig'],
@@ -135,6 +136,7 @@ export default function ClubConfigPage() {
         spinEffect: config.spinEffect ?? 'ruleta',
       });
       setMembershipTypes(Array.isArray(config.membershipTypes) ? config.membershipTypes : []);
+      setClubInterestsCatalog(Array.isArray(config.clubInterestsCatalog) ? config.clubInterestsCatalog : []);
     }
   }, [config]);
 
@@ -157,7 +159,8 @@ export default function ClubConfigPage() {
     e.preventDefault();
     updateMutation.mutate({
       ...formData,
-      membershipTypes
+      membershipTypes,
+      clubInterestsCatalog
     });
   };
 
@@ -185,6 +188,35 @@ export default function ClubConfigPage() {
     }
     const updated = membershipTypes.filter((_, i) => i !== index);
     setMembershipTypes(updated);
+  };
+
+  const handleInterestChange = (index: number, field: keyof ClubInterestConfig, value: string) => {
+    const updated = [...clubInterestsCatalog];
+    updated[index] = { ...updated[index], [field]: value };
+    setClubInterestsCatalog(updated);
+  };
+
+  const handleAddInterest = () => {
+    const nextIndex = clubInterestsCatalog.length + 1;
+    setClubInterestsCatalog([
+      ...clubInterestsCatalog,
+      { key: `nuevo-interes-${nextIndex}`, label: 'Nuevo interés' }
+    ]);
+  };
+
+  const handleRemoveInterest = (index: number) => {
+    const updated = clubInterestsCatalog.filter((_, i) => i !== index);
+    setClubInterestsCatalog(updated);
+  };
+
+  const moveInterest = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= clubInterestsCatalog.length) return;
+
+    const updated = [...clubInterestsCatalog];
+    const [moved] = updated.splice(index, 1);
+    updated.splice(nextIndex, 0, moved);
+    setClubInterestsCatalog(updated);
   };
 
   if (isLoading) {
@@ -755,6 +787,108 @@ export default function ClubConfigPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Intereses del Club</CardTitle>
+              {isEditing && (
+                <button
+                  onClick={handleAddInterest}
+                  className="px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primaryDark)] transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Añadir Interés
+                </button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {clubInterestsCatalog.map((interest, index) => (
+                <div key={`${interest.key}-${index}`} className="border border-[var(--color-cardBorder)] rounded-lg p-4 relative">
+                  {isEditing && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1">
+                      <button
+                        onClick={() => moveInterest(index, -1)}
+                        className="p-2 text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] rounded-lg transition-colors"
+                        title="Subir interés"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        onClick={() => moveInterest(index, 1)}
+                        className="p-2 text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] rounded-lg transition-colors"
+                        title="Bajar interés"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        onClick={() => handleRemoveInterest(index)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Eliminar interés"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                        Clave estable
+                      </label>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={interest.key}
+                          onChange={(e) => handleInterestChange(index, 'key', e.target.value)}
+                          className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                        />
+                      ) : (
+                        <p className="text-[var(--color-text)] py-2 font-medium">{interest.key}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
+                        Texto visible
+                      </label>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={interest.label}
+                          onChange={(e) => handleInterestChange(index, 'label', e.target.value)}
+                          className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                        />
+                      ) : (
+                        <p className="text-[var(--color-text)] py-2">{interest.label}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {!isEditing && clubInterestsCatalog.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {clubInterestsCatalog.map((interest) => (
+                    <span
+                      key={interest.key}
+                      className="rounded-full border px-3 py-1 text-sm"
+                      style={{ borderColor: 'var(--color-cardBorder)', color: 'var(--color-text)' }}
+                    >
+                      {interest.label}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -197,6 +197,7 @@ model UserProfile {
   // Preferencias de juegos
   favoriteGames   String[] // Array de nombres de juegos favoritos
   playStyle       String?  // Competitivo, Casual, Social, etc.
+  clubInterests   String[] @default([]) // Claves estables de intereses seleccionados en el club
 
   // Social
   discord         String?
@@ -696,6 +697,7 @@ model ClubConfig {
 
   // Tipos de membresía disponibles con sus configuraciones
   membershipTypes Json // Array de objetos con: { type, displayName, price, hasKey, description }
+  clubInterestsCatalog Json?
 
   // Otras configuraciones del club
   clubName       String   @default("Club Dreadnought")
@@ -1092,6 +1094,7 @@ enum BadgeCategory {
   WARHAMMER
   FILLERS_PARTY
   CARTAS_LCG_TCG
+  ABSTRACTOS
   CATALOGADOR
   ORGANIZADOR
   REPETIDOR

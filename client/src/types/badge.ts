@@ -9,6 +9,7 @@ export type BadgeCategory =
   | 'WARHAMMER'
   | 'FILLERS_PARTY'
   | 'CARTAS_LCG_TCG'
+  | 'ABSTRACTOS'
   | 'CATALOGADOR'
   | 'ORGANIZADOR'
   | 'REPETIDOR'
@@ -99,6 +100,7 @@ export const getCategoryDisplayName = (category: BadgeCategory): string => {
     WARHAMMER: 'Warhammer',
     FILLERS_PARTY: 'Fillers / Party',
     CARTAS_LCG_TCG: 'Cartas / LCG / TCG',
+    ABSTRACTOS: 'Abstractos',
     CATALOGADOR: 'Catalogador',
     CONOCEDOR_GENEROS: 'Conocedor de Generos',
     FOTOGRAFO: 'Fotografo',
@@ -124,6 +126,7 @@ export const getCategoryDescription = (category: BadgeCategory): string => {
     WARHAMMER: 'Se obtiene jugando partidas de cualquier juego del universo Warhammer (40K, Age of Sigmar, etc.).',
     FILLERS_PARTY: 'Se obtiene jugando partidas de fillers o juegos de fiesta: rapidos, sencillos y para animar cualquier reunion.',
     CARTAS_LCG_TCG: 'Se obtiene jugando partidas de juegos de cartas: LCG, TCG, juegos de cartas coleccionables o similares.',
+    ABSTRACTOS: 'Se obtiene jugando partidas de juegos abstractos: informacion perfecta o casi perfecta, reglas elegantes y poca dependencia del tema.',
     CATALOGADOR: 'Se obtiene jugando partidas en las que hayas seleccionado el genero del juego al crearlas.',
     ORGANIZADOR: 'Se obtiene organizando partidas. Cuenta cada partida que hayas creado y que haya llegado a celebrarse.',
     REPETIDOR: 'Se obtiene cuando juegas al mismo juego 3 o mas veces. Cuenta el numero de juegos distintos con al menos 3 partidas.',
@@ -148,6 +151,7 @@ export const getCategoryColor = (category: BadgeCategory): string => {
     MINIATURAS: '#059669',
     WARHAMMER: '#18181b',
     FILLERS_PARTY: '#fbbf24',
+    ABSTRACTOS: '#14b8a6',
     CATALOGADOR: '#06b6d4',
     ORGANIZADOR: '#f97316',
     REPETIDOR: '#ec4899',
@@ -174,6 +178,7 @@ export const getCategoryIcon = (category: BadgeCategory): string => {
     WARHAMMER: '\u26A1',
     FILLERS_PARTY: '\uD83C\uDF89',
     CARTAS_LCG_TCG: '\uD83C\uDCCF',
+    ABSTRACTOS: '\u265F',
     CATALOGADOR: '\uD83D\uDCDA',
     CONOCEDOR_GENEROS: '\uD83C\uDF93',
     FOTOGRAFO: '\uD83D\uDCF8',

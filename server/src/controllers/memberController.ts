@@ -1,4 +1,4 @@
-// server/src/controllers/memberController.ts
+﻿// server/src/controllers/memberController.ts
 import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 import { v2 as cloudinary } from 'cloudinary';
@@ -25,6 +25,18 @@ const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
 const normalizeText = (value: string) => value.trim().replace(/\s+/g, ' ');
 const shouldAutoCompleteOnboardingForStatus = (status?: string | null, hasProfileData?: boolean) =>
   status === 'APPROVED' && !!hasProfileData;
+const parseInterestFilter = (value: unknown): string[] => {
+  if (typeof value !== 'string') return [];
+
+  return Array.from(
+    new Set(
+      value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  );
+};
 
 /**
  * GET /api/admin/members
@@ -35,6 +47,7 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
     const {
       search = '',
       membershipType = 'all',
+      interests = '',
       dateFrom,
       dateTo,
       paymentStatus: paymentStatusFilter = 'all',
@@ -48,8 +61,9 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
     const pageSizeNum = parseInt(pageSize as string);
     const skip = (pageNum - 1) * pageSizeNum;
     const normalizedSearch = normalizeSearchTerm(search as string);
+    const selectedInterests = parseInterestFilter(interests);
 
-    // Build where clause — incluir APPROVED y SUSPENDED (dados de baja)
+    // Build where clause â€” incluir APPROVED y SUSPENDED (dados de baja)
     const where: any = {
       status: { in: ['APPROVED', 'SUSPENDED'] },
     };
@@ -78,9 +92,16 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
     if (Object.keys(membershipFilter).length > 0) {
       where.membership = membershipFilter;
     }
-    // Si no hay filtro específico, mostrar TODOS los usuarios (con o sin membresía)
+    if (selectedInterests.length > 0) {
+      where.profile = {
+        is: {
+          clubInterests: { hasSome: selectedInterests }
+        }
+      };
+    }
+    // Si no hay filtro especÃ­fico, mostrar TODOS los usuarios (con o sin membresÃ­a)
 
-    // Determine orderBy — email/startDate sort via Prisma; firstName/lastName/paymentStatus in-memory
+    // Determine orderBy â€” email/startDate sort via Prisma; firstName/lastName/paymentStatus in-memory
     if (normalizedSearch) {
       const extraWhere: Prisma.Sql[] = [
         Prisma.sql`u."status" IN ('APPROVED', 'SUSPENDED')`,
@@ -125,19 +146,19 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
       orderBy = { name: 'asc' }; // fallback stable sort; real sort done in-memory
     }
 
-    // Ventana del mes actual para el warning de promoción desde pruebas
+    // Ventana del mes actual para el warning de promociÃ³n desde pruebas
     const nowForWarning = new Date();
     const monthStart = new Date(nowForWarning.getFullYear(), nowForWarning.getMonth(), 1);
     const monthEnd = new Date(nowForWarning.getFullYear(), nowForWarning.getMonth() + 1, 1);
 
     // Get users with pagination
-    const [users, totalCount, recentTrialPromotions] = await Promise.all([
+    const [users, recentTrialPromotions] = await Promise.all([
       prisma.user.findMany({
         where,
         include: {
           membership: true,
           profile: {
-            select: { phone: true, firstName: true, lastName: true }
+            select: { phone: true, firstName: true, lastName: true, clubInterests: true }
           },
           payments: {
             select: {
@@ -146,11 +167,8 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
             }
           }
         },
-        skip: inMemorySort ? 0 : skip,
-        take: inMemorySort ? undefined : pageSizeNum,
         orderBy
       }),
-      prisma.user.count({ where }),
       // userIds que pasaron de EN_PRUEBAS a COLABORADOR este mes
       prisma.membershipChangeLog.findMany({
         where: {
@@ -209,6 +227,7 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
         paymentStatus: computedPaymentStatus,
         monthlyFee: user.membership ? (feeMap[user.membership.type] ?? 0) : null,
         phone: user.profile?.phone || null,
+        clubInterests: user.profile?.clubInterests || [],
         lastPaymentDate: user.membership?.lastPaymentDate?.toISOString() || null,
         showTrialPromotionWarning: recentTrialPromotionDates.has(user.id),
         trialPromotionWarningDate: recentTrialPromotionDates.get(user.id)?.toISOString() ?? null
@@ -238,16 +257,26 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
         }
         return dir === 'asc' ? cmp : -cmp;
       });
-      filteredMembers = filteredMembers.slice(skip, skip + pageSizeNum);
     }
 
+    const interestCountMap = new Map<string, number>();
+    for (const member of filteredMembers) {
+      for (const interestKey of member.clubInterests) {
+        interestCountMap.set(interestKey, (interestCountMap.get(interestKey) ?? 0) + 1);
+      }
+    }
+
+    const totalFilteredMembers = filteredMembers.length;
+    const paginatedMembers = filteredMembers.slice(skip, skip + pageSizeNum);
+
     const response: MembersResponse = {
-      members: filteredMembers,
+      members: paginatedMembers,
+      interestCounts: Array.from(interestCountMap.entries()).map(([key, count]) => ({ key, count })),
       pagination: {
         currentPage: pageNum,
         pageSize: pageSizeNum,
-        totalMembers: totalCount,
-        totalPages: Math.ceil(totalCount / pageSizeNum)
+        totalMembers: totalFilteredMembers,
+        totalPages: Math.max(1, Math.ceil(totalFilteredMembers / pageSizeNum))
       }
     };
 
@@ -320,7 +349,7 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
       ? 'BAJA'
       : user.membership?.type || null;
 
-    // Warning de promoción reciente desde EN_PRUEBAS: solo durante el mes del cambio
+    // Warning de promociÃ³n reciente desde EN_PRUEBAS: solo durante el mes del cambio
     const nowForWarning = new Date();
     const monthStartForWarning = new Date(nowForWarning.getFullYear(), nowForWarning.getMonth(), 1);
     const monthEndForWarning = new Date(nowForWarning.getFullYear(), nowForWarning.getMonth() + 1, 1);
@@ -338,7 +367,7 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
     const trialPromotionWarningDate = recentTrialPromoLog?.changedAt?.toISOString() ?? null;
 
     // --- Score de fidelidad ---
-    // Tasa de respuesta: eventos organizados pasados donde se preguntó si se disputó
+    // Tasa de respuesta: eventos organizados pasados donde se preguntÃ³ si se disputÃ³
     const organizedAsked = await prisma.event.count({
       where: { createdBy: memberId, disputeAsked: true }
     });
@@ -346,7 +375,7 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
       where: { createdBy: memberId, disputeAsked: true, disputeConfirmedAt: { not: null } }
     });
 
-    // Tasa de asistencia: registros confirmados en eventos completados vs. cancelaciones tardías
+    // Tasa de asistencia: registros confirmados en eventos completados vs. cancelaciones tardÃ­as
     const confirmedRegistrations = await prisma.eventRegistration.count({
       where: {
         userId: memberId,
@@ -359,14 +388,14 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
         userId: memberId,
         status: 'CANCELLED',
         event: { status: 'COMPLETED' },
-        // Cancelación tardía: canceló después de que el evento ya había pasado su fecha
+        // CancelaciÃ³n tardÃ­a: cancelÃ³ despuÃ©s de que el evento ya habÃ­a pasado su fecha
         cancelledAt: { not: null }
       }
     });
     const totalParticipations = confirmedRegistrations + lateCancellations;
 
     const reliability = {
-      // % de eventos organizados donde respondió a la pregunta de disputa
+      // % de eventos organizados donde respondiÃ³ a la pregunta de disputa
       responseRate: organizedAsked > 0
         ? Math.round((organizedAnswered / organizedAsked) * 100)
         : null,
@@ -407,6 +436,7 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
             province: profile.province,
             postalCode: profile.postalCode,
             iban: profile.iban,
+            clubInterests: profile.clubInterests,
             imageConsentActivities: profile.imageConsentActivities,
             imageConsentSocial: profile.imageConsentSocial,
             accessCombatZone: profile.accessCombatZone
@@ -479,7 +509,7 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
     if (!dni || typeof dni !== 'string' || !isValidSpanishDni(dni)) {
       res.status(400).json({
         success: false,
-        message: 'DNI no válido'
+        message: 'DNI no vÃ¡lido'
       });
       return;
     }
@@ -501,17 +531,17 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
       return;
     }
 
-    // Verificar si el usuario ya tiene membresía antes de la transacción
+    // Verificar si el usuario ya tiene membresÃ­a antes de la transacciÃ³n
     const existingMembership = await prisma.membership.findUnique({
       where: { userId: existingUser.id }
     });
 
-    // Validar tipo de membresía si se proporciona
+    // Validar tipo de membresÃ­a si se proporciona
     if (newMembershipType) {
       if (!['SOCIO', 'COLABORADOR', 'FAMILIAR', 'EN_PRUEBAS'].includes(newMembershipType)) {
         res.status(400).json({
           success: false,
-          message: 'Tipo de membresía inválido'
+          message: 'Tipo de membresÃ­a invÃ¡lido'
         });
         return;
       }
@@ -572,12 +602,12 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
       })
     ];
 
-    // Manejar cambios de tipo de membresía
+    // Manejar cambios de tipo de membresÃ­a
     if (newMembershipType) {
       const parsedStartDate = startDateRaw ? new Date(startDateRaw) : null;
 
       if (!existingMembership) {
-        // Crear nueva membresía
+        // Crear nueva membresÃ­a
         transactionOperations.push(
           prisma.membership.create({
             data: {
@@ -598,13 +628,13 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
               userId: existingUser.id,
               previousType: null,
               newType: newMembershipType,
-              reason: membershipChangeReason || 'Creación inicial de membresía',
+              reason: membershipChangeReason || 'CreaciÃ³n inicial de membresÃ­a',
               changedBy: adminId
             }
           })
         );
       } else if (existingMembership.type !== newMembershipType) {
-        // Actualizar tipo de membresía existente
+        // Actualizar tipo de membresÃ­a existente
         const isTrialToColaborador = existingMembership.type === 'EN_PRUEBAS' && newMembershipType === 'COLABORADOR';
         const now = new Date();
         const nextMonthFirst = isTrialToColaborador
@@ -638,7 +668,7 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
               userId: existingUser.id,
               previousType: existingMembership.type,
               newType: newMembershipType,
-              reason: membershipChangeReason || 'Cambio de tipo de membresía',
+              reason: membershipChangeReason || 'Cambio de tipo de membresÃ­a',
               changedBy: adminId
             }
           })
@@ -658,7 +688,7 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
         }
       }
     } else if (existingMembership) {
-      // Sin cambio de tipo: actualizar startDate y/o notes si se envían
+      // Sin cambio de tipo: actualizar startDate y/o notes si se envÃ­an
       const parsedStartDate = startDateRaw ? new Date(startDateRaw) : null;
       const update: Record<string, any> = {};
       if (parsedStartDate) update.startDate = parsedStartDate;
@@ -734,7 +764,7 @@ export const markMemberAsBaja = async (req: Request, res: Response): Promise<voi
     if (!membership) {
       res.status(404).json({
         success: false,
-        message: 'Membresía no encontrada'
+        message: 'MembresÃ­a no encontrada'
       });
       return;
     }
@@ -742,7 +772,7 @@ export const markMemberAsBaja = async (req: Request, res: Response): Promise<voi
     if (membership.fechaBaja) {
       res.status(400).json({
         success: false,
-        message: 'El miembro ya está marcado como BAJA'
+        message: 'El miembro ya estÃ¡ marcado como BAJA'
       });
       return;
     }
@@ -788,19 +818,19 @@ export const reactivateMember = async (req: Request, res: Response): Promise<voi
     if (!membership) {
       res.status(404).json({
         success: false,
-        message: 'Membresía no encontrada'
+        message: 'MembresÃ­a no encontrada'
       });
       return;
     }
 
-    // Verificar que el usuario esté en algún estado de baja
+    // Verificar que el usuario estÃ© en algÃºn estado de baja
     const user = await prisma.user.findUnique({ where: { id: memberId }, select: { status: true } });
     const isBaja = membership.fechaBaja !== null || user?.status === 'SUSPENDED' || membership.type === 'BAJA';
 
     if (!isBaja) {
       res.status(400).json({
         success: false,
-        message: 'El miembro no está marcado como BAJA'
+        message: 'El miembro no estÃ¡ marcado como BAJA'
       });
       return;
     }
@@ -841,11 +871,13 @@ export const exportMembersCSV = async (req: Request, res: Response): Promise<voi
     const {
       search = '',
       membershipType = 'all',
+      interests = '',
       dateFrom,
       dateTo,
       paymentStatus: paymentStatusFilter = 'all'
     } = req.query;
     const normalizedSearch = normalizeSearchTerm(search as string);
+    const selectedInterests = parseInterestFilter(interests);
 
     const where: any = {
       status: { in: ['APPROVED', 'SUSPENDED'] },
@@ -875,7 +907,14 @@ export const exportMembersCSV = async (req: Request, res: Response): Promise<voi
     if (Object.keys(membershipFilterExport).length > 0) {
       where.membership = membershipFilterExport;
     }
-    // Si no hay filtro específico, mostrar TODOS los usuarios (con o sin membresía)
+    if (selectedInterests.length > 0) {
+      where.profile = {
+        is: {
+          clubInterests: { hasSome: selectedInterests }
+        }
+      };
+    }
+    // Si no hay filtro especÃ­fico, mostrar TODOS los usuarios (con o sin membresÃ­a)
 
     if (normalizedSearch) {
       const extraWhere: Prisma.Sql[] = [
@@ -914,7 +953,7 @@ export const exportMembersCSV = async (req: Request, res: Response): Promise<voi
       where,
       include: {
         membership: true,
-        profile: { select: { phone: true } },
+        profile: { select: { phone: true, clubInterests: true } },
         payments: {
           select: {
             month: true,
@@ -926,8 +965,8 @@ export const exportMembersCSV = async (req: Request, res: Response): Promise<voi
     });
 
     // Build CSV content
-    const csvHeader = 'Nombre,Email,Tipo de Membresía,Fecha de Incorporación,Fecha de Baja,Estado de Pago,Cuota Mensual,Teléfono\n';
     const feeMapCsv = await getMembershipFeeMap();
+    const csvHeader = 'Nombre,Email,Tipo de Membresía,Fecha de Incorporación,Fecha de Baja,Estado de Pago,Cuota Mensual,Teléfono,Intereses\n';
 
     const csvRows = users.map(user => {
       const membershipType = user.membership?.fechaBaja
@@ -951,10 +990,11 @@ export const exportMembersCSV = async (req: Request, res: Response): Promise<voi
         : computedPaymentStatus === 'IMPAGADO'
         ? 'Impagado'
         : computedPaymentStatus === 'ANO_COMPLETO'
-        ? 'Año completo'
+        ? 'AÃ±o completo'
         : 'Nuevo';
       const monthlyFee = user.membership ? (feeMapCsv[user.membership.type] ?? 0) : '';
       const phone = user.profile?.phone || '';
+      const clubInterests = (user.profile?.clubInterests || []).join(' | ');
 
       // Apply payment status filter
       if (paymentStatusFilter !== 'all') {
@@ -962,7 +1002,7 @@ export const exportMembersCSV = async (req: Request, res: Response): Promise<voi
         if (currentPaymentStatus !== paymentStatusFilter) return null;
       }
 
-      return `"${user.name}","${user.email}","${membershipType}","${startDate}","${fechaBaja}","${paymentStatusText}","${monthlyFee}","${phone}"`;
+      return `"${user.name}","${user.email}","${membershipType}","${startDate}","${fechaBaja}","${paymentStatusText}","${monthlyFee}","${phone}","${clubInterests}"`;
     }).filter(row => row !== null).join('\n');
 
     const csvContent = csvHeader + csvRows;
@@ -1017,10 +1057,10 @@ export const getMembershipHistory = async (req: Request, res: Response): Promise
       data: changeLog
     });
   } catch (error) {
-    console.error('Error al obtener historial de membresía:', error);
+    console.error('Error al obtener historial de membresÃ­a:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener historial de membresía'
+      message: 'Error al obtener historial de membresÃ­a'
     });
   }
 };
@@ -1037,7 +1077,7 @@ export const uploadMemberAvatar = async (req: Request, res: Response): Promise<v
     if (!file) {
       res.status(400).json({
         success: false,
-        message: 'No se proporcionó ninguna imagen'
+        message: 'No se proporcionÃ³ ninguna imagen'
       });
       return;
     }
@@ -1051,11 +1091,11 @@ export const uploadMemberAvatar = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    // Verificar tamaño
+    // Verificar tamaÃ±o
     if (file.size > MAX_AVATAR_SIZE) {
       res.status(400).json({
         success: false,
-        message: 'La imagen excede el tamaño máximo permitido (5MB)'
+        message: 'La imagen excede el tamaÃ±o mÃ¡ximo permitido (5MB)'
       });
       return;
     }
@@ -1168,7 +1208,7 @@ export const changeMemberRole = async (req: Request, res: Response): Promise<voi
 
     const validRoles = isChemi ? ['USER', 'ADMIN', 'SUPER_ADMIN'] : ['USER', 'ADMIN', 'SUPER_ADMIN'];
     if (!newRole || !validRoles.includes(newRole)) {
-      res.status(400).json({ success: false, message: `Rol inválido. Valores permitidos: ${validRoles.join(', ')}` });
+      res.status(400).json({ success: false, message: `Rol invÃ¡lido. Valores permitidos: ${validRoles.join(', ')}` });
       return;
     }
 
@@ -1319,11 +1359,11 @@ export const createMember = async (req: Request, res: Response): Promise<void> =
         return;
       }
     } else {
-      // Generar email placeholder único para no bloquear el unique constraint
+      // Generar email placeholder Ãºnico para no bloquear el unique constraint
       userEmail = `sin-email-${randomUUID()}@clubdreadnought.internal`;
     }
 
-    // Contraseña aleatoria segura (el admin la compartirá o el usuario usará "olvidé contraseña")
+    // ContraseÃ±a aleatoria segura (el admin la compartirÃ¡ o el usuario usarÃ¡ "olvidÃ© contraseÃ±a")
     const randomPassword = randomUUID();
     const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
@@ -1409,3 +1449,4 @@ export const toggleCombatZoneAccess = async (req: Request, res: Response): Promi
     res.status(500).json({ success: false, message: 'Error al actualizar acceso a Combat Zone' });
   }
 };
+

@@ -9,6 +9,7 @@ import EventCard from '../components/events/EventCard';
 import EventCalendar from '../components/events/EventCalendar';
 import EventCalendarWeek from '../components/events/EventCalendarWeek';
 import EventCalendarDay from '../components/events/EventCalendarDay';
+import { getMonthGridRange } from '../components/events/calendarMonthRange';
 import CalendarTour from '../components/tour/CalendarTour';
 import { useTour } from '../hooks/useTour';
 import { api } from '../api/axios';
@@ -63,11 +64,10 @@ export default function Events() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
-  const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-  const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59, 999);
+  const { monthStart, monthEnd, gridStart, gridEnd } = getMonthGridRange(currentMonth);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['events', statusFilter, typeFilter, search, participant, viewMode, monthKey],
+    queryKey: ['events', statusFilter, typeFilter, search, participant, viewMode, calendarView, monthKey],
     refetchInterval: 10 * 60 * 1000,
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -77,8 +77,10 @@ export default function Events() {
         if (participant) params.append('participant', participant);
       }
       if (viewMode === 'calendar') {
-        params.append('startDate', monthStart.toISOString());
-        params.append('endDate', monthEnd.toISOString());
+        const rangeStart = calendarView === 'month' ? gridStart : monthStart;
+        const rangeEnd = calendarView === 'month' ? gridEnd : monthEnd;
+        params.append('startDate', rangeStart.toISOString());
+        params.append('endDate', rangeEnd.toISOString());
       }
       params.append('limit', '1000'); // Get all for current range
 

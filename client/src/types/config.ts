@@ -10,6 +10,11 @@ export interface MembershipTypeConfig {
   description: string;
 }
 
+export interface ClubInterestConfig {
+  key: string;
+  label: string;
+}
+
 export type LoginParticleStyle = 'white' | 'neon' | 'theme' | 'random';
 
 export interface ClubConfig {
@@ -19,6 +24,7 @@ export interface ClubConfig {
   clubPhone?: string;
   clubAddress?: string;
   membershipTypes: MembershipTypeConfig[];
+  clubInterestsCatalog: ClubInterestConfig[];
   defaultCurrency: string;
   loginParticleStyle: LoginParticleStyle;
   inviteMaxActive: number;
@@ -41,6 +47,7 @@ export interface ClubConfigUpdate {
   clubPhone?: string;
   clubAddress?: string;
   membershipTypes?: MembershipTypeConfig[];
+  clubInterestsCatalog?: ClubInterestConfig[];
   defaultCurrency?: string;
   loginParticleStyle?: LoginParticleStyle;
   inviteMaxActive?: number;
@@ -60,4 +67,8 @@ export interface PublicConfig {
   loanEnabled: boolean;
   personalStatsEnabled: boolean;
   spinEffect: string;
+}
+
+export interface OnboardingConfig {
+  clubInterestsCatalog: ClubInterestConfig[];
 }

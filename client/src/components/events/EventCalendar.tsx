@@ -1,6 +1,7 @@
 // client/src/components/events/EventCalendar.tsx
 import { useMemo } from 'react';
 import type { Event } from '../../types/event';
+import { getMonthGridRange, toLocalDateKey } from './calendarMonthRange';
 
 interface EventCalendarProps {
   events: Event[];
@@ -8,94 +9,100 @@ interface EventCalendarProps {
   onDaySelect: (date: Date) => void;
 }
 
+const ADJACENT_DAY_FORMATTER = new Intl.DateTimeFormat('es-ES', {
+  day: 'numeric',
+  month: 'short'
+});
+
+const MONTH_NAME_FORMATTER = new Intl.DateTimeFormat('es-ES', {
+  month: 'long',
+  year: 'numeric'
+});
+
 export default function EventCalendar({ events, currentMonth, onDaySelect }: EventCalendarProps) {
-  const { daysInMonth, firstDayOfMonth, monthName } = useMemo(() => {
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth();
+  const { gridDates, monthName } = useMemo(() => {
+    const { gridStart, gridEnd } = getMonthGridRange(currentMonth);
+    const dates: Date[] = [];
 
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDay = new Date(year, month, 1);
-    // getDay() devuelve 0=domingo..6=sábado; convertir a ISO: 0=lunes..6=domingo
-    const firstDayOfMonth = (firstDay.getDay() + 6) % 7;
+    for (let day = new Date(gridStart); day <= gridEnd; day.setDate(day.getDate() + 1)) {
+      dates.push(new Date(day));
+    }
 
-    const monthName = new Intl.DateTimeFormat('es-ES', {
-      month: 'long',
-      year: 'numeric'
-    }).format(currentMonth);
-
-    return { daysInMonth, firstDayOfMonth, monthName };
+    return {
+      gridDates: dates,
+      monthName: MONTH_NAME_FORMATTER.format(currentMonth)
+    };
   }, [currentMonth]);
 
-  // Agrupar eventos por d?a
-  const eventsByDay = useMemo(() => {
-    const grouped: Record<number, Event[]> = {};
+  const eventsByDate = useMemo(() => {
+    const grouped: Record<string, Event[]> = {};
 
     events.forEach(event => {
       const eventDate = new Date(event.date);
-      const eventMonth = eventDate.getMonth();
-      const eventYear = eventDate.getFullYear();
-
-      // Solo eventos del mes actual
-      if (eventMonth === currentMonth.getMonth() && eventYear === currentMonth.getFullYear()) {
-        const day = eventDate.getDate();
-        if (!grouped[day]) {
-          grouped[day] = [];
-        }
-        grouped[day].push(event);
+      const dateKey = toLocalDateKey(eventDate);
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
       }
+      grouped[dateKey].push(event);
     });
 
     return grouped;
-  }, [events, currentMonth]);
+  }, [events]);
 
-  const renderDay = (day: number) => {
-    const dayEvents = eventsByDay[day] || [];
+  const renderDay = (dayDate: Date) => {
+    const dateKey = toLocalDateKey(dayDate);
+    const dayEvents = eventsByDate[dateKey] || [];
     const hasEvents = dayEvents.length > 0;
     const hasSocio = dayEvents.some(event => event.hasSocioRegistered);
     const hasColaborador = dayEvents.some(event => event.hasColaboradorRegistered);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const isToday =
-      day === today.getDate() &&
-      currentMonth.getMonth() === today.getMonth() &&
-      currentMonth.getFullYear() === today.getFullYear();
-
-    // Formatear fecha para detalle (YYYY-MM-DD)
-    const dateString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const dayDate = new Date(`${dateString}T00:00:00`);
-    const isPastDay = dayDate < today;
+    const normalizedDayDate = new Date(dayDate);
+    normalizedDayDate.setHours(0, 0, 0, 0);
+    const isToday = normalizedDayDate.getTime() === today.getTime();
+    const isPastDay = normalizedDayDate < today;
+    const isCurrentMonth = dayDate.getMonth() === currentMonth.getMonth()
+      && dayDate.getFullYear() === currentMonth.getFullYear();
 
     const handleDayClick = () => {
-      onDaySelect(dayDate);
+      onDaySelect(new Date(dayDate));
     };
 
     const dayBackground = hasSocio
       ? 'bg-[var(--color-calendarDaySocio)]'
       : hasEvents && hasColaborador
-      ? 'bg-[var(--color-calendarDayColaborador)]'
-      : 'bg-[var(--color-cardBackground)]';
-    const isMutedPastDay = isPastDay && !isToday;
+        ? 'bg-[var(--color-calendarDayColaborador)]'
+        : isCurrentMonth
+          ? 'bg-[var(--color-cardBackground)]'
+          : 'bg-[var(--color-tableRowHover)]';
     const dayText = hasSocio
       ? 'text-[var(--color-calendarTextSocio)]'
       : hasColaborador
-      ? 'text-[var(--color-calendarTextColaborador)]'
-      : 'text-[var(--color-text)]';
-    const dayTextClass = isMutedPastDay ? `${dayText} opacity-70` : dayText;
+        ? 'text-[var(--color-calendarTextColaborador)]'
+        : isCurrentMonth
+          ? 'text-[var(--color-text)]'
+          : 'text-[var(--color-textSecondary)]';
+    const isMutedPastDay = isPastDay && !isToday;
+    const dayTextClass = isMutedPastDay ? `${dayText} opacity-80` : dayText;
     const summaryTextClass = isMutedPastDay
-      ? 'text-[10px] text-[var(--color-textSecondary)] opacity-60'
+      ? 'text-[10px] text-[var(--color-textSecondary)] opacity-70'
       : 'text-[10px] text-[var(--color-textSecondary)]';
+    const adjacentDayClass = isCurrentMonth ? '' : 'border-dashed saturate-75';
+    const label = isCurrentMonth
+      ? String(dayDate.getDate())
+      : ADJACENT_DAY_FORMATTER.format(dayDate).replace('.', '').toLowerCase();
 
     return (
       <div
-        key={day}
+        key={dateKey}
         onClick={handleDayClick}
-        className={`min-h-[72px] border p-1 sm:p-2 ${dayBackground} ${
+        className={`min-h-[72px] border p-1 sm:p-2 ${dayBackground} ${adjacentDayClass} ${
           isToday ? 'border-2 border-[var(--color-primary)]' : 'border border-[var(--color-cardBorder)]'
-        } cursor-pointer transition-colors hover:brightness-95 ${isMutedPastDay ? 'opacity-60' : ''}`}
-        title={isMutedPastDay ? 'Dia pasado - toca para ver el detalle' : 'Toca un dia para ver el detalle'}
+        } cursor-pointer transition-colors hover:brightness-95 ${isMutedPastDay ? 'opacity-70' : ''}`}
+        title={isCurrentMonth ? 'Toca un día para ver el detalle' : 'Toca un día de otro mes para ver el detalle y navegar a ese mes'}
       >
         <div className={`text-xs sm:text-sm font-semibold mb-1 ${dayTextClass}`}>
-          {day}
+          {label}
         </div>
 
         {hasEvents && (() => {
@@ -114,22 +121,15 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
     );
   };
 
-  const renderEmptyDay = (index: number) => (
-    <div key={`empty-${index}`} className="min-h-[72px] border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)]" />
-  );
-
   return (
     <div className="bg-[var(--color-cardBackground)] rounded-lg border border-[var(--color-cardBorder)] p-3 sm:p-4">
-      {/* Header */}
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-[var(--color-text)] capitalize">
           {monthName}
         </h3>
       </div>
 
-      {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-px bg-[var(--color-cardBorder)] w-full">
-        {/* Day headers */}
         {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
           <div
             key={day}
@@ -139,14 +139,9 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
           </div>
         ))}
 
-        {/* Empty cells before first day */}
-        {Array.from({ length: firstDayOfMonth }, (_, i) => renderEmptyDay(i))}
-
-        {/* Days of month */}
-        {Array.from({ length: daysInMonth }, (_, i) => renderDay(i + 1))}
+        {gridDates.map(renderDay)}
       </div>
 
-      {/* Legend */}
       <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-[var(--color-textSecondary)]">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-[var(--color-calendarDaySocio)] border border-[var(--color-cardBorder)]"></div>
@@ -161,12 +156,15 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
           <span>Sin partidas</span>
         </div>
         <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded bg-[var(--color-tableRowHover)] border border-dashed border-[var(--color-cardBorder)]"></div>
+          <span>Día de otro mes</span>
+        </div>
+        <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-[var(--color-cardBackground)] border-2 border-[var(--color-primary)]"></div>
           <span>Hoy</span>
         </div>
-        <span className="text-[var(--color-textSecondary)]">Toca un dia para ver el detalle</span>
+        <span className="text-[var(--color-textSecondary)]">Toca un día para ver el detalle</span>
       </div>
     </div>
   );
 }
-

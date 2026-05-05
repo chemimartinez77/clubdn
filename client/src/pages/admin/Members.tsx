@@ -13,6 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../api/axios';
 import type { MemberData, MemberFilters, MemberProfileResponse } from '../../types/members';
 import type { ApiResponse } from '../../types/auth';
+import type { ClubConfig } from '../../types/config';
 
 const EMPTY_PROFILE_FORM = {
   firstName: '', lastName: '', dni: '',
@@ -43,6 +44,7 @@ export default function Members() {
   const [filters, setFilters] = useState<MemberFilters>({
     search: '',
     membershipType: 'all',
+    interests: [],
     dateFrom: '',
     dateTo: '',
     paymentStatus: 'all',
@@ -115,6 +117,13 @@ export default function Members() {
   const debouncedSearch = useDebounce(filters.search, 350);
   const debouncedFilters = { ...filters, search: debouncedSearch };
   const { data, isLoading, refetch, markAsBaja, isMarkingBaja, reactivateMember, isReactivating, exportCSV } = useMembers(debouncedFilters);
+  const { data: clubConfig } = useQuery({
+    queryKey: ['clubConfig'],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<ClubConfig>>('/api/config');
+      return response.data.data;
+    }
+  });
 
   const { data: memberProfile, isLoading: isProfileLoading, isError: isProfileError } = useQuery({
     queryKey: ['memberProfile', selectedMember?.id],
@@ -424,6 +433,20 @@ export default function Members() {
     );
   };
 
+  const interestLabelMap = new Map(
+    (clubConfig?.clubInterestsCatalog ?? []).map((interest) => [interest.key, interest.label])
+  );
+
+  const toggleInterestFilter = (interestKey: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      page: 1,
+      interests: prev.interests.includes(interestKey)
+        ? prev.interests.filter((key) => key !== interestKey)
+        : [...prev.interests, interestKey]
+    }));
+  };
+
   return (
     <Layout>
       <div className="max-w-full mx-auto space-y-6 px-4">
@@ -526,6 +549,33 @@ export default function Members() {
                 </select>
               </div>
 
+              {clubConfig?.clubInterestsCatalog?.length ? (
+                <div className="lg:col-span-4">
+                  <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
+                    Intereses del club
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {clubConfig.clubInterestsCatalog.map((interest) => {
+                      const selected = filters.interests.includes(interest.key);
+                      return (
+                        <button
+                          key={interest.key}
+                          type="button"
+                          onClick={() => toggleInterestFilter(interest.key)}
+                          className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                            selected
+                              ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                              : 'bg-[var(--color-cardBackground)] text-[var(--color-text)] border-[var(--color-inputBorder)]'
+                          }`}
+                        >
+                          {interest.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
               {/* Date From */}
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">
@@ -578,6 +628,7 @@ export default function Members() {
                     setFilters({
                       search: '',
                       membershipType: 'all',
+                      interests: [],
                       dateFrom: '',
                       dateTo: '',
                       paymentStatus: 'all',
@@ -593,6 +644,22 @@ export default function Members() {
                 </Button>
               </div>
             </div>
+
+            {data?.interestCounts?.length ? (
+              <div className="mt-4 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] p-3">
+                <p className="text-sm font-medium text-[var(--color-text)] mb-2">Resumen por intereses</p>
+                <div className="flex flex-wrap gap-2">
+                  {data.interestCounts.map(({ key, count }) => (
+                    <span
+                      key={key}
+                      className="rounded-full border border-[var(--color-cardBorder)] px-3 py-1 text-sm text-[var(--color-text)]"
+                    >
+                      {interestLabelMap.get(key) ?? key}: {count}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </CardContent>}
         </Card>
 
@@ -998,6 +1065,22 @@ export default function Members() {
                     onChange={(e) => setProfileForm({ ...profileForm, iban: e.target.value })}
                     className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Intereses dentro del club</label>
+                  <div className="flex flex-wrap gap-2">
+                    {memberProfile.member.profile.clubInterests.length > 0 ? memberProfile.member.profile.clubInterests.map((interestKey) => (
+                      <span
+                        key={interestKey}
+                        className="rounded-full border border-[var(--color-cardBorder)] px-3 py-1 text-sm text-[var(--color-text)]"
+                      >
+                        {interestLabelMap.get(interestKey) ?? interestKey}
+                      </span>
+                    )) : (
+                      <span className="text-sm text-[var(--color-textSecondary)]">Sin intereses seleccionados</span>
+                    )}
+                  </div>
                 </div>
 
                 <div>

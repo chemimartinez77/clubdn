@@ -2733,6 +2733,7 @@ export default function EventDetail() {
               <option value="WARHAMMER">{getCategoryIcon('WARHAMMER')} {getCategoryDisplayName('WARHAMMER')}</option>
               <option value="FILLERS_PARTY">{getCategoryIcon('FILLERS_PARTY')} {getCategoryDisplayName('FILLERS_PARTY')}</option>
               <option value="CARTAS_LCG_TCG">{getCategoryIcon('CARTAS_LCG_TCG')} {getCategoryDisplayName('CARTAS_LCG_TCG')}</option>
+              <option value="ABSTRACTOS">{getCategoryIcon('ABSTRACTOS')} {getCategoryDisplayName('ABSTRACTOS')}</option>
             </select>
             {editConfirmedCategory && (
               <p className="text-xs text-[var(--color-textSecondary)] mt-1">Categoría fijada por la comunidad. Contacta con un admin para cambiarla.</p>

@@ -3,6 +3,11 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { notifyAdminsOnboardingCompleted } from '../services/notificationService';
 import { v2 as cloudinary } from 'cloudinary';
+import {
+  areClubInterestKeysValid,
+  normalizeClubInterestCatalog,
+  parseClubInterestSelection,
+} from '../utils/clubInterests';
 
 // Configurar Cloudinary
 cloudinary.config({
@@ -526,10 +531,17 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
       iban,
       imageConsentActivities,
       imageConsentSocial,
+      clubInterests,
       termsAccepted,
     } = req.body;
 
     const file = req.file;
+
+    const parsedClubInterests = parseClubInterestSelection(clubInterests);
+    if (parsedClubInterests === null) {
+      res.status(400).json({ success: false, message: 'Formato de intereses no válido' });
+      return;
+    }
 
     // Validar campos obligatorios
     const missing = [];
@@ -547,6 +559,17 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
 
     if (missing.length > 0) {
       res.status(400).json({ success: false, message: `Faltan campos obligatorios: ${missing.join(', ')}` });
+      return;
+    }
+
+    const clubConfig = await prisma.clubConfig.findUnique({
+      where: { id: 'club_config' },
+      select: { clubInterestsCatalog: true }
+    });
+    const normalizedCatalog = normalizeClubInterestCatalog(clubConfig?.clubInterestsCatalog);
+
+    if (!areClubInterestKeysValid(parsedClubInterests, normalizedCatalog)) {
+      res.status(400).json({ success: false, message: 'Se han recibido intereses no permitidos' });
       return;
     }
 
@@ -589,6 +612,7 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
         province: province.trim(),
         postalCode: postalCode.trim(),
         iban: iban.trim(),
+        clubInterests: parsedClubInterests,
         imageConsentActivities: consentActivities,
         imageConsentSocial: consentSocial,
         idPhotoUrl,
@@ -607,6 +631,7 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
         province: province.trim(),
         postalCode: postalCode.trim(),
         iban: iban.trim(),
+        clubInterests: parsedClubInterests,
         imageConsentActivities: consentActivities,
         imageConsentSocial: consentSocial,
         idPhotoUrl,
