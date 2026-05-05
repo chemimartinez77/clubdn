@@ -1,5 +1,5 @@
 // client/src/pages/JoinViaShareLink.tsx
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useState, type ClipboardEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import QRCode from 'react-qr-code';
@@ -47,14 +47,41 @@ interface RegistrationResult {
 }
 
 type Screen = 'info' | 'form' | 'qr';
-
 type LookupMatch = 'none' | 'both' | 'conflict';
 
 interface LookupResult {
   match: LookupMatch;
+  reason?: 'already_known' | 'no_history' | 'conflict';
   firstName?: string;
   lastName?: string;
 }
+
+interface JoinViaShareLinkProps {
+  isPreview?: boolean;
+}
+
+const PREVIEW_DATA: ShareLinkData = {
+  event: {
+    id: 'preview-event',
+    title: 'Partida de prueba para invitados',
+    description: 'Vista previa del formulario público sin envío real ni validaciones contra backend.',
+    date: '2026-05-20T18:00:00.000Z',
+    startHour: 18,
+    startMinute: 0,
+    durationHours: 4,
+    durationMinutes: 0,
+    gameName: 'Ark Nova',
+    gameImage: null,
+    location: 'Club Dreadnought',
+    isFull: false,
+    isActive: true,
+    requiresApproval: false,
+  },
+  invitedBy: {
+    id: 'preview-member',
+    name: 'Socio de prueba',
+  },
+};
 
 const LOPD_TEXT = `De conformidad con el RGPD y la LOPDGDD, le informamos de que los datos personales facilitados (nombre, apellidos y teléfono) serán tratados por el "Club Dreadnought" con la finalidad de gestionar el acceso de invitados, el control de asistencia y posibilitar la comunicación necesaria ante posibles incidencias o accidentes durante la actividad.
 
@@ -64,12 +91,24 @@ Los datos se conservarán durante el tiempo imprescindible para gestionar la asi
 
 Puede ejercer sus derechos de acceso, rectificación, supresión, oposición y limitación del tratamiento dirigiéndose a clubdreadnought.vlc@gmail.com. Asimismo, tiene derecho a presentar una reclamación ante la Agencia Española de Protección de Datos (www.aepd.es).`;
 
+function normalizeDni(value: string): string {
+  return value.trim().toUpperCase().replace(/[-\s]/g, '');
+}
+
+function normalizePhoneNumber(value: string): string {
+  return value.replace(/\s/g, '');
+}
+
 function isValidDni(value: string): boolean {
-  const clean = value.trim().toUpperCase().replace(/[-\s]/g, '');
+  const clean = normalizeDni(value);
   if (!/^\d{8}[A-Z]$/.test(clean)) return false;
   const LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE';
   const num = parseInt(clean.slice(0, 8), 10);
   return clean[8] === LETTERS[num % 23];
+}
+
+function isValidPhone(value: string): boolean {
+  return /^\+?\d{6,15}$/.test(normalizePhoneNumber(value));
 }
 
 function formatEventDate(dateStr: string) {
@@ -84,7 +123,18 @@ function formatTime(hour?: number, minute?: number) {
   return `${h}:${m}`;
 }
 
-export default function JoinViaShareLink() {
+function sanitizeDniInput(value: string): string {
+  const raw = value.replace(/[-\s]/g, '').toUpperCase();
+  const digits = raw.replace(/[^0-9]/g, '').slice(0, 8);
+  const letter = raw.replace(/[^A-Z]/g, '').slice(0, 1);
+  return digits + letter;
+}
+
+function sanitizePhoneInput(value: string): string {
+  return value.replace(/[^0-9\s]/g, '');
+}
+
+export default function JoinViaShareLink({ isPreview = false }: JoinViaShareLinkProps) {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const [screen, setScreen] = useState<Screen>('info');
@@ -93,15 +143,20 @@ export default function JoinViaShareLink() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [dni, setDni] = useState('');
+  const [confirmDni, setConfirmDni] = useState('');
   const [phonePrefix, setPhonePrefix] = useState('+34');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [confirmPhoneNumber, setConfirmPhoneNumber] = useState('');
+  const [isFirstVisit, setIsFirstVisit] = useState(true);
   const [legalAccepted, setLegalAccepted] = useState(false);
   const honeypotRef = useRef<HTMLInputElement>(null);
 
   // Result state
   const [result, setResult] = useState<RegistrationResult | null>(null);
   const [showLopdModal, setShowLopdModal] = useState(false);
-  const [lookupMatch, setLookupMatch] = useState<LookupMatch | null>(null);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [isCheckingLookup, setIsCheckingLookup] = useState(false);
+  const [previewNotice, setPreviewNotice] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['shareLink', token],
@@ -109,55 +164,35 @@ export default function JoinViaShareLink() {
       const res = await api.get<ApiResponse<ShareLinkData>>(`/api/share/invite/${token}`);
       return res.data.data!;
     },
-    enabled: !!token,
+    enabled: !!token && !isPreview,
     retry: false
   });
 
-  // Lookup de invitado por DNI + teléfono
+  const resolvedData = isPreview ? PREVIEW_DATA : data;
+
+  const normalizedDni = normalizeDni(dni);
+  const normalizedConfirmDni = normalizeDni(confirmDni);
+  const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
+  const normalizedConfirmPhoneNumber = normalizePhoneNumber(confirmPhoneNumber);
+  const fullPhone = `${phonePrefix}${normalizedPhoneNumber}`;
+  const confirmFullPhone = `${phonePrefix}${normalizedConfirmPhoneNumber}`;
   const dniValid = isValidDni(dni);
-  const phoneValid = phoneNumber.trim().replace(/\s/g, '').length >= 6;
-  const fullPhone = `${phonePrefix}${phoneNumber.replace(/\s/g, '')}`;
-
-  const lookupQuery = useQuery<LookupResult>({
-    queryKey: ['guestLookup', dni, fullPhone],
-    queryFn: async () => {
-      const res = await api.get<ApiResponse<LookupResult>>('/api/share/lookup', {
-        params: { dni, phone: fullPhone },
-      });
-      return res.data.data!;
-    },
-    enabled: dniValid && phoneValid && screen === 'form',
-    staleTime: Infinity,
-    retry: false,
-  });
-
-  useEffect(() => {
-    if (!lookupQuery.data) {
-      setLookupMatch(null);
-      return;
-    }
-    const result = lookupQuery.data;
-    setLookupMatch(result.match);
-    if (result.match === 'both') {
-      setFirstName(result.firstName ?? '');
-      setLastName(result.lastName ?? '');
-    } else if (result.match === 'none') {
-      setFirstName('');
-      setLastName('');
-    }
-  }, [lookupQuery.data]);
-
-  useEffect(() => {
-    setLookupMatch(null);
-  }, [dni, fullPhone]);
+  const phoneValid = isValidPhone(fullPhone);
+  const nameValid = firstName.trim().length >= 2 && lastName.trim().length >= 2;
+  const confirmationsValid = !isFirstVisit || (
+    normalizedDni === normalizedConfirmDni &&
+    fullPhone === confirmFullPhone &&
+    normalizedConfirmDni.length > 0 &&
+    normalizedConfirmPhoneNumber.length > 0
+  );
 
   // Si el usuario está logueado y es el propio invitador, redirigir al evento
   const storedToken = localStorage.getItem('token');
-  if (storedToken && data) {
+  if (storedToken && resolvedData && !isPreview) {
     try {
       const payload = JSON.parse(atob(storedToken.split('.')[1]));
-      if (payload.userId === data.invitedBy.id) {
-        navigate(`/events/${data.event.id}`, { replace: true });
+      if (payload.userId === resolvedData.invitedBy.id) {
+        navigate(`/events/${resolvedData.event.id}`, { replace: true });
         return null;
       }
     } catch {
@@ -167,23 +202,107 @@ export default function JoinViaShareLink() {
 
   const requestMutation = useMutation({
     mutationFn: async () => {
-      const phone = `${phonePrefix}${phoneNumber.replace(/\s/g, '')}`;
       const res = await api.post<ApiResponse<RegistrationResult>>(`/api/share/invite/${token}/request`, {
         guestFirstName: firstName.trim(),
         guestLastName: lastName.trim(),
-        guestDni: dni.trim().toUpperCase().replace(/[-\s]/g, ''),
-        guestPhone: phone,
+        guestDni: normalizedDni,
+        guestPhone: fullPhone,
         honeypot: honeypotRef.current?.value ?? ''
       });
       return res.data;
     },
-    onSuccess: (data) => {
-      if (data.data) {
-        setResult(data.data);
+    onSuccess: (responseData) => {
+      if (responseData.data) {
+        setResult(responseData.data);
         setScreen('qr');
       }
     }
   });
+
+  const handlePasteBlock = (event: ClipboardEvent<HTMLInputElement>) => {
+    event.preventDefault();
+  };
+
+  const handleSubmit = async () => {
+    if (requestMutation.isPending || isCheckingLookup) return;
+
+    requestMutation.reset();
+    setLookupError(null);
+    setPreviewNotice(null);
+
+    if (!dniValid) {
+      setLookupError('DNI no válido');
+      return;
+    }
+
+    if (!phoneValid) {
+      setLookupError('Número de teléfono no válido');
+      return;
+    }
+
+    if (!nameValid) {
+      setLookupError('Nombre y apellidos requeridos');
+      return;
+    }
+
+    if (!legalAccepted) {
+      setLookupError('Debes aceptar el tratamiento de tus datos personales');
+      return;
+    }
+
+    if (isFirstVisit) {
+      if (normalizedDni !== normalizedConfirmDni) {
+        setLookupError('Los DNIs no coinciden.');
+        return;
+      }
+
+      if (fullPhone !== confirmFullPhone) {
+        setLookupError('Los teléfonos no coinciden.');
+        return;
+      }
+    }
+
+    if (isPreview) {
+      setPreviewNotice('Vista previa activa: este formulario no realiza ninguna validación remota ni envía datos.');
+      return;
+    }
+
+    setIsCheckingLookup(true);
+
+    try {
+      const lookupResponse = await api.get<ApiResponse<LookupResult>>('/api/share/lookup', {
+        params: { dni: normalizedDni, phone: fullPhone },
+      });
+      const lookupResult = lookupResponse.data.data;
+
+      if (!lookupResult) {
+        setLookupError('No se ha podido validar el historial del invitado.');
+        return;
+      }
+
+      if (lookupResult.match === 'conflict') {
+        setLookupError('No podemos procesar tu solicitud porque los datos no son coherentes con el historial. Contacta con el organizador.');
+        return;
+      }
+
+      if (isFirstVisit && lookupResult.match === 'both') {
+        setLookupError('Este invitado ya aparece en el historial. Desmarca "Es la primera vez que viene invitado" si los datos son correctos.');
+        return;
+      }
+
+      if (!isFirstVisit && lookupResult.match === 'none') {
+        setLookupError('No existe historial para este DNI y teléfono. Marca "Es la primera vez que viene invitado" y confirma ambos datos.');
+        return;
+      }
+
+      await requestMutation.mutateAsync();
+    } catch (error: any) {
+      const serverMessage = error?.response?.data?.message;
+      setLookupError(serverMessage || 'No se ha podido validar el historial del invitado.');
+    } finally {
+      setIsCheckingLookup(false);
+    }
+  };
 
   const handleDownloadQr = () => {
     const svg = document.getElementById('guest-qr-svg');
@@ -210,7 +329,7 @@ export default function JoinViaShareLink() {
   const containerClass = 'min-h-screen flex items-center justify-center bg-[var(--color-background)] p-4';
   const cardClass = 'w-full max-w-sm bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] rounded-2xl shadow-lg p-6 space-y-5';
 
-  if (isLoading) {
+  if (isLoading && !isPreview) {
     return (
       <div className={containerClass}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]" />
@@ -218,7 +337,7 @@ export default function JoinViaShareLink() {
     );
   }
 
-  if (isError || !data) {
+  if (isError || !resolvedData) {
     return (
       <div className={containerClass}>
         <div className={cardClass}>
@@ -229,59 +348,58 @@ export default function JoinViaShareLink() {
     );
   }
 
-  if (!data.event.isActive) {
+  if (!resolvedData.event.isActive) {
     return (
       <div className={containerClass}>
         <div className={cardClass}>
           <h2 className="text-lg font-bold text-[var(--color-text)]">Evento no disponible</h2>
           <p className="text-sm text-[var(--color-textSecondary)]">
-            {data.event.isFull ? 'El evento está completo.' : 'El evento ya ha pasado o no está disponible.'}
+            {resolvedData.event.isFull ? 'El evento está completo.' : 'El evento ya ha pasado o no está disponible.'}
           </p>
         </div>
       </div>
     );
   }
 
-  // Pantalla 1: info del evento
   if (screen === 'info') {
-    const timeStr = formatTime(data.event.startHour, data.event.startMinute);
+    const timeStr = formatTime(resolvedData.event.startHour, resolvedData.event.startMinute);
     return (
       <div className={containerClass}>
         <div className={cardClass}>
           <div className="text-center space-y-1">
             <p className="text-sm text-[var(--color-textSecondary)]">Has sido invitado por</p>
-            <p className="text-xl font-bold text-[var(--color-text)]">{data.invitedBy.name}</p>
+            <p className="text-xl font-bold text-[var(--color-text)]">{resolvedData.invitedBy.name}</p>
           </div>
 
-          {data.event.gameImage && (
+          {resolvedData.event.gameImage && (
             <div className="flex justify-center">
               <img
-                src={data.event.gameImage}
-                alt={data.event.gameName || data.event.title}
+                src={resolvedData.event.gameImage}
+                alt={resolvedData.event.gameName || resolvedData.event.title}
                 className="w-32 h-32 object-cover rounded-xl shadow"
               />
             </div>
           )}
 
           <div className="border-t border-[var(--color-cardBorder)] pt-4 space-y-2">
-            <p className="text-base font-semibold text-[var(--color-text)]">{data.event.title}</p>
-            {data.event.gameName && (
-              <p className="text-sm text-[var(--color-textSecondary)]">{data.event.gameName}</p>
+            <p className="text-base font-semibold text-[var(--color-text)]">{resolvedData.event.title}</p>
+            {resolvedData.event.gameName && (
+              <p className="text-sm text-[var(--color-textSecondary)]">{resolvedData.event.gameName}</p>
             )}
             <p className="text-sm text-[var(--color-textSecondary)] capitalize">
-              {formatEventDate(data.event.date)}
+              {formatEventDate(resolvedData.event.date)}
               {timeStr && <span> · {timeStr}h</span>}
             </p>
-            <p className="text-sm text-[var(--color-textSecondary)]">{data.event.location}</p>
+            <p className="text-sm text-[var(--color-textSecondary)]">{resolvedData.event.location}</p>
           </div>
 
-          {data.event.description && (
+          {resolvedData.event.description && (
             <p className="text-sm text-[var(--color-textSecondary)] leading-relaxed border-t border-[var(--color-cardBorder)] pt-3">
-              {data.event.description}
+              {resolvedData.event.description}
             </p>
           )}
 
-          {data.event.isFull ? (
+          {resolvedData.event.isFull ? (
             <p className="text-sm text-red-600 font-medium text-center">El evento está completo.</p>
           ) : (
             <button
@@ -296,26 +414,8 @@ export default function JoinViaShareLink() {
     );
   }
 
-  // Pantalla 2: formulario del invitado
   if (screen === 'form') {
-    const nameFieldsLocked =
-      !dniValid ||
-      !phoneValid ||
-      lookupQuery.isFetching ||
-      lookupMatch === null ||
-      lookupMatch === 'conflict';
-
-    const nameFieldsReadonly = lookupMatch === 'both';
-
-    const isFormValid =
-      firstName.trim().length >= 2 &&
-      lastName.trim().length >= 2 &&
-      dniValid &&
-      phoneValid &&
-      legalAccepted &&
-      lookupMatch !== null &&
-      lookupMatch !== 'conflict';
-
+    const isFormValid = nameValid && dniValid && phoneValid && legalAccepted && confirmationsValid;
     const serverError = (requestMutation.error as any)?.response?.data?.message;
 
     return (
@@ -325,28 +425,45 @@ export default function JoinViaShareLink() {
             <div>
               <h2 className="text-lg font-bold text-[var(--color-text)]">Confirma tu asistencia</h2>
               <p className="text-sm text-[var(--color-textSecondary)] mt-1">
-                Invitación a: <span className="font-medium">{data.event.title}</span>
+                Invitación a: <span className="font-medium">{resolvedData.event.title}</span>
               </p>
             </div>
 
+            {isPreview && (
+              <p className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Vista previa: esta ruta no consulta backend y el botón final no envía nada.
+              </p>
+            )}
+
             <div className="space-y-3">
+              <div className="rounded-xl border border-[var(--color-cardBorder)] bg-[var(--color-background)] px-3 py-3">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isFirstVisit}
+                    onChange={e => {
+                      setLookupError(null);
+                      setIsFirstVisit(e.target.checked);
+                    }}
+                    className="mt-1 h-4 w-4 rounded border-[var(--color-cardBorder)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                  />
+                  <span className="text-sm text-[var(--color-text)]">Es la primera vez que viene invitado</span>
+                </label>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-[var(--color-text)] mb-1">DNI</label>
                 <input
                   type="text"
                   value={dni}
                   onChange={e => {
-                    const raw = e.target.value.replace(/[-\s]/g, '').toUpperCase();
-                    const digits = raw.replace(/[^0-9]/g, '').slice(0, 8);
-                    const letter = raw.replace(/[^A-Z]/g, '').slice(0, 1);
-                    setDni(digits + letter);
+                    setLookupError(null);
+                    setDni(sanitizeDniInput(e.target.value));
                   }}
                   placeholder="12345678Z"
                   maxLength={9}
                   className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] ${
-                    dni.length > 0 && !dniValid
-                      ? 'border-red-500'
-                      : 'border-[var(--color-cardBorder)]'
+                    dni.length > 0 && !dniValid ? 'border-red-500' : 'border-[var(--color-cardBorder)]'
                   }`}
                 />
                 {dni.length > 0 && !dniValid && (
@@ -354,12 +471,40 @@ export default function JoinViaShareLink() {
                 )}
               </div>
 
+              {isFirstVisit && (
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Confirmar DNI</label>
+                  <input
+                    type="text"
+                    value={confirmDni}
+                    onChange={e => {
+                      setLookupError(null);
+                      setConfirmDni(sanitizeDniInput(e.target.value));
+                    }}
+                    onPaste={handlePasteBlock}
+                    placeholder="12345678Z"
+                    maxLength={9}
+                    className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] ${
+                      confirmDni.length > 0 && normalizedDni !== normalizedConfirmDni
+                        ? 'border-red-500'
+                        : 'border-[var(--color-cardBorder)]'
+                    }`}
+                  />
+                  {confirmDni.length > 0 && normalizedDni !== normalizedConfirmDni && (
+                    <p className="text-xs text-red-500 mt-1">Los DNIs no coinciden.</p>
+                  )}
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Teléfono móvil</label>
                 <div className="flex gap-2">
                   <select
                     value={phonePrefix}
-                    onChange={e => setPhonePrefix(e.target.value)}
+                    onChange={e => {
+                      setLookupError(null);
+                      setPhonePrefix(e.target.value);
+                    }}
                     className="px-2 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                   >
                     {PHONE_PREFIXES.map(p => (
@@ -369,68 +514,74 @@ export default function JoinViaShareLink() {
                   <input
                     type="tel"
                     value={phoneNumber}
-                    onChange={e => setPhoneNumber(e.target.value.replace(/[^0-9\s]/g, ''))}
+                    onChange={e => {
+                      setLookupError(null);
+                      setPhoneNumber(sanitizePhoneInput(e.target.value));
+                    }}
                     placeholder="612 345 678"
-                    className="flex-1 px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    className={`flex-1 px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] ${
+                      phoneNumber.length > 0 && !phoneValid ? 'border-red-500' : 'border-[var(--color-cardBorder)]'
+                    }`}
                   />
                 </div>
+                {phoneNumber.length > 0 && !phoneValid && (
+                  <p className="text-xs text-red-500 mt-1">Número de teléfono no válido</p>
+                )}
               </div>
 
-              {dniValid && phoneValid && (
-                <div className="text-xs text-center py-1 min-h-[1.5rem]">
-                  {lookupQuery.isFetching && (
-                    <span className="text-[var(--color-textSecondary)]">Verificando datos...</span>
-                  )}
-                  {!lookupQuery.isFetching && lookupMatch === 'conflict' && (
-                    <p className="text-red-500 font-medium">
-                      No podemos procesar tu solicitud. Contacta con el organizador.
-                    </p>
-                  )}
-                  {!lookupQuery.isFetching && lookupMatch === 'both' && (
-                    <span className="text-green-600">Datos completados automáticamente.</span>
+              {isFirstVisit && (
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Confirmar teléfono móvil</label>
+                  <input
+                    type="tel"
+                    value={confirmPhoneNumber}
+                    onChange={e => {
+                      setLookupError(null);
+                      setConfirmPhoneNumber(sanitizePhoneInput(e.target.value));
+                    }}
+                    onPaste={handlePasteBlock}
+                    placeholder="612 345 678"
+                    className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] ${
+                      confirmPhoneNumber.length > 0 && fullPhone !== confirmFullPhone
+                        ? 'border-red-500'
+                        : 'border-[var(--color-cardBorder)]'
+                    }`}
+                  />
+                  {confirmPhoneNumber.length > 0 && fullPhone !== confirmFullPhone && (
+                    <p className="text-xs text-red-500 mt-1">Los teléfonos no coinciden.</p>
                   )}
                 </div>
               )}
 
               <div>
-                <label className={`block text-sm font-medium mb-1 ${nameFieldsLocked ? 'text-[var(--color-textSecondary)]' : 'text-[var(--color-text)]'}`}>
+                <label className="block text-sm font-medium mb-1 text-[var(--color-text)]">
                   Nombre
                 </label>
                 <input
                   type="text"
                   value={firstName}
-                  onChange={e => { if (!nameFieldsReadonly) setFirstName(e.target.value); }}
-                  placeholder={lookupQuery.isFetching ? 'Verificando...' : 'Tu nombre'}
-                  disabled={nameFieldsLocked}
-                  readOnly={nameFieldsReadonly}
-                  className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-opacity ${
-                    nameFieldsLocked
-                      ? 'border-[var(--color-cardBorder)] text-[var(--color-textSecondary)] opacity-40 cursor-not-allowed'
-                      : nameFieldsReadonly
-                      ? 'border-[var(--color-cardBorder)] text-[var(--color-text)] cursor-default'
-                      : 'border-[var(--color-cardBorder)] text-[var(--color-text)]'
-                  }`}
+                  onChange={e => {
+                    setLookupError(null);
+                    setFirstName(e.target.value);
+                  }}
+                  placeholder="Tu nombre"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                 />
               </div>
 
               <div>
-                <label className={`block text-sm font-medium mb-1 ${nameFieldsLocked ? 'text-[var(--color-textSecondary)]' : 'text-[var(--color-text)]'}`}>
+                <label className="block text-sm font-medium mb-1 text-[var(--color-text)]">
                   Apellidos
                 </label>
                 <input
                   type="text"
                   value={lastName}
-                  onChange={e => { if (!nameFieldsReadonly) setLastName(e.target.value); }}
-                  placeholder={lookupQuery.isFetching ? 'Verificando...' : 'Tus apellidos'}
-                  disabled={nameFieldsLocked}
-                  readOnly={nameFieldsReadonly}
-                  className={`w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-opacity ${
-                    nameFieldsLocked
-                      ? 'border-[var(--color-cardBorder)] text-[var(--color-textSecondary)] opacity-40 cursor-not-allowed'
-                      : nameFieldsReadonly
-                      ? 'border-[var(--color-cardBorder)] text-[var(--color-text)] cursor-default'
-                      : 'border-[var(--color-cardBorder)] text-[var(--color-text)]'
-                  }`}
+                  onChange={e => {
+                    setLookupError(null);
+                    setLastName(e.target.value);
+                  }}
+                  placeholder="Tus apellidos"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-background)] text-[var(--color-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                 />
               </div>
 
@@ -447,7 +598,10 @@ export default function JoinViaShareLink() {
               <div className="flex items-start gap-3">
                 <button
                   type="button"
-                  onClick={() => setLegalAccepted(v => !v)}
+                  onClick={() => {
+                    setLookupError(null);
+                    setLegalAccepted(v => !v);
+                  }}
                   className="flex-shrink-0 mt-0.5"
                   aria-pressed={legalAccepted}
                 >
@@ -470,7 +624,21 @@ export default function JoinViaShareLink() {
                   </button>
                 </span>
               </div>
+
+              {isCheckingLookup && (
+                <div className="text-xs text-center py-1 min-h-[1.5rem]">
+                  <span className="text-[var(--color-textSecondary)]">Verificando datos...</span>
+                </div>
+              )}
             </div>
+
+            {lookupError && (
+              <p className="text-sm text-red-600">{lookupError}</p>
+            )}
+
+            {previewNotice && (
+              <p className="text-sm text-amber-700">{previewNotice}</p>
+            )}
 
             {serverError && (
               <p className="text-sm text-red-600">{serverError}</p>
@@ -480,7 +648,8 @@ export default function JoinViaShareLink() {
               <button
                 onClick={() => {
                   setScreen('info');
-                  setLookupMatch(null);
+                  setLookupError(null);
+                  setPreviewNotice(null);
                   setFirstName('');
                   setLastName('');
                 }}
@@ -489,11 +658,11 @@ export default function JoinViaShareLink() {
                 Volver
               </button>
               <button
-                onClick={() => requestMutation.mutate()}
-                disabled={!isFormValid || requestMutation.isPending}
+                onClick={() => { void handleSubmit(); }}
+                disabled={!isFormValid || requestMutation.isPending || isCheckingLookup}
                 className="flex-1 py-2 px-4 rounded-xl font-semibold text-white bg-[var(--color-primary)] hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
               >
-                {requestMutation.isPending ? 'Enviando...' : 'Confirmar'}
+                {requestMutation.isPending || isCheckingLookup ? 'Enviando...' : (isPreview ? 'Probar validación' : 'Confirmar')}
               </button>
             </div>
           </div>
@@ -527,7 +696,6 @@ export default function JoinViaShareLink() {
     );
   }
 
-  // Pantalla 3: QR del invitado
   if (screen === 'qr' && result) {
     return (
       <div className={containerClass}>

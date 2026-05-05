@@ -259,7 +259,7 @@ export const lookupGuest = async (req: Request, res: Response): Promise<void> =>
     });
 
     if (matches.length === 0) {
-      res.status(200).json({ success: true, data: { match: 'none' } });
+      res.status(200).json({ success: true, data: { match: 'none', reason: 'no_history' } });
       return;
     }
 
@@ -270,7 +270,7 @@ export const lookupGuest = async (req: Request, res: Response): Promise<void> =>
       notifyAdminsGuestConflict(normalizedDni, normalizedPhone).catch(err =>
         console.error('Error enviando alerta de conflicto de invitado:', err)
       );
-      res.status(200).json({ success: true, data: { match: 'conflict' } });
+      res.status(200).json({ success: true, data: { match: 'conflict', reason: 'conflict' } });
       return;
     }
 
@@ -284,7 +284,7 @@ export const lookupGuest = async (req: Request, res: Response): Promise<void> =>
       notifyAdminsGuestConflict(normalizedDni, normalizedPhone).catch(err =>
         console.error('Error enviando alerta de conflicto de invitado:', err)
       );
-      res.status(200).json({ success: true, data: { match: 'conflict' } });
+      res.status(200).json({ success: true, data: { match: 'conflict', reason: 'conflict' } });
       return;
     }
 
@@ -295,6 +295,7 @@ export const lookupGuest = async (req: Request, res: Response): Promise<void> =>
       success: true,
       data: {
         match: 'both',
+        reason: 'already_known',
         firstName: known?.guestFirstName ?? '',
         lastName: known?.guestLastName ?? '',
       },

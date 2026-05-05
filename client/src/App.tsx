@@ -245,6 +245,7 @@ function App() {
           <Route path="/onboarding-preview" element={<OnboardingInner isPreview />} />
           {/* Enlace de invitación por WhatsApp — público (el invitado no tiene cuenta) */}
           <Route path="/join/:token" element={<JoinViaShareLink />} />
+          <Route path="/join-preview" element={<JoinViaShareLink isPreview />} />
           {/* QR del invitado — público (el invitado lo muestra; el socio lo abre al escanear) */}
           <Route path="/invite/:token" element={<InviteValidation />} />
           {/* Sandbox Azul — pública para pruebas sin login */}

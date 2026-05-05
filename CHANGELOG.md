@@ -4,6 +4,40 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-05
+
+### feat: validación final del formulario público de invitados, ruta de preview y marcador visual para override CHEMI
+
+Se refuerza el flujo público de invitaciones externas para evitar comprobaciones en vivo que generaban alertas repetidas mientras se escribía el teléfono. La validación del historial pasa a ejecutarse sólo al confirmar el formulario, con un modo explícito para primeras visitas, confirmación manual de DNI y teléfono, y una ruta pública de preview sin backend para revisar la UX sin riesgo de envío real. Además, se añade una marca visual en `Apuntar miembro` cuando esa acción está habilitada únicamente por el override del rol `CHEMI`.
+
+**Frontend:**
+
+- `client/src/pages/JoinViaShareLink.tsx`: se elimina el `lookup` automático al teclear. La comprobación se hace ahora sólo al pulsar `Confirmar`, justo antes del envío real.
+- `client/src/pages/JoinViaShareLink.tsx`: nueva casilla `Es la primera vez que viene invitado`, marcada por defecto.
+- `client/src/pages/JoinViaShareLink.tsx`: nuevos campos condicionales `Confirmar DNI` y `Confirmar teléfono móvil`, con bloqueo de pegado desde portapapeles para forzar una segunda escritura real.
+- `client/src/pages/JoinViaShareLink.tsx`: nuevos mensajes bloqueantes para los tres casos de historial:
+  - invitado ya conocido con casilla de primera vez marcada;
+  - ausencia total de histórico con casilla desmarcada;
+  - conflicto entre DNI y teléfono.
+- `client/src/pages/JoinViaShareLink.tsx`: nueva prop `isPreview` y datos simulados para reutilizar el mismo formulario sin llamadas al backend ni `POST`.
+- `client/src/App.tsx`: nueva ruta pública `/join-preview` para revisar el formulario de invitado en modo preview.
+- `client/src/pages/EventDetail.tsx`: se descompone la lógica de `canAddMember` para distinguir la regla normal del override de `CHEMI`, y se muestra `‼️` junto a `Apuntar miembro` cuando la opción está activa sólo por ese override.
+- `client/src/pages/Onboarding.tsx`: `TermsModal` tipa `colors` como `ThemeColors` en lugar de `Record<string, string>`, resolviendo un error de compilación TypeScript.
+- `client/src/pages/Onboarding.tsx`: ajuste de textos y estilo visible en la sección de consentimientos de imagen.
+
+**Backend:**
+
+- `server/src/controllers/shareLinkController.ts`: `lookupGuest` sigue enviando alerta sólo en conflictos, pero ahora devuelve también `reason` (`no_history`, `conflict`, `already_known`) para que la UI pueda reaccionar con mensajes específicos.
+
+**Resultado funcional:**
+
+- El formulario público ya no dispara alertas por cada pulsación del teléfono.
+- La fricción extra sólo aparece cuando el invitado declara que es su primera visita.
+- Existe una ruta segura de preview para revisar el flujo sin tocar backend.
+- Cuando `Apuntar miembro` aparece habilitado de forma excepcional por entrar con rol `CHEMI`, queda señalado visualmente.
+
+---
+
 ## 2026-05-04 (sesión 2)
 
 ### feat: foto carnet, aceptación de condiciones y previsualización del formulario de onboarding

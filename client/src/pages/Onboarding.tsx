@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/axios';
 import { useTheme } from '../hooks/useTheme';
+import type { ThemeColors } from '../config/themes';
 
 interface OnboardingForm {
   firstName: string;
@@ -84,7 +85,7 @@ La Asociación se compromete a utilizar las imágenes con respeto a la dignidad 
 El presente contrato entrará en vigor en la fecha de su firma y se mantendrá vigente mientras el Colaborador cumpla con sus obligaciones. Cualquiera de las partes podrá dar por finalizada la colaboración mediante notificación escrita, con un preaviso de 15 días.`;
 
 interface TermsModalProps {
-  colors: Record<string, string>;
+  colors: ThemeColors;
   onClose: () => void;
 }
 
@@ -287,15 +288,18 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
               <p className="text-sm font-medium" style={{ color: colors.text }}>
                 Consentimientos de imagen
               </p>
+              <p className="text-sm italic" style={{ color: colors.accent }}>
+                Queremos que seas parte de nuestros recuerdos! En la asociación nos encanta capturar la energía y los buenos momentos de nuestras jornadas. ¿Nos das permiso para incluirte en nuestra historia?
+              </p>
 
               {[
                 {
                   key: 'imageConsentActivities' as const,
-                  text: 'Autorización expresa para la captación y publicación de la imagen del colaborador en fotografías y videos tomados durante las actividades organizadas por la asociación.',
+                  text: '¡Sí, quiero aparecer en las fotos! Autorizo a la asociación a tomar imágenes y vídeos durante las actividades para que no se pierda ningún buen momento.',
                 },
                 {
                   key: 'imageConsentSocial' as const,
-                  text: 'Autorización expresa para la publicación de la imagen del colaborador en las redes sociales de la asociación.',
+                  text: '¡Me encanta compartir! Doy mi permiso para que estas imágenes se publiquen en nuestras redes sociales y así mostrar al mundo lo que hacemos juntos.',
                 },
               ].map(({ key, text }) => (
                 <label
@@ -382,7 +386,7 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
                     setErrors(prev => ({ ...prev, termsAccepted: undefined }));
                   }}
                   className="relative flex-shrink-0 mt-0.5 w-10 h-6 rounded-full transition-colors duration-200 focus:outline-none"
-                  style={{ backgroundColor: form.termsAccepted ? colors.primary : colors.cardBorder }}
+                  style={{ backgroundColor: form.termsAccepted ? colors.primary : 'rgba(255,255,255,0.2)' }}
                 >
                   <span
                     className="absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
