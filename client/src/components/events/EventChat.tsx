@@ -33,8 +33,11 @@ export default function EventChat({ eventId, canWrite, currentUserId, isChatClos
       const res = await api.get(`/api/events/${eventId}/messages`);
       return res.data.data ?? [];
     },
-    // Siempre hacemos la query inicial para saber si hay mensajes
-    refetchInterval: (userActivated || messages.length > 0) ? 10_000 : false,
+    // El polling arranca una vez que el usuario activa el chat o hay mensajes (evaluado en cada refetch)
+    refetchInterval: (query) => {
+      const data = query.state.data as ChatMessage[] | undefined;
+      return (userActivated || (data && data.length > 0)) ? 10_000 : false;
+    },
   });
 
   const hasMessages = messages.length > 0;
