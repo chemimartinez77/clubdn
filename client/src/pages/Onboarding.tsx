@@ -6,7 +6,7 @@ import { api } from '../api/axios';
 import { useTheme } from '../hooks/useTheme';
 import type { ThemeColors } from '../config/themes';
 import type { ApiResponse } from '../types/auth';
-import type { OnboardingConfig } from '../types/config';
+import type { ClubInterestConfig, OnboardingConfig } from '../types/config';
 
 interface OnboardingForm {
   firstName: string;
@@ -41,6 +41,18 @@ const EMPTY: OnboardingForm = {
   idPhoto: null,
   termsAccepted: false,
 };
+
+const PREVIEW_CLUB_INTERESTS: ClubInterestConfig[] = [
+  { key: 'eurogames', label: 'Eurogames' },
+  { key: 'tematicos', label: 'Temáticos' },
+  { key: 'wargames-historicos', label: 'Wargames/Históricos' },
+  { key: 'rol', label: 'Rol' },
+  { key: 'miniaturas', label: 'Miniaturas' },
+  { key: 'warhammer', label: 'Warhammer' },
+  { key: 'fillers-party', label: 'Fillers / Party' },
+  { key: 'cartas-lcg-tcg', label: 'Cartas / LCG / TCG' },
+  { key: 'abstractos', label: 'Abstractos' },
+];
 
 const TERMS_TEXT = `FORMULARIO DE COLABORACIÓN
 Club Dreadnought - Asociación de Juegos de Mesa, Estrategia y Miniaturas DN1984
@@ -159,7 +171,9 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
     },
     enabled: !isPreview,
   });
-  const clubInterestsCatalog = onboardingConfig?.clubInterestsCatalog ?? [];
+  const clubInterestsCatalog = isPreview
+    ? PREVIEW_CLUB_INTERESTS
+    : (onboardingConfig?.clubInterestsCatalog ?? []);
 
   const mutation = useMutation({
     mutationFn: (data: OnboardingForm) => {

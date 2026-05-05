@@ -93,7 +93,7 @@ export interface TrackGameRequest {
 export const getCategoryDisplayName = (category: BadgeCategory): string => {
   const categoryNames: Record<BadgeCategory, string> = {
     EUROGAMES: 'Eurogames',
-    TEMATICOS: 'Tematicos',
+    TEMATICOS: 'Temáticos',
     WARGAMES: 'Wargames',
     ROL: 'Rol',
     MINIATURAS: 'Miniaturas',
@@ -103,13 +103,13 @@ export const getCategoryDisplayName = (category: BadgeCategory): string => {
     ABSTRACTOS: 'Abstractos',
     CATALOGADOR: 'Catalogador',
     CONOCEDOR_GENEROS: 'Conocedor de Generos',
-    FOTOGRAFO: 'Fotografo',
+    FOTOGRAFO: 'Fotógrafo',
     ORGANIZADOR: 'Organizador',
     REPETIDOR: 'Repetidor',
     INVITADOR: 'Invitador',
     VALIDADOR: 'Validador',
     TESTIGO_MESA: 'Testigo de Mesa',
-    AUDITOR_LUDICO: 'Auditor Ludico',
+    AUDITOR_LUDICO: 'Auditor Lúdico',
     PRIMER_JUGADOR: 'Primer Jugador',
     GIRADOR_RULETA: 'Girador de Ruleta'
   };
