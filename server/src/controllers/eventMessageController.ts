@@ -11,7 +11,7 @@ async function canAccessChat(eventId: string, userId: string, role: EffectiveUse
     where: { eventId_userId: { eventId, userId } },
     select: { status: true },
   });
-  return !!registration && registration.status !== 'CANCELLED';
+  return registration?.status === 'CONFIRMED';
 }
 
 function calcChatClosedAt(event: {

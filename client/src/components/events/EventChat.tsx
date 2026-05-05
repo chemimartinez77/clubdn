@@ -22,20 +22,23 @@ interface Props {
 }
 
 export default function EventChat({ eventId, canWrite, currentUserId, isChatClosed }: Props) {
-  const [isActive, setIsActive] = useState(false);
+  const [userActivated, setUserActivated] = useState(false);
   const [text, setText] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
-  const { data: messages = [] } = useQuery<ChatMessage[]>({
+  const { data: messages = [], isFetched } = useQuery<ChatMessage[]>({
     queryKey: ['eventMessages', eventId],
     queryFn: async () => {
       const res = await api.get(`/api/events/${eventId}/messages`);
       return res.data.data ?? [];
     },
-    enabled: isActive,
-    refetchInterval: isActive ? 10_000 : false,
+    // Siempre hacemos la query inicial para saber si hay mensajes
+    refetchInterval: (userActivated || messages.length > 0) ? 10_000 : false,
   });
+
+  const hasMessages = messages.length > 0;
+  const isActive = userActivated || hasMessages;
 
   useEffect(() => {
     if (isActive) {
@@ -66,11 +69,12 @@ export default function EventChat({ eventId, canWrite, currentUserId, isChatClos
     }
   };
 
-  if (!isActive) {
+  // Mostrar botón solo si la query ya resolvió y no hay mensajes y el usuario no lo ha activado
+  if (isFetched && !isActive) {
     return (
       <div className="flex items-center justify-center py-6">
         <button
-          onClick={() => setIsActive(true)}
+          onClick={() => setUserActivated(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--color-primary)] text-[var(--color-primary)] text-sm font-medium hover:bg-[var(--color-primary)] hover:text-white transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -81,6 +85,9 @@ export default function EventChat({ eventId, canWrite, currentUserId, isChatClos
       </div>
     );
   }
+
+  // Mientras carga la query inicial, no mostrar nada
+  if (!isFetched) return null;
 
   return (
     <div className="flex flex-col h-full min-h-0">

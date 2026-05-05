@@ -6,6 +6,25 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-05
 
+### fix: ajustar comportamiento y acceso al chat del evento
+
+Dos correcciones al chat añadido en la sesión anterior:
+
+1. **Auto-apertura**: el chat ahora hace siempre una query inicial al cargar la página. Si ya existen mensajes, el chat se muestra directamente sin necesidad de pulsar "Iniciar chat". El botón solo aparece cuando no hay mensajes todavía. El polling (cada 10s) arranca en cuanto hay mensajes o el usuario pulsa el botón.
+
+2. **Acceso restringido a CONFIRMED**: antes podían acceder al chat usuarios con estado PENDING_APPROVAL o WAITLIST. Ahora solo los inscritos con estado CONFIRMED (y administradores) pueden leer y escribir mensajes, tanto en frontend como en backend.
+
+**Frontend:**
+
+- `client/src/components/events/EventChat.tsx`: eliminado el estado `isActive` manual; la query se lanza siempre; se muestra el chat si hay mensajes (`hasMessages`) o si el usuario pulsó el botón (`userActivated`).
+- `client/src/pages/EventDetail.tsx`: `canAccessChat` pasa de `isUserRegistered && status !== 'CANCELLED'` a `userRegistrationStatus === 'CONFIRMED'` (o admin).
+
+**Backend:**
+
+- `server/src/controllers/eventMessageController.ts`: `canAccessChat` pasa de aceptar cualquier estado no cancelado a exigir `status === 'CONFIRMED'`.
+
+---
+
 ### fix: el endpoint de impersonación devolvía 403 porque faltaba authenticate
 
 La ruta `POST /api/admin/members/:memberId/impersonate` no tenía el middleware `authenticate`, por lo que `req.user` llegaba `undefined` al controlador. El check `actorRole !== 'CHEMI'` fallaba siempre devolviendo 403, haciendo que el botón "Login as" en el directorio de miembros no funcionara en staging.

@@ -826,9 +826,7 @@ export default function EventDetail() {
   const canConfigureLateJoin = isChemi || isEditMagicSelected;
 
   // Chat del evento
-  const canAccessChat = isAdmin || (
-    event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED'
-  );
+  const canAccessChat = isAdmin || event.userRegistrationStatus === 'CONFIRMED';
   const chatClosedAt = (() => {
     if (event.startHour == null) return null;
     const start = new Date(event.date);
