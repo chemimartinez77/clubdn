@@ -16,9 +16,14 @@ export interface TopDay {
   count: number;
 }
 
+export type GameValidationType = 'players' | 'organizer' | 'solo' | 'unconfirmed';
+
 export interface UserStats {
   eventsAttended: number;
   gamesPlayed: number;
+  gamesValidatedByPlayers: number;
+  gamesValidatedByOrganizer: number;
+  gamesSoloOrganizer: number;
   uniqueGamesPlayed: number;
   topGames: TopGame[];
   upcomingEvents: number;
@@ -87,6 +92,9 @@ export interface UserDetailedStats {
     joinedGames: number;
     uniqueGames: number;
     uniquePlayers: number;
+    gamesValidatedByPlayers: number;
+    gamesValidatedByOrganizer: number;
+    gamesSoloOrganizer: number;
   };
   weeklyStats: {
     bestWeeklyStreak: number;
@@ -124,6 +132,7 @@ export interface EventDetail {
   registeredCount?: number;
   location: string;
   status: string;
+  validationType?: GameValidationType;
   // Relación con la tabla Game (URLs actualizadas)
   game?: {
     thumbnail: string | null;

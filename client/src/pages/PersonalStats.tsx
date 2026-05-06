@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import InfoTooltip from '../components/ui/InfoTooltip';
 import { GameImage } from '../components/events/EventCard';
 import { api } from '../api/axios';
 import type {
@@ -79,11 +80,20 @@ const getBestMonth = (months: DetailedMonthStat[]) => {
   return bestMonth;
 };
 
-function StatTile({ label, value }: { label: string; value: number | string }) {
+function StatTile({ label, value, tooltip }: { label: string; value: number | string; tooltip?: string }) {
   return (
     <div className="border border-[var(--color-cardBorder)] rounded-lg p-4 bg-[var(--color-cardBackground)]">
       <p className="text-2xl font-bold text-[var(--color-text)]">{value}</p>
-      <p className="text-sm text-[var(--color-textSecondary)] mt-1">{label}</p>
+      <div className="flex items-center gap-1 mt-1">
+        <p className="text-sm text-[var(--color-textSecondary)]">{label}</p>
+        {tooltip && (
+          <InfoTooltip content={tooltip} ariaLabel={`Más información sobre ${label}`}>
+            <svg className="w-3.5 h-3.5 text-[var(--color-textSecondary)] cursor-help flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </InfoTooltip>
+        )}
+      </div>
     </div>
   );
 }
@@ -517,7 +527,17 @@ export default function PersonalStats() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-          <StatTile label="Partidas jugadas" value={data.summary.gamesPlayed} />
+          <StatTile
+            label="Partidas jugadas"
+            value={data.summary.gamesPlayed}
+            tooltip={[
+              `${data.summary.gamesPlayed} en total`,
+              `· ${data.summary.gamesValidatedByPlayers} validadas entre jugadores (QR)`,
+              `· ${data.summary.gamesValidatedByOrganizer} validadas por el organizador`,
+              `· ${data.summary.gamesSoloOrganizer} solo asistió el organizador`,
+              `· ${data.summary.gamesPlayed - data.summary.gamesValidatedByPlayers - data.summary.gamesValidatedByOrganizer - data.summary.gamesSoloOrganizer} sin confirmar`,
+            ].join('\n')}
+          />
           <StatTile label="Partidas organizadas" value={data.summary.organizedGames} />
           <StatTile label="Partidas como asistente" value={data.summary.joinedGames} />
           <StatTile label="Juegos distintos" value={data.summary.uniqueGames} />

@@ -4,6 +4,41 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-07 (sesión 1)
+
+### feat: desglose de categorías de partidas en estadísticas
+
+Las estadísticas de partidas jugadas ahora incluyen todas las partidas COMPLETED (no solo las con `disputeResult: true`), con un desglose en 4 categorías que indican el nivel de fiabilidad de cada partida.
+
+**Motivación:** Usuarios como Sandra tenían partidas reales (Gizmos, Feed the Kraken, Dune) que no aparecían en sus estadísticas porque el organizador no respondió a la notificación de disputa. El filtro `disputeResult: true` era demasiado restrictivo.
+
+**Las 4 categorías:**
+- **Validada entre jugadores (QR):** `disputeResult: true` + `disputeConfirmedManually: false` — máxima fiabilidad.
+- **Validada por el organizador:** `disputeResult: true` + `disputeConfirmedManually: true` — alta fiabilidad.
+- **Solo asistió el organizador:** 1 único registro CONFIRMED con `maxAttendees > 1` — partida probablemente no jugada.
+- **Sin confirmar:** `disputeResult: null` — partida completada pero sin validación de ningún tipo.
+
+**Cambios en backend** (`server/src/controllers/statsController.ts`):
+- Nueva función helper `getValidationType()` que clasifica cada partida en una de las 4 categorías.
+- `getUserStats`: quita el filtro `disputeResult: true`; añade `gamesValidatedByPlayers`, `gamesValidatedByOrganizer`, `gamesSoloOrganizer` a la respuesta.
+- `getUserDetailedStats`: igual que arriba, y añade los 3 contadores al objeto `summary`.
+- `getUserGamesPlayed`: quita el filtro, añade campo `validationType` a cada partida devuelta.
+
+**Cambios en frontend:**
+- `client/src/types/stats.ts`: nuevo tipo `GameValidationType`, nuevos campos en `UserStats`, `UserDetailedStats.summary` y `EventDetail`.
+- `client/src/components/dashboard/StatsCard.tsx`: tooltip dinámico en "Partidas jugadas" con desglose de las 4 categorías; badges de color en el modal de lista de partidas (verde=QR, amarillo=organizador, gris=sin confirmar, gris oscuro=solo organizador).
+- `client/src/pages/PersonalStats.tsx`: `StatTile` acepta tooltip opcional; "Partidas jugadas" muestra el mismo desglose al hacer hover.
+
+### fix: estado NOT_ATTENDED no mapeado en página de invitación
+
+La página `/invite/:token` mostraba el badge en bruto `NOT_ATTENDED` y el mensaje incorrecto "Esta invitación no es válida hoy" cuando el cron había marcado la invitación como no utilizada tras terminar el evento.
+
+**Archivos modificados:**
+- `client/src/pages/InviteValidation.tsx`: añadido `NOT_ATTENDED` a `statusLabels` y `statusStyles`; mensaje específico "El invitado no fue validado antes de que terminara el evento."
+- `client/src/types/invitation.ts`: añadido `NOT_ATTENDED` al tipo `InvitationStatus`.
+
+---
+
 ## 2026-05-06
 
 ### feat: lanzadados customizable con física 3D y audio de colisión

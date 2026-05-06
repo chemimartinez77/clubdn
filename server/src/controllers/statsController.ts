@@ -40,6 +40,20 @@ const statsEventExpansionSelect = {
   }
 };
 
+type GameValidationType = 'players' | 'organizer' | 'solo' | 'unconfirmed';
+
+function getValidationType(event: {
+  disputeResult: boolean | null;
+  disputeConfirmedManually: boolean;
+  maxAttendees: number;
+  confirmedCount: number;
+}): GameValidationType {
+  if (event.confirmedCount === 1 && event.maxAttendees > 1) return 'solo';
+  if (event.disputeResult === true && !event.disputeConfirmedManually) return 'players';
+  if (event.disputeResult === true && event.disputeConfirmedManually) return 'organizer';
+  return 'unconfirmed';
+}
+
 const serializeStatsEventExpansions = (
   expansions: Array<{
     id: string;
@@ -358,20 +372,48 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
       }
     });
 
-    // 2. Partidas jugadas (solo eventos tipo PARTIDA con resultado validado)
-    const gamesPlayed = await prisma.eventRegistration.count({
-      where: {
-        userId,
-        status: RegistrationStatus.CONFIRMED,
-        event: {
-          type: 'PARTIDA',
-          status: EventStatus.COMPLETED,
-          disputeResult: true
+    // 2. Partidas jugadas — total y desglose por tipo de validación
+    const [gamesPlayed, gamesValidatedByPlayers, gamesValidatedByOrganizer, soloOrganizerCandidates] = await Promise.all([
+      prisma.eventRegistration.count({
+        where: {
+          userId,
+          status: RegistrationStatus.CONFIRMED,
+          event: { type: 'PARTIDA', status: EventStatus.COMPLETED }
         }
-      }
-    });
+      }),
+      prisma.eventRegistration.count({
+        where: {
+          userId,
+          status: RegistrationStatus.CONFIRMED,
+          event: { type: 'PARTIDA', status: EventStatus.COMPLETED, disputeResult: true, disputeConfirmedManually: false }
+        }
+      }),
+      prisma.eventRegistration.count({
+        where: {
+          userId,
+          status: RegistrationStatus.CONFIRMED,
+          event: { type: 'PARTIDA', status: EventStatus.COMPLETED, disputeResult: true, disputeConfirmedManually: true }
+        }
+      }),
+      // Candidatas a "solo organizador": COMPLETED + maxAttendees > 1, filtramos en código las de 1 asistente
+      prisma.eventRegistration.findMany({
+        where: {
+          userId,
+          status: RegistrationStatus.CONFIRMED,
+          event: { type: 'PARTIDA', status: EventStatus.COMPLETED, maxAttendees: { gt: 1 } }
+        },
+        select: {
+          event: {
+            select: {
+              _count: { select: { registrations: { where: { status: RegistrationStatus.CONFIRMED } } } }
+            }
+          }
+        }
+      })
+    ]);
+    const gamesSoloOrganizer = soloOrganizerCandidates.filter(r => r.event._count.registrations === 1).length;
 
-    // 3. Top 3 juegos más jugados por el usuario
+    // 3. Top 3 juegos más jugados por el usuario (todas las partidas COMPLETED)
     const userTopGames = await prisma.eventRegistration.findMany({
       where: {
         userId,
@@ -379,8 +421,7 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
         event: {
           type: 'PARTIDA',
           status: EventStatus.COMPLETED,
-          gameName: { not: null },
-          disputeResult: true
+          gameName: { not: null }
         }
       },
       select: {
@@ -560,6 +601,9 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
       data: {
         eventsAttended,
         gamesPlayed,
+        gamesValidatedByPlayers,
+        gamesValidatedByOrganizer,
+        gamesSoloOrganizer,
         uniqueGamesPlayed,
         topGames,
         upcomingEvents,
@@ -611,8 +655,7 @@ export const getUserDetailedStats = async (req: Request, res: Response): Promise
         status: RegistrationStatus.CONFIRMED,
         event: {
           type: 'PARTIDA',
-          status: EventStatus.COMPLETED,
-          disputeResult: true
+          status: EventStatus.COMPLETED
         }
       },
       select: {
@@ -626,6 +669,9 @@ export const getUserDetailedStats = async (req: Request, res: Response): Promise
             createdBy: true,
             gameName: true,
             gameImage: true,
+            maxAttendees: true,
+            disputeResult: true,
+            disputeConfirmedManually: true,
             game: {
               select: {
                 thumbnail: true,
@@ -756,6 +802,23 @@ export const getUserDetailedStats = async (req: Request, res: Response): Promise
     }
 
     const gamesPlayed = registrations.length;
+
+    // Contadores de validationType
+    let gamesValidatedByPlayers = 0;
+    let gamesValidatedByOrganizer = 0;
+    let gamesSoloOrganizer = 0;
+    for (const { event } of registrations) {
+      const vt = getValidationType({
+        disputeResult: event.disputeResult,
+        disputeConfirmedManually: event.disputeConfirmedManually,
+        maxAttendees: event.maxAttendees,
+        confirmedCount: event.registrations.length
+      });
+      if (vt === 'players') gamesValidatedByPlayers++;
+      else if (vt === 'organizer') gamesValidatedByOrganizer++;
+      else if (vt === 'solo') gamesSoloOrganizer++;
+    }
+
     const sortedWeekStarts = Array.from(playedWeekStarts).sort((a, b) => a - b);
     const currentWeekStartMs = getWeekStart(new Date()).getTime();
     const byMonthList = Array.from(byMonth.entries())
@@ -770,7 +833,10 @@ export const getUserDetailedStats = async (req: Request, res: Response): Promise
           organizedGames,
           joinedGames: gamesPlayed - organizedGames,
           uniqueGames: games.size,
-          uniquePlayers: players.size
+          uniquePlayers: players.size,
+          gamesValidatedByPlayers,
+          gamesValidatedByOrganizer,
+          gamesSoloOrganizer
         },
         weeklyStats: {
           bestWeeklyStreak: countBestWeeklyStreak(sortedWeekStarts),
@@ -925,8 +991,7 @@ export const getUserGamesPlayed = async (req: Request, res: Response): Promise<v
         status: RegistrationStatus.CONFIRMED,
         event: {
           type: 'PARTIDA',
-          status: EventStatus.COMPLETED,
-          disputeResult: true
+          status: EventStatus.COMPLETED
         }
       },
       select: {
@@ -947,6 +1012,8 @@ export const getUserGamesPlayed = async (req: Request, res: Response): Promise<v
             maxAttendees: true,
             location: true,
             status: true,
+            disputeResult: true,
+            disputeConfirmedManually: true,
             registrations: {
               where: {
                 status: RegistrationStatus.CONFIRMED
@@ -989,6 +1056,12 @@ export const getUserGamesPlayed = async (req: Request, res: Response): Promise<v
       success: true,
       data: games.map(({ event }) => ({
         ...event,
+        validationType: getValidationType({
+          disputeResult: event.disputeResult,
+          disputeConfirmedManually: event.disputeConfirmedManually,
+          maxAttendees: event.maxAttendees,
+          confirmedCount: event.registrations.length
+        }),
         expansions: serializeStatsEventExpansions(event.expansions)
       }))
     });

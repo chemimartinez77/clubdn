@@ -8,8 +8,15 @@ import Modal from '../ui/Modal';
 import InfoTooltip from '../ui/InfoTooltip';
 import { api } from '../../api/axios';
 import { GameImage } from '../events/EventCard';
-import type { UserStatsResponse, ClubStatsResponse, EventDetail } from '../../types/stats';
+import type { UserStatsResponse, ClubStatsResponse, EventDetail, GameValidationType } from '../../types/stats';
 import type { PublicConfig } from '../../types/config';
+
+const VALIDATION_BADGE: Record<GameValidationType, { label: string; className: string }> = {
+  players:    { label: 'Validada QR',           className: 'bg-green-100 text-green-700' },
+  organizer:  { label: 'Validada organizador',  className: 'bg-yellow-100 text-yellow-700' },
+  unconfirmed:{ label: 'Sin confirmar',          className: 'bg-gray-100 text-gray-500' },
+  solo:       { label: 'Solo organizador',       className: 'bg-gray-200 text-gray-500' },
+};
 
 interface StatItem {
   label: string;
@@ -158,6 +165,15 @@ export default function StatsCard() {
       label: 'Partidas jugadas',
       value: userStats?.gamesPlayed ?? '-',
       color: 'blue',
+      tooltip: userStats
+        ? [
+            `${userStats.gamesPlayed} en total`,
+            `· ${userStats.gamesValidatedByPlayers} validadas entre jugadores (QR)`,
+            `· ${userStats.gamesValidatedByOrganizer} validadas por el organizador`,
+            `· ${userStats.gamesSoloOrganizer} solo asistió el organizador`,
+            `· ${userStats.gamesPlayed - userStats.gamesValidatedByPlayers - userStats.gamesValidatedByOrganizer - userStats.gamesSoloOrganizer} sin confirmar`,
+          ].join('\n')
+        : undefined,
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -451,7 +467,17 @@ export default function StatsCard() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-[var(--color-text)]">{game.title}</h4>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-semibold text-[var(--color-text)]">{game.title}</h4>
+                      {game.validationType && (() => {
+                        const badge = VALIDATION_BADGE[game.validationType as GameValidationType];
+                        return badge ? (
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.className}`}>
+                            {badge.label}
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
                     {game.gameName && (
                       <p className="text-sm text-blue-600 mt-1">🎮 {game.gameName}</p>
                     )}
