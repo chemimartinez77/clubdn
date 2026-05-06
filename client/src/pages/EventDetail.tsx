@@ -801,9 +801,15 @@ export default function EventDetail() {
     && !inheritsRegistrationsFromPrevious
     && (effectiveStatus === 'SCHEDULED' || canLateJoin);
   const canUnregister = event.isUserRegistered && event.userRegistrationStatus !== 'CANCELLED' && !isPast && !inheritsRegistrationsFromPrevious;
+  const eventEnd = (() => {
+    const durationMs = ((event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0)) * 60 * 1000;
+    return new Date(eventStart.getTime() + durationMs);
+  })();
+  const canLateInvite = effectiveStatus === 'ONGOING'
+    || (effectiveStatus === 'COMPLETED' && (new Date().getTime() - eventEnd.getTime()) < 3 * 60 * 60 * 1000);
   const canInvite = !isFull
     && !inheritsRegistrationsFromPrevious
-    && (effectiveStatus === 'SCHEDULED' || canLateJoin);
+    && (effectiveStatus === 'SCHEDULED' || canLateInvite);
   const canDelete = isPartida && !isPast && event.status !== 'CANCELLED' && (isAdmin || user?.id === event.createdBy);
   const canEdit = isOrganizerOrAdmin && event.status !== 'CANCELLED' && !isPast;
   const canAddMemberNormally = isOrganizerOrAdmin
