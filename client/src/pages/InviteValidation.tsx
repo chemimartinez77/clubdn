@@ -14,15 +14,17 @@ import type { Invitation } from '../types/invitation';
 const statusLabels: Record<string, string> = {
   PENDING: 'Pendiente',
   USED: 'Usado',
-  EXPIRED: 'Expirado',
-  CANCELLED: 'Cancelado'
+  EXPIRED: 'Expirada',
+  CANCELLED: 'Cancelada',
+  NOT_ATTENDED: 'No asistió'
 };
 
 const statusStyles: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
   USED: 'bg-green-100 text-green-800',
   EXPIRED: 'bg-red-100 text-red-800',
-  CANCELLED: 'bg-gray-100 text-gray-600'
+  CANCELLED: 'bg-gray-100 text-gray-600',
+  NOT_ATTENDED: 'bg-gray-100 text-gray-600'
 };
 
 function getCurrentUserId(): string | null {
@@ -228,6 +230,8 @@ export default function InviteValidation() {
                   ? 'Esta invitación ha expirado.'
                   : invitation.status === 'CANCELLED'
                   ? 'Esta invitación ha sido cancelada.'
+                  : invitation.status === 'NOT_ATTENDED'
+                  ? 'El invitado no fue validado antes de que terminara el evento.'
                   : 'Esta invitación no es válida hoy.'}
               </p>
             </CardContent>
