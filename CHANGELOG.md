@@ -6,6 +6,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-07 (sesión 1)
 
+### fix: corregir mojibake y BOM en CreatePartida.tsx y Ludoteca.tsx, y badge de expansión BGG
+
+Tres correcciones independientes de calidad de texto y datos:
+
+**1. Mojibake en `CreatePartida.tsx`** — el archivo tenía codificación UTF-8 with BOM y múltiples cadenas con caracteres corruptos producidos por un pegado en latin-1 (p.ej. `AÃ±adir expansiÃ³n` → `Añadir expansión`). Se eliminó el BOM y se corrigieron todas las cadenas afectadas: títulos de sección, labels, placeholders, mensajes de clonado de asistentes, textos del modal de expansión, etc.
+
+**2. Mojibake en `Ludoteca.tsx`** — el badge `DonaciÃ³n` en la tarjeta de donación y el título del diálogo `Solicitar prestamo` (sin tilde) se corrigieron a `Donación` y `Solicitar préstamo` respectivamente.
+
+**3. Badge de expansión en búsqueda BGG** — al mapear resultados del endpoint `/thing`, el `itemType` se obtenía solo del resultado de búsqueda (`sourceItem.$?.type`). Si el juego no se encontraba en el mapa por diferencia de tipos (string vs número) caía a `boardgame`. Ahora también se consulta el tipo del propio ítem de detalle (`item.$?.type`), lo que garantiza que expansiones como "Darwin's Journey: Oceania" reciban el badge correcto.
+
+**Archivos modificados:**
+- `client/src/pages/CreatePartida.tsx`: eliminado BOM (EF BB BF), corregidas ~20 cadenas con mojibake.
+- `client/src/pages/Ludoteca.tsx`: corregidas 2 cadenas (`Donación`, `Solicitar préstamo`).
+- `server/src/services/bggService.ts`: en `searchBGGGames`, `itemType` ahora usa `sourceItem.$?.type || item.$?.type` para determinar si es expansión.
+
+---
+
 ### fix: ordenar resultados BGG por tipo y año, y mejorar badge de expansión
 
 Al buscar juegos en la BGG salían mezclados juegos base y expansiones sin orden aparente. Ahora los resultados se ordenan automáticamente en el frontend: primero los juegos base y después las expansiones, y dentro de cada grupo por año de publicación ascendente (el original primero). Además, el indicador "Expansión" pasa de ser texto suelto a un chip naranja compacto alineado con el año, más fácil de identificar visualmente.

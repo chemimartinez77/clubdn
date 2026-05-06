@@ -812,7 +812,7 @@ export default function Ludoteca() {
 
                     {item.isDonated && item.donorDisplayName && (
                       <div className="mb-3 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                        <span className="rounded-full bg-amber-200 px-2 py-0.5 font-semibold text-amber-900">DonaciÃ³n</span>
+                        <span className="rounded-full bg-amber-200 px-2 py-0.5 font-semibold text-amber-900">Donación</span>
                         <span>Donado por {item.donorDisplayName}</span>
                       </div>
                     )}
@@ -1050,7 +1050,7 @@ export default function Ludoteca() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-lg bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] shadow-xl">
             <div className="p-5 border-b border-[var(--color-cardBorder)]">
-              <h3 className="text-lg font-semibold text-[var(--color-text)]">Solicitar prestamo</h3>
+              <h3 className="text-lg font-semibold text-[var(--color-text)]">Solicitar préstamo</h3>
               <p className="mt-1 text-sm text-[var(--color-textSecondary)]">{pendingLoanRequest.name}</p>
             </div>
             <div className="p-5 space-y-3">

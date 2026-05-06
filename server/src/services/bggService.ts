@@ -242,7 +242,7 @@ export async function searchBGGGames(
         yearPublished: item.yearpublished?.[0]?.$.value || '',
         image: item.image?.[0] || '',
         thumbnail: item.thumbnail?.[0] || '',
-        itemType: sourceItem?.$?.type === 'boardgameexpansion' ? 'boardgameexpansion' : 'boardgame',
+        itemType: (sourceItem?.$?.type === 'boardgameexpansion' || item?.$?.type === 'boardgameexpansion') ? 'boardgameexpansion' : 'boardgame',
       };
     });
 
