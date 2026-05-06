@@ -6,6 +6,17 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-07 (sesión 1)
 
+### fix: ordenar resultados BGG por tipo y año, y mejorar badge de expansión
+
+Al buscar juegos en la BGG salían mezclados juegos base y expansiones sin orden aparente. Ahora los resultados se ordenan automáticamente en el frontend: primero los juegos base y después las expansiones, y dentro de cada grupo por año de publicación ascendente (el original primero). Además, el indicador "Expansión" pasa de ser texto suelto a un chip naranja compacto alineado con el año, más fácil de identificar visualmente.
+
+No se añaden llamadas adicionales a la API — los campos `itemType` y `yearPublished` ya venían en la respuesta.
+
+**Archivos modificados:**
+- `client/src/components/events/GameSearchModal.tsx`: ordenamiento de `visibleGames` con `.sort()` y rediseño del badge de expansión.
+
+---
+
 ### feat: desglose de categorías de partidas en estadísticas
 
 Las estadísticas de partidas jugadas ahora incluyen todas las partidas COMPLETED (no solo las con `disputeResult: true`), con un desglose en 4 categorías que indican el nivel de fiabilidad de cada partida.

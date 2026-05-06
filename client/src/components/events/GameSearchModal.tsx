@@ -96,7 +96,14 @@ export default function GameSearchModal({
     }
   };
 
-  const visibleGames = searchResult.games;
+  const visibleGames = [...searchResult.games].sort((a, b) => {
+    const aIsExp = a.itemType === 'boardgameexpansion' ? 1 : 0;
+    const bIsExp = b.itemType === 'boardgameexpansion' ? 1 : 0;
+    if (aIsExp !== bIsExp) return aIsExp - bIsExp;
+    const aYear = parseInt(a.yearPublished || '0', 10);
+    const bYear = parseInt(b.yearPublished || '0', 10);
+    return aYear - bYear;
+  });
 
   const handleSelectGame = (game: BGGGame) => {
     onSelect(game);
@@ -256,12 +263,14 @@ export default function GameSearchModal({
                   )}
                   <div className="flex-1">
                     <h3 className="font-medium text-[var(--color-text)]">{game.name}</h3>
-                    {game.yearPublished && (
-                      <p className="text-sm text-[var(--color-textSecondary)]">{game.yearPublished}</p>
-                    )}
-                    {game.itemType === 'boardgameexpansion' && (
-                      <p className="text-xs text-amber-600 mt-1">Expansión</p>
-                    )}
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      {game.yearPublished && (
+                        <span className="text-sm text-[var(--color-textSecondary)]">{game.yearPublished}</span>
+                      )}
+                      {game.itemType === 'boardgameexpansion' && (
+                        <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Expansión</span>
+                      )}
+                    </div>
                   </div>
                   <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
