@@ -4,6 +4,54 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-06
+
+### feat: lanzadados customizable con física 3D y audio de colisión
+
+Nueva página `/lanzadados/custom` con dados RPG estándar (D4, D6, D8, D10, D12, D20) en 3D con física real (Three.js + Cannon-es). Además, audio de colisión añadido también a `/lanzadados/mansiones`.
+
+**Funcionalidad:**
+- Botones `+D4`, `+D6`, `+D8`, `+D10`, `+D12`, `+D20` para añadir dados a la mesa (máximo 12).
+- Botón **Lanzar**: relanza todos los dados con velocidad y rotación aleatoria.
+- Botón **Reset**: vacía la mesa.
+- Panel de resultados con valores por tipo y suma total.
+- Física: gravedad, rebote, fricción y detección de estabilidad idénticos a la versión de Mansiones.
+
+**Geometrías 3D:**
+- D4: `TetrahedronGeometry` con textura especial — cada cara muestra 3 números en los vértices (rotados), el resultado es la cara inferior (la que queda en la base).
+- D6: geometría non-indexed construida a mano con winding correcto y UVs explícitas por triángulo; caras opuestas suman 7 (1↔6, 2↔5, 3↔4).
+- D8: `OctahedronGeometry`.
+- D10: bipirámide pentagonal custom (`buildD10Geometry`).
+- D12: `DodecahedronGeometry` con `trisPerFace=3`.
+- D20: `IcosahedronGeometry`.
+
+**Texturas:**
+- Atlas de canvas generado dinámicamente por tipo de dado: números centrados, color de fondo distintivo por tipo.
+- D10, D12 y D20: fuente más pequeña y punto indicador bajo el 6 y el 9 para distinguirlos.
+- D4: atlas especial `buildD4Atlas` con 3 números por celda, rotados hacia cada vértice.
+- D6: atlas especial `buildD6Atlas` (grid 3×2) con números grandes centrados.
+
+**Audio:**
+- `diceAudio.ts`: singleton de Web Audio API que carga el WAV `347807__andresix__dice_rolls_15cm.wav` (11 segmentos identificados), reproduce uno aleatorio por colisión con volumen proporcional al impacto y cooldown de 80ms.
+- `unlockAudio()` llamado en el primer gesto del usuario para desbloquear el AudioContext en iOS Safari / Android Chrome.
+- Audio integrado también en `MansionsDiceRoller.tsx` mediante `body.addEventListener('collide', ...)`.
+
+**Detección de cara ganadora:**
+- `getTopFaceIndex`: normal más alineada con el vector up, con soporte para `trisPerFace` (devuelve índice de cara lógica, no de triángulo).
+- `getBottomFaceIndex`: para el D4, detecta la cara inferior (base).
+
+**Archivos creados:**
+- `client/src/pages/lanzadados/diceAudio.ts`
+- `client/src/pages/lanzadados/CustomDiceRoller.tsx`
+- `client/public/lanzadados/347807__andresix__dice_rolls_15cm.wav`
+
+**Archivos modificados:**
+- `client/src/pages/lanzadados/MansionsDiceRoller.tsx`: audio de colisión añadido.
+- `client/src/App.tsx`: rutas `/lanzadados/mansiones` y `/lanzadados/custom` registradas.
+- `client/package.json` / `package.json`: sin cambios de dependencias (Three.js y Cannon-es ya estaban).
+
+---
+
 ## 2026-05-05
 
 ### fix: ajustar comportamiento y acceso al chat del evento

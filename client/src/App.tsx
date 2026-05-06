@@ -66,6 +66,8 @@ import MarketplaceEdit from './pages/marketplace/MarketplaceEdit';
 import MarketplaceMine from './pages/marketplace/MarketplaceMine';
 import MarketplaceConversations from './pages/marketplace/MarketplaceConversations';
 import MarketplaceChat from './pages/marketplace/MarketplaceChat';
+import MansionsDiceRoller from './pages/lanzadados/MansionsDiceRoller';
+import CustomDiceRoller from './pages/lanzadados/CustomDiceRoller';
 
 // Componente para rutas protegidas
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -250,6 +252,9 @@ function App() {
           <Route path="/invite/:token" element={<InviteValidation />} />
           {/* Sandbox Azul — pública para pruebas sin login */}
           <Route path="/azul/local" element={<AzulLocal />} />
+          {/* Simuladores de dados — públicos */}
+          <Route path="/lanzadados/mansiones" element={<MansionsDiceRoller />} />
+          <Route path="/lanzadados/custom" element={<CustomDiceRoller />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
