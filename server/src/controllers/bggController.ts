@@ -14,22 +14,28 @@ const PINNED_GAMES: { keywords: string[]; game: BGGGame }[] = [
   },
 ];
 
-function applyPinnedGames(query: string, games: BGGGame[]): BGGGame[] {
+async function applyPinnedGames(query: string, games: BGGGame[]): Promise<BGGGame[]> {
   const q = query.toLowerCase();
   const toPin: BGGGame[] = [];
 
   for (const pinned of PINNED_GAMES) {
     if (pinned.keywords.some(k => q.includes(k))) {
       // Buscar si ya viene en los resultados para usar sus imágenes
-      const existing = games.find(g => g.id === pinned.game.id);
-      toPin.push(existing ?? pinned.game);
+      const existing = games.find(g => String(g.id) === String(pinned.game.id));
+      if (existing) {
+        toPin.push(existing);
+      } else {
+        // No está en la página actual: obtener datos completos (con imagen) desde BGG
+        const fetched = await getBGGGame(pinned.game.id);
+        toPin.push(fetched ?? pinned.game);
+      }
     }
   }
 
   if (toPin.length === 0) return games;
 
-  const pinnedIds = new Set(toPin.map(g => g.id));
-  return [...toPin, ...games.filter(g => !pinnedIds.has(g.id))];
+  const pinnedIds = new Set(toPin.map(g => String(g.id)));
+  return [...toPin, ...games.filter(g => !pinnedIds.has(String(g.id)))];
 }
 
 /**
@@ -57,7 +63,7 @@ export const searchGames = async (req: Request, res: Response): Promise<void> =>
     const searchResult = await searchBGGGames(query, pageNumber, pageSizeNumber, expansionOnlyBool);
     console.log('[BGG SEARCH] Resultados:', searchResult.games.length, 'juegos encontrados');
 
-    const games = applyPinnedGames(query, searchResult.games);
+    const games = await applyPinnedGames(query, searchResult.games);
 
     res.status(200).json({
       success: true,
