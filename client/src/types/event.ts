@@ -214,8 +214,11 @@ export interface CreateEventData {
   gameCategory?: string;
   linkedNext?: {
     gameId: string;
+    startHour?: number;
+    startMinute?: number;
     durationHours?: number;
     durationMinutes?: number;
+    expansions?: Array<{ gameId: string }>;
   } | null;
 
   // Fecha y hora
@@ -258,8 +261,11 @@ export interface UpdateEventData {
   allowLateJoin?: boolean;
   linkedNext?: {
     gameId: string;
+    startHour?: number;
+    startMinute?: number;
     durationHours?: number;
     durationMinutes?: number;
+    expansions?: Array<{ gameId: string }>;
   } | null;
 }
 

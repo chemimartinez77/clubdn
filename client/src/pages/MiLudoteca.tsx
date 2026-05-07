@@ -181,6 +181,8 @@ export default function MiLudoteca() {
   const [dismissedJobId, setDismissedJobId] = useState<string | null>(
     () => localStorage.getItem(BGG_SYNC_DISMISSED_JOB_KEY)
   );
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['myGames', tab, search, page, locationFilter],
@@ -330,6 +332,39 @@ export default function MiLudoteca() {
     setSearch(searchInput);
     setPage(1);
   }, [searchInput]);
+
+  const handleExport = async (format: 'csv' | 'xlsx') => {
+    setIsExporting(true);
+    try {
+      const res = await api.get<{ success: boolean; data: { headers: string[]; rows: string[][]; total: number } }>('/api/my-ludoteca/export');
+      const { headers, rows } = res.data.data;
+      const dateStr = new Date().toISOString().slice(0, 10);
+
+      if (format === 'csv') {
+        const escape = (cell: string) => `"${cell.replace(/"/g, '""')}"`;
+        const csvContent = [headers, ...rows].map(row => row.map(escape).join(',')).join('\r\n');
+        const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ludoteca-${dateStr}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        const xlsx = await import('xlsx');
+        const ws = xlsx.utils.aoa_to_sheet([headers, ...rows]);
+        const wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(wb, ws, 'Ludoteca');
+        xlsx.writeFile(wb, `ludoteca-${dateStr}.xlsx`);
+      }
+
+      setIsExportModalOpen(false);
+    } catch {
+      toastError('Error al exportar la ludoteca');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleBggSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -640,6 +675,12 @@ export default function MiLudoteca() {
               ))}
             </select>
           )}
+          <button
+            onClick={() => setIsExportModalOpen(true)}
+            className="px-3 py-2 text-sm border border-[var(--color-cardBorder)] rounded-lg text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] transition-colors whitespace-nowrap"
+          >
+            Exportar
+          </button>
         </div>
 
         {isLoading ? (
@@ -854,6 +895,41 @@ export default function MiLudoteca() {
                   className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
                 >
                   Aceptar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isExportModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50" onClick={() => !isExporting && setIsExportModalOpen(false)} />
+            <div className="relative bg-[var(--color-cardBackground)] rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
+              <h2 className="text-lg font-bold text-[var(--color-text)]">Exportar ludoteca</h2>
+              <p className="text-sm text-[var(--color-textSecondary)]">
+                Se exportará tu ludoteca completa (todos los juegos, todos los estados) en el formato que elijas.
+              </p>
+              <div className="flex flex-col gap-3 pt-1">
+                <button
+                  onClick={() => handleExport('csv')}
+                  disabled={isExporting}
+                  className="w-full px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+                >
+                  {isExporting ? 'Exportando...' : 'Descargar CSV'}
+                </button>
+                <button
+                  onClick={() => handleExport('xlsx')}
+                  disabled={isExporting}
+                  className="w-full px-4 py-2 text-sm border border-[var(--color-cardBorder)] rounded-lg text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] disabled:opacity-50"
+                >
+                  {isExporting ? 'Exportando...' : 'Descargar Excel (.xlsx)'}
+                </button>
+                <button
+                  onClick={() => setIsExportModalOpen(false)}
+                  disabled={isExporting}
+                  className="w-full px-4 py-2 text-sm text-[var(--color-textSecondary)] hover:underline disabled:opacity-50"
+                >
+                  Cancelar
                 </button>
               </div>
             </div>

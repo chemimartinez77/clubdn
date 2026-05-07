@@ -19,6 +19,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
+import MiId from './pages/MiId';
 import PersonalStats from './pages/PersonalStats';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
@@ -90,7 +91,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    const redirect = location.pathname !== '/' ? `?redirect=${encodeURIComponent(location.pathname)}` : '';
+    return <Navigate to={`/login${redirect}`} replace />;
   }
 
   // Si el onboarding no está completo y no estamos ya en /onboarding, redirigir
@@ -272,6 +274,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mi-id"
+            element={
+              <ProtectedRoute>
+                <MiId />
               </ProtectedRoute>
             }
           />

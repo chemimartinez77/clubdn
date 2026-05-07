@@ -15,6 +15,7 @@ import {
   getLocations,
   createLocation,
   deleteLocation,
+  exportMyGames,
 } from '../controllers/myLudotecaController';
 import { authenticate } from '../middleware/auth';
 
@@ -28,6 +29,7 @@ router.post('/bgg-sync-confirm', authenticate, confirmBggSync);
 router.get('/bgg-sync-jobs/latest', authenticate, getLatestBggSyncJob);
 router.get('/bgg-sync-jobs/:jobId', authenticate, getBggSyncJobStatus);
 router.delete('/bgg-sync-jobs/:jobId', authenticate, cancelBggSyncJob);
+router.get('/export', authenticate, exportMyGames);
 router.get('/locations', authenticate, getLocations);
 router.post('/locations', authenticate, createLocation);
 router.delete('/locations/:locationId', authenticate, deleteLocation);

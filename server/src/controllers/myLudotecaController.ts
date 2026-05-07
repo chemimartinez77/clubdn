@@ -699,3 +699,52 @@ export const deleteLocation = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: 'Error al eliminar la ubicación' });
   }
 };
+
+/**
+ * GET /api/my-ludoteca/export
+ * Devuelve todos los juegos del usuario formateados para exportar a CSV/Excel.
+ */
+export const exportMyGames = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+
+    const games = await prisma.userGame.findMany({
+      where: { userId, status: 'active' },
+      orderBy: { game: { name: 'asc' } },
+      include: { game: true, location: true },
+    });
+
+    const headers = [
+      'Nombre',
+      'Año de publicación',
+      'Expansión',
+      'Lo tengo',
+      'Wishlist',
+      'Prioridad wishlist',
+      'Lo tuve',
+      'Quiero jugar',
+      'Ubicación',
+      'Sincronizado con BGG',
+      'Fecha añadido',
+    ];
+
+    const rows = games.map((ug) => [
+      ug.game.name,
+      ug.game.yearPublished != null ? String(ug.game.yearPublished) : '',
+      ug.game.isExpansion ? 'Sí' : 'No',
+      ug.own ? 'Sí' : 'No',
+      ug.wishlist ? 'Sí' : 'No',
+      ug.wishlistPriority != null ? String(ug.wishlistPriority) : '',
+      ug.previouslyOwned ? 'Sí' : 'No',
+      ug.wantToPlay ? 'Sí' : 'No',
+      ug.location ? ug.location.name : 'Casa',
+      ug.bggSynced ? 'Sí' : 'No',
+      new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(ug.createdAt),
+    ]);
+
+    return res.json({ success: true, data: { headers, rows, total: games.length } });
+  } catch (error) {
+    console.error('[MY_LUDOTECA] Error en exportMyGames:', error);
+    return res.status(500).json({ success: false, message: 'Error al exportar la ludoteca' });
+  }
+};

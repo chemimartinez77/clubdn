@@ -64,10 +64,11 @@ export default function Events() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
-  const { monthStart, monthEnd, gridStart, gridEnd } = getMonthGridRange(currentMonth);
+  const dayKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(currentMonth.getDate()).padStart(2, '0')}`;
+  const { gridStart, gridEnd } = getMonthGridRange(currentMonth);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['events', statusFilter, typeFilter, search, participant, viewMode, calendarView, monthKey],
+    queryKey: ['events', statusFilter, typeFilter, search, participant, viewMode, calendarView, calendarView === 'month' ? monthKey : dayKey],
     refetchInterval: 10 * 60 * 1000,
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -77,8 +78,27 @@ export default function Events() {
         if (participant) params.append('participant', participant);
       }
       if (viewMode === 'calendar') {
-        const rangeStart = calendarView === 'month' ? gridStart : monthStart;
-        const rangeEnd = calendarView === 'month' ? gridEnd : monthEnd;
+        let rangeStart: Date;
+        let rangeEnd: Date;
+        if (calendarView === 'month') {
+          rangeStart = gridStart;
+          rangeEnd = gridEnd;
+        } else if (calendarView === 'week') {
+          const base = new Date(currentMonth);
+          const dayOfWeek = base.getDay();
+          const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+          rangeStart = new Date(base);
+          rangeStart.setDate(base.getDate() + diff);
+          rangeStart.setHours(0, 0, 0, 0);
+          rangeEnd = new Date(rangeStart);
+          rangeEnd.setDate(rangeStart.getDate() + 6);
+          rangeEnd.setHours(23, 59, 59, 999);
+        } else {
+          rangeStart = new Date(currentMonth);
+          rangeStart.setHours(0, 0, 0, 0);
+          rangeEnd = new Date(currentMonth);
+          rangeEnd.setHours(23, 59, 59, 999);
+        }
         params.append('startDate', rangeStart.toISOString());
         params.append('endDate', rangeEnd.toISOString());
       }

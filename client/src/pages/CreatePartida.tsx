@@ -70,8 +70,27 @@ export default function CreatePartida() {
     }))
   );
   const [linkedNextGame, setLinkedNextGame] = useState<BGGGame | null>(null);
+  const [isLinkedNextExpansionModalOpen, setIsLinkedNextExpansionModalOpen] = useState(false);
+  const [linkedNextExpansions, setLinkedNextExpansions] = useState<BGGGame[]>([]);
   const [linkedNextDurationHours, setLinkedNextDurationHours] = useState('1');
   const [linkedNextDurationMinutes, setLinkedNextDurationMinutes] = useState('0');
+  const [linkedNextStartHour, setLinkedNextStartHour] = useState('');
+  const [linkedNextStartMinute, setLinkedNextStartMinute] = useState('0');
+
+  // Controlled state for main game time/duration — needed to calculate linked game start time
+  const [mainStartHour, setMainStartHour] = useState(() =>
+    clonePrefill?.startHour !== null && clonePrefill?.startHour !== undefined ? String(clonePrefill.startHour) : '17'
+  );
+  const [mainStartMinute, setMainStartMinute] = useState(() =>
+    clonePrefill?.startMinute !== null && clonePrefill?.startMinute !== undefined ? String(clonePrefill.startMinute) : '0'
+  );
+  const [mainDurationHours, setMainDurationHours] = useState(() =>
+    clonePrefill?.durationHours !== null && clonePrefill?.durationHours !== undefined ? String(clonePrefill.durationHours) : '3'
+  );
+  const [mainDurationMinutes, setMainDurationMinutes] = useState(() =>
+    clonePrefill?.durationMinutes !== null && clonePrefill?.durationMinutes !== undefined ? String(clonePrefill.durationMinutes) : '0'
+  );
+
   const [selectedCategory, setSelectedCategory] = useState<string>(clonePrefill?.gameCategory ?? '');
   const [confirmedCategory, setConfirmedCategory] = useState<string | null>(null);
   const [selectedClonedAttendeeIds, setSelectedClonedAttendeeIds] = useState<string[]>(() => cloneAttendees.map((attendee) => attendee.id));
@@ -135,8 +154,11 @@ export default function CreatePartida() {
       linkedNext: linkedNextGame
         ? {
             gameId: linkedNextGame.id,
+            startHour: linkedNextStartHour !== '' ? parseInt(linkedNextStartHour, 10) : undefined,
+            startMinute: linkedNextStartMinute !== '' ? parseInt(linkedNextStartMinute, 10) : undefined,
             durationHours: linkedNextDurationHours !== '' ? parseInt(linkedNextDurationHours, 10) : undefined,
             durationMinutes: linkedNextDurationMinutes !== '' ? parseInt(linkedNextDurationMinutes, 10) : undefined,
+            expansions: linkedNextExpansions.map(e => ({ gameId: e.id })),
           }
         : null,
       gameCategory: gameCategory || undefined
@@ -243,18 +265,6 @@ export default function CreatePartida() {
   const locationDefaultValue = clonePrefill?.location ?? '';
   const addressDefaultValue = clonePrefill?.address ?? '';
   const maxAttendeesDefaultValue = clonePrefill?.maxAttendees ?? 4;
-  const startHourDefaultValue = clonePrefill?.startHour !== null && clonePrefill?.startHour !== undefined
-    ? String(clonePrefill.startHour)
-    : '17';
-  const startMinuteDefaultValue = clonePrefill?.startMinute !== null && clonePrefill?.startMinute !== undefined
-    ? String(clonePrefill.startMinute)
-    : '0';
-  const durationHoursDefaultValue = clonePrefill?.durationHours !== null && clonePrefill?.durationHours !== undefined
-    ? String(clonePrefill.durationHours)
-    : '3';
-  const durationMinutesDefaultValue = clonePrefill?.durationMinutes !== null && clonePrefill?.durationMinutes !== undefined
-    ? String(clonePrefill.durationMinutes)
-    : '0';
   const requiresApprovalDefaultValue = clonePrefill?.requiresApproval ?? true;
   const attendDefaultValue = cloneState ? currentUserWasConfirmed : true;
   const [willAttend, setWillAttend] = useState<boolean>(attendDefaultValue);
@@ -266,6 +276,21 @@ export default function CreatePartida() {
       setAllowLateJoin(true);
     }
   }, [isMagicSelected]);
+
+  // Recalculate linked game start time when main game time/duration changes
+  useEffect(() => {
+    if (!linkedNextGame) return;
+    const startH = parseInt(mainStartHour, 10);
+    const startM = parseInt(mainStartMinute, 10);
+    const durH = parseInt(mainDurationHours, 10) || 0;
+    const durM = parseInt(mainDurationMinutes, 10) || 0;
+    if (Number.isNaN(startH)) return;
+    const totalMinutes = startH * 60 + (startM || 0) + durH * 60 + durM;
+    const calcH = Math.floor(totalMinutes / 60) % 24;
+    const calcM = totalMinutes % 60;
+    setLinkedNextStartHour(String(calcH));
+    setLinkedNextStartMinute(String(calcM));
+  }, [linkedNextGame, mainStartHour, mainStartMinute, mainDurationHours, mainDurationMinutes]);
 
   return (
     <Layout>
@@ -527,7 +552,8 @@ export default function CreatePartida() {
                     <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Hora</label>
                     <select
                       name="startHour"
-                      defaultValue={startHourDefaultValue}
+                      value={mainStartHour}
+                      onChange={e => setMainStartHour(e.target.value)}
                       className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
                     >
                       <option value="">--</option>
@@ -542,7 +568,8 @@ export default function CreatePartida() {
                     <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Minutos</label>
                     <select
                       name="startMinute"
-                      defaultValue={startMinuteDefaultValue}
+                      value={mainStartMinute}
+                      onChange={e => setMainStartMinute(e.target.value)}
                       className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
                     >
                       {minutes.map(minute => (
@@ -564,7 +591,8 @@ export default function CreatePartida() {
                     <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Horas</label>
                     <select
                       name="durationHours"
-                      defaultValue={durationHoursDefaultValue}
+                      value={mainDurationHours}
+                      onChange={e => setMainDurationHours(e.target.value)}
                       className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
                     >
                       <option value="">--</option>
@@ -577,7 +605,8 @@ export default function CreatePartida() {
                     <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Minutos</label>
                     <select
                       name="durationMinutes"
-                      defaultValue={durationMinutesDefaultValue}
+                      value={mainDurationMinutes}
+                      onChange={e => setMainDurationMinutes(e.target.value)}
                       className="w-full px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)]"
                     >
                       {minutes.map(minute => (
@@ -632,9 +661,61 @@ export default function CreatePartida() {
                         </button>
                       </div>
 
+                      {/* Hora de inicio de la segunda partida */}
+                      {(() => {
+                        const mainH = parseInt(mainStartHour, 10);
+                        const mainM = parseInt(mainStartMinute, 10) || 0;
+                        const minStartMinutes = Number.isNaN(mainH) ? null : mainH * 60 + mainM + 60;
+                        const linkedH = parseInt(linkedNextStartHour, 10);
+                        const linkedM = parseInt(linkedNextStartMinute, 10) || 0;
+                        const linkedTotalMinutes = Number.isNaN(linkedH) ? null : linkedH * 60 + linkedM;
+                        const isTooEarly = minStartMinutes !== null && linkedTotalMinutes !== null && linkedTotalMinutes < minStartMinutes;
+                        return (
+                          <div>
+                            <label className="block text-xs text-[var(--color-textSecondary)] mb-1">
+                              Hora de inicio
+                              {minStartMinutes !== null && (
+                                <span className="ml-1 text-[var(--color-textSecondary)]">
+                                  (mínimo {String(Math.floor(minStartMinutes / 60) % 24).padStart(2, '0')}:{String(minStartMinutes % 60).padStart(2, '0')})
+                                </span>
+                              )}
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <select
+                                value={linkedNextStartHour}
+                                onChange={e => setLinkedNextStartHour(e.target.value)}
+                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)] ${isTooEarly ? 'border-red-500' : 'border-[var(--color-inputBorder)]'}`}
+                              >
+                                <option value="">--</option>
+                                {hours.map(h => {
+                                  const disabled = minStartMinutes !== null && h * 60 + linkedM < minStartMinutes && h * 60 + 59 < minStartMinutes;
+                                  return <option key={h} value={h} disabled={disabled}>{String(h).padStart(2, '0')}h</option>;
+                                })}
+                              </select>
+                              <select
+                                value={linkedNextStartMinute}
+                                onChange={e => setLinkedNextStartMinute(e.target.value)}
+                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-inputBackground)] text-[var(--color-inputText)] ${isTooEarly ? 'border-red-500' : 'border-[var(--color-inputBorder)]'}`}
+                              >
+                                {minutes.map(m => {
+                                  const disabled = minStartMinutes !== null && linkedH * 60 + m < minStartMinutes;
+                                  return <option key={m} value={m} disabled={disabled}>{String(m).padStart(2, '0')}min</option>;
+                                })}
+                              </select>
+                            </div>
+                            {isTooEarly && (
+                              <p className="text-xs text-red-500 mt-1">
+                                La segunda partida no puede empezar antes de 1h después del inicio de la primera.
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      {/* Duración de la segunda partida */}
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Horas</label>
+                          <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Duración (horas)</label>
                           <select
                             value={linkedNextDurationHours}
                             onChange={(e) => setLinkedNextDurationHours(e.target.value)}
@@ -647,7 +728,7 @@ export default function CreatePartida() {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Minutos</label>
+                          <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Duración (minutos)</label>
                           <select
                             value={linkedNextDurationMinutes}
                             onChange={(e) => setLinkedNextDurationMinutes(e.target.value)}
@@ -658,6 +739,40 @@ export default function CreatePartida() {
                             ))}
                           </select>
                         </div>
+                      </div>
+
+                      {/* Expansiones de la segunda partida */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-xs text-[var(--color-textSecondary)]">Expansiones</label>
+                          <button
+                            type="button"
+                            onClick={() => setIsLinkedNextExpansionModalOpen(true)}
+                            className="text-xs text-[var(--color-primary)] hover:underline"
+                          >
+                            + Añadir expansión
+                          </button>
+                        </div>
+                        {linkedNextExpansions.length > 0 && (
+                          <ul className="space-y-1">
+                            {linkedNextExpansions.map(exp => (
+                              <li key={exp.id} className="flex items-center gap-2 text-sm text-[var(--color-text)]">
+                                {exp.thumbnail && <img src={exp.thumbnail} alt="" className="w-6 h-6 rounded object-cover" />}
+                                <span className="flex-1 truncate">{exp.name}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setLinkedNextExpansions(prev => prev.filter(e => e.id !== exp.id))}
+                                  className="text-red-500 hover:text-red-600"
+                                  aria-label={`Eliminar ${exp.name}`}
+                                >
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -808,6 +923,21 @@ export default function CreatePartida() {
         onClose={() => setIsLinkedGameModalOpen(false)}
         onSelect={handleLinkedNextSelect}
         title="Seleccionar segunda partida enlazada"
+      />
+
+      <GameSearchModal
+        isOpen={isLinkedNextExpansionModalOpen}
+        onClose={() => setIsLinkedNextExpansionModalOpen(false)}
+        onSelect={(game) => {
+          setLinkedNextExpansions(prev =>
+            prev.some(e => e.id === game.id) ? prev : [...prev, game]
+          );
+          setIsLinkedNextExpansionModalOpen(false);
+        }}
+        title="Añadir expansión a la segunda partida"
+        searchPlaceholder="Busca una expansión..."
+        allowRPGG={false}
+        filterExpansionOnly
       />
 
       {showTour && <CreatePartidaTour onDismiss={dismissTour} />}

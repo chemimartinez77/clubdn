@@ -4,6 +4,69 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-07 (sesión 2)
+
+### fix: vista semanal del calendario no cargaba al cruzar cambio de mes
+
+La vista semanal (y diaria) de Eventos usaba `monthStart`/`monthEnd` (rango del mes completo) como parámetros de la query en lugar del rango real de la semana visible. Al navegar a una semana que cruzaba el cambio de mes (p.ej. 27 abr – 3 may), los eventos de mayo no se cargaban. Reportado por Jorge Fuentes.
+
+**Causa raíz:** el `queryKey` usaba `monthKey` (YYYY-MM), por lo que navegar de semana dentro del mismo mes no disparaba un nuevo fetch; además el rango enviado al servidor era el mes completo en vez del lunes-domingo exacto.
+
+**Solución:** añadido `dayKey` (YYYY-MM-DD) que se usa como `queryKey` en vistas semana/día; dentro del `queryFn`, el rango se calcula como el lunes–domingo de la semana que contiene `currentMonth`. El destructuring de `getMonthGridRange` se ajustó para eliminar las variables no usadas.
+
+**Archivos modificados:**
+- `client/src/pages/Events.tsx`: cálculo del rango semana/día, uso de `dayKey` en `queryKey`.
+
+---
+
+### feat: hora de inicio y expansiones en partida enlazada
+
+Al crear una partida con segunda partida enlazada no había campo para su hora de inicio ni para añadirle expansiones. Reportado por Eva Cabrera.
+
+**Cambios en el formulario (`CreatePartida.tsx`):**
+- Los selectores de hora/duración de la partida principal se convirtieron de uncontrolled (`defaultValue`) a controlled (`value`+`onChange`) para poder reactivamente calcular la hora de inicio de la segunda.
+- La hora de inicio de la segunda partida se precalcula automáticamente (inicio principal + duración principal) mediante un `useEffect`, y es editable. Restricción: nunca puede ser antes de inicio principal +1h; las opciones inválidas quedan deshabilitadas y se muestra un mensaje de error en rojo.
+- Sección de expansiones para la segunda partida, con el mismo modal de búsqueda BGG que la principal.
+- El payload de envío incluye ahora `startHour`, `startMinute` y `expansions` para `linkedNext`.
+
+**Cambios en el servidor (`eventController.ts`):**
+- Tipo `LinkedNextInput` extendido con `startHour`, `startMinute` y `expansions`.
+- `normalizeLinkedNext` extrae y normaliza los nuevos campos.
+- En `createEvent` y `updateEvent`: la partida secundaria se crea/actualiza con `startHour`/`startMinute`, y se llama a `replaceEventExpansions` para sus expansiones (scoped al ID de la partida secundaria, independiente de la principal).
+
+**Archivos modificados:**
+- `client/src/pages/CreatePartida.tsx`
+- `client/src/types/event.ts`: `linkedNext` en `CreateEventData` y `UpdateEventData` con los nuevos campos.
+- `server/src/controllers/eventController.ts`
+
+---
+
+### feat: página /mi-id — acceso directo a la tarjeta de socio
+
+Nueva ruta `/mi-id` que muestra la tarjeta de identificación del usuario (avatar, nombre, tipo de membresía y reloj en tiempo real) como página independiente, pensada para añadirse a la pantalla de inicio del móvil. Protegida con `ProtectedRoute`; si no hay sesión, redirige al login con `?redirect=/mi-id` para volver automáticamente al destino correcto tras autenticarse.
+
+**Archivos modificados:**
+- `client/src/pages/MiId.tsx`: nueva página (componente standalone sin Layout).
+- `client/src/App.tsx`: ruta `/mi-id` + fix en `ProtectedRoute` para pasar el parámetro `redirect` al login.
+
+---
+
+### feat: exportar ludoteca a CSV y Excel
+
+Nuevo botón "Exportar" en Mi ludoteca que abre una modal y permite descargar la colección completa del usuario (todos los juegos, todos los estados: lo tengo, wishlist, lo tuve, quiero jugar) en formato CSV o Excel (.xlsx). La exportación no usa la paginación — el servidor devuelve todos los juegos en una sola llamada.
+
+**Columnas exportadas:** Nombre, Año de publicación, Expansión, Lo tengo, Wishlist, Prioridad wishlist, Lo tuve, Quiero jugar, Ubicación, Sincronizado con BGG, Fecha añadido.
+
+El CSV incluye BOM UTF-8 para que Excel lo abra correctamente con acentos. El XLSX se genera en el cliente con SheetJS (xlsx 0.18.5) importado dinámicamente.
+
+**Archivos modificados:**
+- `server/src/controllers/myLudotecaController.ts`: nueva función `exportMyGames`.
+- `server/src/routes/myLudotecaRoutes.ts`: nuevo endpoint `GET /api/my-ludoteca/export`.
+- `client/src/pages/MiLudoteca.tsx`: botón Exportar, modal, función `handleExport`.
+- `client/package.json`: dependencia `xlsx ^0.18.5`.
+
+---
+
 ## 2026-05-07 (sesión 1)
 
 ### fix: corregir mojibake y BOM en CreatePartida.tsx y Ludoteca.tsx, y badge de expansión BGG

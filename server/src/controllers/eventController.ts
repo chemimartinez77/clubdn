@@ -21,8 +21,11 @@ const REGISTRATION_COOLDOWN_MS = 30000; // 30 segundos
 type EventExpansionInput = { gameId: string };
 type LinkedNextInput = {
   gameId: string;
+  startHour?: number;
+  startMinute?: number;
   durationHours?: number;
   durationMinutes?: number;
+  expansions?: EventExpansionInput[];
 };
 
 const eventExpansionInclude = {
@@ -232,12 +235,19 @@ function normalizeLinkedNext(raw: unknown): LinkedNextInput | null {
   if (!raw || typeof raw !== 'object') return null;
   const gameId = String((raw as { gameId?: string }).gameId ?? '').trim();
   if (!gameId) return null;
-  const durationHours = (raw as { durationHours?: number }).durationHours;
-  const durationMinutes = (raw as { durationMinutes?: number }).durationMinutes;
+  const r = raw as Record<string, unknown>;
+  const startHour = typeof r.startHour === 'number' ? r.startHour : undefined;
+  const startMinute = typeof r.startMinute === 'number' ? r.startMinute : undefined;
+  const durationHours = typeof r.durationHours === 'number' ? r.durationHours : undefined;
+  const durationMinutes = typeof r.durationMinutes === 'number' ? r.durationMinutes : undefined;
+  const expansions = normalizeExpansionInputs(r.expansions);
   return {
     gameId,
+    ...(startHour !== undefined ? { startHour } : {}),
+    ...(startMinute !== undefined ? { startMinute } : {}),
     ...(durationHours !== undefined ? { durationHours } : {}),
     ...(durationMinutes !== undefined ? { durationMinutes } : {}),
+    expansions,
   };
 }
 
@@ -862,12 +872,16 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
             gameName: linkedNextGame.name,
             gameImage: linkedNextGame.image || linkedNextGame.thumbnail || null,
             bggId: linkedNextGame.id,
+            startHour: normalizedLinkedNext.startHour ?? null,
+            startMinute: normalizedLinkedNext.startMinute ?? null,
             durationHours: normalizedLinkedNext.durationHours ?? null,
             durationMinutes: normalizedLinkedNext.durationMinutes ?? null,
             requiresApproval: req.body.requiresApproval !== undefined ? req.body.requiresApproval === true || req.body.requiresApproval === 'true' : true,
             createdBy: userId,
           },
         });
+
+        await replaceEventExpansions(tx, linkedEvent.id, normalizedLinkedNext.expansions ?? []);
 
         await tx.event.update({
           where: { id: createdEvent.id },
@@ -1084,6 +1098,8 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
                 gameName: linkedNextGame.name,
                 gameImage: linkedNextGame.image || linkedNextGame.thumbnail || null,
                 bggId: linkedNextGame.id,
+                startHour: normalizedLinkedNext.startHour ?? null,
+                startMinute: normalizedLinkedNext.startMinute ?? null,
                 durationHours: normalizedLinkedNext.durationHours ?? null,
                 durationMinutes: normalizedLinkedNext.durationMinutes ?? null,
                 location: typeof location === 'string' && location.trim().length > 0 ? location.trim() : updatedEvent.location,
@@ -1093,6 +1109,7 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
               },
             });
 
+            await replaceEventExpansions(tx, existingEvent.linkedNextEventId, normalizedLinkedNext.expansions ?? []);
             await syncPrimaryRegistrationsToLinkedEvent(tx, eventId, existingEvent.linkedNextEventId);
           } else {
             const createdLinkedEvent = await tx.event.create({
@@ -1107,12 +1124,16 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
                 gameName: linkedNextGame.name,
                 gameImage: linkedNextGame.image || linkedNextGame.thumbnail || null,
                 bggId: linkedNextGame.id,
+                startHour: normalizedLinkedNext.startHour ?? null,
+                startMinute: normalizedLinkedNext.startMinute ?? null,
                 durationHours: normalizedLinkedNext.durationHours ?? null,
                 durationMinutes: normalizedLinkedNext.durationMinutes ?? null,
                 requiresApproval: requiresApproval !== undefined ? (requiresApproval === true || requiresApproval === 'true') : updatedEvent.requiresApproval,
                 createdBy: updatedEvent.createdBy,
               }
             });
+
+            await replaceEventExpansions(tx, createdLinkedEvent.id, normalizedLinkedNext.expansions ?? []);
 
             await tx.event.update({
               where: { id: eventId },
