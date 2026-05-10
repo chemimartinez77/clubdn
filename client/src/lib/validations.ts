@@ -21,6 +21,13 @@ export const registerSchema = z.object({
     .string()
     .min(2, 'El nombre debe tener al menos 2 caracteres')
     .max(100, 'El nombre no puede exceder 100 caracteres'),
+  birthDate: z
+    .string()
+    .min(1, 'La fecha de nacimiento es obligatoria')
+    .refine((value) => {
+      const parsedDate = new Date(`${value}T00:00:00`);
+      return !Number.isNaN(parsedDate.getTime()) && parsedDate <= new Date();
+    }, 'La fecha de nacimiento no es válida'),
   email: z
     .string()
     .min(1, 'El email es requerido')

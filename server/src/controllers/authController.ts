@@ -97,7 +97,7 @@ export const register = async (req: Request, res: Response) => {
       });
     }
 
-    const { name, email, password, hcaptchaToken } = req.body;
+    const { name, email, password, birthDate, hcaptchaToken } = req.body;
     const bypassHcaptcha = shouldBypassHcaptcha(req);
 
     // Verificar hCaptcha
@@ -140,15 +140,30 @@ export const register = async (req: Request, res: Response) => {
     const tokenExpiry = add24Hours();
 
     // Crear usuario
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        verificationToken,
-        tokenExpiry,
-        status: 'PENDING_VERIFICATION',
-      },
+    const parsedBirthDate = new Date(`${birthDate}T00:00:00`);
+
+    const user = await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+          verificationToken,
+          tokenExpiry,
+          status: 'PENDING_VERIFICATION',
+        },
+      });
+
+      await tx.userProfile.create({
+        data: {
+          userId: createdUser.id,
+          birthDate: parsedBirthDate,
+          favoriteGames: [],
+          emailUpdates: false,
+        },
+      });
+
+      return createdUser;
     });
 
     // Enviar email de verificación

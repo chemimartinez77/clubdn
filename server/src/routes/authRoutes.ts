@@ -26,6 +26,13 @@ router.post(
       .trim()
       .isLength({ min: 2 })
       .withMessage('El nombre debe tener al menos 2 caracteres'),
+    body('birthDate')
+      .notEmpty()
+      .withMessage('La fecha de nacimiento es obligatoria')
+      .isISO8601()
+      .withMessage('La fecha de nacimiento no es válida')
+      .custom((value) => new Date(value) <= new Date())
+      .withMessage('La fecha de nacimiento no puede ser futura'),
     body('email')
       .trim()
       .isEmail()

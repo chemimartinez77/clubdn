@@ -4,6 +4,27 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-10
+
+### feat: fecha de nacimiento obligatoria en el registro
+
+Se añadió el campo `Fecha de nacimiento` a la ficha de registro pública y pasó a ser obligatorio tanto en cliente como en servidor.
+
+**Cambios realizados:**
+- En el formulario de registro se incorporó un selector de fecha con límite para impedir fechas futuras.
+- La validación de cliente exige ahora `birthDate` antes de permitir el envío.
+- La ruta de registro del servidor valida que la fecha exista, tenga formato correcto y no sea futura.
+- El alta crea también el `UserProfile` inicial y guarda ahí la fecha de nacimiento dentro de una transacción, evitando usuarios creados sin perfil si falla esa parte.
+
+**Archivos modificados:**
+- `client/src/pages/Register.tsx`
+- `client/src/lib/validations.ts`
+- `client/src/types/auth.ts`
+- `server/src/routes/authRoutes.ts`
+- `server/src/controllers/authController.ts`
+
+---
+
 ## 2026-05-07 (sesión 2)
 
 ### fix: vista semanal del calendario no cargaba al cruzar cambio de mes

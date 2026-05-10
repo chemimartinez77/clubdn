@@ -193,6 +193,27 @@ export default function Register() {
 
           <div>
             <label
+              htmlFor="birthDate"
+              className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2"
+            >
+              Fecha de nacimiento
+            </label>
+            <input
+              id="birthDate"
+              type="date"
+              max={new Date().toISOString().split('T')[0]}
+              {...register('birthDate')}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent ${
+                errors.birthDate ? 'border-red-500' : 'border-[var(--color-inputBorder)]'
+              }`}
+            />
+            {errors.birthDate && (
+              <p className="mt-1 text-sm text-red-600">{errors.birthDate.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label
               htmlFor="password"
               className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2"
             >

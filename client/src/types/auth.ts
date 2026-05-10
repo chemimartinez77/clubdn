@@ -41,6 +41,7 @@ export interface AuthContextType {
 
 export interface RegisterData {
   name: string;
+  birthDate: string;
   email: string;
   password: string;
 }
