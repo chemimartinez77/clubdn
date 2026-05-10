@@ -522,6 +522,7 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
     const {
       firstName,
       lastName,
+      birthDate,
       dni,
       phone,
       address,
@@ -547,6 +548,7 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
     const missing = [];
     if (!firstName?.trim()) missing.push('firstName');
     if (!lastName?.trim()) missing.push('lastName');
+    if (!birthDate?.trim()) missing.push('birthDate');
     if (!dni?.trim()) missing.push('dni');
     if (!phone?.trim()) missing.push('phone');
     if (!address?.trim()) missing.push('address');
@@ -559,6 +561,12 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
 
     if (missing.length > 0) {
       res.status(400).json({ success: false, message: `Faltan campos obligatorios: ${missing.join(', ')}` });
+      return;
+    }
+
+    const parsedBirthDate = new Date(`${birthDate}T00:00:00`);
+    if (Number.isNaN(parsedBirthDate.getTime()) || parsedBirthDate.getTime() > Date.now()) {
+      res.status(400).json({ success: false, message: 'La fecha de nacimiento no es válida' });
       return;
     }
 
@@ -604,6 +612,7 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
       update: {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
+        birthDate: parsedBirthDate,
         dni: dni.trim(),
         dniNormalized,
         phone: phone.trim(),
@@ -623,6 +632,7 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
         userId,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
+        birthDate: parsedBirthDate,
         dni: dni.trim(),
         dniNormalized,
         phone: phone.trim(),

@@ -1,5 +1,5 @@
 // client/src/pages/Onboarding.tsx
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/axios';
@@ -11,6 +11,7 @@ import type { ClubInterestConfig, OnboardingConfig } from '../types/config';
 interface OnboardingForm {
   firstName: string;
   lastName: string;
+  birthDate: string;
   dni: string;
   phone: string;
   address: string;
@@ -28,6 +29,7 @@ interface OnboardingForm {
 const EMPTY: OnboardingForm = {
   firstName: '',
   lastName: '',
+  birthDate: '',
   dni: '',
   phone: '',
   address: '',
@@ -171,15 +173,35 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
     },
     enabled: !isPreview,
   });
+  const { data: myProfile } = useQuery({
+    queryKey: ['profile', 'me'],
+    queryFn: async () => {
+      const response = await api.get('/api/profile/me');
+      return response.data.data?.profile;
+    },
+    enabled: !isPreview,
+  });
   const clubInterestsCatalog = isPreview
     ? PREVIEW_CLUB_INTERESTS
     : (onboardingConfig?.clubInterestsCatalog ?? []);
+
+  useEffect(() => {
+    if (isPreview) return;
+    if (!myProfile?.birthDate) return;
+
+    setForm((current) => (
+      current.birthDate
+        ? current
+        : { ...current, birthDate: myProfile.birthDate.split('T')[0] }
+    ));
+  }, [isPreview, myProfile]);
 
   const mutation = useMutation({
     mutationFn: (data: OnboardingForm) => {
       const fd = new FormData();
       fd.append('firstName', data.firstName);
       fd.append('lastName', data.lastName);
+      fd.append('birthDate', data.birthDate);
       fd.append('dni', data.dni);
       fd.append('phone', data.phone);
       fd.append('address', data.address);
@@ -207,6 +229,11 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
     const e: Partial<Record<keyof OnboardingForm | 'idPhoto', string>> = {};
     if (!form.firstName.trim()) e.firstName = 'Campo obligatorio';
     if (!form.lastName.trim()) e.lastName = 'Campo obligatorio';
+    if (!form.birthDate.trim()) {
+      e.birthDate = 'Campo obligatorio';
+    } else if (new Date(`${form.birthDate}T00:00:00`).getTime() > Date.now()) {
+      e.birthDate = 'La fecha no puede ser futura';
+    }
     if (!form.dni.trim()) e.dni = 'Campo obligatorio';
     if (!form.phone.trim()) e.phone = 'Campo obligatorio';
     if (!form.address.trim()) e.address = 'Campo obligatorio';
@@ -311,6 +338,7 @@ export function OnboardingInner({ isPreview = false }: OnboardingInnerProps) {
             <div className="grid grid-cols-2 gap-4">
               {field('firstName', 'Nombre', { half: true })}
               {field('lastName', 'Apellidos', { half: true })}
+              {field('birthDate', 'Fecha de nacimiento', { half: true, type: 'date' })}
               {field('dni', 'DNI / NIE', { half: true })}
               {field('phone', 'Teléfono', { half: true })}
               {field('address', 'Dirección')}
