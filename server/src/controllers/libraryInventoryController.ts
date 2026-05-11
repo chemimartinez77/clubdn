@@ -1,4 +1,4 @@
-import { GameCondition, GameType, LibraryDonationStatus, LibraryItemLoanStatus, LibraryLoanStatus, LibraryLoanPolicy, LibraryQueueStatus, Prisma } from '@prisma/client';
+import { GameCondition, GameType, LibraryContributionType, LibraryDonationStatus, LibraryItemLoanStatus, LibraryLoanStatus, LibraryLoanPolicy, LibraryQueueStatus, Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { getRPGGeekItem } from '../services/bggService';
@@ -501,6 +501,8 @@ export const createDonationRequest = async (req: Request, res: Response): Promis
       gameType,
       condition,
       notes,
+      contributionType,
+      requestedLoanPolicy,
       acquisitionDate,
     } = req.body as {
       bggId?: string | null;
@@ -508,6 +510,8 @@ export const createDonationRequest = async (req: Request, res: Response): Promis
       gameType?: GameType;
       condition?: GameCondition;
       notes?: string | null;
+      contributionType?: LibraryContributionType;
+      requestedLoanPolicy?: LibraryLoanPolicy | null;
       acquisitionDate?: string | null;
     };
 
@@ -521,6 +525,13 @@ export const createDonationRequest = async (req: Request, res: Response): Promis
       return;
     }
 
+    const finalContributionType = contributionType === LibraryContributionType.CESSION
+      ? LibraryContributionType.CESSION
+      : LibraryContributionType.DONATION;
+    const finalRequestedLoanPolicy = finalContributionType === LibraryContributionType.CESSION
+      ? (requestedLoanPolicy === LibraryLoanPolicy.LOANABLE ? LibraryLoanPolicy.LOANABLE : LibraryLoanPolicy.NOT_LOANABLE)
+      : null;
+
     const request = await prisma.libraryDonationRequest.create({
       data: {
         requesterUserId,
@@ -529,6 +540,8 @@ export const createDonationRequest = async (req: Request, res: Response): Promis
         gameType,
         condition,
         notes: notes?.trim() || null,
+        contributionType: finalContributionType,
+        requestedLoanPolicy: finalRequestedLoanPolicy,
         acquisitionDate: acquisitionDate ? new Date(acquisitionDate) : null,
       },
     });
@@ -541,12 +554,20 @@ export const createDonationRequest = async (req: Request, res: Response): Promis
     await createBulkNotifications({
       userIds: admins.map((admin) => admin.id),
       type: 'LIBRARY_DONATION_REQUESTED',
-      title: 'Nueva propuesta de donación',
-      message: `Un socio ha propuesto donar "${name.trim()}" a la ludoteca del club.`,
-      metadata: { donationRequestId: request.id, gameName: name.trim() },
+      title: finalContributionType === LibraryContributionType.CESSION ? 'Nueva propuesta de cesión' : 'Nueva propuesta de donación',
+      message: finalContributionType === LibraryContributionType.CESSION
+        ? `Un socio ha propuesto ceder "${name.trim()}" a la ludoteca del club.`
+        : `Un socio ha propuesto donar "${name.trim()}" a la ludoteca del club.`,
+      metadata: { donationRequestId: request.id, gameName: name.trim(), contributionType: finalContributionType },
     });
 
-    res.status(201).json({ success: true, message: 'Solicitud de donación enviada correctamente', data: request });
+    res.status(201).json({
+      success: true,
+      message: finalContributionType === LibraryContributionType.CESSION
+        ? 'Solicitud de cesión enviada correctamente'
+        : 'Solicitud de donación enviada correctamente',
+      data: request,
+    });
   } catch (error) {
     console.error('Error al crear solicitud de donación:', error);
     res.status(500).json({ success: false, message: 'Error al enviar la solicitud de donación' });
@@ -563,6 +584,8 @@ export const getDonationRequestsAdmin = async (_req: Request, res: Response): Pr
         gameType: true,
         condition: true,
         notes: true,
+        contributionType: true,
+        requestedLoanPolicy: true,
         acquisitionDate: true,
         status: true,
         reviewedAt: true,
@@ -630,7 +653,7 @@ export const approveDonationRequest = async (req: Request, res: Response): Promi
     const request = await prisma.libraryDonationRequest.findUnique({
       where: { id },
       include: {
-        requesterUser: { select: { id: true, name: true, profile: { select: { nick: true } } } },
+        requesterUser: { select: { id: true, name: true, email: true, profile: { select: { nick: true } } } },
       },
     });
 
@@ -649,8 +672,9 @@ export const approveDonationRequest = async (req: Request, res: Response): Promi
     const finalCondition = condition || request.condition;
     const finalNotes = notes?.trim() || request.notes;
     const finalBggId = bggId?.trim() || request.bggId;
+    const finalLoanPolicy = loanPolicy || request.requestedLoanPolicy;
 
-    if (!loanPolicy) {
+    if (!finalLoanPolicy) {
       res.status(400).json({ success: false, message: 'Debes indicar la política de préstamo del ítem aprobado' });
       return;
     }
@@ -674,12 +698,12 @@ export const approveDonationRequest = async (req: Request, res: Response): Promi
           gameType: finalGameType,
           condition: finalCondition,
           notes: finalNotes,
-          loanPolicy,
+          loanPolicy: finalLoanPolicy,
           loanStatus: LibraryItemLoanStatus.AVAILABLE,
           acquisitionDate: acquisitionDate ? new Date(acquisitionDate) : request.acquisitionDate,
-          ownerEmail: CLUB_OWNER_EMAIL,
-          ownerUserId: null,
-          donorUserId: request.requesterUserId,
+          ownerEmail: request.contributionType === LibraryContributionType.CESSION ? request.requesterUser.email : CLUB_OWNER_EMAIL,
+          ownerUserId: request.contributionType === LibraryContributionType.CESSION ? request.requesterUserId : null,
+          donorUserId: request.contributionType === LibraryContributionType.DONATION ? request.requesterUserId : null,
         },
         select: { id: true, name: true, internalId: true },
       });
@@ -697,6 +721,7 @@ export const approveDonationRequest = async (req: Request, res: Response): Promi
           gameType: finalGameType,
           condition: finalCondition,
           notes: finalNotes,
+          requestedLoanPolicy: finalLoanPolicy,
           acquisitionDate: acquisitionDate ? new Date(acquisitionDate) : request.acquisitionDate,
         },
       });
@@ -707,12 +732,20 @@ export const approveDonationRequest = async (req: Request, res: Response): Promi
     await createNotification({
       userId: request.requesterUserId,
       type: 'LIBRARY_DONATION_APPROVED',
-      title: 'Donación aprobada',
-      message: `Tu donación "${createdItem.name}" ha sido aprobada y ya forma parte de la ludoteca del club.`,
+      title: request.contributionType === LibraryContributionType.CESSION ? 'Cesión aprobada' : 'Donación aprobada',
+      message: request.contributionType === LibraryContributionType.CESSION
+        ? `Tu cesión "${createdItem.name}" ha sido aprobada y ya forma parte de la ludoteca del club.`
+        : `Tu donación "${createdItem.name}" ha sido aprobada y ya forma parte de la ludoteca del club.`,
       metadata: { donationRequestId: request.id, libraryItemId: createdItem.id },
     });
 
-    res.json({ success: true, message: 'Donación aprobada y registrada en inventario', data: createdItem });
+    res.json({
+      success: true,
+      message: request.contributionType === LibraryContributionType.CESSION
+        ? 'Cesión aprobada y registrada en inventario'
+        : 'Donación aprobada y registrada en inventario',
+      data: createdItem,
+    });
   } catch (error) {
     console.error('Error al aprobar donación:', error);
     res.status(500).json({ success: false, message: 'Error al aprobar la donación' });
@@ -727,7 +760,7 @@ export const rejectDonationRequest = async (req: Request, res: Response): Promis
 
     const request = await prisma.libraryDonationRequest.findUnique({
       where: { id },
-      select: { id: true, requesterUserId: true, name: true, status: true },
+      select: { id: true, requesterUserId: true, name: true, status: true, contributionType: true },
     });
 
     if (!request) {
@@ -753,8 +786,10 @@ export const rejectDonationRequest = async (req: Request, res: Response): Promis
     await createNotification({
       userId: request.requesterUserId,
       type: 'LIBRARY_DONATION_REJECTED',
-      title: 'Donación no aprobada',
-      message: `La propuesta de donación "${request.name}" no ha sido aprobada.`,
+      title: request.contributionType === LibraryContributionType.CESSION ? 'Cesión no aprobada' : 'Donación no aprobada',
+      message: request.contributionType === LibraryContributionType.CESSION
+        ? `La propuesta de cesión "${request.name}" no ha sido aprobada.`
+        : `La propuesta de donación "${request.name}" no ha sido aprobada.`,
       metadata: { donationRequestId: request.id, rejectionReason: rejectionReason?.trim() || null },
     });
 

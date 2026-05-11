@@ -9,6 +9,7 @@ import type {
   DonationRequestAdminItem,
   GameCondition,
   ItemSearchResult,
+  LibraryContributionType,
   LibraryItemLoanStatus,
   LibraryLoan,
   LibraryLoanPolicy,
@@ -31,6 +32,10 @@ const loanPolicyLabels: Record<LibraryLoanPolicy, string> = {
   LOANABLE: 'Prestable',
   CONSULT: 'Consultar',
   NOT_LOANABLE: 'No prestable'
+};
+const contributionTypeLabels: Record<LibraryContributionType, string> = {
+  DONATION: 'Donación',
+  CESSION: 'Cesión',
 };
 const loanStatusLabels: Record<LibraryItemLoanStatus, string> = {
   AVAILABLE: 'Disponible',
@@ -921,7 +926,7 @@ function ApproveDonationModal({
       gameType: donation.gameType as LibraryGameType,
       condition: donation.condition,
       notes: donation.notes ?? '',
-      loanPolicy: 'LOANABLE',
+      loanPolicy: donation.requestedLoanPolicy ?? 'LOANABLE',
       acquisitionDate: donation.acquisitionDate ? donation.acquisitionDate.slice(0, 10) : '',
     });
   }, [donation]);
@@ -931,8 +936,14 @@ function ApproveDonationModal({
   return (
     <ModalShell maxWidth="max-w-2xl">
       <div className="border-b border-[var(--color-cardBorder)] p-5">
-        <h3 className="text-lg font-semibold text-[var(--color-text)]">Aprobar donación</h3>
-        <p className="mt-1 text-sm text-[var(--color-textSecondary)]">Se registrará como juego del club, mostrando a {donation.requesterDisplayName} como donante.</p>
+        <h3 className="text-lg font-semibold text-[var(--color-text)]">
+          {donation.contributionType === 'CESSION' ? 'Aprobar cesión' : 'Aprobar donación'}
+        </h3>
+        <p className="mt-1 text-sm text-[var(--color-textSecondary)]">
+          {donation.contributionType === 'CESSION'
+            ? `Se registrará como juego cedido por ${donation.requesterDisplayName}, manteniendo a ese socio como propietario.`
+            : `Se registrará como juego del club, mostrando a ${donation.requesterDisplayName} como donante.`}
+        </p>
       </div>
       <div className="grid gap-4 p-5 md:grid-cols-2">
         <div>
@@ -1059,7 +1070,9 @@ function RejectDonationModal({
   return (
     <ModalShell maxWidth="max-w-md">
       <div className="border-b border-[var(--color-cardBorder)] p-5">
-        <h3 className="text-lg font-semibold text-[var(--color-text)]">Rechazar donación</h3>
+        <h3 className="text-lg font-semibold text-[var(--color-text)]">
+          {donation.contributionType === 'CESSION' ? 'Rechazar cesión' : 'Rechazar donación'}
+        </h3>
         <p className="mt-1 text-sm text-[var(--color-textSecondary)]">{donation.name}</p>
       </div>
       <div className="space-y-3 p-5">
@@ -1406,14 +1419,14 @@ function DonationsPanel() {
   });
 
   if (isLoading) {
-    return <p className="text-sm text-[var(--color-textSecondary)]">Cargando donaciones...</p>;
+    return <p className="text-sm text-[var(--color-textSecondary)]">Cargando propuestas...</p>;
   }
 
   return (
     <>
       <div className="space-y-3">
         {data.length === 0 ? (
-          <p className="text-sm text-[var(--color-textSecondary)]">No hay solicitudes de donación.</p>
+          <p className="text-sm text-[var(--color-textSecondary)]">No hay solicitudes de donación ni cesión.</p>
         ) : (
           data.map((donation) => (
             <div key={donation.id} className="rounded-lg border border-[var(--color-cardBorder)] p-4">
@@ -1426,8 +1439,14 @@ function DonationsPanel() {
                     </span>
                   </div>
                   <p className="text-sm text-[var(--color-textSecondary)]">Solicitante: {donation.requesterDisplayName}</p>
+                  <p className="text-sm text-[var(--color-textSecondary)]">Propuesta: {contributionTypeLabels[donation.contributionType]}</p>
                   <p className="text-sm text-[var(--color-textSecondary)]">Tipo: {gameTypeLabels[donation.gameType as LibraryGameType] ?? donation.gameType}</p>
                   <p className="text-sm text-[var(--color-textSecondary)]">Estado: {conditionLabels[donation.condition]}</p>
+                  {donation.contributionType === 'CESSION' && (
+                    <p className="text-sm text-[var(--color-textSecondary)]">
+                      Préstamo solicitado: {donation.requestedLoanPolicy ? loanPolicyLabels[donation.requestedLoanPolicy] : 'No prestable'}
+                    </p>
+                  )}
                   <p className="text-sm text-[var(--color-textSecondary)]">Fecha propuesta: {formatDate(donation.acquisitionDate)}</p>
                   <p className="text-sm text-[var(--color-textSecondary)]">Registrada: {formatDate(donation.createdAt)}</p>
                   {donation.notes && <p className="text-sm text-[var(--color-textSecondary)]">Notas: {donation.notes}</p>}
@@ -1492,7 +1511,7 @@ export default function LibraryLoansAdmin() {
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-text)]">Ludoteca: Préstamos e inventario</h1>
           <p className="mt-1 text-sm text-[var(--color-textSecondary)]">
-            Gestiona préstamos, inventario compartido, bajas lógicas y validación de donaciones.
+            Gestiona préstamos, inventario compartido, bajas lógicas y validación de donaciones y cesiones.
           </p>
         </div>
 
@@ -1501,7 +1520,7 @@ export default function LibraryLoansAdmin() {
             ['search', 'Buscar'],
             ['active', 'Préstamos activos'],
             ['inventory', 'Inventario'],
-            ['donations', 'Donaciones'],
+            ['donations', 'Propuestas'],
           ] as const).map(([key, label]) => (
             <button
               key={key}

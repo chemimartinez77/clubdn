@@ -103,6 +103,7 @@ export interface LibraryInventoryPagination {
 }
 
 export type LibraryDonationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type LibraryContributionType = 'DONATION' | 'CESSION';
 
 export interface DonationRequestAdminItem {
   id: string;
@@ -111,6 +112,8 @@ export interface DonationRequestAdminItem {
   gameType: string;
   condition: GameCondition;
   notes: string | null;
+  contributionType: LibraryContributionType;
+  requestedLoanPolicy: LibraryLoanPolicy | null;
   acquisitionDate: string | null;
   status: LibraryDonationStatus;
   reviewedAt: string | null;

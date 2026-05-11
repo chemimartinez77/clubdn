@@ -786,6 +786,11 @@ enum LibraryDonationStatus {
   REJECTED
 }
 
+enum LibraryContributionType {
+  DONATION
+  CESSION
+}
+
 // Item físico en la ludoteca del club
 model LibraryItem {
   id                String                @id @default(cuid())
@@ -904,6 +909,8 @@ model LibraryDonationRequest {
   gameType            GameType
   condition           GameCondition
   notes               String?               @db.Text
+  contributionType    LibraryContributionType @default(DONATION)
+  requestedLoanPolicy LibraryLoanPolicy?
   acquisitionDate     DateTime?
   status              LibraryDonationStatus @default(PENDING)
   reviewedAt          DateTime?

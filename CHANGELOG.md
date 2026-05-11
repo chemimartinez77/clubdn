@@ -4,6 +4,48 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-11
+
+### feat(ludoteca): añadir soporte para cesiones de juegos además de donaciones
+
+Se incorporó un nuevo tipo de propuesta en la Ludoteca: la **cesión**. A diferencia de la donación (el juego pasa a ser del club), en la cesión el juego sigue siendo propiedad del socio pero queda disponible para usarse en las instalaciones. El socio puede además indicar si desea que el juego cedido sea prestable a domicilio.
+
+**Cambios en el modelo de datos:**
+- Nuevo enum `LibraryContributionType` (`DONATION` | `CESSION`) en `schema.prisma`.
+- Campo `contributionType` (con default `DONATION`) y `requestedLoanPolicy` opcionales añadidos a `LibraryDonationRequest`.
+- Migración `20260511000000_add_library_cession_requests` creada.
+
+**Backend (`libraryInventoryController.ts`):**
+- `createDonationRequest`: acepta `contributionType` y `requestedLoanPolicy` del cuerpo de la petición; valida y normaliza los valores; las notificaciones a admins distinguen entre donación y cesión.
+- `approveDonationRequest`: al aprobar una cesión, `ownerUserId`/`ownerEmail` apuntan al socio cedente (no al club) y `donorUserId` queda nulo; la `loanPolicy` se inicializa con la `requestedLoanPolicy` de la solicitud.
+- `rejectDonationRequest` y `getDonationRequestsAdmin`: devuelven y usan `contributionType` para personalizar notificaciones y respuestas.
+
+**Frontend — Ludoteca (`Ludoteca.tsx`):**
+- Dos botones en escritorio y móvil: "Proponer donación" y "Proponer cesión".
+- El modal adapta título, descripción y mensaje de éxito según el tipo.
+- Para cesiones se muestra un toggle adicional "Permitir préstamo a domicilio".
+- El formulario resetea correctamente `loanableCession` al cerrarse.
+
+**Frontend — Admin (`LibraryLoans.tsx`):**
+- El panel de propuestas muestra el tipo de propuesta (Donación / Cesión) y la política de préstamo solicitada.
+- Los modales de aprobación y rechazo adaptan título y descripción al tipo.
+- La `loanPolicy` inicial del modal de aprobación se precarga con `requestedLoanPolicy`.
+- Textos genéricos actualizados ("Propuestas" en lugar de "Donaciones", etc.).
+
+**Tipos (`libraryLoans.ts`):**
+- Exportado `LibraryContributionType`.
+- `DonationRequestAdminItem` incluye `contributionType` y `requestedLoanPolicy`.
+
+**Archivos modificados:**
+- `client/src/pages/Ludoteca.tsx`
+- `client/src/pages/admin/LibraryLoans.tsx`
+- `client/src/types/libraryLoans.ts`
+- `server/prisma/schema.prisma`
+- `server/src/controllers/libraryInventoryController.ts`
+- `server/prisma/migrations/20260511000000_add_library_cession_requests/` (nuevo)
+
+---
+
 ## 2026-05-10
 
 ### feat: fecha de nacimiento obligatoria en el registro
