@@ -4,6 +4,17 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-13
+
+### refactor(ludoteca): unificar botones de donación y cesión en un único formulario
+
+Los dos botones separados ("Proponer donación" / "Proponer cesión" en escritorio; "Donar" / "Ceder" en móvil) se reemplazaron por un único botón "Donar / Ceder" que abre un formulario unificado. Dentro del modal, el usuario selecciona el tipo de contribución mediante dos pills (Donación / Cesión) antes de rellenar el resto del formulario. El título del modal pasa a ser "Proponer juego" (fijo). Al abrir el modal siempre se resetea al estado inicial (Donación, sin toggle de préstamo activo).
+
+**Archivos modificados:**
+- `client/src/pages/Ludoteca.tsx`
+
+---
+
 ## 2026-05-11
 
 ### feat(ludoteca): añadir soporte para cesiones de juegos además de donaciones

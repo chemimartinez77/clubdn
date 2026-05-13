@@ -369,12 +369,17 @@ export default function Ludoteca() {
     }
   };
 
-  const openContributionModal = (contributionType: LibraryContributionType) => {
-    setDonationForm((current) => ({
-      ...current,
-      contributionType,
-      loanableCession: contributionType === 'CESSION' ? current.loanableCession : false,
-    }));
+  const openContributionModal = () => {
+    setDonationForm({
+      bggId: '',
+      name: '',
+      gameType: 'MESA',
+      condition: 'BUENO',
+      notes: '',
+      acquisitionDate: '',
+      contributionType: 'DONATION',
+      loanableCession: false,
+    });
     setDonationModalOpen(true);
   };
 
@@ -458,17 +463,10 @@ export default function Ludoteca() {
           <div className="hidden items-center gap-2 md:flex">
             <button
               type="button"
-              onClick={() => openContributionModal('DONATION')}
+              onClick={() => openContributionModal()}
               className="rounded-lg border border-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-primary)]"
             >
-              Proponer donación
-            </button>
-            <button
-              type="button"
-              onClick={() => openContributionModal('CESSION')}
-              className="rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white"
-            >
-              Proponer cesión
+              Donar / Ceder
             </button>
           </div>
         </div>
@@ -505,17 +503,10 @@ export default function Ludoteca() {
             </button>
             <button
               type="button"
-              onClick={() => openContributionModal('DONATION')}
+              onClick={() => openContributionModal()}
               className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg text-sm font-medium text-[var(--color-text)]"
             >
-              Donar
-            </button>
-            <button
-              type="button"
-              onClick={() => openContributionModal('CESSION')}
-              className="px-3 py-2 rounded-lg text-sm font-medium text-white bg-[var(--color-primary)]"
-            >
-              Ceder
+              Donar/Ceder
             </button>
             {mobileSearchActive && (
               <button
@@ -993,10 +984,28 @@ export default function Ludoteca() {
           <div className="flex min-h-full items-center justify-center">
             <div className="my-6 w-full max-w-2xl max-h-[calc(100vh-3rem)] overflow-y-auto rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] shadow-xl">
               <div className="border-b border-[var(--color-cardBorder)] p-5">
-                <h3 className="text-lg font-semibold text-[var(--color-text)]">
-                  {donationForm.contributionType === 'CESSION' ? 'Proponer cesión' : 'Proponer donación'}
-                </h3>
-                <p className="mt-1 text-sm text-[var(--color-textSecondary)]">
+                <h3 className="text-lg font-semibold text-[var(--color-text)]">Proponer juego</h3>
+                <div className="mt-3 flex gap-2">
+                  {(['DONATION', 'CESSION'] as LibraryContributionType[]).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setDonationForm((current) => ({
+                        ...current,
+                        contributionType: type,
+                        loanableCession: type === 'CESSION' ? current.loanableCession : false,
+                      }))}
+                      className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                        donationForm.contributionType === type
+                          ? 'bg-[var(--color-primary)] text-white'
+                          : 'border border-[var(--color-cardBorder)] text-[var(--color-textSecondary)]'
+                      }`}
+                    >
+                      {type === 'DONATION' ? 'Donación' : 'Cesión'}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-sm text-[var(--color-textSecondary)]">
                   {donationForm.contributionType === 'CESSION'
                     ? 'La propuesta llegará a administración para su revisión. Si se aprueba, el juego seguirá siendo tuyo y quedará disponible para usarse en el club.'
                     : 'La propuesta llegará a administración para su revisión. Si se aprueba, el juego pasará a la ludoteca del club con reconocimiento público al donante.'}
