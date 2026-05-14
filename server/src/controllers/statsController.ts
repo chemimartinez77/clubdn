@@ -1075,6 +1075,62 @@ export const getUserGamesPlayed = async (req: Request, res: Response): Promise<v
   }
 };
 
+export const getUserGamesPlayedPublic = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+
+    const games = await prisma.eventRegistration.findMany({
+      where: {
+        userId,
+        status: RegistrationStatus.CONFIRMED,
+        event: {
+          type: 'PARTIDA',
+          status: EventStatus.COMPLETED
+        }
+      },
+      select: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            gameName: true,
+            gameImage: true,
+            date: true,
+            maxAttendees: true,
+            disputeResult: true,
+            disputeConfirmedManually: true,
+            registrations: {
+              where: { status: RegistrationStatus.CONFIRMED },
+              select: { id: true }
+            },
+            game: {
+              select: { thumbnail: true, image: true }
+            }
+          }
+        }
+      },
+      orderBy: { event: { date: 'desc' } },
+      take: 10,
+    });
+
+    res.json({
+      success: true,
+      data: games.map(({ event }) => ({
+        id: event.id,
+        title: event.title,
+        gameName: event.gameName,
+        gameImage: event.gameImage,
+        date: event.date,
+        thumbnail: event.game?.thumbnail ?? null,
+      }))
+    });
+
+  } catch (error) {
+    console.error('Error al obtener partidas jugadas del usuario:', error);
+    res.status(500).json({ success: false, message: 'Error al obtener partidas jugadas' });
+  }
+};
+
 /**
  * Obtener próximos eventos del usuario (detallados)
  */

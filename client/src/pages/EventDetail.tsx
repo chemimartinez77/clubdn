@@ -145,6 +145,7 @@ export default function EventDetail() {
   const [resultRows, setResultRows] = useState<ResultRow[]>([]);
   const [tiebreakModal, setTiebreakModal] = useState<{ rowIndex: number } | null>(null);
   const [tiebreakNotes, setTiebreakNotes] = useState('');
+  const [resultNotes, setResultNotes] = useState('');
 
   // Configuración pública del club (para spinEffect)
   const { data: publicConfig } = useQuery({
@@ -183,14 +184,16 @@ export default function EventDetail() {
   );
 
   // Resultados de partida
-  const { data: existingResults, isLoading: resultsLoading } = useQuery({
+  const { data: resultsData, isLoading: resultsLoading } = useQuery({
     queryKey: ['eventResults', id],
     queryFn: async () => {
-      const res = await api.get<ApiResponse<EventResultEntry[]>>(`/api/events/${id}/results`);
-      return res.data.data ?? [];
+      const res = await api.get<{ success: boolean; data: EventResultEntry[]; victoryType: string; resultNotes: string | null }>(`/api/events/${id}/results`);
+      return res.data;
     },
     enabled: !!id,
   });
+  const existingResults = resultsData?.data ?? [];
+  const eventVictoryType = (resultsData?.victoryType ?? event?.victoryType ?? 'COMPETITIVE') as string;
 
   const saveResultsMutation = useMutation({
     mutationFn: async () => {
@@ -203,7 +206,7 @@ export default function EventDetail() {
           isWinner: r.isWinner,
           notes: r.notes?.trim() || undefined,
         }));
-      await api.put(`/api/events/${id}/results`, { results });
+      await api.put(`/api/events/${id}/results`, { results, resultNotes: resultNotes.trim() || undefined });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['eventResults', id] });
@@ -249,6 +252,7 @@ export default function EventDetail() {
       }));
       setResultRows([...confirmedRows, ...invitationRows]);
     }
+    setResultNotes(resultsData?.resultNotes ?? '');
     setResultEditing(true);
   };
 
@@ -840,7 +844,7 @@ export default function EventDetail() {
     const totalMinutes = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
     if (totalMinutes <= 0) return null;
     const end = new Date(start.getTime() + totalMinutes * 60 * 1000);
-    return new Date(end.getTime() + 3 * 60 * 60 * 1000);
+    return new Date(end.getTime() + 24 * 60 * 60 * 1000);
   })();
   const isChatClosed = chatClosedAt !== null && new Date() > chatClosedAt;
   const canWriteChat = canAccessChat && !isChatClosed;
@@ -2012,6 +2016,7 @@ export default function EventDetail() {
                   canWrite={!!canWriteChat}
                   currentUserId={user.id}
                   isChatClosed={isChatClosed}
+                  chatClosedAt={chatClosedAt}
                 />
               </CardContent>
             </Card>
@@ -2169,31 +2174,62 @@ export default function EventDetail() {
                 </div>
               ) : !resultEditing && existingResults && existingResults.length > 0 ? (
                 <div className="space-y-2">
-                  {existingResults.map((r) => (
-                    <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg bg-[var(--color-tableRowHover)]">
-                      {r.isWinner && <span title="Ganador">🏆</span>}
-                      <span className="flex-1 text-sm text-[var(--color-text)] font-medium">
-                        {r.user ? (
-                          <UserPopover
-                            userId={r.user.id}
-                            name={r.user.name}
-                            nick={r.user.profile?.nick}
-                            avatar={r.user.profile?.avatar}
-                          >
-                            <span>{displayName(r.user.name, r.user.profile?.nick)}</span>
-                          </UserPopover>
-                        ) : (
-                          <>{r.guestName ?? 'Invitado'}<span className="ml-1 text-xs text-[var(--color-textSecondary)]">(invitado)</span></>
-                        )}
-                        {r.isWinner && r.notes && (
-                          <span className="ml-1 text-xs text-[var(--color-textSecondary)]">({r.notes})</span>
-                        )}
+                  {resultsData?.resultNotes && (
+                    <p className="text-sm text-[var(--color-textSecondary)] italic mb-2">{resultsData.resultNotes}</p>
+                  )}
+                  {eventVictoryType === 'COOPERATIVE' ? (
+                    <div className="flex items-center gap-3 p-2 rounded-lg bg-[var(--color-tableRowHover)]">
+                      <span className="text-sm font-medium text-[var(--color-text)]">
+                        {existingResults.some((r) => r.isWinner) ? 'Victoria' : 'Derrota'}
                       </span>
-                      {r.score !== null && (
-                        <span className="text-sm text-[var(--color-textSecondary)] font-mono">{r.score} pts</span>
-                      )}
+                      <span className="text-xs text-[var(--color-textSecondary)]">
+                        — {existingResults.map((r) => r.user ? displayName(r.user.name, r.user.profile?.nick) : r.guestName).join(', ')}
+                      </span>
                     </div>
-                  ))}
+                  ) : (
+                    existingResults.map((r) => {
+                      const posLabel = eventVictoryType === 'RACING'
+                        ? (r.notes === 'Estrellado' || r.notes === 'Abandono'
+                            ? r.notes
+                            : r.score !== null ? `${r.score}º` : '—')
+                        : null;
+                      return (
+                        <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg bg-[var(--color-tableRowHover)]">
+                          {r.isWinner && eventVictoryType !== 'RACING' && <span title="Ganador">🏆</span>}
+                          {eventVictoryType === 'RACING' && posLabel && (
+                            <span className={`text-sm font-mono font-bold w-10 text-center ${r.isWinner ? 'text-amber-500' : 'text-[var(--color-textSecondary)]'}`}>
+                              {posLabel}
+                            </span>
+                          )}
+                          <span className="flex-1 text-sm text-[var(--color-text)] font-medium">
+                            {r.user ? (
+                              <UserPopover
+                                userId={r.user.id}
+                                name={r.user.name}
+                                nick={r.user.profile?.nick}
+                                avatar={r.user.profile?.avatar}
+                              >
+                                <span>{displayName(r.user.name, r.user.profile?.nick)}</span>
+                              </UserPopover>
+                            ) : (
+                              <>{r.guestName ?? 'Invitado'}<span className="ml-1 text-xs text-[var(--color-textSecondary)]">(invitado)</span></>
+                            )}
+                            {eventVictoryType === 'COMPETITIVE' && r.isWinner && r.notes && (
+                              <span className="ml-1 text-xs text-[var(--color-textSecondary)]">({r.notes})</span>
+                            )}
+                          </span>
+                          {eventVictoryType === 'COMPETITIVE' && r.score !== null && (
+                            <span className="text-sm text-[var(--color-textSecondary)] font-mono">{r.score} pts</span>
+                          )}
+                          {eventVictoryType === 'SEMI_COOPERATIVE' && (
+                            <span className={`text-xs font-medium ${r.isWinner ? 'text-green-600' : 'text-[var(--color-textSecondary)]'}`}>
+                              {r.isWinner ? 'Ganó' : 'Perdió'}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                   {canAddResults && (
                     <button onClick={startResultEditing} className="mt-2 text-sm text-[var(--color-primary)] hover:underline">
                       Editar resultados
@@ -2211,6 +2247,38 @@ export default function EventDetail() {
                 </div>
               ) : (
                 <div className="space-y-3">
+                  {/* Notas generales de la partida */}
+                  <div>
+                    <label className="block text-xs text-[var(--color-textSecondary)] mb-1">Notas generales (opcional)</label>
+                    <textarea
+                      value={resultNotes}
+                      onChange={(e) => setResultNotes(e.target.value)}
+                      placeholder="Observaciones sobre la partida, campañas, torneos..."
+                      rows={2}
+                      className="w-full px-2 py-1 text-sm border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)] resize-none"
+                    />
+                  </div>
+
+                  {/* Selector global para cooperativo */}
+                  {eventVictoryType === 'COOPERATIVE' && (
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setResultRows((prev) => prev.map((r) => ({ ...r, isWinner: true })))}
+                        className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${resultRows.every((r) => r.isWinner) ? 'border-green-500 bg-green-500/10 text-green-700' : 'border-[var(--color-cardBorder)] text-[var(--color-textSecondary)]'}`}
+                      >
+                        Todos ganan
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setResultRows((prev) => prev.map((r) => ({ ...r, isWinner: false })))}
+                        className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${resultRows.every((r) => !r.isWinner) ? 'border-red-500 bg-red-500/10 text-red-700' : 'border-[var(--color-cardBorder)] text-[var(--color-textSecondary)]'}`}
+                      >
+                        Todos pierden
+                      </button>
+                    </div>
+                  )}
+
                   {resultRows.map((row, i) => (
                     <div key={i} className="flex flex-wrap items-center gap-2 p-2 border border-[var(--color-cardBorder)] rounded-lg">
                       <label className="flex items-center gap-1 text-xs text-[var(--color-textSecondary)]">
@@ -2237,46 +2305,88 @@ export default function EventDetail() {
                           className="flex-1 min-w-[120px] px-2 py-1 text-sm border border-[var(--color-cardBorder)] rounded bg-[var(--color-tableRowHover)] text-[var(--color-text)] cursor-default"
                         />
                       )}
-                      <input
-                        type="number"
-                        value={row.score}
-                        onChange={(e) => {
-                          const newScore = e.target.value;
-                          setResultRows((prev) => {
-                            const updated = prev.map((r, idx) => idx === i ? { ...r, score: newScore } : r);
-                            // Recalcular ganador automáticamente
-                            const scores = updated.map((r) => r.score !== '' ? parseInt(r.score) : NaN).filter((s) => !isNaN(s));
-                            if (scores.length === 0) return updated;
-                            const maxScore = Math.max(...scores);
-                            return updated.map((r) => ({
-                              ...r,
-                              isWinner: r.score !== '' && !isNaN(parseInt(r.score)) && parseInt(r.score) === maxScore,
-                            }));
-                          });
-                        }}
-                        placeholder="Puntos"
-                        className="w-20 px-2 py-1 text-sm border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)]"
-                      />
-                      <label className="flex items-center gap-1 text-xs text-[var(--color-textSecondary)]">
+
+                      {/* Campo de puntuación: según tipo de victoria */}
+                      {eventVictoryType === 'COMPETITIVE' && (
                         <input
-                          type="checkbox"
-                          checked={row.isWinner}
+                          type="number"
+                          value={row.score}
                           onChange={(e) => {
-                            const checked = e.target.checked;
-                            if (checked) {
-                              const currentWinners = resultRows.filter((r, idx) => idx !== i && r.isWinner);
-                              if (currentWinners.length > 0) {
-                                // Ya hay otro ganador ⚠️ pedir motivo de empate
-                                setTiebreakModal({ rowIndex: i });
-                                setTiebreakNotes('');
-                                return;
-                              }
-                            }
-                            setResultRows((prev) => prev.map((r, idx) => idx === i ? { ...r, isWinner: checked } : r));
+                            const newScore = e.target.value;
+                            setResultRows((prev) => {
+                              const updated = prev.map((r, idx) => idx === i ? { ...r, score: newScore } : r);
+                              const scores = updated.map((r) => r.score !== '' ? parseInt(r.score) : NaN).filter((s) => !isNaN(s));
+                              if (scores.length === 0) return updated;
+                              const maxScore = Math.max(...scores);
+                              return updated.map((r) => ({
+                                ...r,
+                                isWinner: r.score !== '' && !isNaN(parseInt(r.score)) && parseInt(r.score) === maxScore,
+                              }));
+                            });
                           }}
+                          placeholder="Puntos"
+                          className="w-20 px-2 py-1 text-sm border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)]"
                         />
-                        Ganador
-                      </label>
+                      )}
+
+                      {eventVictoryType === 'RACING' && (
+                        <select
+                          value={row.notes === 'Estrellado' || row.notes === 'Abandono' ? row.notes : (row.score || '')}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const isSpecial = val === 'Estrellado' || val === 'Abandono';
+                            setResultRows((prev) => prev.map((r, idx) => idx === i ? {
+                              ...r,
+                              score: isSpecial ? '' : val,
+                              notes: isSpecial ? val : '',
+                              isWinner: !isSpecial && val === '1',
+                            } : r));
+                          }}
+                          className="w-28 px-2 py-1 text-sm border border-[var(--color-cardBorder)] rounded bg-[var(--color-inputBackground)] text-[var(--color-text)]"
+                        >
+                          <option value="">—</option>
+                          {Array.from({ length: resultRows.length }, (_, k) => k + 1).map((pos) => (
+                            <option key={pos} value={String(pos)}>{pos}º</option>
+                          ))}
+                          <option value="Estrellado">Estrellado</option>
+                          <option value="Abandono">Abandono</option>
+                        </select>
+                      )}
+
+                      {/* Ganador: según tipo */}
+                      {(eventVictoryType === 'COMPETITIVE') && (
+                        <label className="flex items-center gap-1 text-xs text-[var(--color-textSecondary)]">
+                          <input
+                            type="checkbox"
+                            checked={row.isWinner}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              if (checked) {
+                                const currentWinners = resultRows.filter((r, idx) => idx !== i && r.isWinner);
+                                if (currentWinners.length > 0) {
+                                  setTiebreakModal({ rowIndex: i });
+                                  setTiebreakNotes('');
+                                  return;
+                                }
+                              }
+                              setResultRows((prev) => prev.map((r, idx) => idx === i ? { ...r, isWinner: checked } : r));
+                            }}
+                          />
+                          Ganador
+                        </label>
+                      )}
+
+                      {eventVictoryType === 'SEMI_COOPERATIVE' && (
+                        <label className="flex items-center gap-1 text-xs text-[var(--color-textSecondary)]">
+                          <input
+                            type="checkbox"
+                            checked={row.isWinner}
+                            onChange={(e) => setResultRows((prev) => prev.map((r, idx) => idx === i ? { ...r, isWinner: e.target.checked } : r))}
+                          />
+                          Ganó
+                        </label>
+                      )}
+
                       <button
                         onClick={() => setResultRows((prev) => prev.filter((_, idx) => idx !== i))}
                         className="text-red-400 hover:text-red-600 text-xs"

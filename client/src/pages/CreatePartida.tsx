@@ -93,6 +93,7 @@ export default function CreatePartida() {
 
   const [selectedCategory, setSelectedCategory] = useState<string>(clonePrefill?.gameCategory ?? '');
   const [confirmedCategory, setConfirmedCategory] = useState<string | null>(null);
+  const [victoryType, setVictoryType] = useState<string>('COMPETITIVE');
   const [selectedClonedAttendeeIds, setSelectedClonedAttendeeIds] = useState<string[]>(() => cloneAttendees.map((attendee) => attendee.id));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allowLateJoin, setAllowLateJoin] = useState<boolean>(clonePrefill?.allowLateJoin ?? false);
@@ -161,7 +162,8 @@ export default function CreatePartida() {
             expansions: linkedNextExpansions.map(e => ({ gameId: e.id })),
           }
         : null,
-      gameCategory: gameCategory || undefined
+      gameCategory: gameCategory || undefined,
+      victoryType
     };
 
     try {
@@ -451,6 +453,34 @@ export default function CreatePartida() {
                       : 'Categoría cargada automáticamente. Puedes cambiarla si es incorrecta.'}
                   </p>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
+                  Tipo de victoria
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { value: 'COMPETITIVE', label: 'Competitivo', desc: 'Puntuación numérica' },
+                    { value: 'RACING', label: 'Carreras', desc: 'Posición en carrera' },
+                    { value: 'COOPERATIVE', label: 'Cooperativo', desc: 'Todos ganan o pierden' },
+                    { value: 'SEMI_COOPERATIVE', label: 'Semi-cooperativo', desc: 'Victoria individual (Némesis...)' },
+                  ] as const).map(({ value, label, desc }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setVictoryType(value)}
+                      className={`text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
+                        victoryType === value
+                          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                          : 'border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)]'
+                      }`}
+                    >
+                      <span className="font-medium block">{label}</span>
+                      <span className="text-xs opacity-75">{desc}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="flex items-center gap-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] px-4 py-3">

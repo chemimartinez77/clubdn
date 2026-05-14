@@ -1,6 +1,6 @@
 ﻿// client/src/pages/Events.tsx
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
@@ -44,8 +44,23 @@ export default function Events() {
     enabled: !!user,
   });
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
-  const [calendarView, setCalendarView] = useState<CalendarView>('month');
+
+  const calendarViewParam = searchParams.get('view') as CalendarView | null;
+  const calendarView: CalendarView = calendarViewParam && ['month', 'week', 'day'].includes(calendarViewParam) ? calendarViewParam : 'month';
+
+  const setCalendarView = (view: CalendarView, date?: Date) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('view', view);
+      if (date) {
+        next.set('date', `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`);
+      }
+      return next;
+    }, { replace: false });
+  };
 
   useEffect(() => {
     if ((location.state as { forceMonth?: boolean } | null)?.forceMonth) {
@@ -58,7 +73,14 @@ export default function Events() {
   const [capacityFilter, setCapacityFilter] = useState<CapacityFilter>('');
   const [search, setSearch] = useState('');
   const [participant, setParticipant] = useState('');
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const dateParam = searchParams.get('date');
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    if (dateParam) {
+      const d = new Date(dateParam);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return new Date();
+  });
   const [sortOption, setSortOption] = useState<SortOption>('date_asc');
   const [openDays, setOpenDays] = useState<Set<string>>(new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -217,7 +239,7 @@ export default function Events() {
 
   const handleDaySelect = (date: Date) => {
     setCurrentMonth(date);
-    setCalendarView('day');
+    setCalendarView('day', date);
   };
 
   const getWeekRange = (date: Date) => {
@@ -672,7 +694,7 @@ export default function Events() {
                     )}
                     <div id="events-calendar-view-selector" className="flex gap-2 bg-[var(--color-tableRowHover)] p-1 rounded-lg">
                       <button
-                        onClick={() => setCalendarView('month')}
+                        onClick={() => setCalendarView('month', currentMonth)}
                         className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                           calendarView === 'month'
                             ? 'bg-[var(--color-cardBackground)] text-[var(--color-primaryDark)] shadow-sm'
@@ -682,7 +704,7 @@ export default function Events() {
                         Mes
                       </button>
                       <button
-                        onClick={() => setCalendarView('week')}
+                        onClick={() => setCalendarView('week', currentMonth)}
                         className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                           calendarView === 'week'
                             ? 'bg-[var(--color-cardBackground)] text-[var(--color-primaryDark)] shadow-sm'
@@ -692,7 +714,7 @@ export default function Events() {
                         Semana
                       </button>
                       <button
-                        onClick={() => setCalendarView('day')}
+                        onClick={() => setCalendarView('day', currentMonth)}
                         className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                           calendarView === 'day'
                             ? 'bg-[var(--color-cardBackground)] text-[var(--color-primaryDark)] shadow-sm'

@@ -13,7 +13,7 @@ import { useTour } from '../hooks/useTour';
 import { displayName, fullNameTooltip } from '../utils/displayName';
 
 type ReportType = 'BUG' | 'MEJORA';
-type ReportStatus = 'NUEVO' | 'EN_REVISION' | 'EN_PROGRESO' | 'HECHO';
+type ReportStatus = 'NUEVO' | 'EN_REVISION' | 'EN_PROGRESO' | 'POR_DESPLEGAR' | 'HECHO';
 type ReportPriority = 'BAJA' | 'MEDIA' | 'ALTA' | 'CRITICA';
 type ReportSeverity = 'NO_URGE' | 'ME_MOLESTA' | 'BLOQUEANTE';
 type ReportPlatform = 'MOVIL' | 'PC';
@@ -64,6 +64,7 @@ const statusLabels: Record<ReportStatus, string> = {
   NUEVO: 'Nuevo',
   EN_REVISION: 'En revisión',
   EN_PROGRESO: 'En progreso',
+  POR_DESPLEGAR: 'Por desplegar',
   HECHO: 'Hecho'
 };
 
@@ -71,6 +72,7 @@ const statusColors: Record<ReportStatus, string> = {
   NUEVO: 'bg-gray-100 text-gray-700',
   EN_REVISION: 'bg-blue-100 text-blue-700',
   EN_PROGRESO: 'bg-indigo-100 text-indigo-700',
+  POR_DESPLEGAR: 'bg-orange-100 text-orange-700',
   HECHO: 'bg-green-100 text-green-700'
 };
 
@@ -545,6 +547,7 @@ export default function Feedback() {
                 <option value="NUEVO">Nuevo</option>
                 <option value="EN_REVISION">En revisión</option>
                 <option value="EN_PROGRESO">En progreso</option>
+                <option value="POR_DESPLEGAR">Por desplegar</option>
                 <option value="HECHO">Hecho</option>
               </select>
             </div>

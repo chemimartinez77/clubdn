@@ -878,55 +878,77 @@ export default function Profile() {
               <CardContent>
                 <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">Configuración</h3>
                 <div className="space-y-4">
+                  {/* Interruptor maestro */}
                   <div>
-                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Notificaciones</p>
+                    <NotifToggle
+                      value={profile.notifications}
+                      label="Recibir notificaciones en la app"
+                      description="Interruptor general. Si lo desactivas, no recibirás ninguna notificación en la campanita, independientemente del resto de ajustes."
+                      onToggle={() => updateMutation.mutate({ notifications: !profile.notifications })}
+                      disabled={updateMutation.isPending}
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Notificaciones por email</p>
                     <div className="space-y-2">
-                      <NotifToggle
-                        value={profile.notifications}
-                        label="Notificaciones en la aplicación"
-                        onToggle={() => updateMutation.mutate({ notifications: !profile.notifications })}
-                        disabled={updateMutation.isPending}
-                      />
                       <NotifToggle
                         value={profile.emailUpdates}
                         label="Actualizaciones por email"
+                        description="Recibirás un correo cuando alguien se apunte o abandone una partida que organizas, o cuando cancelen una partida en la que estás inscrito."
                         onToggle={() => updateMutation.mutate({ emailUpdates: !profile.emailUpdates })}
                         disabled={updateMutation.isPending}
-                        tooltip="Recibe un email cuando alguien se apunte o abandone tu partida, o cuando una partida a la que asistes sea cancelada"
                       />
                     </div>
                   </div>
 
+                  {/* Preferencias de campanita */}
                   <div className="pt-4 border-t border-[var(--color-cardBorder)]">
-                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Preferencias de Notificaciones</p>
+                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">
+                      Preferencias de notificaciones
+                      <span className="ml-1 text-xs font-normal text-[var(--color-textSecondary)] opacity-70">(campanita)</span>
+                    </p>
                     <div className="space-y-2">
                       <NotifToggle
                         value={profile.notifyNewEvents}
                         label="Nuevas partidas creadas"
+                        description="Te avisamos cuando se publique una nueva partida en el club."
                         onToggle={() => updateMutation.mutate({ notifyNewEvents: !profile.notifyNewEvents })}
                         disabled={updateMutation.isPending}
                       />
                       <NotifToggle
                         value={profile.notifyEventChanges}
                         label="Cambios en eventos inscritos"
+                        description="Te avisamos cuando alguien abandone una partida en la que estás inscrito."
                         onToggle={() => updateMutation.mutate({ notifyEventChanges: !profile.notifyEventChanges })}
                         disabled={updateMutation.isPending}
                       />
                       <NotifToggle
                         value={profile.notifyEventCancelled}
                         label="Eventos cancelados"
+                        description="Te avisamos si cancelan una partida en la que estabas apuntado."
                         onToggle={() => updateMutation.mutate({ notifyEventCancelled: !profile.notifyEventCancelled })}
                         disabled={updateMutation.isPending}
                       />
                       <NotifToggle
                         value={profile.notifyInvitations}
                         label="Estado de invitaciones"
+                        description="Te avisamos cuando el organizador apruebe o rechace tu solicitud de registro."
                         onToggle={() => updateMutation.mutate({ notifyInvitations: !profile.notifyInvitations })}
                         disabled={updateMutation.isPending}
                       />
+                    </div>
+                  </div>
+
+                  {/* Configuración de privacidad */}
+                  <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Privacidad</p>
+                    <div className="space-y-2">
                       <NotifToggle
                         value={profile.allowEventInvitations}
                         label="Permitir invitaciones a partidas"
+                        description="Otros miembros podrán apuntarte directamente a partidas como acompañante. Si lo desactivas, nadie podrá invitarte sin tu confirmación."
                         onToggle={() => updateMutation.mutate({ allowEventInvitations: !profile.allowEventInvitations })}
                         disabled={updateMutation.isPending}
                       />

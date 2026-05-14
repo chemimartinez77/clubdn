@@ -15,12 +15,15 @@ const formatDateEs = (date: Date): string => {
   return `${d}/${m}/${y}`;
 };
 
+type ProfilePreferenceKey = 'notifyEventChanges' | 'notifyInvitations' | 'notifyEventCancelled';
+
 interface CreateNotificationParams {
   userId: string;
   type: NotificationType;
   title: string;
   message: string;
   metadata?: Prisma.InputJsonValue;
+  preferenceKey?: ProfilePreferenceKey;
 }
 
 interface CreateBulkNotificationsParams {
@@ -29,6 +32,7 @@ interface CreateBulkNotificationsParams {
   title: string;
   message: string;
   metadata?: Prisma.InputJsonValue;
+  preferenceKey?: ProfilePreferenceKey;
 }
 
 /**
@@ -36,6 +40,13 @@ interface CreateBulkNotificationsParams {
  */
 export const createNotification = async (params: CreateNotificationParams) => {
   try {
+    const profile = await prisma.userProfile.findUnique({
+      where: { userId: params.userId },
+      select: { notifications: true, notifyEventChanges: true, notifyInvitations: true, notifyEventCancelled: true },
+    });
+    if (profile?.notifications === false) return { success: true, skipped: true };
+    if (params.preferenceKey && profile?.[params.preferenceKey] === false) return { success: true, skipped: true };
+
     const notification = await prisma.notification.create({
       data: {
         userId: params.userId,
@@ -58,8 +69,21 @@ export const createNotification = async (params: CreateNotificationParams) => {
  */
 export const createBulkNotifications = async (params: CreateBulkNotificationsParams) => {
   try {
+    const profiles = await prisma.userProfile.findMany({
+      where: {
+        userId: { in: params.userIds },
+        notifications: true,
+        ...(params.preferenceKey === 'notifyEventChanges' ? { notifyEventChanges: true } : {}),
+        ...(params.preferenceKey === 'notifyInvitations' ? { notifyInvitations: true } : {}),
+        ...(params.preferenceKey === 'notifyEventCancelled' ? { notifyEventCancelled: true } : {}),
+      },
+      select: { userId: true },
+    });
+    const enabledIds = profiles.map(p => p.userId);
+    if (enabledIds.length === 0) return { success: true, count: 0 };
+
     const notifications = await prisma.notification.createMany({
-      data: params.userIds.map(userId => ({
+      data: enabledIds.map(userId => ({
         userId,
         type: params.type,
         title: params.title,
@@ -82,23 +106,11 @@ export const notifyEventCancelled = async (eventId: string, eventTitle: string) 
   try {
     // Obtener usuarios inscritos que tengan habilitadas las notificaciones de cancelación
     const registrations = await prisma.eventRegistration.findMany({
-      where: {
-        eventId,
-        status: 'CONFIRMED',
-      },
-      include: {
-        user: {
-          include: {
-            profile: true,
-          },
-        },
-      },
+      where: { eventId, status: 'CONFIRMED' },
+      select: { user: { select: { id: true } } },
     });
 
-    // Filtrar usuarios que tienen habilitadas las notificaciones
-    const userIds = registrations
-      .filter(reg => reg.user.profile?.notifyEventCancelled !== false)
-      .map(reg => reg.user.id);
+    const userIds = registrations.map(reg => reg.user.id).filter(Boolean);
 
     if (userIds.length === 0) {
       return { success: true, count: 0 };
@@ -110,6 +122,7 @@ export const notifyEventCancelled = async (eventId: string, eventTitle: string) 
       title: 'Evento cancelado',
       message: `El evento "${eventTitle}" ha sido cancelado.`,
       metadata: { eventId, eventTitle },
+      preferenceKey: 'notifyEventCancelled',
     });
   } catch (error) {
     console.error('Error notificando cancelación de evento:', error);
@@ -308,6 +321,7 @@ export const notifyPlayersOfAbandonment = async (
       title: 'Un jugador ha abandonado la partida',
       message: `${leavingUserName} ha abandonado "${eventTitle}".`,
       metadata: { eventId, eventTitle, userName: leavingUserName },
+      preferenceKey: 'notifyEventChanges',
     });
   } catch (error) {
     console.error('Error notificando abandono a jugadores:', error);
@@ -370,6 +384,7 @@ export const notifyRegistrationApproved = async (
     title: 'Registro aprobado',
     message: `Tu solicitud para "${eventTitle}" ha sido aprobada.`,
     metadata: { eventId, eventTitle },
+    preferenceKey: 'notifyInvitations',
   });
 };
 
@@ -387,6 +402,7 @@ export const notifyRegistrationRejected = async (
     title: 'Registro rechazado',
     message: `Tu solicitud para "${eventTitle}" no ha sido aprobada.`,
     metadata: { eventId, eventTitle },
+    preferenceKey: 'notifyInvitations',
   });
 };
 

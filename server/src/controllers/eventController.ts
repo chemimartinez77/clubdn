@@ -757,6 +757,7 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
       expansions,
       linkedNext,
       gameCategory,
+      victoryType,
       startHour,
       startMinute,
       durationHours,
@@ -847,6 +848,7 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
           gameImage,
           bggId,
           gameCategory: gameCategory || null,
+          victoryType: victoryType || 'COMPETITIVE',
           startHour: startHour !== undefined ? parseInt(startHour) : null,
           startMinute: startMinute !== undefined ? parseInt(startMinute) : null,
           durationHours: durationHours !== undefined ? parseInt(durationHours) : null,
@@ -958,7 +960,7 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
     const userRole = req.user?.role;
     const {
       title, description, date, location, address, maxAttendees, status,
-      gameName, gameImage, bggId, expansions, linkedNext, gameCategory,
+      gameName, gameImage, bggId, expansions, linkedNext, gameCategory, victoryType,
       startHour, startMinute, durationHours, durationMinutes,
       requiresApproval, allowLateJoin
     } = req.body;
@@ -1060,6 +1062,7 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
       ...(gameImage !== undefined && { gameImage: gameImage || null }),
       ...(bggId !== undefined && { bggId: bggId || null }),
       ...(gameCategory !== undefined && { gameCategory: gameCategory || null }),
+      ...(victoryType !== undefined && { victoryType }),
       ...(startHour !== undefined && { startHour: startHour !== null ? parseInt(startHour) : null }),
       ...(startMinute !== undefined && { startMinute: startMinute !== null ? parseInt(startMinute) : null }),
       ...(durationHours !== undefined && { durationHours: durationHours !== null ? parseInt(durationHours) : null }),

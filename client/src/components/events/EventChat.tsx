@@ -19,11 +19,34 @@ interface Props {
   canWrite: boolean;
   currentUserId: string;
   isChatClosed: boolean;
+  chatClosedAt: Date | null;
 }
 
-export default function EventChat({ eventId, canWrite, currentUserId, isChatClosed }: Props) {
+function useCountdown(target: Date | null): string | null {
+  const [remaining, setRemaining] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!target) return;
+    const update = () => {
+      const diff = target.getTime() - Date.now();
+      if (diff <= 0) { setRemaining(null); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setRemaining(`${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`);
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [target]);
+
+  return remaining;
+}
+
+export default function EventChat({ eventId, canWrite, currentUserId, isChatClosed, chatClosedAt }: Props) {
   const [userActivated, setUserActivated] = useState(false);
   const [text, setText] = useState('');
+  const countdown = useCountdown(isChatClosed ? null : chatClosedAt);
   const bottomRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
@@ -134,10 +157,16 @@ export default function EventChat({ eventId, canWrite, currentUserId, isChatClos
       {/* Input */}
       {isChatClosed ? (
         <p className="text-xs text-[var(--color-textSecondary)] text-center mt-3 py-2 border-t border-[var(--color-inputBorder)]">
-          El chat está cerrado (han pasado más de 3h desde que terminó el evento)
+          El chat está cerrado (han pasado más de 24h desde que terminó el evento)
         </p>
       ) : canWrite ? (
-        <div className="flex gap-2 mt-3 pt-3 border-t border-[var(--color-inputBorder)]">
+        <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-[var(--color-inputBorder)]">
+          {countdown && (
+            <p className="text-xs text-[var(--color-textSecondary)] text-center">
+              El chat se cerrará en <span className="font-mono font-medium text-[var(--color-text)]">{countdown}</span>
+            </p>
+          )}
+        <div className="flex gap-2">
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -157,6 +186,7 @@ export default function EventChat({ eventId, canWrite, currentUserId, isChatClos
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
           </button>
+        </div>
         </div>
       ) : null}
     </div>

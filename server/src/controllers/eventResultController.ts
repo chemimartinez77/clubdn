@@ -11,16 +11,27 @@ export const getEventResults = async (req: Request, res: Response) => {
   try {
     const { eventId } = req.params;
 
-    const results = await prisma.eventResult.findMany({
-      where: { eventId },
-      include: {
-        user: { select: { id: true, name: true, profile: { select: { nick: true, avatar: true } } } },
-        creator: { select: { id: true, name: true } },
-      },
-      orderBy: [{ isWinner: 'desc' }, { score: 'desc' }],
-    });
+    const [results, event] = await Promise.all([
+      prisma.eventResult.findMany({
+        where: { eventId },
+        include: {
+          user: { select: { id: true, name: true, profile: { select: { nick: true, avatar: true } } } },
+          creator: { select: { id: true, name: true } },
+        },
+        orderBy: [{ isWinner: 'desc' }, { score: 'desc' }],
+      }),
+      prisma.event.findUnique({
+        where: { id: eventId },
+        select: { victoryType: true, resultNotes: true },
+      }),
+    ]);
 
-    return res.json({ success: true, data: results });
+    return res.json({
+      success: true,
+      data: results,
+      victoryType: event?.victoryType ?? 'COMPETITIVE',
+      resultNotes: event?.resultNotes ?? null,
+    });
   } catch (error) {
     console.error('[EVENT_RESULT] Error en getEventResults:', error);
     return res.status(500).json({ success: false, message: 'Error al obtener los resultados' });
@@ -37,7 +48,7 @@ export const upsertEventResults = async (req: Request, res: Response) => {
   try {
     const { eventId } = req.params;
     const createdBy = req.user!.userId;
-    const { results } = req.body as {
+    const { results, resultNotes } = req.body as {
       results: {
         userId?: string;
         guestName?: string;
@@ -45,6 +56,7 @@ export const upsertEventResults = async (req: Request, res: Response) => {
         isWinner?: boolean;
         notes?: string;
       }[];
+      resultNotes?: string;
     };
 
     if (!Array.isArray(results) || results.length === 0) {
@@ -54,7 +66,13 @@ export const upsertEventResults = async (req: Request, res: Response) => {
     // Verificar que el evento existe
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      include: {
+      select: {
+        id: true,
+        createdBy: true,
+        date: true,
+        durationHours: true,
+        durationMinutes: true,
+        victoryType: true,
         registrations: { where: { status: 'CONFIRMED' }, select: { userId: true } },
       },
     });
@@ -86,16 +104,18 @@ export const upsertEventResults = async (req: Request, res: Response) => {
       }
     }
 
-    // Si hay empate y nadie está marcado como ganador, marcar al de mayor score
+    // Solo en modo COMPETITIVE: si nadie está marcado como ganador, inferir por score
     let processedResults = results.map((r) => ({ ...r }));
-    const anyWinner = processedResults.some((r) => r.isWinner);
-    if (!anyWinner) {
-      const maxScore = Math.max(...processedResults.map((r) => r.score ?? -Infinity));
-      if (isFinite(maxScore)) {
-        processedResults = processedResults.map((r) => ({
-          ...r,
-          isWinner: r.score === maxScore,
-        }));
+    if (event.victoryType === 'COMPETITIVE') {
+      const anyWinner = processedResults.some((r) => r.isWinner);
+      if (!anyWinner) {
+        const maxScore = Math.max(...processedResults.map((r) => r.score ?? -Infinity));
+        if (isFinite(maxScore)) {
+          processedResults = processedResults.map((r) => ({
+            ...r,
+            isWinner: r.score === maxScore,
+          }));
+        }
       }
     }
 
@@ -112,6 +132,10 @@ export const upsertEventResults = async (req: Request, res: Response) => {
           notes: r.notes ?? null,
           createdBy,
         })),
+      }),
+      prisma.event.update({
+        where: { id: eventId as string },
+        data: { resultNotes: resultNotes ?? null },
       }),
     ]);
 

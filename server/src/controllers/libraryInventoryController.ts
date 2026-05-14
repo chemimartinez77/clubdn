@@ -1,4 +1,4 @@
-import { GameCondition, GameType, LibraryContributionType, LibraryDonationStatus, LibraryItemLoanStatus, LibraryLoanStatus, LibraryLoanPolicy, LibraryQueueStatus, Prisma } from '@prisma/client';
+import { GameCondition, LibraryGameCategory, LibraryContributionType, LibraryDonationStatus, LibraryItemLoanStatus, LibraryLoanStatus, LibraryLoanPolicy, LibraryQueueStatus, Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { getRPGGeekItem } from '../services/bggService';
@@ -27,7 +27,7 @@ async function ensureLibraryCatalogEntry({
   fallbackName,
 }: {
   bggId?: string | null;
-  gameType: GameType;
+  gameType: LibraryGameCategory;
   fallbackName: string;
 }) {
   if (!bggId?.trim()) {
@@ -140,7 +140,7 @@ function mapInventoryItem(item: {
   id: string;
   internalId: string;
   name: string;
-  gameType: GameType;
+  gameType: LibraryGameCategory;
   condition: GameCondition;
   thumbnail: string | null;
   loanStatus: LibraryItemLoanStatus;
@@ -320,7 +320,7 @@ export const createAdminLibraryItem = async (req: Request, res: Response): Promi
       ownerType?: 'club' | 'member';
       ownerUserId?: string | null;
       condition?: GameCondition;
-      gameType?: GameType;
+      gameType?: LibraryGameCategory;
       notes?: string | null;
       loanPolicy?: LibraryLoanPolicy;
       acquisitionDate?: string | null;
@@ -507,7 +507,7 @@ export const createDonationRequest = async (req: Request, res: Response): Promis
     } = req.body as {
       bggId?: string | null;
       name?: string;
-      gameType?: GameType;
+      gameType?: LibraryGameCategory;
       condition?: GameCondition;
       notes?: string | null;
       contributionType?: LibraryContributionType;
@@ -643,7 +643,7 @@ export const approveDonationRequest = async (req: Request, res: Response): Promi
     } = req.body as {
       bggId?: string | null;
       name?: string;
-      gameType?: GameType;
+      gameType?: LibraryGameCategory;
       condition?: GameCondition;
       notes?: string | null;
       loanPolicy?: LibraryLoanPolicy;

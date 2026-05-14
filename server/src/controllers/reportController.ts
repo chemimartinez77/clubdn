@@ -365,6 +365,7 @@ export const updateReportAdmin = async (req: Request, res: Response): Promise<vo
       NUEVO: 'Nuevo',
       EN_REVISION: 'En revisión',
       EN_PROGRESO: 'En progreso',
+      POR_DESPLEGAR: 'Por desplegar',
       HECHO: 'Hecho',
     };
     const changes: string[] = [];

@@ -7,7 +7,8 @@ import {
   getClubStats,
   getUserEventsAttended,
   getUserGamesPlayed,
-  getUserUpcomingEvents
+  getUserUpcomingEvents,
+  getUserGamesPlayedPublic,
 } from '../controllers/statsController';
 import { authenticate, requireAdmin } from '../middleware/auth';
 
@@ -23,9 +24,12 @@ router.get('/user/detailed', authenticate, getUserDetailedStats);
 // Estadísticas globales del club (públicas para usuarios autenticados)
 router.get('/club', authenticate, getClubStats);
 
-// Detalles de eventos del usuario
+// Detalles de eventos del usuario autenticado
 router.get('/user/events-attended', authenticate, getUserEventsAttended);
 router.get('/user/games-played', authenticate, getUserGamesPlayed);
 router.get('/user/upcoming-events', authenticate, getUserUpcomingEvents);
+
+// Historial público de partidas de un usuario
+router.get('/user/:userId/games-played', authenticate, getUserGamesPlayedPublic);
 
 export default router;

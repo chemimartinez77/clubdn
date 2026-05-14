@@ -1,5 +1,4 @@
-// client/src/pages/UserProfile.tsx
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
@@ -8,6 +7,15 @@ import { displayName } from '../utils/displayName';
 import type { ApiResponse } from '../types/auth';
 import type { UserProfile } from '../types/profile';
 import type { UserBadge } from '../types/badge';
+
+interface PublicGame {
+  id: string;
+  title: string;
+  gameName: string | null;
+  gameImage: string | null;
+  date: string;
+  thumbnail: string | null;
+}
 
 export default function UserProfile() {
   const { userId } = useParams<{ userId: string }>();
@@ -18,6 +26,15 @@ export default function UserProfile() {
     queryFn: async () => {
       const response = await api.get<ApiResponse<{ profile: UserProfile; badges: UserBadge[] }>>(`/api/profile/${userId}`);
       return response.data.data;
+    },
+    enabled: !!userId,
+  });
+
+  const { data: gamesData, isLoading: gamesLoading } = useQuery({
+    queryKey: ['userGamesPlayed', userId],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<PublicGame[]>>(`/api/stats/user/${userId}/games-played`);
+      return response.data.data ?? [];
     },
     enabled: !!userId,
   });
@@ -166,6 +183,45 @@ export default function UserProfile() {
             </CardContent>
           </Card>
         )}
+
+        <Card>
+          <CardContent>
+            <p className="text-sm text-[var(--color-textSecondary)] mb-3">Últimas partidas jugadas</p>
+            {gamesLoading ? (
+              <p className="text-sm text-[var(--color-textSecondary)]">Cargando...</p>
+            ) : !gamesData || gamesData.length === 0 ? (
+              <p className="text-sm text-[var(--color-textSecondary)]">Este miembro aún no tiene partidas registradas.</p>
+            ) : (
+              <div className="space-y-2">
+                {gamesData.map((game) => (
+                  <Link
+                    key={game.id}
+                    to={`/events/${game.id}`}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-cardBorder)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                  >
+                    {(game.thumbnail ?? game.gameImage) ? (
+                      <img
+                        src={game.thumbnail ?? game.gameImage ?? ''}
+                        alt=""
+                        className="w-10 h-10 rounded object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-[var(--color-cardBorder)] shrink-0" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-[var(--color-text)] truncate">
+                        {game.gameName ?? game.title}
+                      </p>
+                      <p className="text-xs text-[var(--color-textSecondary)]">
+                        {formatDate(game.date)}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );

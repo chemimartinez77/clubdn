@@ -4,6 +4,72 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-14 (sesión 1)
+
+### feat(partidas): tipos de victoria, notas de partida y corrección de preferencias de notificación
+
+**Tipos de victoria en partidas (petición de Ximo)**
+
+Se añade un campo `victoryType` al modelo `Event` con cuatro modos que adaptan el formulario y la vista de resultados:
+
+- **COMPETITIVE** (defecto): puntuación numérica, ganador inferido por mayor score o marcado manualmente.
+- **RACING**: selector de posición ordinal por jugador (1.º, 2.º, … N.º, Estrellado, Abandono). La posición se guarda en `score`; los estados especiales en `notes`. El 1.º se marca ganador automáticamente.
+- **COOPERATIVE**: selector global "Todos ganan / Todos pierden". Marca `isWinner` a todos o a ninguno.
+- **SEMI_COOPERATIVE** (estilo Némesis): checkbox "Ganó" individual por jugador, sin puntuación numérica.
+
+El tipo se elige al crear la partida en `CreatePartida.tsx` (4 botones tipo pill).
+
+**Notas generales de partida**
+
+Campo `resultNotes` (texto libre) en `Event`, editable desde el formulario de resultados. Se muestra en la vista de detalle de la partida junto a los resultados.
+
+**Vista de resultados adaptada por tipo**
+
+La presentación de resultados existentes en `EventDetail.tsx` también cambia según `victoryType`: posiciones ordinales en RACING, "Victoria/Derrota" global en COOPERATIVE, "Ganó/Perdió" individual en SEMI_COOPERATIVE.
+
+**Migración de base de datos**
+
+- Nuevo enum `VictoryType` (`COMPETITIVE`, `RACING`, `COOPERATIVE`, `SEMI_COOPERATIVE`) en `schema.prisma`.
+- Campo `victoryType VictoryType @default(COMPETITIVE)` y `resultNotes String? @db.Text` en `Event`.
+- Migración `20260514100000_add_victory_type_and_result_notes` creada.
+
+**Archivos modificados:**
+- `server/prisma/schema.prisma`
+- `server/prisma/migrations/20260514100000_add_victory_type_and_result_notes/migration.sql`
+- `server/src/controllers/eventController.ts` — acepta `victoryType` en creación y edición
+- `server/src/controllers/eventResultController.ts` — `resultNotes`, lógica de ganador automático condicional por tipo, `victoryType` y `resultNotes` en la respuesta GET
+- `client/src/types/event.ts` — `victoryType` en `Event` y `CreateEventData`
+- `client/src/pages/CreatePartida.tsx` — selector de tipo de victoria
+- `client/src/pages/EventDetail.tsx` — formulario y vista de resultados adaptados por tipo
+
+---
+
+### fix(notificaciones): implementar preferencias de notificación y corregir UI de ajustes
+
+**Backend — preferencias que no se respetaban**
+
+Los campos `notifyEventChanges` e `notifyInvitations` se guardaban en BD pero nunca se leían al crear notificaciones. Ahora el servicio los respeta:
+
+- Se añade `preferenceKey` opcional a `createNotification` y `createBulkNotifications`. Antes de crear la notificación se chequea el campo correspondiente del perfil del usuario.
+- `notifyPlayersOfAbandonment` usa `preferenceKey: 'notifyEventChanges'` (alguien abandona una partida en la que estás inscrito).
+- `notifyRegistrationApproved` / `notifyRegistrationRejected` usan `preferenceKey: 'notifyInvitations'` (estado de tu solicitud de registro).
+- `notifyEventCancelled` refactorizado para usar el mismo mecanismo de `preferenceKey` en lugar del filtro manual inline.
+
+**Frontend — UI de ajustes reestructurada**
+
+La sección de configuración en `Profile.tsx` se reorganiza con etiquetas y descripciones claras:
+
+- **Recibir notificaciones en la app**: renombrado, con descripción que explica que es el interruptor general.
+- **Notificaciones por email**: sección propia con descripción de qué correos se envían.
+- **Preferencias de notificaciones (campanita)**: agrupa las cuatro preferencias individuales, cada una con descripción precisa de qué evento la activa.
+- **Privacidad**: sección separada para "Permitir invitaciones a partidas" (no es una preferencia de notificación sino de comportamiento).
+
+**Archivos modificados:**
+- `server/src/services/notificationService.ts`
+- `client/src/pages/Profile.tsx`
+
+---
+
 ## 2026-05-13
 
 ### refactor(ludoteca): unificar botones de donación y cesión en un único formulario

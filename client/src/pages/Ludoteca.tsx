@@ -8,7 +8,7 @@ import GameDetailModal from '../components/games/GameDetailModal';
 import { api } from '../api/axios';
 import { useAuth } from '../contexts/AuthContext';
 
-type GameType = 'WARGAME' | 'MESA' | 'CARTAS' | 'MINI' | 'ROL';
+type LibraryGameCategory = 'EUROGAMES' | 'TEMATICOS' | 'WARGAMES' | 'ROL' | 'MINIATURAS' | 'WARHAMMER' | 'FILLERS_PARTY' | 'CARTAS_LCG_TCG' | 'ABSTRACTOS';
 type GameCondition = 'NUEVO' | 'BUENO' | 'REGULAR' | 'MALO';
 
 type LibraryItemLoanStatus = 'AVAILABLE' | 'REQUESTED' | 'ON_LOAN' | 'BLOCKED' | 'MAINTENANCE';
@@ -22,7 +22,7 @@ interface LibraryItem {
   name: string;
   description: string | null;
   notes: string | null;
-  gameType: GameType;
+  gameType: LibraryGameCategory;
   condition: GameCondition;
   ownerEmail: string | null;
   ownerDisplayName?: string | null;
@@ -44,7 +44,7 @@ interface LibraryStats {
   expansions: number;
   clubItems: number;
   memberItems: number;
-  byGameType: { type: GameType; count: number }[];
+  byLibraryGameCategory: { type: LibraryGameCategory; count: number }[];
   byCondition: { condition: GameCondition; count: number }[];
   uniqueOwners: number;
 }
@@ -55,25 +55,33 @@ interface OwnerOption {
 }
 
 interface Filters {
-  gameTypes: GameType[];
+  gameTypes: LibraryGameCategory[];
   conditions: GameCondition[];
   owners: OwnerOption[];
 }
 
-const gameTypeLabels: Record<GameType, string> = {
-  WARGAME: 'Wargame',
-  MESA: 'Juego de Mesa',
-  CARTAS: 'Juego de Cartas',
-  MINI: 'Miniaturas',
-  ROL: 'Rol'
+const gameTypeLabels: Record<LibraryGameCategory, string> = {
+  EUROGAMES: 'Eurogames',
+  TEMATICOS: 'Temáticos',
+  WARGAMES: 'Wargames',
+  ROL: 'Rol',
+  MINIATURAS: 'Miniaturas',
+  WARHAMMER: 'Warhammer',
+  FILLERS_PARTY: 'Fillers / Party',
+  CARTAS_LCG_TCG: 'Cartas / LCG / TCG',
+  ABSTRACTOS: 'Abstractos',
 };
 
-const gameTypeIcons: Record<GameType, string> = {
-  WARGAME: '🎖️',
-  MESA: '🎲',
-  CARTAS: '🃏',
-  MINI: '♟️',
-  ROL: '📖'
+const gameTypeIcons: Record<LibraryGameCategory, string> = {
+  EUROGAMES: '🎲',
+  TEMATICOS: '🗺️',
+  WARGAMES: '🎖️',
+  ROL: '📖',
+  MINIATURAS: '♟️',
+  WARHAMMER: '⚔️',
+  FILLERS_PARTY: '🎉',
+  CARTAS_LCG_TCG: '🃏',
+  ABSTRACTOS: '🧩',
 };
 
 const conditionLabels: Record<GameCondition, string> = {
@@ -132,7 +140,7 @@ export default function Ludoteca() {
   const [donationForm, setDonationForm] = useState({
     bggId: '',
     name: '',
-    gameType: 'MESA' as GameType,
+    gameType: 'EUROGAMES' as LibraryGameCategory,
     condition: 'BUENO' as GameCondition,
     notes: '',
     acquisitionDate: '',
@@ -373,7 +381,7 @@ export default function Ludoteca() {
     setDonationForm({
       bggId: '',
       name: '',
-      gameType: 'MESA',
+      gameType: 'EUROGAMES',
       condition: 'BUENO',
       notes: '',
       acquisitionDate: '',
@@ -410,7 +418,7 @@ export default function Ludoteca() {
       setDonationForm({
         bggId: '',
         name: '',
-        gameType: 'MESA',
+        gameType: 'EUROGAMES',
         condition: 'BUENO',
         notes: '',
         acquisitionDate: '',
@@ -1022,7 +1030,7 @@ export default function Ludoteca() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Nombre</label>
+                  <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Nombre <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     value={donationForm.name}
@@ -1034,7 +1042,7 @@ export default function Ludoteca() {
                   <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Tipo</label>
                   <select
                     value={donationForm.gameType}
-                    onChange={(event) => setDonationForm((current) => ({ ...current, gameType: event.target.value as GameType }))}
+                    onChange={(event) => setDonationForm((current) => ({ ...current, gameType: event.target.value as LibraryGameCategory }))}
                     className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
                   >
                     {Object.entries(gameTypeLabels).map(([value, label]) => (
@@ -1054,13 +1062,13 @@ export default function Ludoteca() {
                     ))}
                   </select>
                 </div>
-                <div className="md:col-span-2">
+                <div>
                   <label className="mb-1 block text-xs font-medium text-[var(--color-textSecondary)]">Fecha de adquisición</label>
                   <input
                     type="date"
                     value={donationForm.acquisitionDate}
                     onChange={(event) => setDonationForm((current) => ({ ...current, acquisitionDate: event.target.value }))}
-                    className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)]"
+                    className="w-full rounded-lg border border-[var(--color-inputBorder)] bg-[var(--color-inputBackground)] px-3 py-2 text-sm text-[var(--color-inputText)] [color-scheme:dark]"
                   />
                 </div>
                 {donationForm.contributionType === 'CESSION' && (

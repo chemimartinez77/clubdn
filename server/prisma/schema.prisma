@@ -35,6 +35,7 @@ enum ReportStatus {
   NUEVO
   EN_REVISION
   EN_PROGRESO
+  POR_DESPLEGAR
   HECHO
 }
 
@@ -354,6 +355,8 @@ model Event {
   game            Game?    @relation("GameEvents", fields: [bggId], references: [id])
   expansions      EventExpansion[]
   gameCategory    BadgeCategory? // Categoría para tracking de badges
+  victoryType     VictoryType    @default(COMPETITIVE)
+  resultNotes     String?        @db.Text
   linkedNextEventId   String? @unique
   linkedNextEvent     Event?  @relation("LinkedEventChain", fields: [linkedNextEventId], references: [id])
   linkedPreviousEvent Event?  @relation("LinkedEventChain")
@@ -735,13 +738,16 @@ model ClubConfig {
   updatedAt      DateTime @updatedAt
 }
 
-// Tipos de juegos en la ludoteca
-enum GameType {
-  WARGAME
-  MESA
-  CARTAS
-  MINI
+enum LibraryGameCategory {
+  EUROGAMES
+  TEMATICOS
+  WARGAMES
   ROL
+  MINIATURAS
+  WARHAMMER
+  FILLERS_PARTY
+  CARTAS_LCG_TCG
+  ABSTRACTOS
 }
 
 // Estados de condición física del juego
@@ -809,7 +815,7 @@ model LibraryItem {
   yearPublished     Int?
 
   // Clasificación
-  gameType          GameType
+  gameType          LibraryGameCategory
   condition         GameCondition
 
   // Propiedad y adquisición
@@ -906,7 +912,7 @@ model LibraryDonationRequest {
 
   bggId               String?
   name                String
-  gameType            GameType
+  gameType            LibraryGameCategory
   condition           GameCondition
   notes               String?               @db.Text
   contributionType    LibraryContributionType @default(DONATION)
@@ -1779,4 +1785,11 @@ model EventMessage {
 
   @@index([eventId, createdAt])
   @@index([userId])
+}
+
+enum VictoryType {
+  COMPETITIVE
+  RACING
+  COOPERATIVE
+  SEMI_COOPERATIVE
 }

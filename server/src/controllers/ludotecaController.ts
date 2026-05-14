@@ -1,7 +1,7 @@
 // server/src/controllers/ludotecaController.ts
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
-import { GameType, GameCondition, Prisma } from '@prisma/client';
+import { LibraryGameCategory, GameCondition, Prisma } from '@prisma/client';
 import { getRPGGeekItem } from '../services/bggService';
 import { buildClubOwnerWhere, buildParticularOwnerWhere, isClubOwnerEmail } from '../utils/libraryOwnership';
 
@@ -48,7 +48,7 @@ export const getLibraryItems = async (req: Request, res: Response): Promise<void
     }
 
     if (gameType && typeof gameType === 'string') {
-      andClauses.push({ gameType: gameType as GameType });
+      andClauses.push({ gameType: gameType as LibraryGameCategory });
     }
 
     if (condition && typeof condition === 'string') {
@@ -421,7 +421,10 @@ export const getLibraryItemDetail = async (req: Request, res: Response): Promise
 export const getLibraryFilters = async (_req: Request, res: Response): Promise<void> => {
   try {
     // Tipos de juego disponibles
-    const gameTypes = Object.values(GameType);
+    const gameTypes: LibraryGameCategory[] = [
+      'EUROGAMES', 'TEMATICOS', 'WARGAMES', 'ROL',
+      'MINIATURAS', 'WARHAMMER', 'FILLERS_PARTY', 'CARTAS_LCG_TCG', 'ABSTRACTOS',
+    ];
 
     // Condiciones disponibles
     const conditions = Object.values(GameCondition);

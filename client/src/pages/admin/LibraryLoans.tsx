@@ -16,17 +16,21 @@ import type {
   MemberSearchResult,
 } from '../../types/libraryLoans';
 
-type LibraryGameType = 'WARGAME' | 'MESA' | 'CARTAS' | 'MINI' | 'ROL';
+type LibraryGameType = 'EUROGAMES' | 'TEMATICOS' | 'WARGAMES' | 'ROL' | 'MINIATURAS' | 'WARHAMMER' | 'FILLERS_PARTY' | 'CARTAS_LCG_TCG' | 'ABSTRACTOS';
 
 const conditionLabels: Record<GameCondition, string> = { NUEVO: 'Nuevo', BUENO: 'Bueno', REGULAR: 'Regular', MALO: 'Malo' };
 const conditionOptions: GameCondition[] = ['NUEVO', 'BUENO', 'REGULAR', 'MALO'];
-const gameTypeOptions: LibraryGameType[] = ['WARGAME', 'MESA', 'CARTAS', 'MINI', 'ROL'];
+const gameTypeOptions: LibraryGameType[] = ['EUROGAMES', 'TEMATICOS', 'WARGAMES', 'ROL', 'MINIATURAS', 'WARHAMMER', 'FILLERS_PARTY', 'CARTAS_LCG_TCG', 'ABSTRACTOS'];
 const gameTypeLabels: Record<LibraryGameType, string> = {
-  WARGAME: 'Wargame',
-  MESA: 'Juego de mesa',
-  CARTAS: 'Juego de cartas',
-  MINI: 'Miniaturas',
+  EUROGAMES: 'Eurogames',
+  TEMATICOS: 'Temáticos',
+  WARGAMES: 'Wargames',
   ROL: 'Rol',
+  MINIATURAS: 'Miniaturas',
+  WARHAMMER: 'Warhammer',
+  FILLERS_PARTY: 'Fillers / Party',
+  CARTAS_LCG_TCG: 'Cartas / LCG / TCG',
+  ABSTRACTOS: 'Abstractos',
 };
 const loanPolicyLabels: Record<LibraryLoanPolicy, string> = {
   LOANABLE: 'Prestable',
@@ -677,7 +681,7 @@ function CreateInventoryModal({
     bggId: '',
     name: '',
     condition: 'BUENO' as GameCondition,
-    gameType: 'MESA' as LibraryGameType,
+    gameType: 'EUROGAMES' as LibraryGameType,
     notes: '',
     loanPolicy: 'LOANABLE' as LibraryLoanPolicy,
     acquisitionDate: '',
@@ -691,7 +695,7 @@ function CreateInventoryModal({
         bggId: '',
         name: '',
         condition: 'BUENO',
-        gameType: 'MESA',
+        gameType: 'EUROGAMES',
         notes: '',
         loanPolicy: 'LOANABLE',
         acquisitionDate: '',
@@ -911,7 +915,7 @@ function ApproveDonationModal({
   const [form, setForm] = useState({
     bggId: '',
     name: '',
-    gameType: 'MESA' as LibraryGameType,
+    gameType: 'EUROGAMES' as LibraryGameType,
     condition: 'BUENO' as GameCondition,
     notes: '',
     loanPolicy: 'LOANABLE' as LibraryLoanPolicy,
@@ -1447,7 +1451,7 @@ function DonationsPanel() {
                       Préstamo solicitado: {donation.requestedLoanPolicy ? loanPolicyLabels[donation.requestedLoanPolicy] : 'No prestable'}
                     </p>
                   )}
-                  <p className="text-sm text-[var(--color-textSecondary)]">Fecha propuesta: {formatDate(donation.acquisitionDate)}</p>
+                  <p className="text-sm text-[var(--color-textSecondary)]">Fecha adquisición: {formatDate(donation.acquisitionDate)}</p>
                   <p className="text-sm text-[var(--color-textSecondary)]">Registrada: {formatDate(donation.createdAt)}</p>
                   {donation.notes && <p className="text-sm text-[var(--color-textSecondary)]">Notas: {donation.notes}</p>}
                   {donation.reviewerDisplayName && <p className="text-sm text-[var(--color-textSecondary)]">Revisó: {donation.reviewerDisplayName}</p>}

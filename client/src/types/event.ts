@@ -24,6 +24,7 @@ export interface Event {
   }>;
   gameCategory?: BadgeCategory | null;
   confirmedCategory?: BadgeCategory | null;
+  victoryType?: string | null;
   linkedNextEvent?: {
     id: string;
     title: string;
@@ -212,6 +213,7 @@ export interface CreateEventData {
   bggId?: string;
   expansions?: Array<{ gameId: string }>;
   gameCategory?: string;
+  victoryType?: string;
   linkedNext?: {
     gameId: string;
     startHour?: number;

@@ -27,7 +27,7 @@ function calcChatClosedAt(event: {
   const totalMinutes = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
   if (totalMinutes <= 0) return null;
   const end = new Date(start.getTime() + totalMinutes * 60 * 1000);
-  return new Date(end.getTime() + 3 * 60 * 60 * 1000);
+  return new Date(end.getTime() + 24 * 60 * 60 * 1000);
 }
 
 export const getMessages = async (req: Request, res: Response): Promise<void> => {
