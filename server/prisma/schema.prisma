@@ -222,6 +222,7 @@ model UserProfile {
   defaultScreen        String   @default("home")       // Pantalla de inicio tras login: "home" o "events"
   noughterColor        String?                         // Color de Noughter: purple, blue, green, red, brown (null = usar tema activo)
   eventsDefaultView    String   @default("calendar")   // Vista por defecto en Eventos: "calendar" o "list"
+  eventsCalendarView   String   @default("week")        // Subvista del calendario: "month" | "week" | "day"
   eventsAccordionMode  String   @default("current_only") // Modo acordeón en lista: "current_only" o "all_open"
   eventButtonStyle     String   @default("dropdown")     // Estilo de botones en detalle de evento: "dropdown" o "multicolor"
   idPhotoUrl                 String?                   // Foto carnet del colaborador (Cloudinary)
@@ -383,6 +384,10 @@ model Event {
   gamePlayHistory  GamePlayHistory[]
   gameValidations  GameValidation[]
   firstPlayerSpins FirstPlayerSpin[]
+
+  // Idioma
+  language         String   @default("es") // "es" | "en"
+  englishLevel     String?                  // "basic" | "medium" | "advanced" — solo si language="en"
 
   // Aprobación de jugadores
   requiresApproval Boolean @default(true) // Si requiere aprobación del organizador

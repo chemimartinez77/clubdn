@@ -4,6 +4,59 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-15 (sesión 1)
+
+### feat(eventos): preferencia de vista del calendario, indicador de registro y campo de idioma
+
+Tres mejoras en el módulo de eventos a partir de sugerencias de Pablo Valbuena.
+
+**Vista por defecto del calendario persistida en perfil**
+
+La subvista del calendario (Mes / Semana / Día) ya no vuelve a "Mes" al navegar. Ahora:
+- Se guarda en el perfil del usuario (`eventsCalendarView`) cada vez que cambia de vista.
+- Al entrar en `/eventos` sin parámetros en la URL, se restaura la última vista usada.
+- El valor por defecto para usuarios nuevos es **Semana** (en lugar de Mes).
+- Se añade un selector "Vista por defecto en Calendario" en la página de perfil.
+
+Migración: `20260515000000_add_events_calendar_view` — nuevo campo `eventsCalendarView TEXT DEFAULT 'week'` en `UserProfile`.
+
+Archivos modificados:
+- `server/prisma/schema.prisma` — campo `eventsCalendarView`
+- `server/src/controllers/profileController.ts` — acepta y persiste `eventsCalendarView`
+- `client/src/types/profile.ts` — campo en `UserProfile` y `UpdateProfileData`
+- `client/src/pages/Events.tsx` — lee preferencia del perfil como fallback, guarda silenciosamente al cambiar
+- `client/src/pages/Profile.tsx` — selector de subvista (Mes / Semana / Día)
+
+**Indicador visual de registro en tarjetas del calendario semanal**
+
+Las tarjetas de evento en la vista semana ahora muestran el estado de registro del usuario:
+- **Confirmado**: franja verde en la parte inferior + prefijo `✓` en el título.
+- **Lista de espera**: franja amarilla en la parte inferior + prefijo `⏳` en el título.
+- Eventos sin registro: sin cambios visuales.
+
+Archivos modificados:
+- `client/src/components/events/EventCalendarWeek.tsx` — usa `isUserRegistered` y `userRegistrationStatus` (ya devueltos por la API)
+
+**Campo de idioma en partidas**
+
+Las partidas ahora pueden indicar si se juegan en Castellano o en Inglés. Si se selecciona Inglés, se puede especificar el nivel requerido (Básico / Medio / Avanzado).
+
+- Por defecto: Castellano (sin cambio de comportamiento para partidas existentes).
+- Toggle Castellano ↔ Inglés en el formulario de creación; al activar Inglés aparecen tres botones de nivel.
+- Badge visible en tarjetas (`EventCard`) y en la ficha de detalle (`EventDetail`): verde "en Castellano" / naranja "en INGLÉS · Nivel".
+
+Migración: `20260515100000_add_event_language` — nuevos campos `language TEXT DEFAULT 'es'` y `englishLevel TEXT` en `Event`.
+
+Archivos modificados:
+- `server/prisma/schema.prisma` — campos `language` y `englishLevel`
+- `server/src/controllers/eventController.ts` — acepta y persiste `language` y `englishLevel` en creación y edición
+- `client/src/types/event.ts` — campos en `Event`, `CreateEventData`, `UpdateEventData` y `CreatePartidaClonePrefill`
+- `client/src/pages/CreatePartida.tsx` — toggle de idioma + selector de nivel
+- `client/src/components/events/EventCard.tsx` — badge de idioma
+- `client/src/pages/EventDetail.tsx` — badge de idioma
+
+---
+
 ## 2026-05-14 (sesión 1)
 
 ### feat(partidas): tipos de victoria, notas de partida y corrección de preferencias de notificación

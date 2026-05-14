@@ -1,7 +1,7 @@
 ﻿// client/src/pages/Events.tsx
 import { useState, useEffect } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -49,7 +49,12 @@ export default function Events() {
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
 
   const calendarViewParam = searchParams.get('view') as CalendarView | null;
-  const calendarView: CalendarView = calendarViewParam && ['month', 'week', 'day'].includes(calendarViewParam) ? calendarViewParam : 'month';
+  const preferredCalendarView = (profileData?.eventsCalendarView as CalendarView | undefined) ?? 'week';
+  const calendarView: CalendarView = calendarViewParam && ['month', 'week', 'day'].includes(calendarViewParam) ? calendarViewParam : preferredCalendarView;
+
+  const updateCalendarViewMutation = useMutation({
+    mutationFn: (view: CalendarView) => api.patch('/api/profile/me', { eventsCalendarView: view }),
+  });
 
   const setCalendarView = (view: CalendarView, date?: Date) => {
     setSearchParams(prev => {
@@ -60,6 +65,9 @@ export default function Events() {
       }
       return next;
     }, { replace: false });
+    if (user) {
+      updateCalendarViewMutation.mutate(view);
+    }
   };
 
   useEffect(() => {

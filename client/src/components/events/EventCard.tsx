@@ -188,6 +188,18 @@ export default function EventCard({ event }: EventCardProps) {
                 </span>
               </div>
 
+              <div className="flex flex-wrap gap-2 mb-3">
+                {event.language === 'en' ? (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-500 text-white">
+                    en INGLÉS{event.englishLevel ? ` · ${event.englishLevel === 'basic' ? 'Básico' : event.englishLevel === 'medium' ? 'Medio' : 'Avanzado'}` : ''}
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-green-500 text-white">
+                    en Castellano
+                  </span>
+                )}
+              </div>
+
               <div className="mb-4 space-y-2">
                 <div className="flex items-center gap-2 text-[var(--color-textSecondary)]">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

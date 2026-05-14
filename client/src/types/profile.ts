@@ -32,6 +32,7 @@ export interface UserProfile {
   noughterColor: string | null;
   defaultScreen: string;
   eventsDefaultView: string;
+  eventsCalendarView: string;
   eventsAccordionMode: string;
   eventButtonStyle: string;
   calendarToken: string | null;
@@ -67,6 +68,7 @@ export interface UpdateProfileData {
   noughterColor?: string | null;
   defaultScreen?: string;
   eventsDefaultView?: string;
+  eventsCalendarView?: string;
   eventsAccordionMode?: string;
   eventButtonStyle?: string;
 }

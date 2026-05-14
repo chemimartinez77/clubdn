@@ -226,6 +226,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
       noughterColor,
       defaultScreen,
       eventsDefaultView,
+      eventsCalendarView,
       eventsAccordionMode,
       eventButtonStyle,
       showTipOfTheDay,
@@ -304,6 +305,7 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
           ...(noughterColor !== undefined && { noughterColor }),
           ...(defaultScreen !== undefined && { defaultScreen }),
           ...(eventsDefaultView !== undefined && { eventsDefaultView }),
+          ...(eventsCalendarView !== undefined && { eventsCalendarView }),
           ...(eventsAccordionMode !== undefined && { eventsAccordionMode }),
           ...(eventButtonStyle !== undefined && { eventButtonStyle }),
           ...(ludotecaPublica !== undefined && { ludotecaPublica })

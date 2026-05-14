@@ -122,6 +122,8 @@ export default function EventCalendarWeek({ events, currentMonth }: EventCalenda
               const time = estimatedTime ? `Inicio estimado: ${estimatedTime}` : defaultTime;
               const registeredCount = event.registeredCount || 0;
               const isFull = registeredCount >= event.maxAttendees;
+              const isConfirmed = event.isUserRegistered && event.userRegistrationStatus === 'CONFIRMED';
+              const isWaitlist = event.isUserRegistered && event.userRegistrationStatus === 'WAITLIST';
 
               return (
                 <div
@@ -134,9 +136,11 @@ export default function EventCalendarWeek({ events, currentMonth }: EventCalenda
                     isFull
                       ? 'bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)] hover:bg-[var(--color-cardBorder)]'
                       : 'bg-[var(--color-primary-100)] text-[var(--color-primary-900)] hover:bg-[var(--color-primary-200)]'
+                  } ${
+                    isConfirmed ? 'border-b-4 border-green-500' : isWaitlist ? 'border-b-4 border-yellow-400' : ''
                   }`}
                 >
-                  <div className="font-medium truncate">{event.title}</div>
+                  <div className="font-medium truncate">{isConfirmed ? '✓ ' : isWaitlist ? '⏳ ' : ''}{event.title}</div>
                   <div className="text-xs mt-1 flex items-center justify-between">
                     <span>{time}</span>
                     <span className={`font-medium ${isFull ? 'text-red-600' : 'text-green-700'}`}>

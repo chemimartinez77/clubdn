@@ -1168,6 +1168,15 @@ export default function EventDetail() {
                               : event.userRegistrationStatus}
                       </span>
                     )}
+                    {event.language === 'en' ? (
+                      <span className="px-3 py-1 rounded-full text-sm font-bold bg-orange-500 text-white">
+                        en INGLÉS{event.englishLevel ? ` · ${event.englishLevel === 'basic' ? 'Básico' : event.englishLevel === 'medium' ? 'Medio' : 'Avanzado'}` : ''}
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 rounded-full text-sm font-bold bg-green-500 text-white">
+                        en Castellano
+                      </span>
+                    )}
                   </div>
                 </div>
 

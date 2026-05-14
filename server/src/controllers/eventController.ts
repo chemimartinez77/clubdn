@@ -763,7 +763,9 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
       durationHours,
       durationMinutes,
       attend,
-      allowLateJoin
+      allowLateJoin,
+      language,
+      englishLevel
     } = req.body;
 
     if (!userId) {
@@ -855,6 +857,8 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
           durationMinutes: durationMinutes !== undefined ? parseInt(durationMinutes) : null,
           requiresApproval: req.body.requiresApproval !== undefined ? req.body.requiresApproval === true || req.body.requiresApproval === 'true' : true,
           allowLateJoin: normalizedAllowLateJoin,
+          language: language || 'es',
+          englishLevel: language === 'en' ? (englishLevel || null) : null,
           createdBy: userId
         },
       });
@@ -962,7 +966,7 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
       title, description, date, location, address, maxAttendees, status,
       gameName, gameImage, bggId, expansions, linkedNext, gameCategory, victoryType,
       startHour, startMinute, durationHours, durationMinutes,
-      requiresApproval, allowLateJoin
+      requiresApproval, allowLateJoin, language, englishLevel
     } = req.body;
 
     if (!eventId) {
@@ -1068,7 +1072,8 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
       ...(durationHours !== undefined && { durationHours: durationHours !== null ? parseInt(durationHours) : null }),
       ...(durationMinutes !== undefined && { durationMinutes: durationMinutes !== null ? parseInt(durationMinutes) : null }),
       ...(requiresApproval !== undefined && { requiresApproval: requiresApproval === true || requiresApproval === 'true' }),
-      ...((allowLateJoin !== undefined || bggId !== undefined) && { allowLateJoin: normalizedAllowLateJoin })
+      ...((allowLateJoin !== undefined || bggId !== undefined) && { allowLateJoin: normalizedAllowLateJoin }),
+      ...(language !== undefined && { language: language || 'es', englishLevel: language === 'en' ? (englishLevel || null) : null })
     };
 
     if (location !== undefined) {

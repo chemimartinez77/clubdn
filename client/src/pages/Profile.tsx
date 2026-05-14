@@ -1027,6 +1027,30 @@ export default function Profile() {
                   </div>
 
                   <div className="pt-4 border-t border-[var(--color-cardBorder)]">
+                    <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Vista por defecto en Calendario</p>
+                    <div className="flex gap-3">
+                      {[
+                        { value: 'month', label: 'Mes' },
+                        { value: 'week', label: 'Semana' },
+                        { value: 'day', label: 'Día' }
+                      ].map(option => (
+                        <button
+                          key={option.value}
+                          onClick={() => updateMutation.mutate({ eventsCalendarView: option.value })}
+                          disabled={updateMutation.isPending}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                            (profile.eventsCalendarView ?? 'week') === option.value
+                              ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                              : 'bg-transparent text-[var(--color-textSecondary)] border-[var(--color-cardBorder)] hover:border-[var(--color-primary)]'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-[var(--color-cardBorder)]">
                     <p className="text-sm font-medium text-[var(--color-textSecondary)] mb-3">Acordeones en vista de lista</p>
                     <div className="flex gap-3">
                       {[

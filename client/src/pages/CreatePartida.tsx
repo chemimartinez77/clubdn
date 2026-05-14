@@ -97,6 +97,8 @@ export default function CreatePartida() {
   const [selectedClonedAttendeeIds, setSelectedClonedAttendeeIds] = useState<string[]>(() => cloneAttendees.map((attendee) => attendee.id));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allowLateJoin, setAllowLateJoin] = useState<boolean>(clonePrefill?.allowLateJoin ?? false);
+  const [language, setLanguage] = useState<'es' | 'en'>(clonePrefill?.language === 'en' ? 'en' : 'es');
+  const [englishLevel, setEnglishLevel] = useState<string>(clonePrefill?.englishLevel ?? '');
 
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const minutes = [0, 15, 30, 45];
@@ -163,7 +165,9 @@ export default function CreatePartida() {
           }
         : null,
       gameCategory: gameCategory || undefined,
-      victoryType
+      victoryType,
+      language,
+      englishLevel: language === 'en' ? (englishLevel || null) : null
     };
 
     try {
@@ -508,6 +512,47 @@ export default function CreatePartida() {
                 <label htmlFor="requiresApproval" className="text-sm text-[var(--color-textSecondary)]">
                   Requiere aprobación del organizador
                 </label>
+              </div>
+
+              <div className="space-y-3 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] px-4 py-3">
+                <p className="text-sm font-medium text-[var(--color-textSecondary)]">Idioma de la partida</p>
+                <div className="flex items-center gap-3">
+                  <span className={`text-sm ${language === 'es' ? 'font-semibold text-[var(--color-text)]' : 'text-[var(--color-textSecondary)]'}`}>
+                    Castellano
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => { setLanguage(language === 'es' ? 'en' : 'es'); setEnglishLevel(''); }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                      language === 'en' ? 'bg-orange-500' : 'bg-[var(--color-cardBorder)]'
+                    }`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                      language === 'en' ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                  </button>
+                  <span className={`text-sm ${language === 'en' ? 'font-semibold text-orange-600' : 'text-[var(--color-textSecondary)]'}`}>
+                    Inglés
+                  </span>
+                </div>
+                {language === 'en' && (
+                  <div className="flex gap-2 pt-1">
+                    {(['basic', 'medium', 'advanced'] as const).map((level) => (
+                      <button
+                        key={level}
+                        type="button"
+                        onClick={() => setEnglishLevel(level)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                          englishLevel === level
+                            ? 'bg-orange-500 text-white border-orange-500'
+                            : 'bg-transparent text-[var(--color-textSecondary)] border-[var(--color-cardBorder)] hover:border-orange-400'
+                        }`}
+                      >
+                        {level === 'basic' ? 'Básico' : level === 'medium' ? 'Medio' : 'Avanzado'}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {canConfigureLateJoin && (

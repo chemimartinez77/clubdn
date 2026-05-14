@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Event" ADD COLUMN IF NOT EXISTS "language" TEXT NOT NULL DEFAULT 'es';
+ALTER TABLE "Event" ADD COLUMN IF NOT EXISTS "englishLevel" TEXT;
