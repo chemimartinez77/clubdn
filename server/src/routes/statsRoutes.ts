@@ -9,6 +9,7 @@ import {
   getUserGamesPlayed,
   getUserUpcomingEvents,
   getUserGamesPlayedPublic,
+  getUserTopGamesPublic,
 } from '../controllers/statsController';
 import { authenticate, requireAdmin } from '../middleware/auth';
 
@@ -31,5 +32,6 @@ router.get('/user/upcoming-events', authenticate, getUserUpcomingEvents);
 
 // Historial público de partidas de un usuario
 router.get('/user/:userId/games-played', authenticate, getUserGamesPlayedPublic);
+router.get('/user/:userId/top-games', authenticate, getUserTopGamesPublic);
 
 export default router;

@@ -4,6 +4,32 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-15 (sesión 2)
+
+### feat(perfil): mostrar los juegos más jugados en el perfil público
+
+Se amplía la ficha pública de cada socio para que, además de las últimas partidas jugadas, muestre también un resumen de sus juegos más frecuentes.
+
+**Nuevo bloque "Juegos más jugados" en el perfil público**
+
+- Se añade una segunda sección en `UserProfile` con el top 10 de juegos más jugados por el usuario.
+- Cada fila muestra imagen, nombre del juego y número de partidas registradas.
+- Cada juego enlaza a la partida más reciente de ese título, para mantener una navegación útil sin crear una vista nueva específica de juego.
+
+**Nuevo endpoint público de estadísticas agregadas**
+
+- Se expone `GET /api/stats/user/:userId/top-games`.
+- El backend agrupa partidas completadas confirmadas por `gameName` y, si no existe, por `title`.
+- El ranking se ordena por número de partidas descendente y, en empate, por nombre.
+- La respuesta se limita a 10 resultados e incluye la imagen disponible y el `latestEventId` más reciente para enlazado desde la interfaz.
+
+**Archivos modificados:**
+- `server/src/controllers/statsController.ts` — nuevo controlador `getUserTopGamesPublic`
+- `server/src/routes/statsRoutes.ts` — nueva ruta pública `/user/:userId/top-games`
+- `client/src/pages/UserProfile.tsx` — consulta del ranking y render del bloque "Juegos más jugados"
+
+---
+
 ## 2026-05-15 (sesión 1)
 
 ### feat(eventos): preferencia de vista del calendario, indicador de registro y campo de idioma

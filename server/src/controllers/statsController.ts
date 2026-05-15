@@ -1132,6 +1132,91 @@ export const getUserGamesPlayedPublic = async (req: Request, res: Response): Pro
 };
 
 /**
+ * Obtener los juegos más jugados de un usuario para su perfil público.
+ */
+export const getUserTopGamesPublic = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+
+    const games = await prisma.eventRegistration.findMany({
+      where: {
+        userId,
+        status: RegistrationStatus.CONFIRMED,
+        event: {
+          type: 'PARTIDA',
+          status: EventStatus.COMPLETED
+        }
+      },
+      select: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            gameName: true,
+            gameImage: true,
+            date: true,
+            game: {
+              select: {
+                thumbnail: true,
+                image: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const topGames = new Map<string, {
+      name: string;
+      count: number;
+      image: string | null;
+      latestEventId: string;
+      latestDate: Date;
+    }>();
+
+    for (const { event } of games) {
+      const gameName = event.gameName || event.title;
+      const existingGame = topGames.get(gameName);
+      const image = event.game?.image || event.game?.thumbnail || event.gameImage || null;
+
+      if (!existingGame) {
+        topGames.set(gameName, {
+          name: gameName,
+          count: 1,
+          image,
+          latestEventId: event.id,
+          latestDate: event.date
+        });
+        continue;
+      }
+
+      existingGame.count++;
+      if (event.date > existingGame.latestDate) {
+        existingGame.latestEventId = event.id;
+        existingGame.latestDate = event.date;
+        existingGame.image = image || existingGame.image;
+      }
+    }
+
+    res.json({
+      success: true,
+      data: Array.from(topGames.values())
+        .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'es'))
+        .slice(0, 10)
+        .map(game => ({
+          name: game.name,
+          count: game.count,
+          image: game.image,
+          latestEventId: game.latestEventId
+        }))
+    });
+  } catch (error) {
+    console.error('Error al obtener los juegos más jugados del usuario:', error);
+    res.status(500).json({ success: false, message: 'Error al obtener los juegos más jugados' });
+  }
+};
+
+/**
  * Obtener próximos eventos del usuario (detallados)
  */
 export const getUserUpcomingEvents = async (req: Request, res: Response): Promise<void> => {

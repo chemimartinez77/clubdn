@@ -17,6 +17,13 @@ interface PublicGame {
   thumbnail: string | null;
 }
 
+interface PublicTopGame {
+  name: string;
+  count: number;
+  image: string | null;
+  latestEventId: string;
+}
+
 export default function UserProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
@@ -34,6 +41,15 @@ export default function UserProfile() {
     queryKey: ['userGamesPlayed', userId],
     queryFn: async () => {
       const response = await api.get<ApiResponse<PublicGame[]>>(`/api/stats/user/${userId}/games-played`);
+      return response.data.data ?? [];
+    },
+    enabled: !!userId,
+  });
+
+  const { data: topGamesData, isLoading: topGamesLoading } = useQuery({
+    queryKey: ['userTopGames', userId],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<PublicTopGame[]>>(`/api/stats/user/${userId}/top-games`);
       return response.data.data ?? [];
     },
     enabled: !!userId,
@@ -214,6 +230,45 @@ export default function UserProfile() {
                       </p>
                       <p className="text-xs text-[var(--color-textSecondary)]">
                         {formatDate(game.date)}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <p className="text-sm text-[var(--color-textSecondary)] mb-3">Juegos más jugados</p>
+            {topGamesLoading ? (
+              <p className="text-sm text-[var(--color-textSecondary)]">Cargando...</p>
+            ) : !topGamesData || topGamesData.length === 0 ? (
+              <p className="text-sm text-[var(--color-textSecondary)]">Este miembro aún no tiene partidas registradas.</p>
+            ) : (
+              <div className="space-y-2">
+                {topGamesData.map((game) => (
+                  <Link
+                    key={game.name}
+                    to={`/events/${game.latestEventId}`}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-cardBorder)] hover:bg-[var(--color-tableRowHover)] transition-colors"
+                  >
+                    {game.image ? (
+                      <img
+                        src={game.image}
+                        alt=""
+                        className="w-10 h-10 rounded object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-[var(--color-cardBorder)] shrink-0" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-[var(--color-text)] truncate">
+                        {game.name}
+                      </p>
+                      <p className="text-xs text-[var(--color-textSecondary)]">
+                        {game.count} {game.count === 1 ? 'partida' : 'partidas'}
                       </p>
                     </div>
                   </Link>
