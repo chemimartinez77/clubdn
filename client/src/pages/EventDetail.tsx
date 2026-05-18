@@ -783,7 +783,11 @@ export default function EventDetail() {
   };
 
   const isPartida = event.type === 'PARTIDA';
-  const eventStart = resolveEventStartDate(event.date, event.startHour, event.startMinute) ?? new Date(event.date);
+  const linkedEstimatedStart = event.linkedPreviousEvent
+    ? calcLinkedEstimatedStartDate(event.linkedPreviousEvent)
+    : null;
+  const explicitEventStart = resolveEventStartDate(event.date, event.startHour, event.startMinute);
+  const eventStart = explicitEventStart ?? linkedEstimatedStart ?? new Date(event.date);
   const isPast = eventStart < new Date();
 
   const effectiveStatus = (() => {
@@ -899,9 +903,6 @@ export default function EventDetail() {
   const canShowGameDetails = isPartida && !!event.bggId;
   const expansionsLabel = (event.expansions ?? []).map((expansion) => expansion.name).join(', ');
   const eventDateText = formatDateOnly(event.date);
-  const linkedEstimatedStart = event.linkedPreviousEvent
-    ? calcLinkedEstimatedStartDate(event.linkedPreviousEvent)
-    : null;
   const eventScheduleText = linkedEstimatedStart
     ? `Inicio estimado: ${formatScheduleFromStart(linkedEstimatedStart, event.durationHours, event.durationMinutes)}`
     : formatEventSchedule(
