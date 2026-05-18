@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { displayName } from '../../utils/displayName';
+import { getPublicMembershipLabel } from '../../utils/membershipLabels';
 
 interface UserPopoverProps {
   userId: string;
@@ -12,13 +13,6 @@ interface UserPopoverProps {
   membershipType?: string | null;
   children: React.ReactNode;
 }
-
-const membershipLabels: Record<string, string> = {
-  SOCIO: 'Socio',
-  COLABORADOR: 'Colaborador',
-  FAMILIAR: 'Familiar',
-  EN_PRUEBAS: 'En pruebas',
-};
 
 export default function UserPopover({ userId, name, nick, avatar, membershipType, children }: UserPopoverProps) {
   const [open, setOpen] = useState(false);
@@ -89,9 +83,9 @@ export default function UserPopover({ userId, name, nick, avatar, membershipType
               {hasNick && (
                 <p className="text-xs text-[var(--color-textSecondary)] truncate">{name}</p>
               )}
-              {membershipType && membershipLabels[membershipType] && (
+              {membershipType && (
                 <span className="mt-0.5 inline-block text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-1.5 py-0.5 rounded-full">
-                  {membershipLabels[membershipType]}
+                  {getPublicMembershipLabel(membershipType)}
                 </span>
               )}
             </div>

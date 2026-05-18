@@ -8,6 +8,7 @@ import Modal from '../ui/Modal';
 import NotificationBell from '../notifications/NotificationBell';
 import TipOfTheDayModal from '../tips/TipOfTheDayModal';
 import { displayName, fullNameTooltip } from '../../utils/displayName';
+import { getPublicMembershipLabel } from '../../utils/membershipLabels';
 import { getRandomTip } from '../../data/tips';
 import { api } from '../../api/axios';
 import type { Tip } from '../../data/tips';
@@ -60,18 +61,7 @@ export default function Header() {
     setIsMobileComunidadOpen(false);
   };
 
-  const membershipLabel =
-    user?.membership?.type === 'SOCIO'
-      ? 'Socio'
-      : user?.membership?.type === 'COLABORADOR'
-      ? 'Colaborador'
-      : user?.membership?.type === 'FAMILIAR'
-      ? 'Familiar'
-      : user?.membership?.type === 'EN_PRUEBAS'
-      ? 'Colaborador en pruebas'
-      : user?.membership?.type === 'BAJA'
-      ? 'Baja'
-      : 'Miembro';
+  const membershipLabel = getPublicMembershipLabel(user?.membership?.type);
   const isCombatZoneEnabledForUser = user?.profile?.accessCombatZone === true;
 
   return (

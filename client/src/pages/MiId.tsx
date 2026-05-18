@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { displayName, fullNameTooltip } from '../utils/displayName';
+import { getPublicMembershipLabel } from '../utils/membershipLabels';
 
 export default function MiId() {
   const { user } = useAuth();
@@ -12,18 +13,7 @@ export default function MiId() {
     return () => clearInterval(interval);
   }, []);
 
-  const membershipLabel =
-    user?.membership?.type === 'SOCIO'
-      ? 'Socio'
-      : user?.membership?.type === 'COLABORADOR'
-      ? 'Colaborador'
-      : user?.membership?.type === 'FAMILIAR'
-      ? 'Familiar'
-      : user?.membership?.type === 'EN_PRUEBAS'
-      ? 'Colaborador en pruebas'
-      : user?.membership?.type === 'BAJA'
-      ? 'Baja'
-      : 'Miembro';
+  const membershipLabel = getPublicMembershipLabel(user?.membership?.type);
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center p-6">

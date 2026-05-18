@@ -22,6 +22,7 @@ import type { UserProfile } from '../types/profile';
 import type { Invitation } from '../types/invitation';
 import { getCategoryDisplayName, getCategoryIcon } from '../types/badge';
 import { displayName, fullNameTooltip } from '../utils/displayName';
+import { getPublicMembershipLabel } from '../utils/membershipLabels';
 import UserPopover from '../components/ui/UserPopover';
 import FirstPlayerModal from '../components/events/FirstPlayerModal';
 import EventChat from '../components/events/EventChat';
@@ -775,13 +776,6 @@ export default function EventDetail() {
     EXPIRED: 'text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)]',
     CANCELLED: 'text-red-700 bg-red-100'
   };
-  const membershipLabels: Record<string, string> = {
-    SOCIO: 'Socio',
-    COLABORADOR: 'Colaborador',
-    FAMILIAR: 'Familiar',
-    EN_PRUEBAS: 'En pruebas'
-  };
-
   const isPartida = event.type === 'PARTIDA';
   const linkedEstimatedStart = event.linkedPreviousEvent
     ? calcLinkedEstimatedStartDate(event.linkedPreviousEvent)
@@ -1874,12 +1868,11 @@ export default function EventDetail() {
                             </span>
                           </UserPopover>
                         ) : null}
-                        {registration.user?.membership?.type &&
-                          membershipLabels[registration.user.membership.type] && (
-                            <span className="text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
-                              {membershipLabels[registration.user.membership.type]}
-                            </span>
-                          )}
+                          {registration.user?.membership?.type && (
+                              <span className="text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
+                                {getPublicMembershipLabel(registration.user.membership.type)}
+                              </span>
+                            )}
                       </div>
                       {!inheritsRegistrationsFromPrevious &&
                         (isAdmin || user?.id === event.createdBy) &&
@@ -1985,12 +1978,11 @@ export default function EventDetail() {
                             </span>
                           </UserPopover>
                         ) : null}
-                        {registration.user?.membership?.type &&
-                          membershipLabels[registration.user.membership.type] && (
-                            <span className="text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
-                              {membershipLabels[registration.user.membership.type]}
-                            </span>
-                          )}
+                          {registration.user?.membership?.type && (
+                              <span className="text-xs text-[var(--color-textSecondary)] bg-[var(--color-tableRowHover)] px-2 py-0.5 rounded-full">
+                                {getPublicMembershipLabel(registration.user.membership.type)}
+                              </span>
+                            )}
                       </div>
                       {!inheritsRegistrationsFromPrevious &&
                         (isAdmin || user?.id === event.createdBy) &&
