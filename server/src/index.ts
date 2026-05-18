@@ -31,6 +31,7 @@ import announcementRoutes from './routes/announcementRoutes';
 import marketplaceRoutes from './routes/marketplaceRoutes';
 import libraryLoansRoutes from './routes/libraryLoansRoutes';
 import previewRoutes from './routes/previewRoutes';
+import { previewEvent } from './controllers/previewController';
 import pushRoutes from './routes/pushRoutes';
 import photoLibraryRoutes from './routes/photoLibraryRoutes';
 import myLudotecaRoutes from './routes/myLudotecaRoutes';
@@ -188,6 +189,7 @@ app.use('/api/announcements', announcementRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/library-loans', libraryLoansRoutes);
 app.use('/preview', previewRoutes);
+app.get('/e/:id', previewEvent);
 app.use('/api/push', pushRoutes);
 
 // Ruta 404
