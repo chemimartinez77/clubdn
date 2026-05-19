@@ -20,10 +20,7 @@ Ese modo carga `client/.env.android`. El fichero está ignorado por Git. Usa `cl
 
 ```bash
 VITE_API_URL=https://clubdn-api.up.railway.app
-VITE_SHARE_PREVIEW_BASE_URL=https://clubdn-api.up.railway.app
 ```
-
-Si necesitas un build de staging para Android, puedes partir de `client/.env.android.staging.example`.
 
 ## Comandos habituales
 
@@ -49,6 +46,5 @@ Compila y lanza la app en un emulador o dispositivo conectado.
 
 - El backend sigue desplegado aparte en Railway.
 - La app móvil llama a la API definida por `VITE_API_URL`.
-- Los enlaces compartidos por WhatsApp y otras apps usan `VITE_SHARE_PREVIEW_BASE_URL` si está definida; si no, usan `VITE_API_URL`.
 - El plugin `@capacitor/camera` está instalado para preparar la integración nativa de cámara y galería.
 - Las notificaciones push quedan pendientes para una fase posterior con Firebase Cloud Messaging.
