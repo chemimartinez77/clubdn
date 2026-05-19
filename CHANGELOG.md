@@ -4,6 +4,29 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-19 (sesión 1)
+
+### revert(compartir): deshacer el acortado de enlaces de WhatsApp y la configuración de preview por entorno
+
+Se revierte la última iteración del sistema de enlaces compartidos para volver al comportamiento anterior en el módulo de eventos.
+
+**Reversión del enlace corto para compartir eventos**
+
+- Se elimina la ruta corta `/e/:id` añadida en el backend.
+- La acción de compartir por WhatsApp desde `EventDetail` deja de usar la URL corta de preview y recupera el flujo previo.
+
+**Reversión de la configuración específica de preview por entorno**
+
+- Se elimina la variable `VITE_SHARE_PREVIEW_BASE_URL` de los ejemplos de entorno.
+- Se borran los ficheros de ejemplo `client/.env.staging.example` y `client/.env.android.staging.example` creados para esta configuración.
+- Se revierte la documentación asociada en `client/README_ANDROID.md`.
+
+**Commits de reversión generados:**
+- `a7b8374` — reversión de `86a5680`
+- `fdde783` — reversión de `c3fc508`
+
+---
+
 ## 2026-05-15 (sesión 2)
 
 ### feat(perfil): mostrar los juegos más jugados en el perfil público
