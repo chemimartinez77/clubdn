@@ -1024,11 +1024,10 @@ export default function EventDetail() {
       return message;
     };
 
-    // Usamos una ruta corta propia para la preview: genera los meta tags OG (imagen)
-    // y redirige automáticamente a los usuarios a la app.
-    const previewBaseUrl = (import.meta.env.VITE_SHARE_PREVIEW_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000')
-      .replace(/\/+$/, '');
-    const previewUrl = `${previewBaseUrl}/e/${event.id}`;
+    // Usamos la URL de preview como enlace del mensaje: genera los meta tags OG (imagen)
+    // y redirige automáticamente a los usuarios a la app
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const previewUrl = `${apiBase}/preview/events/${event.id}?v=${Date.now()}`;
 
     const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(buildMessage(previewUrl))}`, '_blank');
     void whatsappWindow;
