@@ -4,6 +4,7 @@ import https from 'https';
 import http from 'http';
 import sharp from 'sharp';
 import { prisma } from '../config/database';
+import { getBGGGame } from '../services/bggService';
 
 const CLIENT_URL = process.env.CLIENT_URL ?? 'https://app.clubdreadnought.org';
 
@@ -145,6 +146,139 @@ export const previewEvent = async (req: Request, res: Response) => {
 </head>
 <body>
   <script>window.location.replace('${eventUrl}');</script>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch {
+    res.redirect(`${CLIENT_URL}/`);
+  }
+};
+
+// Descarga una imagen desde una URL y devuelve su Buffer
+function fetchImageBuffer(url: string): Promise<Buffer> {
+  // Las URLs de BGG pueden venir sin protocolo (//cf.geekdo-images.com/...)
+  const fullUrl = url.startsWith('//') ? `https:${url}` : url;
+  const protocol = fullUrl.startsWith('https') ? https : http;
+  return new Promise((resolve, reject) => {
+    protocol.get(fullUrl, (res) => {
+      const chunks: Buffer[] = [];
+      res.on('data', (chunk: Buffer) => chunks.push(chunk));
+      res.on('end', () => resolve(Buffer.concat(chunks)));
+      res.on('error', reject);
+    }).on('error', reject);
+  });
+}
+
+// Imagen combinada de dos juegos BGG side-by-side
+export const proxyDualImage = async (req: Request, res: Response) => {
+  const { bgg1, bgg2 } = req.query as { bgg1?: string; bgg2?: string };
+
+  if (!bgg1 || !bgg2) {
+    res.status(400).send('Se requieren bgg1 y bgg2');
+    return;
+  }
+
+  try {
+    const [game1, game2] = await Promise.all([getBGGGame(bgg1), getBGGGame(bgg2)]);
+
+    const url1 = game1?.image || game1?.thumbnail;
+    const url2 = game2?.image || game2?.thumbnail;
+
+    if (!url1 || !url2) {
+      res.redirect(`${CLIENT_URL}/og-image.png`);
+      return;
+    }
+
+    const [buf1, buf2] = await Promise.all([fetchImageBuffer(url1), fetchImageBuffer(url2)]);
+
+    const HALF_W = 300;
+    const CANVAS_H = 300;
+
+    const [left, right] = await Promise.all([
+      sharp(buf1).resize(HALF_W, CANVAS_H, { fit: 'inside', withoutEnlargement: true }).toBuffer(),
+      sharp(buf2).resize(HALF_W, CANVAS_H, { fit: 'inside', withoutEnlargement: true }).toBuffer(),
+    ]);
+
+    const [leftMeta, rightMeta] = await Promise.all([
+      sharp(left).metadata(),
+      sharp(right).metadata(),
+    ]);
+
+    const leftH  = leftMeta.height  ?? CANVAS_H;
+    const rightH = rightMeta.height ?? CANVAS_H;
+
+    const result = await sharp({
+      create: { width: HALF_W * 2, height: CANVAS_H, channels: 3, background: '#1a1a2e' },
+    })
+      .composite([
+        { input: left,  left: 0,      top: Math.floor((CANVAS_H - leftH)  / 2) },
+        { input: right, left: HALF_W, top: Math.floor((CANVAS_H - rightH) / 2) },
+      ])
+      .jpeg({ quality: 80 })
+      .toBuffer();
+
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(result);
+  } catch (err) {
+    console.error('[proxyDualImage] error:', err);
+    res.redirect(`${CLIENT_URL}/og-image.png`);
+  }
+};
+
+// HTML con meta tags OG para propuesta de 2 juegos
+export const previewDual = async (req: Request, res: Response) => {
+  const { bgg1, bgg2, title } = req.query as { bgg1?: string; bgg2?: string; title?: string };
+
+  if (!bgg1 || !bgg2) {
+    res.redirect(`${CLIENT_URL}/`);
+    return;
+  }
+
+  try {
+    const railwayDomain = process.env.RAILWAY_PUBLIC_DOMAIN;
+    const serverUrl = process.env.SERVER_URL
+      ?? (railwayDomain ? `https://${railwayDomain}` : CLIENT_URL);
+
+    let ogTitle = title ?? '';
+    if (!ogTitle) {
+      const [game1, game2] = await Promise.all([getBGGGame(bgg1), getBGGGame(bgg2)]);
+      ogTitle = [game1?.name, game2?.name].filter(Boolean).join(' o ') || 'Propuesta de juego';
+    }
+
+    const ogDescription = '¿A qué jugamos? Vota tu favorito.';
+    const ogImage = `${serverUrl}/preview/dual-image?bgg1=${encodeURIComponent(bgg1)}&bgg2=${encodeURIComponent(bgg2)}`;
+    const ogUrl = `${CLIENT_URL}/events`;
+
+    const userAgent = req.headers['user-agent'] ?? '';
+    const isCrawler = /facebookexternalhit|whatsapp|twitterbot|linkedinbot|telegrambot|slackbot|discordbot/i.test(userAgent);
+
+    const html = isCrawler
+      ? `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>${ogTitle}</title>
+  <meta property="og:title" content="${ogTitle}" />
+  <meta property="og:description" content="${ogDescription}" />
+  <meta property="og:image" content="${ogImage}" />
+  <meta property="og:url" content="${ogUrl}" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="${ogImage}" />
+</head>
+<body></body>
+</html>`
+      : `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="refresh" content="0; url=${ogUrl}" />
+</head>
+<body>
+  <script>window.location.replace('${ogUrl}');</script>
 </body>
 </html>`;
 

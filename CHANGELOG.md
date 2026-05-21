@@ -4,6 +4,25 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-21 (sesión 1)
+
+### feat(compartir): propuesta dual de juegos con imagen combinada para WhatsApp
+
+Permite al organizador de una partida proponer dos juegos alternativos y compartirlos en WhatsApp con una imagen combinada side-by-side generada al vuelo.
+
+**Backend — nuevos endpoints públicos en `/preview`**
+
+- `GET /preview/dual?bgg1=X&bgg2=Y&title=Texto` — devuelve HTML con meta tags OG (título, descripción, imagen combinada). Los crawlers (WhatsApp) reciben los meta tags; los usuarios son redirigidos a `/events`.
+- `GET /preview/dual-image?bgg1=X&bgg2=Y` — descarga las imágenes de ambos juegos desde BGG via `getBGGGame()`, las compone side-by-side en un canvas de 600×300px con `sharp` (fondo `#1a1a2e`), y devuelve JPEG 80% con caché de 24h.
+- Archivos modificados: `server/src/controllers/previewController.ts`, `server/src/routes/previewRoutes.ts`.
+
+**Frontend — modal de propuesta dual**
+
+- Nuevo componente `client/src/components/events/ShareDualGameModal.tsx`: muestra el juego principal del evento (solo lectura) y permite buscar un juego alternativo via el `GameSearchModal` existente. El título se pre-rellena como "Juego1 o Juego2" y es editable. Al compartir abre WhatsApp con la URL de preview dual.
+- En `client/src/pages/EventDetail.tsx`: botón "Proponer 2 juegos" añadido en los tres puntos de la UI (barra desktop, dropdown grande y dropdown pequeño). Solo aparece si el evento tiene juego asignado (`canProposeDual = canShareWhatsApp && !!event.bggId`).
+
+---
+
 ## 2026-05-19 (sesión 1)
 
 ### revert(compartir): deshacer el acortado de enlaces de WhatsApp y la configuración de preview por entorno
