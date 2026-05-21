@@ -6,20 +6,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-05-21 (sesión 1)
 
-### feat(compartir): propuesta dual de juegos con imagen combinada para WhatsApp
+### feat(calendario): compartir por WhatsApp las partidas incompletas del día con sugerencias de reagrupación
 
-Permite al organizador de una partida proponer dos juegos alternativos y compartirlos en WhatsApp con una imagen combinada side-by-side generada al vuelo.
+Desde la vista de día del calendario, el organizador puede compartir por WhatsApp un resumen de texto con todas las partidas incompletas de esa jornada.
 
-**Backend — nuevos endpoints públicos en `/preview`**
+**Funcionalidad añadida en `client/src/components/events/EventCalendarDay.tsx`**
 
-- `GET /preview/dual?bgg1=X&bgg2=Y&title=Texto` — devuelve HTML con meta tags OG (título, descripción, imagen combinada). Los crawlers (WhatsApp) reciben los meta tags; los usuarios son redirigidos a `/events`.
-- `GET /preview/dual-image?bgg1=X&bgg2=Y` — descarga las imágenes de ambos juegos desde BGG via `getBGGGame()`, las compone side-by-side en un canvas de 600×300px con `sharp` (fondo `#1a1a2e`), y devuelve JPEG 80% con caché de 24h.
-- Archivos modificados: `server/src/controllers/previewController.ts`, `server/src/routes/previewRoutes.ts`.
+- Al pie de la vista de día aparece el botón "Compartir incompletas (N)" cuando hay al menos una partida incompleta (no cancelada ni completada).
+- El mensaje generado incluye: nombre del juego, plazas ocupadas/máximas y plazas libres por partida, total de participantes, y sugerencias de reagrupación calculadas con un algoritmo greedy a partir de los tamaños de `maxAttendees` de las partidas.
+- Si no hay sugerencias exactas posibles (no se pueden completar grupos sin dejar jugadores fuera), la sección de reagrupaciones se omite.
+- Sin backend nuevo ni modal: todo es lógica inline en el componente que construye el texto y abre `wa.me/?text=...`.
 
-**Frontend — modal de propuesta dual**
+### revert: eliminar feature de propuesta dual de juegos
 
-- Nuevo componente `client/src/components/events/ShareDualGameModal.tsx`: muestra el juego principal del evento (solo lectura) y permite buscar un juego alternativo via el `GameSearchModal` existente. El título se pre-rellena como "Juego1 o Juego2" y es editable. Al compartir abre WhatsApp con la URL de preview dual.
-- En `client/src/pages/EventDetail.tsx`: botón "Proponer 2 juegos" añadido en los tres puntos de la UI (barra desktop, dropdown grande y dropdown pequeño). Solo aparece si el evento tiene juego asignado (`canProposeDual = canShareWhatsApp && !!event.bggId`).
+Se revierte la feature implementada en la sesión anterior (propuesta de 2 juegos con imagen combinada) porque las imágenes de portadas de juegos de mesa en formato portrait quedan muy pequeñas al componerlas side-by-side, resultando en una experiencia visual pobre en WhatsApp. Se opta por mantener el flujo existente de un juego por partida.
+
+- Revertidos: `server/src/controllers/previewController.ts`, `server/src/routes/previewRoutes.ts`, `client/src/pages/EventDetail.tsx`.
+- Eliminado: `client/src/components/events/ShareDualGameModal.tsx`.
 
 ---
 
