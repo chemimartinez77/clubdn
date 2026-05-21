@@ -3209,6 +3209,7 @@ export default function EventDetail() {
         <ShareDualGameModal
           isOpen={showDualGameModal}
           onClose={() => setShowDualGameModal(false)}
+          eventId={event.id}
           primaryGame={{ id: event.bggId, name: event.gameName, thumbnail: event.gameImage }}
         />
       )}

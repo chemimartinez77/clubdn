@@ -156,6 +156,103 @@ export const previewEvent = async (req: Request, res: Response) => {
   }
 };
 
+// HTML con meta tags OG para un juego de BGG directamente (sin evento)
+export const previewBggGame = async (req: Request, res: Response) => {
+  const bggId = req.params['bggId'];
+
+  if (!bggId) {
+    res.redirect(`${CLIENT_URL}/`);
+    return;
+  }
+
+  try {
+    const game = await getBGGGame(bggId);
+
+    if (!game) {
+      res.redirect(`${CLIENT_URL}/`);
+      return;
+    }
+
+    const railwayDomain = process.env.RAILWAY_PUBLIC_DOMAIN;
+    const serverUrl = process.env.SERVER_URL
+      ?? (railwayDomain ? `https://${railwayDomain}` : CLIENT_URL);
+
+    const ogTitle = game.name;
+    const ogImage = game.image || game.thumbnail
+      ? `${serverUrl}/preview/bgg-image/${bggId}`
+      : `${CLIENT_URL}/og-image.png`;
+    const ogUrl = `${CLIENT_URL}/events`;
+
+    const userAgent = req.headers['user-agent'] ?? '';
+    const isCrawler = /facebookexternalhit|whatsapp|twitterbot|linkedinbot|telegrambot|slackbot|discordbot/i.test(userAgent);
+
+    const html = isCrawler
+      ? `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>${ogTitle}</title>
+  <meta property="og:title" content="${ogTitle}" />
+  <meta property="og:image" content="${ogImage}" />
+  <meta property="og:url" content="${ogUrl}" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="${ogImage}" />
+</head>
+<body></body>
+</html>`
+      : `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="refresh" content="0; url=${ogUrl}" />
+</head>
+<body>
+  <script>window.location.replace('${ogUrl}');</script>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch {
+    res.redirect(`${CLIENT_URL}/`);
+  }
+};
+
+// Proxy de imagen de un juego BGG por su bggId (sin pasar por un evento)
+export const proxyBggGameImage = async (req: Request, res: Response) => {
+  const bggId = req.params['bggId'];
+
+  if (!bggId) {
+    res.redirect(`${CLIENT_URL}/og-image.png`);
+    return;
+  }
+
+  try {
+    const game = await getBGGGame(bggId);
+    const imageUrl = game?.image || game?.thumbnail;
+
+    if (!imageUrl) {
+      res.redirect(`${CLIENT_URL}/og-image.png`);
+      return;
+    }
+
+    const fullUrl = imageUrl.startsWith('//') ? `https:${imageUrl}` : imageUrl;
+    const protocol = fullUrl.startsWith('https') ? https : http;
+
+    protocol.get(fullUrl, (imgRes) => {
+      const resizer = sharp().resize(600, 600, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80 });
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      imgRes.pipe(resizer).pipe(res);
+    }).on('error', () => {
+      res.redirect(`${CLIENT_URL}/og-image.png`);
+    });
+  } catch {
+    res.redirect(`${CLIENT_URL}/og-image.png`);
+  }
+};
+
 // Descarga una imagen desde una URL y devuelve su Buffer
 function fetchImageBuffer(url: string): Promise<Buffer> {
   // Las URLs de BGG pueden venir sin protocolo (//cf.geekdo-images.com/...)
