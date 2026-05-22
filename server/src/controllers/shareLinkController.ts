@@ -285,22 +285,13 @@ export const lookupGuest = async (req: Request, res: Response): Promise<void> =>
     const known = matches.find(
       m => m.guestDniNormalized === normalizedDni && m.guestPhone === normalizedPhone
     );
-
-    // Solo es 'both' si hay un registro con DNI y teléfono coincidiendo a la vez.
-    // Si el historial solo tiene teléfono (sin DNI), tratamos como 'none' para
-    // que el invitado complete sus datos normalmente.
-    if (!known) {
-      res.status(200).json({ success: true, data: { match: 'none', reason: 'no_history' } });
-      return;
-    }
-
     res.status(200).json({
       success: true,
       data: {
         match: 'both',
         reason: 'already_known',
-        firstName: known.guestFirstName ?? '',
-        lastName: known.guestLastName ?? '',
+        firstName: known?.guestFirstName ?? '',
+        lastName: known?.guestLastName ?? '',
       },
     });
   } catch (error) {
