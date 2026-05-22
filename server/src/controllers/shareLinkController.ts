@@ -263,18 +263,12 @@ export const lookupGuest = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    const dniMatches = matches.some(m => m.guestDniNormalized === normalizedDni);
-    const phoneMatches = matches.some(m => m.guestPhone === normalizedPhone);
-
-    if (!dniMatches || !phoneMatches) {
-      notifyAdminsGuestConflict(normalizedDni, normalizedPhone).catch(err =>
-        console.error('Error enviando alerta de conflicto de invitado:', err)
-      );
-      res.status(200).json({ success: true, data: { match: 'conflict', reason: 'conflict' } });
-      return;
-    }
-
+    // Un registro sin DNI no genera conflicto al introducir uno nuevo — solo
+    // indica que la primera visita no recogió el DNI. Igualmente para teléfono.
     const hasConflict = matches.some(m => {
+      const dniPresent = m.guestDniNormalized !== null;
+      const phonePresent = m.guestPhone !== null;
+      if (!dniPresent || !phonePresent) return false;
       const thisDni = m.guestDniNormalized === normalizedDni;
       const thisPhone = m.guestPhone === normalizedPhone;
       return thisDni !== thisPhone;
