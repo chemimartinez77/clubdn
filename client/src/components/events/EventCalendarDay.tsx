@@ -278,29 +278,38 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
               const totalPlayers = incomplete.reduce((sum, e) => sum + (e.registeredCount || 0), 0);
               const sizes = [...new Set(incomplete.map(e => e.maxAttendees))].sort((a, b) => b - a);
 
-              function suggestGroups(remaining: number, available: number[]): string[] {
-                if (remaining === 0) return [];
-                const results: string[] = [];
-                for (let attempt = 0; attempt < 8 && results.length < 3; attempt++) {
-                  let left = remaining;
-                  const counts: Record<number, number> = {};
-                  const pool = attempt === 0 ? [...available] : [...available].sort(() => Math.random() - 0.5);
-                  for (const s of pool) {
-                    const n = Math.floor(left / s);
-                    if (n > 0) { counts[s] = n; left -= n * s; }
-                  }
-                  if (left === 0) {
-                    const label = Object.entries(counts)
-                      .sort((a, b) => Number(b[0]) - Number(a[0]))
-                      .map(([s, n]) => `${n} de ${s}`)
-                      .join(' + ');
-                    if (!results.includes(label)) results.push(label);
+              // Busca la combinación de tamaños que coloca el máximo de jugadores
+              // sin pasarse, dejando el mínimo posible sin colocar.
+              function suggestGroups(total: number, available: number[]): { label: string; leftover: number } | null {
+                if (total === 0 || available.length === 0) return null;
+                type Best = { counts: Record<number, number>; placed: number };
+                let best: Best | null = null;
+
+                function search(idx: number, left: number, counts: Record<number, number>) {
+                  const placed = total - left;
+                  if (!best || placed > best.placed) best = { counts: { ...counts }, placed };
+                  if (idx >= available.length || left <= 0) return;
+                  const s = available[idx];
+                  const max = Math.floor(left / s);
+                  for (let n = max; n >= 0; n--) {
+                    counts[s] = n;
+                    search(idx + 1, left - n * s, counts);
+                    delete counts[s];
                   }
                 }
-                return results;
+
+                search(0, total, {});
+                if (!best || (best as Best).placed === 0) return null;
+
+                const label = Object.entries((best as Best).counts)
+                  .filter(([, n]) => (n as number) > 0)
+                  .sort((a, b) => Number(b[0]) - Number(a[0]))
+                  .map(([s, n]) => `${n} partida${Number(n) > 1 ? 's' : ''} de ${s}`)
+                  .join(' + ');
+                return { label, leftover: total - (best as Best).placed };
               }
 
-              const suggestions = suggestGroups(totalPlayers, sizes);
+              const suggestion = suggestGroups(totalPlayers, sizes);
 
               const buildText = () => {
                 const lines: string[] = [`Partidas incompletas — ${dayName}`, ''];
@@ -312,10 +321,11 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
                 }
                 lines.push('');
                 lines.push(`Total: ${totalPlayers} participante${totalPlayers !== 1 ? 's' : ''} en ${incomplete.length} partida${incomplete.length !== 1 ? 's' : ''}`);
-                if (suggestions.length > 0) {
+                if (suggestion) {
                   lines.push('');
-                  lines.push('Posibles reagrupaciones:');
-                  for (const s of suggestions) lines.push(`• ${s}`);
+                  lines.push('Reagrupación posible:');
+                  const leftoverNote = suggestion.leftover > 0 ? ` (sobra${suggestion.leftover > 1 ? 'n' : ''} ${suggestion.leftover})` : '';
+                  lines.push(`• ${suggestion.label}${leftoverNote}`);
                 }
                 return lines.join('\n');
               };
