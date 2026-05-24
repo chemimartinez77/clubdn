@@ -2641,7 +2641,7 @@ export default function EventDetail() {
               <p className="text-sm text-[var(--color-textSecondary)]">Aún no hay invitaciones para esta partida.</p>
             ) : (
               <div className="space-y-2">
-                {invitations.map((invite) => (
+                {invitations.filter(invite => invite.status !== 'CANCELLED').map((invite) => (
                   <div
                     key={invite.id}
                     className="flex items-center justify-between p-3 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-tableRowHover)]"
@@ -2651,7 +2651,9 @@ export default function EventDetail() {
                         {invite.guestFirstName} {invite.guestLastName}
                       </p>
                       <p className="text-xs text-[var(--color-textSecondary)]">
-                        {new Date(invite.validDate).toLocaleDateString('es-ES')}
+                        {invite.inviter?.name && `Invitado por ${invite.inviter.name}`}
+                        {invite.inviter?.name && invite.createdAt && ' · '}
+                        {invite.createdAt && new Date(invite.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                     {invitationStatusTooltips[invite.status] ? (

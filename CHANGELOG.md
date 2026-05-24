@@ -4,6 +4,32 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-05-24 (sesión 1)
+
+### fix(invitaciones): corregir conteo de ocupación y mejorar modal de invitaciones
+
+**Bug principal — evento marcado como lleno incorrectamente**
+
+`PENDING_APPROVAL` se contaba como plaza ocupada en `getEvents` y `getEvent`, pero `createInvitation` no la contaba. Esto provocaba que el frontend mostrara el evento como lleno y deshabilitara el botón de invitar, aunque el backend habría permitido crear la invitación. La corrección elimina `PENDING_APPROVAL` del filtro de invitaciones activas: una invitación en ese estado no ocupa plaza hasta que el organizador la apruebe (momento en que pasa a `PENDING`).
+
+- `server/src/controllers/eventController.ts` — eliminado `PENDING_APPROVAL` del conteo `activeGuestCount` (listado) y `activeInvitationsCount` (detalle).
+
+**Bug visual — invitaciones canceladas aparecían en el modal**
+
+El modal de invitaciones mostraba todas las invitaciones del evento, incluyendo las `CANCELLED`, lo que confundía al usuario haciéndole creer que esas plazas estaban ocupadas.
+
+- `client/src/pages/EventDetail.tsx` — se filtra `status !== 'CANCELLED'` antes de renderizar la lista.
+
+**Mejora — quién invitó y cuándo en el modal**
+
+Cada invitación del modal ahora muestra "Invitado por [nombre] · [fecha y hora]" debajo del nombre del invitado.
+
+- `server/src/controllers/invitationController.ts` — `mapInvitation` incluye ahora `createdAt` en la respuesta (el campo `inviter` ya existía).
+- `client/src/types/invitation.ts` — añadido `createdAt?: string` a la interfaz `Invitation`.
+- `client/src/pages/EventDetail.tsx` — el modal muestra el nombre del invitador y la fecha/hora de creación de la invitación.
+
+---
+
 ## 2026-05-21 (sesión 1)
 
 ### feat(calendario): compartir por WhatsApp las partidas incompletas del día con sugerencias de reagrupación

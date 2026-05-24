@@ -170,7 +170,8 @@ const mapInvitation = (invitation: any, options?: { includeQr?: boolean }) => {
     validatedBy: invitation.validatedBy
       ? { id: invitation.validatedBy.id, name: invitation.validatedBy.name }
       : undefined,
-    usedAt: invitation.usedAt
+    usedAt: invitation.usedAt,
+    createdAt: invitation.createdAt
   } as Record<string, unknown>;
 
   if (options?.includeQr && invitation.token) {

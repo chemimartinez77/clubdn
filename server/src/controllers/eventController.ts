@@ -608,7 +608,7 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
         const now = new Date();
         const activeGuestCount = event.invitations.filter(inv => {
           if (inv.status === 'RESERVED') return inv.expiresAt !== null && inv.expiresAt > now;
-          return inv.status === 'PENDING' || inv.status === 'PENDING_APPROVAL' || inv.status === 'USED';
+          return inv.status === 'PENDING' || inv.status === 'USED';
         }).length;
         const registeredCount = event.registrations.filter(r => r.status === 'CONFIRMED').length + activeGuestCount;
         const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST').length;
@@ -691,7 +691,7 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       const now = new Date();
       const activeInvitationsCount = event.invitations.filter(inv => {
         if (inv.status === 'RESERVED') return inv.expiresAt !== null && inv.expiresAt > now;
-        return inv.status === 'PENDING' || inv.status === 'PENDING_APPROVAL' || inv.status === 'USED';
+        return inv.status === 'PENDING' || inv.status === 'USED';
       }).length;
       const guestCount = activeInvitationsCount;
       const registeredCount =

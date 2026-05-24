@@ -26,6 +26,7 @@ export interface Invitation {
   event?: InvitationEventInfo;
   inviter?: InvitationUserInfo;
   validatedBy?: InvitationUserInfo;
+  createdAt?: string;
 }
 
 export interface CreateInvitationPayload {
