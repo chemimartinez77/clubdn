@@ -327,9 +327,12 @@ export default function Login() {
             </label>
             <input
               id="email"
-              type="text"
+              type="email"
               inputMode="email"
               autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               {...register('email')}
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all ${
                 errors.email ? 'border-red-500' : 'border-[var(--color-inputBorder)]'

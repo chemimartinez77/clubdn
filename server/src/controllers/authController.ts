@@ -357,6 +357,7 @@ export const resendVerificationEmail = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password, hcaptchaToken } = req.body;
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
     const bypassHcaptcha = shouldBypassHcaptcha(req);
 
     // Verificar hCaptcha
@@ -373,7 +374,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Comprobar rate limit antes de cualquier consulta de credenciales
-    const rateLimit = await checkLoginRateLimit(email);
+    const rateLimit = await checkLoginRateLimit(normalizedEmail);
     if (rateLimit.blocked) {
       const mins = Math.ceil(rateLimit.retryAfterSeconds / 60);
       const timeStr = rateLimit.retryAfterSeconds < 60
@@ -388,7 +389,7 @@ export const login = async (req: Request, res: Response) => {
 
     // Buscar usuario
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
       include: {
         membership: true,
         profile: true,
@@ -397,12 +398,12 @@ export const login = async (req: Request, res: Response) => {
 
     if (!user) {
       await logLoginAttempt({
-        email,
+        email: normalizedEmail,
         success: false,
         failureReason: 'invalid_credentials',
         req
       });
-      const rl = await checkLoginRateLimit(email);
+      const rl = await checkLoginRateLimit(normalizedEmail);
 
       return res.status(401).json({
         success: false,
@@ -415,13 +416,13 @@ export const login = async (req: Request, res: Response) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       await logLoginAttempt({
-        email,
+        email: normalizedEmail,
         userId: user.id,
         success: false,
         failureReason: 'invalid_credentials',
         req
       });
-      const rl = await checkLoginRateLimit(email);
+      const rl = await checkLoginRateLimit(normalizedEmail);
 
       return res.status(401).json({
         success: false,
@@ -433,7 +434,7 @@ export const login = async (req: Request, res: Response) => {
     // Verificar estado del usuario
     if (user.status === 'PENDING_VERIFICATION') {
       await logLoginAttempt({
-        email,
+        email: normalizedEmail,
         userId: user.id,
         success: false,
         failureReason: 'pending_verification',
@@ -449,7 +450,7 @@ export const login = async (req: Request, res: Response) => {
 
     if (user.status === 'PENDING_APPROVAL') {
       await logLoginAttempt({
-        email,
+        email: normalizedEmail,
         userId: user.id,
         success: false,
         failureReason: 'pending_approval',
@@ -465,7 +466,7 @@ export const login = async (req: Request, res: Response) => {
 
     if (user.status === 'REJECTED') {
       await logLoginAttempt({
-        email,
+        email: normalizedEmail,
         userId: user.id,
         success: false,
         failureReason: 'rejected',
@@ -481,7 +482,7 @@ export const login = async (req: Request, res: Response) => {
 
     if (user.status === 'SUSPENDED') {
       await logLoginAttempt({
-        email,
+        email: normalizedEmail,
         userId: user.id,
         success: false,
         failureReason: 'suspended',
@@ -497,7 +498,7 @@ export const login = async (req: Request, res: Response) => {
 
     if (user.status === 'BAJA') {
       await logLoginAttempt({
-        email,
+        email: normalizedEmail,
         userId: user.id,
         success: false,
         failureReason: 'baja',
@@ -536,7 +537,7 @@ export const login = async (req: Request, res: Response) => {
 
     // Registrar login exitoso
     await logLoginAttempt({
-      email,
+      email: normalizedEmail,
       userId: user.id,
       success: true,
       req
