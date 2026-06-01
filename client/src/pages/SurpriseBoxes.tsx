@@ -149,13 +149,9 @@ export default function SurpriseBoxes() {
     [boxes]
   );
 
-  const copyText = async (value: string, label: string) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      success(`${label} copiado al portapapeles`);
-    } catch {
-      showError(`No se ha podido copiar ${label.toLowerCase()}`);
-    }
+  const shareOnWhatsApp = (box: SurpriseBox) => {
+    const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(box.previewUrl)}`, '_blank');
+    void whatsappWindow;
   };
 
   const handleGameSelect = (game: BGGGame) => {
@@ -440,8 +436,8 @@ export default function SurpriseBoxes() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="outline" onClick={() => copyText(box.previewUrl, 'Enlace de la landing')}>
-                      Copiar enlace de la landing
+                    <Button type="button" variant="outline" onClick={() => shareOnWhatsApp(box)}>
+                      WhatsApp
                     </Button>
                     {box.status === 'OPEN' && (
                       <Button
