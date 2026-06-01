@@ -164,7 +164,7 @@ export default function SurpriseBoxes() {
   );
 
   const shareOnWhatsApp = (box: SurpriseBox) => {
-    const message = `*${formatShareDateTime(box)}*\n${box.previewUrl}`;
+    const message = `*${box.title}*\n*${formatShareDateTime(box)}*\n${box.previewUrl}`;
     const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
     void whatsappWindow;
   };
