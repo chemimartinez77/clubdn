@@ -9,6 +9,7 @@ const SERVER_URL = (
   process.env.SERVER_URL ||
   (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : CLIENT_URL)
 ).replace(/\/$/, '');
+const SURPRISE_BOX_COVER_IMAGE_URL = `${CLIENT_URL}/lootbox2.jpg`;
 
 type SurpriseOptionInput = {
   gameId?: string;
@@ -175,7 +176,6 @@ function validateCreatePayload(req: Request) {
   const title = String(req.body.title ?? '').trim();
   const subtitle = typeof req.body.subtitle === 'string' ? req.body.subtitle.trim() : '';
   const description = typeof req.body.description === 'string' ? req.body.description.trim() : '';
-  const coverImageUrl = typeof req.body.coverImageUrl === 'string' ? req.body.coverImageUrl.trim() : '';
   const location = String(req.body.location ?? '').trim();
   const address = typeof req.body.address === 'string' ? req.body.address.trim() : '';
   const dateRaw = String(req.body.date ?? '').trim();
@@ -226,7 +226,7 @@ function validateCreatePayload(req: Request) {
       title,
       subtitle: subtitle || null,
       description: description || null,
-      coverImageUrl: coverImageUrl || null,
+      coverImageUrl: SURPRISE_BOX_COVER_IMAGE_URL,
       location,
       address: address || null,
       eventDate,
@@ -292,7 +292,7 @@ export const createSurpriseBox = async (req: Request, res: Response) => {
         title: parsed.data.title,
         subtitle: parsed.data.subtitle,
         description: parsed.data.description,
-        coverImageUrl: parsed.data.coverImageUrl,
+        coverImageUrl: SURPRISE_BOX_COVER_IMAGE_URL,
         eventDate: parsed.data.eventDate,
         startHour: parsed.data.startHour,
         startMinute: parsed.data.startMinute,

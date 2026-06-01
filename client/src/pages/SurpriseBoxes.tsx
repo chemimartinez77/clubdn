@@ -17,7 +17,6 @@ type FormState = {
   title: string;
   subtitle: string;
   description: string;
-  coverImageUrl: string;
   date: string;
   startHour: string;
   startMinute: string;
@@ -36,7 +35,6 @@ const initialForm: FormState = {
   title: 'Caja sorpresa',
   subtitle: '',
   description: '',
-  coverImageUrl: '',
   date: '',
   startHour: '17',
   startMinute: '0',
@@ -101,7 +99,6 @@ export default function SurpriseBoxes() {
         title: form.title,
         subtitle: form.subtitle || undefined,
         description: form.description || undefined,
-        coverImageUrl: form.coverImageUrl || undefined,
         date: eventDate.toISOString(),
         startHour,
         startMinute,
@@ -201,12 +198,9 @@ export default function SurpriseBoxes() {
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Imagen de portada</label>
-                <input
-                  value={form.coverImageUrl}
-                  onChange={(e) => setForm((current) => ({ ...current, coverImageUrl: e.target.value }))}
-                  placeholder="https://..."
-                  className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)]"
-                />
+                <div className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)]">
+                  Se usará una portada fija de Caja Sorpresa.
+                </div>
                 <p className="text-xs text-[var(--color-textSecondary)] mt-1">
                   Usa una URL pública para la imagen que se compartirá en WhatsApp y en la landing.
                 </p>
