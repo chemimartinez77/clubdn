@@ -206,7 +206,7 @@ export default function SurpriseBoxes() {
                   Se usará una portada fija de Caja Sorpresa.
                 </div>
                 <p className="text-xs text-[var(--color-textSecondary)] mt-1">
-                  Usa una URL pública para la imagen que se compartirá en WhatsApp y en la landing.
+                  La imagen ya no se elige manualmente y será la misma en WhatsApp y en la landing.
                 </p>
               </div>
               <div>

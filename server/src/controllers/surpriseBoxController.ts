@@ -511,11 +511,13 @@ export const voteSurpriseBox = async (req: Request, res: Response) => {
         throw new Error('OPTION_NOT_FOUND');
       }
 
+      const resolvedEventTitle = `${box.title} · ${option.gameName}`;
+
       await tx.$queryRaw`SELECT id FROM "SurpriseBox" WHERE id = ${box.id} FOR UPDATE`;
 
       const createdEvent = await tx.event.create({
         data: {
-          title: box.title,
+          title: resolvedEventTitle,
           description: box.description || `Caja sorpresa resuelta: ${option.gameName}`,
           type: 'PARTIDA',
           date: box.eventDate,
