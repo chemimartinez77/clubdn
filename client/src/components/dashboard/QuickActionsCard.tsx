@@ -13,8 +13,15 @@ interface QuickActionProps {
 function QuickAction({ to, title, description, icon, enabled = true }: QuickActionProps) {
   if (!enabled) {
     return (
-      <div className="p-4 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] opacity-60">
-        <div className="flex items-center gap-3">
+      <div
+        className="relative overflow-hidden p-4 rounded-lg border border-[var(--color-cardBorder)] bg-[var(--color-tableRowHover)] opacity-75"
+        style={{
+          backgroundImage:
+            'repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 10px, rgba(0,0,0,0.18) 10px, rgba(0,0,0,0.18) 20px)',
+        }}
+      >
+        <div className="absolute inset-0 bg-black/25 pointer-events-none" />
+        <div className="relative flex items-center gap-3">
           <div className="p-2 rounded-lg bg-[var(--color-cardBorder)] text-[var(--color-textSecondary)]">
             {icon}
           </div>
@@ -102,8 +109,8 @@ export default function QuickActionsCard({ isAdmin }: QuickActionsCardProps) {
         <QuickAction
           to="/caja-sorpresa"
           title="Caja Sorpresa"
-          description="Prepara una votación sorpresa"
-          enabled={true}
+          description="Temporalmente no disponible"
+          enabled={false}
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0H4m16 0l-2.586-5.172A2 2 0 0015.625 5H8.375a2 2 0 00-1.789 1.106L4 12m5-3h6m-3-3v6" />
