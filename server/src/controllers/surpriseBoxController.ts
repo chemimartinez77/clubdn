@@ -11,6 +11,14 @@ const SERVER_URL = (
 ).replace(/\/$/, '');
 const SURPRISE_BOX_COVER_IMAGE_URL = `${CLIENT_URL}/lootbox2.jpg`;
 
+function getReadableConflictTitle(event: { title: string; gameName?: string | null }) {
+  if (event.title === 'Caja sorpresa' && event.gameName) {
+    return `Caja sorpresa · ${event.gameName}`;
+  }
+
+  return event.title || event.gameName || 'otra partida';
+}
+
 type SurpriseOptionInput = {
   gameId?: string;
 };
@@ -106,6 +114,7 @@ async function getScheduleConflict(
       event: {
         select: {
           title: true,
+          gameName: true,
           startHour: true,
           startMinute: true,
           durationHours: true,
@@ -124,7 +133,7 @@ async function getScheduleConflict(
     const currentEnd = currentStart + (currentDuration > 0 ? currentDuration : 1);
     const overlaps = newStart < currentEnd && currentStart < newEnd;
 
-    if (overlaps) return event.title;
+    if (overlaps) return getReadableConflictTitle(event);
   }
 
   return null;
