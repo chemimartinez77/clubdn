@@ -1,9 +1,9 @@
-// client/src/components/profile/ChangePasswordSection.tsx
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import Button from '../ui/Button';
 import { useToast } from '../../hooks/useToast';
 import { api } from '../../api/axios';
+import { PASSWORD_MIN_LENGTH, PASSWORD_POLICY_HELP, validateStrongPassword } from '../../lib/passwordPolicy';
 
 export default function ChangePasswordSection() {
   const { success, error: showError } = useToast();
@@ -29,14 +29,15 @@ export default function ChangePasswordSection() {
     },
     onError: (err: any) => {
       showError(err.response?.data?.message || 'Error al cambiar la contraseña');
-    }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (newPassword.length < 6) {
-      showError('La nueva contraseña debe tener al menos 6 caracteres');
+    const validationError = validateStrongPassword(newPassword);
+    if (validationError) {
+      showError(validationError);
       return;
     }
 
@@ -64,7 +65,7 @@ export default function ChangePasswordSection() {
             variant="outline"
             onClick={() => setIsChangingPassword(true)}
           >
-            Cambiar Contraseña
+            Cambiar contraseña
           </Button>
         )}
       </div>
@@ -73,7 +74,7 @@ export default function ChangePasswordSection() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="currentPassword" className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
-              Contraseña Actual *
+              Contraseña actual *
             </label>
             <div className="relative">
               <input
@@ -106,7 +107,7 @@ export default function ChangePasswordSection() {
 
           <div>
             <label htmlFor="newPassword" className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
-              Nueva Contraseña *
+              Nueva contraseña *
             </label>
             <div className="relative">
               <input
@@ -115,7 +116,7 @@ export default function ChangePasswordSection() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={PASSWORD_MIN_LENGTH}
                 className="w-full px-4 py-2 pr-12 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
                 placeholder="••••••••"
               />
@@ -137,13 +138,13 @@ export default function ChangePasswordSection() {
               </button>
             </div>
             <p className="text-xs text-[var(--color-textSecondary)] mt-1">
-              Mínimo 6 caracteres
+              {PASSWORD_POLICY_HELP}
             </p>
           </div>
 
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
-              Repetir Nueva Contraseña *
+              Repetir nueva contraseña *
             </label>
             <div className="relative">
               <input
@@ -152,7 +153,7 @@ export default function ChangePasswordSection() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={PASSWORD_MIN_LENGTH}
                 className="w-full px-4 py-2 pr-12 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
                 placeholder="••••••••"
               />
@@ -181,7 +182,7 @@ export default function ChangePasswordSection() {
               variant="primary"
               disabled={changePasswordMutation.isPending}
             >
-              {changePasswordMutation.isPending ? 'Cambiando...' : 'Cambiar Contraseña'}
+              {changePasswordMutation.isPending ? 'Actualizando...' : 'Guardar contraseña'}
             </Button>
             <Button
               type="button"
@@ -195,7 +196,7 @@ export default function ChangePasswordSection() {
         </form>
       ) : (
         <p className="text-sm text-[var(--color-textSecondary)]">
-          Haz clic en "Cambiar Contraseña" para actualizar tu contraseña
+          Mantén tu cuenta segura con una contraseña robusta.
         </p>
       )}
     </div>

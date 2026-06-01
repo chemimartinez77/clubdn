@@ -4,6 +4,36 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-06-01 (sesión 1)
+
+### feat(caja-sorpresa): añadir el flujo completo de votación y creación automática de partidas
+
+Se incorpora una nueva funcionalidad de `caja sorpresa` para socios autenticados. El organizador puede preparar una landing compartible con imagen, texto personalizado, configuración completa de la futura partida y hasta tres juegos candidatos. El primer voto válido resuelve la caja, crea automáticamente la partida con el juego elegido, inscribe al organizador y al primer votante, y convierte el enlace público en una puerta de entrada a la partida creada.
+
+- `server/prisma/schema.prisma` — nuevos modelos y enumerados para `SurpriseBox`, opciones, estado y relación con el evento generado.
+- `server/prisma/migrations/20260601100000_add_surprise_boxes/migration.sql` — migración para persistir la nueva entidad y sus relaciones.
+- `server/src/controllers/surpriseBoxController.ts` — creación, listado, cierre, consulta pública por token y resolución transaccional en el primer voto.
+- `server/src/routes/surpriseBoxRoutes.ts` — nuevos endpoints autenticados y públicos del flujo.
+- `server/src/controllers/previewController.ts` y `server/src/routes/previewRoutes.ts` — previsualización social específica para compartir cajas sorpresa.
+- `server/src/index.ts` — registro de las nuevas rutas.
+- `client/src/pages/SurpriseBoxes.tsx` — interfaz privada para crear y gestionar cajas sorpresa.
+- `client/src/pages/SurpriseBoxLanding.tsx` — landing pública por token con voto y estado resuelto o cerrado.
+- `client/src/types/surpriseBox.ts`, `client/src/App.tsx` y `client/src/components/dashboard/QuickActionsCard.tsx` — tipado, rutas y acceso rápido desde la aplicación.
+
+### fix(auth): unificar la política de contraseñas en toda la aplicación
+
+Se elimina la discrepancia entre registro, cambio y restablecimiento de contraseña. A partir de ahora todos los flujos exigen la misma regla: mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número, compartiendo validación común en cliente y servidor para evitar mensajes y comportamientos inconsistentes.
+
+- `server/src/utils/passwordPolicy.ts` y `client/src/lib/passwordPolicy.ts` — nueva validación compartida de contraseña robusta.
+- `server/src/controllers/authController.ts` y `server/src/routes/authRoutes.ts` — alineación de login, registro, cambio y restablecimiento con la misma política.
+- `client/src/lib/validations.ts`, `client/src/components/profile/ChangePasswordSection.tsx` y `client/src/pages/ResetPassword.tsx` — actualización de ayudas, validaciones y errores del frontend.
+
+### fix(mi-ludoteca): permitir que `Lo tengo`, `Quiero jugar` y `Wishlist` convivan
+
+Se corrige el comportamiento de `Mi Ludoteca` para que marcar `Quiero jugar` o `Wishlist` no elimine automáticamente `Lo tengo`. Los filtros siguen funcionando por pestaña, pero un mismo juego puede aparecer en varias vistas si tiene varios estados activos.
+
+- `client/src/pages/MiLudoteca.tsx` — ajuste de la lógica de edición y persistencia de estados no excluyentes.
+
 ## 2026-05-24 (sesión 1)
 
 ### fix(invitaciones): corregir conteo de ocupación y mejorar modal de invitaciones

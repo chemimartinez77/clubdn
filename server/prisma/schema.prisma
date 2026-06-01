@@ -162,6 +162,8 @@ model User {
   firstPlayerSpinsAsSpinner FirstPlayerSpin[]             @relation("FirstPlayerSpinSpinner")
   firstPlayerSpinsAsChosen  FirstPlayerSpin[]             @relation("FirstPlayerSpinChosen")
   eventMessages             EventMessage[]
+  createdSurpriseBoxes      SurpriseBox[]                 @relation("SurpriseBoxCreator")
+  resolvedSurpriseBoxes     SurpriseBox[]                 @relation("SurpriseBoxResolver")
 
   @@index([email])
   @@index([status])
@@ -340,6 +342,12 @@ enum InvitationStatus {
   NOT_ATTENDED       // El invitado se registró pero el QR no fue validado al terminar el evento
 }
 
+enum SurpriseBoxStatus {
+  OPEN
+  RESOLVED
+  CLOSED
+}
+
 // Modelo de Evento
 model Event {
   id              String   @id @default(cuid())
@@ -384,6 +392,7 @@ model Event {
   gamePlayHistory  GamePlayHistory[]
   gameValidations  GameValidation[]
   firstPlayerSpins FirstPlayerSpin[]
+  resolvedFromSurpriseBox SurpriseBox? @relation("SurpriseBoxResolvedEvent")
 
   // Idioma
   language         String   @default("es") // "es" | "en"
@@ -482,6 +491,61 @@ model EventShareLink {
 
   @@unique([eventId, memberId])
   @@index([token])
+}
+
+model SurpriseBox {
+  id               String             @id @default(cuid())
+  token            String             @unique
+  title            String
+  subtitle         String?
+  description      String?            @db.Text
+  coverImageUrl    String?
+  status           SurpriseBoxStatus  @default(OPEN)
+  eventDate        DateTime
+  startHour        Int?
+  startMinute      Int?
+  durationHours    Int?
+  durationMinutes  Int?
+  location         String
+  address          String?
+  maxAttendees     Int
+  requiresApproval Boolean            @default(true)
+  allowLateJoin    Boolean            @default(false)
+  language         String             @default("es")
+  englishLevel     String?
+  createdById      String
+  createdBy        User               @relation("SurpriseBoxCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  resolvedByUserId String?
+  resolvedByUser   User?              @relation("SurpriseBoxResolver", fields: [resolvedByUserId], references: [id])
+  resolvedEventId  String?            @unique
+  resolvedEvent    Event?             @relation("SurpriseBoxResolvedEvent", fields: [resolvedEventId], references: [id])
+  winningOptionId  String?            @unique
+  winningOption    SurpriseBoxOption? @relation("SurpriseBoxWinningOption", fields: [winningOptionId], references: [id])
+  resolvedAt       DateTime?
+  closedAt         DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  options          SurpriseBoxOption[] @relation("SurpriseBoxOptions")
+
+  @@index([token])
+  @@index([createdById, status])
+  @@index([status, eventDate])
+}
+
+model SurpriseBoxOption {
+  id            String      @id @default(cuid())
+  surpriseBoxId String
+  surpriseBox   SurpriseBox @relation("SurpriseBoxOptions", fields: [surpriseBoxId], references: [id], onDelete: Cascade)
+  position      Int
+  gameId        String
+  gameName      String
+  gameImage     String?
+  gameThumbnail String?
+  createdAt     DateTime    @default(now())
+  winningForBox SurpriseBox? @relation("SurpriseBoxWinningOption")
+
+  @@unique([surpriseBoxId, position])
+  @@index([surpriseBoxId, position])
 }
 
 model EventGuest {

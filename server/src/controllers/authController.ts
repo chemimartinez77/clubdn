@@ -10,6 +10,7 @@ import {
 } from '../services/emailService';
 import { logLoginAttempt, checkLoginRateLimit } from '../services/loginAttemptService';
 import { notifyAdminsNewUser } from '../services/notificationService';
+import { validateStrongPassword } from '../utils/passwordPolicy';
 import https from 'https';
 import querystring from 'querystring';
 
@@ -668,10 +669,11 @@ export const resetPassword = async (req: Request, res: Response) => {
       });
     }
 
-    if (newPassword.length < 6) {
+    const passwordValidationError = validateStrongPassword(newPassword);
+    if (passwordValidationError) {
       return res.status(400).json({
         success: false,
-        message: 'La contraseña debe tener al menos 6 caracteres',
+        message: passwordValidationError,
       });
     }
 
@@ -746,10 +748,11 @@ export const changePassword = async (req: Request, res: Response) => {
       });
     }
 
-    if (newPassword.length < 6) {
+    const passwordValidationError = validateStrongPassword(newPassword);
+    if (passwordValidationError) {
       return res.status(400).json({
         success: false,
-        message: 'La nueva contraseña debe tener al menos 6 caracteres',
+        message: passwordValidationError,
       });
     }
 

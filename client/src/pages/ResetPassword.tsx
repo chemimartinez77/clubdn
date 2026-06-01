@@ -1,4 +1,3 @@
-// client/src/pages/ResetPassword.tsx
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
@@ -7,6 +6,7 @@ import { Card, CardContent } from '../components/ui/Card';
 import { useToast } from '../hooks/useToast';
 import { useTheme } from '../hooks/useTheme';
 import { api } from '../api/axios';
+import { PASSWORD_MIN_LENGTH, PASSWORD_POLICY_HELP, validateStrongPassword } from '../lib/passwordPolicy';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -34,7 +34,7 @@ export default function ResetPassword() {
     },
     onError: (err: any) => {
       showError(err.response?.data?.message || 'Error al restablecer la contraseña');
-    }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -45,8 +45,9 @@ export default function ResetPassword() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      showError('La contraseña debe tener al menos 6 caracteres');
+    const validationError = validateStrongPassword(newPassword);
+    if (validationError) {
+      showError(validationError);
       return;
     }
 
@@ -69,7 +70,7 @@ export default function ResetPassword() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-[var(--color-text)] mb-2">Token Inválido</h2>
+              <h2 className="text-2xl font-bold text-[var(--color-text)] mb-2">Token inválido</h2>
               <p className="text-[var(--color-textSecondary)] mb-6">
                 El enlace de recuperación no es válido o ha expirado.
               </p>
@@ -96,17 +97,17 @@ export default function ResetPassword() {
               className="h-20 w-auto mx-auto mb-6"
             />
             <h1 className="text-2xl font-bold text-[var(--color-text)] mb-2">
-              Nueva Contraseña
+              Nueva contraseña
             </h1>
             <p className="text-[var(--color-textSecondary)]">
-              Ingresa tu nueva contraseña
+              Introduce una contraseña segura para tu cuenta.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="newPassword" className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
-                Nueva Contraseña
+                Nueva contraseña
               </label>
               <div className="relative">
                 <input
@@ -115,7 +116,7 @@ export default function ResetPassword() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={PASSWORD_MIN_LENGTH}
                   className="w-full px-4 py-3 pr-12 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
                   placeholder="••••••••"
                 />
@@ -137,13 +138,13 @@ export default function ResetPassword() {
                 </button>
               </div>
               <p className="text-xs text-[var(--color-textSecondary)] mt-1">
-                Mínimo 6 caracteres
+                {PASSWORD_POLICY_HELP}
               </p>
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">
-                Repetir Nueva Contraseña
+                Repetir nueva contraseña
               </label>
               <div className="relative">
                 <input
@@ -152,7 +153,7 @@ export default function ResetPassword() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={PASSWORD_MIN_LENGTH}
                   className="w-full px-4 py-3 pr-12 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-cardBackground)] text-[var(--color-text)]"
                   placeholder="••••••••"
                 />
@@ -163,7 +164,7 @@ export default function ResetPassword() {
                 >
                   {showConfirmPassword ? (
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                     </svg>
                   ) : (
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1,4 +1,3 @@
-// server/src/routes/authRoutes.ts
 import { Router, Request, Response } from 'express';
 import { body } from 'express-validator';
 import {
@@ -9,16 +8,25 @@ import {
   requestPasswordReset,
   resetPassword,
   changePassword,
-  resendVerificationEmail
+  resendVerificationEmail,
 } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
+import { PASSWORD_MIN_LENGTH, validateStrongPassword } from '../utils/passwordPolicy';
 
 const router = Router();
 
-/**
- * POST /api/auth/register
- * Registro de nuevo usuario
- */
+const validateStrongPasswordField = (fieldName: string, minLengthMessage: string) =>
+  body(fieldName)
+    .isLength({ min: PASSWORD_MIN_LENGTH })
+    .withMessage(minLengthMessage)
+    .custom((value) => {
+      const message = validateStrongPassword(String(value));
+      if (message) {
+        throw new Error(message);
+      }
+      return true;
+    });
+
 router.post(
   '/register',
   [
@@ -38,18 +46,9 @@ router.post(
       .isEmail()
       .withMessage('Debe proporcionar un email válido')
       .normalizeEmail({ gmail_remove_dots: false }),
-    body('password')
-      .isLength({ min: 8 })
-      .withMessage('La contraseña debe tener al menos 8 caracteres')
-      .matches(/[A-Z]/)
-      .withMessage('La contraseña debe contener al menos una letra mayúscula')
-      .matches(/[a-z]/)
-      .withMessage('La contraseña debe contener al menos una letra minúscula')
-      .matches(/[0-9]/)
-      .withMessage('La contraseña debe contener al menos un número'),
+    validateStrongPasswordField('password', 'La contraseña debe tener al menos 8 caracteres'),
   ],
   async (req: Request, res: Response) => {
-    // Verificar errores de validación
     const { validationResult } = await import('express-validator');
     const errors = validationResult(req);
 
@@ -65,23 +64,10 @@ router.post(
   }
 );
 
-/**
- * GET /api/auth/verify-email?token=xxx
- * Verificación de email
- */
 router.get('/verify-email', verifyEmail);
 router.post('/resend-verification', resendVerificationEmail);
-
-/**
- * GET /api/auth/me
- * Obtener usuario actual (requiere autenticación)
- */
 router.get('/me', authenticate, getCurrentUser);
 
-/**
- * POST /api/auth/login
- * Inicio de sesión
- */
 router.post(
   '/login',
   [
@@ -94,7 +80,6 @@ router.post(
       .withMessage('La contraseña es requerida'),
   ],
   async (req: Request, res: Response) => {
-    // Verificar errores de validación
     const { validationResult } = await import('express-validator');
     const errors = validationResult(req);
 
@@ -110,10 +95,6 @@ router.post(
   }
 );
 
-/**
- * POST /api/auth/request-password-reset
- * Solicitar recuperación de contraseña
- */
 router.post(
   '/request-password-reset',
   [
@@ -138,19 +119,13 @@ router.post(
   }
 );
 
-/**
- * POST /api/auth/reset-password
- * Restablecer contraseña con token
- */
 router.post(
   '/reset-password',
   [
     body('token')
       .notEmpty()
       .withMessage('Token requerido'),
-    body('newPassword')
-      .isLength({ min: 6 })
-      .withMessage('La contraseña debe tener al menos 6 caracteres'),
+    validateStrongPasswordField('newPassword', 'La contraseña debe tener al menos 8 caracteres'),
   ],
   async (req: Request, res: Response) => {
     const { validationResult } = await import('express-validator');
@@ -168,10 +143,6 @@ router.post(
   }
 );
 
-/**
- * POST /api/auth/change-password
- * Cambiar contraseña (usuario autenticado)
- */
 router.post(
   '/change-password',
   authenticate,
@@ -179,9 +150,7 @@ router.post(
     body('currentPassword')
       .notEmpty()
       .withMessage('Contraseña actual requerida'),
-    body('newPassword')
-      .isLength({ min: 6 })
-      .withMessage('La nueva contraseña debe tener al menos 6 caracteres'),
+    validateStrongPasswordField('newPassword', 'La nueva contraseña debe tener al menos 8 caracteres'),
   ],
   async (req: Request, res: Response) => {
     const { validationResult } = await import('express-validator');

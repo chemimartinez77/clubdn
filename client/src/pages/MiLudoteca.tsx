@@ -1000,8 +1000,7 @@ function GameCard({ game, locations, insight, onUpdate, onLocationChange, onRemo
 
   const handleWishlistClick = () => {
     if (!game.wishlist) {
-      // Activating wishlist â†’ deactivate "Tengo"
-      onUpdate({ wishlist: true, own: false });
+      onUpdate({ wishlist: true });
     } else {
       // Deactivating wishlist only allowed if something else stays active
       if (!game.wantToPlay && !game.own && !game.previouslyOwned) return;
@@ -1020,8 +1019,7 @@ function GameCard({ game, locations, insight, onUpdate, onLocationChange, onRemo
 
   const handleWantToPlayClick = () => {
     if (!game.wantToPlay) {
-      // Activating wantToPlay â†’ deactivate "Tengo"
-      onUpdate({ wantToPlay: true, own: false });
+      onUpdate({ wantToPlay: true });
     } else {
       // Deactivating only allowed if something else stays active
       if (!game.wishlist && !game.own && !game.previouslyOwned) return;

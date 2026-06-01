@@ -60,6 +60,8 @@ import SevenWondersDuelHub from './pages/sevenWondersDuel/SevenWondersDuelHub';
 import MultiplayerHub from './pages/combatzone/multiplayer/MultiplayerHub';
 import MultiplayerMatch from './pages/combatzone/multiplayer/MultiplayerMatch';
 import WeeklyPreview from './pages/WeeklyPreview';
+import SurpriseBoxes from './pages/SurpriseBoxes';
+import SurpriseBoxLanding from './pages/SurpriseBoxLanding';
 import Marketplace from './pages/marketplace/Marketplace';
 import MarketplaceNew from './pages/marketplace/MarketplaceNew';
 import MarketplaceListing from './pages/marketplace/MarketplaceListing';
@@ -250,6 +252,7 @@ function App() {
           {/* Enlace de invitación por WhatsApp — público (el invitado no tiene cuenta) */}
           <Route path="/join/:token" element={<JoinViaShareLink />} />
           <Route path="/join-preview" element={<JoinViaShareLink isPreview />} />
+          <Route path="/caja-sorpresa/:token" element={<SurpriseBoxLanding />} />
           {/* QR del invitado — público (el invitado lo muestra; el socio lo abre al escanear) */}
           <Route path="/invite/:token" element={<InviteValidation />} />
           {/* Sandbox Azul — pública para pruebas sin login */}
@@ -334,6 +337,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <WeeklyPreview />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/caja-sorpresa"
+            element={
+              <ProtectedRoute>
+                <SurpriseBoxes />
               </ProtectedRoute>
             }
           />
