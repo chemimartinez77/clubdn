@@ -64,6 +64,20 @@ function formatEventTime(box: SurpriseBox) {
   return `${String(box.startHour).padStart(2, '0')}:${String(box.startMinute ?? 0).padStart(2, '0')}`;
 }
 
+function formatShareDateTime(box: SurpriseBox) {
+  const dateText = new Intl.DateTimeFormat('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(box.eventDate));
+
+  if (box.startHour == null) {
+    return dateText;
+  }
+
+  return `${dateText}, ${formatEventTime(box)}`;
+}
+
 export default function SurpriseBoxes() {
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
@@ -150,7 +164,8 @@ export default function SurpriseBoxes() {
   );
 
   const shareOnWhatsApp = (box: SurpriseBox) => {
-    const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(box.previewUrl)}`, '_blank');
+    const message = `*${formatShareDateTime(box)}*\n${box.previewUrl}`;
+    const whatsappWindow = window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
     void whatsappWindow;
   };
 
