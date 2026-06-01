@@ -144,6 +144,10 @@ export default function SurpriseBoxes() {
     () => selectedGames.filter(Boolean).length,
     [selectedGames]
   );
+  const hasOpenBox = useMemo(
+    () => boxes.some((box) => box.status === 'OPEN'),
+    [boxes]
+  );
 
   const copyText = async (value: string, label: string) => {
     try {
@@ -397,11 +401,16 @@ export default function SurpriseBoxes() {
               <Button
                 type="button"
                 onClick={() => createMutation.mutate()}
-                disabled={createMutation.isPending || !form.date || selectedCount === 0}
+                disabled={createMutation.isPending || !form.date || selectedCount === 0 || hasOpenBox}
               >
                 {createMutation.isPending ? 'Creando...' : 'Crear caja sorpresa'}
               </Button>
             </div>
+            {hasOpenBox && (
+              <p className="text-sm text-amber-700">
+                Ya hay una caja sorpresa activa. Ciérrala o espera a que se resuelva antes de crear otra.
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -431,11 +440,8 @@ export default function SurpriseBoxes() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="outline" onClick={() => copyText(box.publicUrl, 'Enlace público')}>
-                      Copiar landing
-                    </Button>
-                    <Button type="button" variant="outline" onClick={() => copyText(box.previewUrl, 'Enlace para compartir')}>
-                      Copiar enlace social
+                    <Button type="button" variant="outline" onClick={() => copyText(box.previewUrl, 'Enlace para WhatsApp')}>
+                      Copiar enlace para WhatsApp
                     </Button>
                     {box.status === 'OPEN' && (
                       <Button

@@ -272,6 +272,18 @@ export const createSurpriseBox = async (req: Request, res: Response) => {
       });
     }
 
+    const existingOpenBox = await prisma.surpriseBox.findFirst({
+      where: { status: SurpriseBoxStatus.OPEN },
+      select: { id: true, title: true },
+    });
+
+    if (existingOpenBox) {
+      return res.status(409).json({
+        success: false,
+        message: `Ya hay una caja sorpresa activa${existingOpenBox.title ? `: "${existingOpenBox.title}"` : ''}. Ciérrala o espera a que se resuelva antes de crear otra.`,
+      });
+    }
+
     const games = await prisma.game.findMany({
       where: { id: { in: parsed.data.options.map((option) => option.gameId!) } },
       select: { id: true, name: true, image: true, thumbnail: true },
