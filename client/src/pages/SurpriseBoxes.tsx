@@ -440,8 +440,8 @@ export default function SurpriseBoxes() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="outline" onClick={() => copyText(box.previewUrl, 'Enlace para WhatsApp')}>
-                      Copiar enlace para WhatsApp
+                    <Button type="button" variant="outline" onClick={() => copyText(box.previewUrl, 'Enlace de la landing')}>
+                      Copiar enlace de la landing
                     </Button>
                     {box.status === 'OPEN' && (
                       <Button

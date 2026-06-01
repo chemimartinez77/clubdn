@@ -10,6 +10,27 @@ const SERVER_URL = (
   (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : CLIENT_URL)
 ).replace(/\/$/, '');
 
+function formatSurpriseBoxShareDate(eventDate: Date, startHour: number | null, startMinute: number | null) {
+  const date = new Date(eventDate);
+
+  if (startHour !== null && startHour !== undefined) {
+    date.setHours(startHour, startMinute ?? 0, 0, 0);
+    return new Intl.DateTimeFormat('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  }
+
+  return new Intl.DateTimeFormat('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
+}
+
 function sendCrawlerAwareHtml(req: Request, res: Response, redirectUrl: string, ogTitle: string, ogDescription: string, ogImage: string) {
   const userAgent = req.headers['user-agent'] ?? '';
   const isCrawler = /facebookexternalhit|whatsapp|twitterbot|linkedinbot|telegrambot|slackbot|discordbot/i.test(userAgent);
@@ -182,7 +203,9 @@ export const previewSurpriseBox = async (req: Request, res: Response) => {
       select: {
         token: true,
         title: true,
-        subtitle: true,
+        eventDate: true,
+        startHour: true,
+        startMinute: true,
         status: true,
         winningOption: {
           select: {
@@ -201,11 +224,13 @@ export const previewSurpriseBox = async (req: Request, res: Response) => {
     const ogTitle = box.status === 'RESOLVED' && box.winningOption?.gameName
       ? `${box.title} · ${box.winningOption.gameName}`
       : box.title;
-    const ogDescription = box.status === 'OPEN'
-      ? (box.subtitle || 'Vota el primer juego y desbloquea la partida sorpresa.')
+    const ogDescriptionLegacy = box.status === 'OPEN'
+      ? 'Vota el primer juego y desbloquea la partida sorpresa.'
       : box.status === 'CLOSED'
         ? 'La caja sorpresa ya está cerrada.'
         : `La caja sorpresa ya se resolvió. Juego elegido: ${box.winningOption?.gameName ?? 'desconocido'}.`;
+    void ogDescriptionLegacy;
+    const ogDescription = formatSurpriseBoxShareDate(box.eventDate, box.startHour, box.startMinute);
     const ogImage = `${SERVER_URL}/preview/surprise-image/${box.token}`;
 
     sendCrawlerAwareHtml(req, res, publicUrl, ogTitle, ogDescription, ogImage);
