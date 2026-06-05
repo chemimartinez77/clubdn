@@ -9,7 +9,8 @@ const SERVER_URL = (
   process.env.SERVER_URL ||
   (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : CLIENT_URL)
 ).replace(/\/$/, '');
-const SURPRISE_BOX_COVER_IMAGE_URL = `${CLIENT_URL}/lootbox2.jpg`;
+const SURPRISE_BOX_COVERS = [`${CLIENT_URL}/mysterybox1.def.png`, `${CLIENT_URL}/mysterybox2.def.png`];
+const getRandomCover = () => SURPRISE_BOX_COVERS[Math.floor(Math.random() * SURPRISE_BOX_COVERS.length)];
 
 function getReadableConflictTitle(event: { title: string; gameName?: string | null }) {
   if (event.title === 'Caja sorpresa' && event.gameName) {
@@ -249,8 +250,8 @@ function validateCreatePayload(req: Request) {
     return { error: 'El número de plazas debe ser al menos 1' };
   }
 
-  if (options.length < 1 || options.length > 3) {
-    return { error: 'Debes indicar entre 1 y 3 juegos para la caja sorpresa' };
+  if (options.length < 2 || options.length > 3) {
+    return { error: 'Debes indicar entre 2 y 3 juegos para la partida a elegir' };
   }
 
   if (startHour !== null && (startHour < 0 || startHour > 23)) {
@@ -266,7 +267,7 @@ function validateCreatePayload(req: Request) {
       title,
       subtitle: subtitle || null,
       description: description || null,
-      coverImageUrl: SURPRISE_BOX_COVER_IMAGE_URL,
+      coverImageUrl: getRandomCover(),
       location,
       address: address || null,
       eventDate,
@@ -344,7 +345,7 @@ export const createSurpriseBox = async (req: Request, res: Response) => {
         title: parsed.data.title,
         subtitle: parsed.data.subtitle,
         description: parsed.data.description,
-        coverImageUrl: SURPRISE_BOX_COVER_IMAGE_URL,
+        coverImageUrl: getRandomCover(),
         eventDate: parsed.data.eventDate,
         startHour: parsed.data.startHour,
         startMinute: parsed.data.startMinute,

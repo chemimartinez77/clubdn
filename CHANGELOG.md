@@ -29,6 +29,14 @@ La función `getScheduleConflict` solo comprobaba las partidas en las que el org
   - La lógica de comprobación de solape se extrae a `checkOverlap` para reutilizarla en los tres bucles.
   - El `findFirst` de `existingOpenBox` añade el filtro `createdById: userId` para que la limitación de "una caja abierta a la vez" sea por organizador y no global.
 
+### fix(caja-sorpresa): mínimo 2 juegos, subtítulo por defecto y portada aleatoria
+
+Tres ajustes menores al formulario de creación y al backend de la partida a elegir:
+
+- **Mínimo 2 juegos obligatorio**: la validación del backend pasó de `< 1` a `< 2` y el texto de ayuda del frontend se actualizó de "1 y 3" a "2 y 3". — `server/src/controllers/surpriseBoxController.ts`, `client/src/pages/SurpriseBoxes.tsx`.
+- **Subtítulo con valor por defecto editable**: en lugar de ser un placeholder vacío, el formulario arranca con "El primer voto decide qué se juega" como valor real del campo, editable y que se resetea al crear. — `client/src/pages/SurpriseBoxes.tsx`.
+- **Portada aleatoria entre dos imágenes**: se elimina la imagen fija `lootbox2.jpg` y se elige aleatoriamente entre `mysterybox1.def.png` y `mysterybox2.def.png` en el momento de creación. — `server/src/controllers/surpriseBoxController.ts`.
+
 ### fix(auth): unificar la política de contraseñas en toda la aplicación
 
 Se elimina la discrepancia entre registro, cambio y restablecimiento de contraseña. A partir de ahora todos los flujos exigen la misma regla: mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número, compartiendo validación común en cliente y servidor para evitar mensajes y comportamientos inconsistentes.

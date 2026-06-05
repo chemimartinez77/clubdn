@@ -33,7 +33,7 @@ type FormState = {
 
 const initialForm: FormState = {
   title: 'Caja sorpresa',
-  subtitle: '',
+  subtitle: 'El primer voto decide qué se juega',
   description: '',
   date: '',
   startHour: '17',
@@ -204,7 +204,7 @@ export default function SurpriseBoxes() {
                 <input
                   value={form.subtitle}
                   onChange={(e) => setForm((current) => ({ ...current, subtitle: e.target.value }))}
-                  placeholder="Ej: El primer voto decide qué se juega"
+                  placeholder="Subtítulo"
                   className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)]"
                 />
               </div>
@@ -365,7 +365,7 @@ export default function SurpriseBoxes() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-[var(--color-text)]">Juegos a votar</h3>
-                  <p className="text-xs text-[var(--color-textSecondary)]">Elige entre 1 y 3 juegos distintos.</p>
+                  <p className="text-xs text-[var(--color-textSecondary)]">Elige entre 2 y 3 juegos distintos.</p>
                 </div>
                 <span className="text-xs text-[var(--color-textSecondary)]">{selectedCount}/3 seleccionados</span>
               </div>
