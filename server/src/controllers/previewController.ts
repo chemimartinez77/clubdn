@@ -227,8 +227,8 @@ export const previewSurpriseBox = async (req: Request, res: Response) => {
     const ogDescriptionLegacy = box.status === 'OPEN'
       ? 'Vota el primer juego y desbloquea la partida sorpresa.'
       : box.status === 'CLOSED'
-        ? 'La caja sorpresa ya está cerrada.'
-        : `La caja sorpresa ya se resolvió. Juego elegido: ${box.winningOption?.gameName ?? 'desconocido'}.`;
+        ? 'La caja misteriosa ya está cerrada.'
+        : `La caja misteriosa ya se resolvió. Juego elegido: ${box.winningOption?.gameName ?? 'desconocido'}.`;
     void ogDescriptionLegacy;
     const ogDescription = formatSurpriseBoxShareDate(box.eventDate, box.startHour, box.startMinute);
     const ogImage = `${SERVER_URL}/preview/surprise-image/${box.token}`;

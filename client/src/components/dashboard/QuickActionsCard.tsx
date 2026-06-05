@@ -2,7 +2,6 @@
 import { Link } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from '../ui/Card';
 import { useAuth } from '../../contexts/AuthContext';
-import { isChemiRole } from '../../utils/roles';
 
 interface QuickActionProps {
   to: string;
@@ -63,8 +62,6 @@ interface QuickActionsCardProps {
 
 export default function QuickActionsCard({ isAdmin }: QuickActionsCardProps) {
   const { user } = useAuth();
-  const canUseSurpriseBox = isChemiRole(user?.role);
-
   return (
     <Card id="dashboard-quick-actions">
       <CardHeader>
@@ -113,9 +110,9 @@ export default function QuickActionsCard({ isAdmin }: QuickActionsCardProps) {
 
         <QuickAction
           to="/caja-sorpresa"
-          title="Caja Sorpresa"
-          description={canUseSurpriseBox ? 'Prepara una votación sorpresa' : 'Temporalmente no disponible'}
-          enabled={canUseSurpriseBox}
+          title="Caja Misteriosa"
+          description="Prepara una votación misteriosa"
+          enabled={true}
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0H4m16 0l-2.586-5.172A2 2 0 0015.625 5H8.375a2 2 0 00-1.789 1.106L4 12m5-3h6m-3-3v6" />

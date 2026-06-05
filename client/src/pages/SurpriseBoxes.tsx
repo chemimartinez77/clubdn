@@ -4,6 +4,7 @@ import Layout from '../components/layout/Layout';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import GameSearchModal from '../components/events/GameSearchModal';
+import Modal from '../components/ui/Modal';
 import { api } from '../api/axios';
 import { useToast } from '../hooks/useToast';
 import type { ApiResponse } from '../types/auth';
@@ -32,7 +33,7 @@ type FormState = {
 };
 
 const initialForm: FormState = {
-  title: 'Caja sorpresa',
+  title: 'Caja misteriosa',
   subtitle: 'El primer voto decide qué se juega',
   description: '',
   date: '',
@@ -84,6 +85,7 @@ export default function SurpriseBoxes() {
   const [form, setForm] = useState<FormState>(initialForm);
   const [selectedGames, setSelectedGames] = useState<Array<BGGGame | null>>([null, null, null]);
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
+  const [isInstructionsOpen, setIsInstructionsOpen] = useState(false);
 
   const { data: boxes = [], isLoading } = useQuery({
     queryKey: ['surpriseBoxesMine'],
@@ -131,13 +133,13 @@ export default function SurpriseBoxes() {
       return response.data.data!;
     },
     onSuccess: () => {
-      success('Caja sorpresa creada correctamente');
+      success('Caja misteriosa creada correctamente');
       setForm(initialForm);
       setSelectedGames([null, null, null]);
       queryClient.invalidateQueries({ queryKey: ['surpriseBoxesMine'] });
     },
     onError: (err: any) => {
-      showError(err.response?.data?.message || 'Error al crear la caja sorpresa');
+      showError(err.response?.data?.message || 'Error al crear la caja misteriosa');
     },
   });
 
@@ -146,11 +148,11 @@ export default function SurpriseBoxes() {
       await api.post(`/api/surprise-boxes/${id}/close`);
     },
     onSuccess: () => {
-      success('Caja sorpresa cerrada');
+      success('Caja misteriosa cerrada');
       queryClient.invalidateQueries({ queryKey: ['surpriseBoxesMine'] });
     },
     onError: (err: any) => {
-      showError(err.response?.data?.message || 'Error al cerrar la caja sorpresa');
+      showError(err.response?.data?.message || 'Error al cerrar la caja misteriosa');
     },
   });
 
@@ -178,16 +180,44 @@ export default function SurpriseBoxes() {
   return (
     <Layout>
       <div className="max-w-6xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-[var(--color-text)]">Caja sorpresa</h1>
-          <p className="text-[var(--color-textSecondary)] mt-1">
-            Configura una caja sorpresa, compártela y deja que el primer voto cree la partida automáticamente.
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-[var(--color-text)]">Caja misteriosa</h1>
+            <p className="text-[var(--color-textSecondary)] mt-1">
+              Configura una caja misteriosa, compártela y deja que el primer voto cree la partida automáticamente.
+            </p>
+          </div>
+          <Button variant="secondary" className="shrink-0 text-base px-5 py-2.5" onClick={() => setIsInstructionsOpen(true)}>
+            Instrucciones
+          </Button>
         </div>
+
+        <Modal isOpen={isInstructionsOpen} onClose={() => setIsInstructionsOpen(false)} title="Cómo funciona la Caja Misteriosa" size="md">
+          <div className="space-y-4 text-sm text-[var(--color-text)]">
+            <p>La Caja Misteriosa te permite organizar una partida sin desvelar el juego de antemano. Tú preparas las opciones y la comunidad decide con su voto.</p>
+            <ol className="space-y-3 list-none">
+              {[
+                ['1. Configura la caja', 'Elige fecha, hora, ubicación, aforo y entre 2 y 3 juegos candidatos. El título y subtítulo se mostrarán en la landing pública.'],
+                ['2. Comparte por WhatsApp', 'Una vez creada, usa el botón "Compartir" para enviar el enlace con vista previa. Los socios verán la imagen, el título y los juegos a elegir.'],
+                ['3. El primer voto decide', 'En cuanto un socio autenticado pulse "Elegir este juego", la partida se crea automáticamente con ese juego y ese socio queda inscrito junto a ti.'],
+                ['4. La landing cambia', 'El enlace que compartiste pasa a mostrar el juego ganador y un acceso directo a la partida ya creada en la app.'],
+                ['5. Solo una activa a la vez', 'No puedes tener dos cajas misteriosas abiertas al mismo tiempo. Cierra o espera a que se resuelva la actual antes de crear otra.'],
+              ].map(([titulo, desc]) => (
+                <li key={titulo} className="flex gap-3">
+                  <span className="mt-0.5 w-2 h-2 rounded-full bg-[var(--color-primary)] shrink-0 translate-y-1" />
+                  <div>
+                    <p className="font-semibold">{titulo}</p>
+                    <p className="text-[var(--color-textSecondary)] mt-0.5">{desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </Modal>
 
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-[var(--color-text)]">Nueva caja sorpresa</h2>
+            <h2 className="text-lg font-semibold text-[var(--color-text)]">Nueva caja misteriosa</h2>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
@@ -414,12 +444,12 @@ export default function SurpriseBoxes() {
                 onClick={() => createMutation.mutate()}
                 disabled={createMutation.isPending || !form.date || selectedCount === 0 || hasOpenBox}
               >
-                {createMutation.isPending ? 'Creando...' : 'Crear caja sorpresa'}
+                {createMutation.isPending ? 'Creando...' : 'Crear caja misteriosa'}
               </Button>
             </div>
             {hasOpenBox && (
               <p className="text-sm text-amber-700">
-                Ya hay una caja sorpresa activa. Ciérrala o espera a que se resuelva antes de crear otra.
+                Ya hay una caja misteriosa activa. Ciérrala o espera a que se resuelva antes de crear otra.
               </p>
             )}
           </CardContent>
@@ -432,7 +462,7 @@ export default function SurpriseBoxes() {
           <CardContent className="space-y-4">
             {isLoading && <p className="text-sm text-[var(--color-textSecondary)]">Cargando cajas sorpresa...</p>}
             {!isLoading && boxes.length === 0 && (
-              <p className="text-sm text-[var(--color-textSecondary)]">Todavía no has creado ninguna caja sorpresa.</p>
+              <p className="text-sm text-[var(--color-textSecondary)]">Todavía no has creado ninguna caja misteriosa.</p>
             )}
 
             {boxes.map((box) => (
@@ -500,7 +530,7 @@ export default function SurpriseBoxes() {
         isOpen={activeSlot !== null}
         onClose={() => setActiveSlot(null)}
         onSelect={handleGameSelect}
-        title="Seleccionar juego para la caja sorpresa"
+        title="Seleccionar juego para la caja misteriosa"
         allowRPGG={false}
       />
     </Layout>

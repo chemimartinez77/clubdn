@@ -29,6 +29,14 @@ La función `getScheduleConflict` solo comprobaba las partidas en las que el org
   - La lógica de comprobación de solape se extrae a `checkOverlap` para reutilizarla en los tres bucles.
   - El `findFirst` de `existingOpenBox` añade el filtro `createdById: userId` para que la limitación de "una caja abierta a la vez" sea por organizador y no global.
 
+### feat(caja-sorpresa): renombrar a "Caja Misteriosa", abrir acceso a todos y añadir modal de instrucciones
+
+Tres cambios relacionados con la madurez de la funcionalidad:
+
+- **Renombrado completo a "Caja Misteriosa"**: todos los textos visibles en frontend y backend sustituyen "caja sorpresa" por "caja misteriosa". Las rutas de URL, nombres de variables y endpoints de API no cambian. — `client/src/pages/SurpriseBoxes.tsx`, `client/src/pages/SurpriseBoxLanding.tsx`, `server/src/controllers/surpriseBoxController.ts`, `server/src/controllers/previewController.ts`.
+- **Acceso abierto a todos los socios**: se elimina la restricción `isChemiRole` que limitaba la funcionalidad al rol CHEMI. Ahora cualquier usuario autenticado puede crear cajas misteriosas desde el dashboard. — `client/src/components/dashboard/QuickActionsCard.tsx`.
+- **Modal de instrucciones**: botón "Instrucciones" en el encabezado de la página que abre un modal explicando el flujo completo en 5 pasos (configurar, compartir, votar, resolución automática de la landing y límite de una caja activa por usuario). — `client/src/pages/SurpriseBoxes.tsx`.
+
 ### fix(caja-sorpresa): mínimo 2 juegos, subtítulo por defecto y portada aleatoria
 
 Tres ajustes menores al formulario de creación y al backend de la partida a elegir:

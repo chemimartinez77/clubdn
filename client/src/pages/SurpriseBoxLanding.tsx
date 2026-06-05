@@ -57,7 +57,7 @@ export default function SurpriseBoxLanding() {
         navigate(`/login?redirect=${encodeURIComponent(`/caja-sorpresa/${token}`)}`);
         return;
       }
-      showError(err.response?.data?.message || 'No se ha podido votar esta caja sorpresa');
+      showError(err.response?.data?.message || 'No se ha podido votar esta caja misteriosa');
     },
   });
 
@@ -75,7 +75,7 @@ export default function SurpriseBoxLanding() {
     return (
       <CardShell>
         <div className="rounded-2xl border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] p-8 text-center">
-          <h1 className="text-2xl font-bold text-[var(--color-text)]">Caja sorpresa no disponible</h1>
+          <h1 className="text-2xl font-bold text-[var(--color-text)]">Caja misteriosa no disponible</h1>
           <p className="text-[var(--color-textSecondary)] mt-2">El enlace no existe o ya no está disponible.</p>
         </div>
       </CardShell>
@@ -172,7 +172,7 @@ export default function SurpriseBoxLanding() {
                 <p className="text-xs uppercase tracking-wide text-green-700">Juego ganador</p>
                 <h2 className="text-2xl font-bold text-green-900 mt-1">{winner.gameName}</h2>
                 <p className="text-sm text-green-800 mt-2">
-                  La caja sorpresa ya se ha resuelto. La partida está creada y lista para abrirse desde la app.
+                  La caja misteriosa ya se ha resuelto. La partida está creada y lista para abrirse desde la app.
                 </p>
               </div>
 
@@ -191,7 +191,7 @@ export default function SurpriseBoxLanding() {
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
               <h2 className="text-xl font-semibold text-amber-900">Caja cerrada</h2>
               <p className="text-sm text-amber-800 mt-2">
-                Esta caja sorpresa ya no admite votos.
+                Esta caja misteriosa ya no admite votos.
               </p>
             </div>
           )}

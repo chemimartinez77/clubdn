@@ -13,8 +13,8 @@ const SURPRISE_BOX_COVERS = [`${CLIENT_URL}/mysterybox1.def.png`, `${CLIENT_URL}
 const getRandomCover = () => SURPRISE_BOX_COVERS[Math.floor(Math.random() * SURPRISE_BOX_COVERS.length)];
 
 function getReadableConflictTitle(event: { title: string; gameName?: string | null }) {
-  if (event.title === 'Caja sorpresa' && event.gameName) {
-    return `Caja sorpresa · ${event.gameName}`;
+  if (event.title === 'Caja misteriosa' && event.gameName) {
+    return `Caja misteriosa · ${event.gameName}`;
   }
 
   return event.title || event.gameName || 'otra partida';
@@ -245,7 +245,7 @@ function validateCreatePayload(req: Request) {
   }
 
   if (Number.isNaN(eventDate.getTime()) || eventDate <= new Date()) {
-    return { error: 'La fecha de la caja sorpresa debe ser futura' };
+    return { error: 'La fecha de la caja misteriosa debe ser futura' };
   }
 
   if (Number.isNaN(maxAttendees) || maxAttendees < 1) {
@@ -311,7 +311,7 @@ export const createSurpriseBox = async (req: Request, res: Response) => {
     if (conflictTitle) {
       return res.status(409).json({
         success: false,
-        message: `No puedes preparar esta caja sorpresa porque tienes conflicto horario con "${conflictTitle}"`,
+        message: `No puedes preparar esta caja misteriosa porque tienes conflicto horario con "${conflictTitle}"`,
       });
     }
 
@@ -323,7 +323,7 @@ export const createSurpriseBox = async (req: Request, res: Response) => {
     if (existingOpenBox) {
       return res.status(409).json({
         success: false,
-        message: `Ya hay una caja sorpresa activa${existingOpenBox.title ? `: "${existingOpenBox.title}"` : ''}. Ciérrala o espera a que se resuelva antes de crear otra.`,
+        message: `Ya hay una caja misteriosa activa${existingOpenBox.title ? `: "${existingOpenBox.title}"` : ''}. Ciérrala o espera a que se resuelva antes de crear otra.`,
       });
     }
 
@@ -335,7 +335,7 @@ export const createSurpriseBox = async (req: Request, res: Response) => {
     if (games.length !== parsed.data.options.length) {
       return res.status(400).json({
         success: false,
-        message: 'Todos los juegos de la caja sorpresa deben existir en el catálogo',
+        message: 'Todos los juegos de la caja misteriosa deben existir en el catálogo',
       });
     }
 
@@ -380,11 +380,11 @@ export const createSurpriseBox = async (req: Request, res: Response) => {
     return res.status(201).json({
       success: true,
       data: await serializeSurpriseBox(created),
-      message: 'Caja sorpresa creada correctamente',
+      message: 'Caja misteriosa creada correctamente',
     });
   } catch (error) {
-    console.error('Error al crear la caja sorpresa:', error);
-    return res.status(500).json({ success: false, message: 'Error al crear la caja sorpresa' });
+    console.error('Error al crear la caja misteriosa:', error);
+    return res.status(500).json({ success: false, message: 'Error al crear la caja misteriosa' });
   }
 };
 
@@ -420,7 +420,7 @@ export const getPublicSurpriseBox = async (req: Request, res: Response) => {
     });
 
     if (!box) {
-      return res.status(404).json({ success: false, message: 'Caja sorpresa no encontrada' });
+      return res.status(404).json({ success: false, message: 'Caja misteriosa no encontrada' });
     }
 
     return res.status(200).json({
@@ -428,8 +428,8 @@ export const getPublicSurpriseBox = async (req: Request, res: Response) => {
       data: await serializeSurpriseBox(box),
     });
   } catch (error) {
-    console.error('Error al obtener la caja sorpresa pública:', error);
-    return res.status(500).json({ success: false, message: 'Error al obtener la caja sorpresa' });
+    console.error('Error al obtener la caja misteriosa pública:', error);
+    return res.status(500).json({ success: false, message: 'Error al obtener la caja misteriosa' });
   }
 };
 
@@ -449,11 +449,11 @@ export const closeSurpriseBox = async (req: Request, res: Response) => {
     });
 
     if (!existing) {
-      return res.status(404).json({ success: false, message: 'Caja sorpresa no encontrada' });
+      return res.status(404).json({ success: false, message: 'Caja misteriosa no encontrada' });
     }
 
     if (!isAdminLikeRole(userRole) && existing.createdById !== userId) {
-      return res.status(403).json({ success: false, message: 'No tienes permisos para cerrar esta caja sorpresa' });
+      return res.status(403).json({ success: false, message: 'No tienes permisos para cerrar esta caja misteriosa' });
     }
 
     if (existing.status !== SurpriseBoxStatus.OPEN) {
@@ -472,11 +472,11 @@ export const closeSurpriseBox = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       data: await serializeSurpriseBox(updated),
-      message: 'Caja sorpresa cerrada correctamente',
+      message: 'Caja misteriosa cerrada correctamente',
     });
   } catch (error) {
-    console.error('Error al cerrar la caja sorpresa:', error);
-    return res.status(500).json({ success: false, message: 'Error al cerrar la caja sorpresa' });
+    console.error('Error al cerrar la caja misteriosa:', error);
+    return res.status(500).json({ success: false, message: 'Error al cerrar la caja misteriosa' });
   }
 };
 
@@ -501,22 +501,22 @@ export const voteSurpriseBox = async (req: Request, res: Response) => {
     });
 
     if (!current) {
-      return res.status(404).json({ success: false, message: 'Caja sorpresa no encontrada' });
+      return res.status(404).json({ success: false, message: 'Caja misteriosa no encontrada' });
     }
 
     if (current.status !== SurpriseBoxStatus.OPEN) {
       return res.status(400).json({
         success: false,
         message: current.status === SurpriseBoxStatus.RESOLVED
-          ? 'La caja sorpresa ya se resolvió'
-          : 'La caja sorpresa está cerrada',
+          ? 'La caja misteriosa ya se resolvió'
+          : 'La caja misteriosa está cerrada',
         data: await serializeSurpriseBox(current),
       });
     }
 
     const selectedOption = current.options.find((option) => option.id === optionId);
     if (!selectedOption) {
-      return res.status(400).json({ success: false, message: 'La opción elegida no pertenece a esta caja sorpresa' });
+      return res.status(400).json({ success: false, message: 'La opción elegida no pertenece a esta caja misteriosa' });
     }
 
     const conflictTitle = await getScheduleConflict(
@@ -532,7 +532,7 @@ export const voteSurpriseBox = async (req: Request, res: Response) => {
     if (conflictTitle) {
       return res.status(409).json({
         success: false,
-        message: `No puedes votar esta caja sorpresa porque ya tienes conflicto horario con "${conflictTitle}"`,
+        message: `No puedes votar esta caja misteriosa porque ya tienes conflicto horario con "${conflictTitle}"`,
       });
     }
 
@@ -562,7 +562,7 @@ export const voteSurpriseBox = async (req: Request, res: Response) => {
       const createdEvent = await tx.event.create({
         data: {
           title: resolvedEventTitle,
-          description: box.description || `Caja sorpresa resuelta: ${option.gameName}`,
+          description: box.description || `Caja misteriosa resuelta: ${option.gameName}`,
           type: 'PARTIDA',
           date: box.eventDate,
           startHour: box.startHour,
@@ -624,15 +624,15 @@ export const voteSurpriseBox = async (req: Request, res: Response) => {
       success: true,
       data: serialized,
       message: result.alreadyResolved
-        ? 'La caja sorpresa ya estaba resuelta'
-        : 'La caja sorpresa se ha resuelto y la partida se ha creado automáticamente',
+        ? 'La caja misteriosa ya estaba resuelta'
+        : 'La caja misteriosa se ha resuelto y la partida se ha creado automáticamente',
     });
   } catch (error) {
     if (error instanceof Error && error.message === 'BOX_NOT_FOUND') {
-      return res.status(404).json({ success: false, message: 'Caja sorpresa no encontrada' });
+      return res.status(404).json({ success: false, message: 'Caja misteriosa no encontrada' });
     }
     if (error instanceof Error && error.message === 'OPTION_NOT_FOUND') {
-      return res.status(400).json({ success: false, message: 'La opción elegida no pertenece a esta caja sorpresa' });
+      return res.status(400).json({ success: false, message: 'La opción elegida no pertenece a esta caja misteriosa' });
     }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
       const box = await prisma.surpriseBox.findUnique({
@@ -641,12 +641,12 @@ export const voteSurpriseBox = async (req: Request, res: Response) => {
       });
       return res.status(409).json({
         success: false,
-        message: 'La caja sorpresa se estaba resolviendo. Vuelve a cargar la página.',
+        message: 'La caja misteriosa se estaba resolviendo. Vuelve a cargar la página.',
         data: box ? await serializeSurpriseBox(box) : null,
       });
     }
 
-    console.error('Error al votar la caja sorpresa:', error);
-    return res.status(500).json({ success: false, message: 'Error al votar la caja sorpresa' });
+    console.error('Error al votar la caja misteriosa:', error);
+    return res.status(500).json({ success: false, message: 'Error al votar la caja misteriosa' });
   }
 };
