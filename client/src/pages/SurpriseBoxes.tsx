@@ -439,17 +439,16 @@ export default function SurpriseBoxes() {
               </div>
             </div>
 
-            <div className="flex justify-end">
-              {(() => {
-                const reasons: string[] = [];
-                if (hasOpenBox) reasons.push('Ya tienes una caja misteriosa activa');
-                if (!form.date) reasons.push('Falta la fecha');
-                if (!form.title.trim()) reasons.push('Falta el título');
-                if (!form.location.trim()) reasons.push('Falta la ubicación');
-                if (selectedCount < 2) reasons.push('Selecciona al menos 2 juegos');
-                const isDisabled = createMutation.isPending || reasons.length > 0;
-                const tooltipText = reasons.join(' · ');
-                return (
+            {(() => {
+              const reasons: string[] = [];
+              if (hasOpenBox) reasons.push('Ya tienes una caja misteriosa activa');
+              if (!form.date) reasons.push('Falta la fecha');
+              if (!form.title.trim()) reasons.push('Falta el título');
+              if (!form.location.trim()) reasons.push('Falta la ubicación');
+              if (selectedCount < 2) reasons.push('Selecciona al menos 2 juegos');
+              const isDisabled = createMutation.isPending || reasons.length > 0;
+              return (
+                <div className="flex flex-col items-end gap-1">
                   <div className="relative group inline-block">
                     <Button
                       type="button"
@@ -459,19 +458,19 @@ export default function SurpriseBoxes() {
                       {createMutation.isPending ? 'Creando...' : 'Crear caja misteriosa'}
                     </Button>
                     {reasons.length > 0 && (
-                      <div className="pointer-events-none absolute bottom-full right-0 mb-2 w-max max-w-xs rounded-lg bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] px-3 py-2 text-xs text-[var(--color-textSecondary)] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                        {tooltipText}
+                      <div className="pointer-events-none absolute bottom-full right-0 mb-2 w-max max-w-xs rounded-lg bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] px-3 py-2 text-xs text-[var(--color-textSecondary)] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
+                        {reasons.join(' · ')}
                       </div>
                     )}
                   </div>
-                );
-              })()}
-            </div>
-            {hasOpenBox && (
-              <p className="text-sm text-amber-700">
-                Ya hay una caja misteriosa activa. Ciérrala o espera a que se resuelva antes de crear otra.
-              </p>
-            )}
+                  {reasons.length > 0 && (
+                    <p className="text-xs text-[var(--color-textSecondary)] text-right sm:hidden">
+                      {reasons.join(' · ')}
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
 
