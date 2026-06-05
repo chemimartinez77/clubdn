@@ -242,12 +242,12 @@ export default function SurpriseBoxes() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
+              <div className="opacity-50">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Imagen de portada</label>
                 <input
                   disabled
                   value="Se elegirá una portada aleatoria de Caja Misteriosa"
-                  className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-textSecondary)] opacity-60 cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)] cursor-not-allowed"
                 />
               </div>
               <div>
@@ -260,14 +260,14 @@ export default function SurpriseBoxes() {
               </div>
             </div>
 
-            <div>
+            <div className="opacity-50">
               <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Descripción</label>
               <textarea
                 disabled
                 value=""
                 rows={3}
-                placeholder="Próximamente disponible"
-                className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-textSecondary)] opacity-60 cursor-not-allowed resize-none"
+                placeholder="Deshabilitado temporalmente"
+                className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)] cursor-not-allowed resize-none"
               />
             </div>
 
