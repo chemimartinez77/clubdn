@@ -88,7 +88,7 @@ export default function SurpriseBoxLanding() {
     <CardShell>
       <div className="rounded-3xl border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] shadow-xl overflow-hidden">
         {box.coverImageUrl && (
-          <div className="h-72 bg-[var(--color-tableRowHover)]">
+          <div className="h-[432px] bg-[var(--color-tableRowHover)]">
             <img src={box.coverImageUrl} alt={box.title} className="w-full h-full object-cover" />
           </div>
         )}

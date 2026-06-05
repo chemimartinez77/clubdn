@@ -89,7 +89,8 @@ async function getScheduleConflict(
   startHour: number | null,
   startMinute: number | null,
   durationHours: number | null,
-  durationMinutes: number | null
+  durationMinutes: number | null,
+  excludeBoxId?: string
 ): Promise<string | null> {
   if (startHour === null || startHour === undefined) return null;
 
@@ -136,6 +137,7 @@ async function getScheduleConflict(
         createdById: userId,
         status: SurpriseBoxStatus.OPEN,
         eventDate: { gte: dayStart, lt: dayEnd },
+        ...(excludeBoxId ? { id: { not: excludeBoxId } } : {}),
       },
       select: { title: true, startHour: true, startMinute: true, durationHours: true, durationMinutes: true },
     }),
@@ -523,7 +525,8 @@ export const voteSurpriseBox = async (req: Request, res: Response) => {
       current.startHour,
       current.startMinute,
       current.durationHours,
-      current.durationMinutes
+      current.durationMinutes,
+      current.id
     );
 
     if (conflictTitle) {
