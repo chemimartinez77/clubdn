@@ -1,7 +1,6 @@
 // client/src/components/dashboard/QuickActionsCard.tsx
 import { Link } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from '../ui/Card';
-import { useAuth } from '../../contexts/AuthContext';
 
 interface QuickActionProps {
   to: string;
@@ -61,7 +60,6 @@ interface QuickActionsCardProps {
 }
 
 export default function QuickActionsCard({ isAdmin }: QuickActionsCardProps) {
-  const { user } = useAuth();
   return (
     <Card id="dashboard-quick-actions">
       <CardHeader>
