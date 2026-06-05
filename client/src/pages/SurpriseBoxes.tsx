@@ -225,6 +225,7 @@ export default function SurpriseBoxes() {
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Título</label>
                 <input
+                  disabled
                   value={form.title}
                   onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))}
                   className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)]"
@@ -233,6 +234,7 @@ export default function SurpriseBoxes() {
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Subtítulo</label>
                 <input
+                  disabled
                   value={form.subtitle}
                   onChange={(e) => setForm((current) => ({ ...current, subtitle: e.target.value }))}
                   placeholder="Subtítulo"
@@ -253,6 +255,7 @@ export default function SurpriseBoxes() {
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Ubicación</label>
                 <input
+                  disabled
                   value={form.location}
                   onChange={(e) => setForm((current) => ({ ...current, location: e.target.value }))}
                   className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)]"
