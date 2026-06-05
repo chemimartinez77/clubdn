@@ -192,6 +192,7 @@ export default function SurpriseBoxes() {
           </Button>
         </div>
 
+
         <Modal isOpen={isInstructionsOpen} onClose={() => setIsInstructionsOpen(false)} title="Cómo funciona la Caja Misteriosa" size="md">
           <div className="space-y-4 text-sm text-[var(--color-text)]">
             <p>La Caja Misteriosa te permite organizar una partida sin desvelar el juego de antemano. Tú preparas las opciones y la comunidad decide con su voto.</p>
@@ -243,12 +244,11 @@ export default function SurpriseBoxes() {
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Imagen de portada</label>
-                <div className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-tableRowHover)] text-[var(--color-textSecondary)]">
-                  Se usará una portada fija de Caja Sorpresa.
-                </div>
-                <p className="text-xs text-[var(--color-textSecondary)] mt-1">
-                  La imagen ya no se elige manualmente y será la misma en WhatsApp y en la landing.
-                </p>
+                <input
+                  disabled
+                  value="Se elegirá una portada aleatoria de Caja Misteriosa"
+                  className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-textSecondary)] opacity-60 cursor-not-allowed"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Ubicación</label>
@@ -263,10 +263,11 @@ export default function SurpriseBoxes() {
             <div>
               <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Descripción</label>
               <textarea
-                value={form.description}
-                onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))}
+                disabled
+                value=""
                 rows={3}
-                className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)]"
+                placeholder="Próximamente disponible"
+                className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-textSecondary)] opacity-60 cursor-not-allowed resize-none"
               />
             </div>
 
@@ -439,13 +440,32 @@ export default function SurpriseBoxes() {
             </div>
 
             <div className="flex justify-end">
-              <Button
-                type="button"
-                onClick={() => createMutation.mutate()}
-                disabled={createMutation.isPending || !form.date || selectedCount === 0 || hasOpenBox}
-              >
-                {createMutation.isPending ? 'Creando...' : 'Crear caja misteriosa'}
-              </Button>
+              {(() => {
+                const reasons: string[] = [];
+                if (hasOpenBox) reasons.push('Ya tienes una caja misteriosa activa');
+                if (!form.date) reasons.push('Falta la fecha');
+                if (!form.title.trim()) reasons.push('Falta el título');
+                if (!form.location.trim()) reasons.push('Falta la ubicación');
+                if (selectedCount < 2) reasons.push('Selecciona al menos 2 juegos');
+                const isDisabled = createMutation.isPending || reasons.length > 0;
+                const tooltipText = reasons.join(' · ');
+                return (
+                  <div className="relative group inline-block">
+                    <Button
+                      type="button"
+                      onClick={() => createMutation.mutate()}
+                      disabled={isDisabled}
+                    >
+                      {createMutation.isPending ? 'Creando...' : 'Crear caja misteriosa'}
+                    </Button>
+                    {reasons.length > 0 && (
+                      <div className="pointer-events-none absolute bottom-full right-0 mb-2 w-max max-w-xs rounded-lg bg-[var(--color-cardBackground)] border border-[var(--color-cardBorder)] px-3 py-2 text-xs text-[var(--color-textSecondary)] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                        {tooltipText}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             {hasOpenBox && (
               <p className="text-sm text-amber-700">
