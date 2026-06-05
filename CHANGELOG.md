@@ -20,6 +20,15 @@ Se incorpora una nueva funcionalidad de `caja sorpresa` para socios autenticados
 - `client/src/pages/SurpriseBoxLanding.tsx` — landing pública por token con voto y estado resuelto o cerrado.
 - `client/src/types/surpriseBox.ts`, `client/src/App.tsx` y `client/src/components/dashboard/QuickActionsCard.tsx` — tipado, rutas y acceso rápido desde la aplicación.
 
+### fix(caja-sorpresa): corregir validación de conflictos horarios al crear una partida a elegir
+
+La función `getScheduleConflict` solo comprobaba las partidas en las que el organizador estaba apuntado como asistente, ignorando las partidas que él mismo había creado y otras cajas sorpresa abiertas en el mismo horario. Además, la comprobación de "ya hay una caja abierta" era global en lugar de por usuario, impidiendo que dos organizadores distintos tuvieran cada uno su propia caja activa.
+
+- `server/src/controllers/surpriseBoxController.ts`:
+  - `getScheduleConflict` ahora lanza en paralelo tres consultas: registraciones del usuario, partidas creadas por él (`createdBy`) y cajas sorpresa propias con estado OPEN en el mismo día. Cualquier solape horario en alguna de las tres bloquea la creación.
+  - La lógica de comprobación de solape se extrae a `checkOverlap` para reutilizarla en los tres bucles.
+  - El `findFirst` de `existingOpenBox` añade el filtro `createdById: userId` para que la limitación de "una caja abierta a la vez" sea por organizador y no global.
+
 ### fix(auth): unificar la política de contraseñas en toda la aplicación
 
 Se elimina la discrepancia entre registro, cambio y restablecimiento de contraseña. A partir de ahora todos los flujos exigen la misma regla: mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número, compartiendo validación común en cliente y servidor para evitar mensajes y comportamientos inconsistentes.

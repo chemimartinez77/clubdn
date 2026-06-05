@@ -101,39 +101,70 @@ async function getScheduleConflict(
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayEnd.getDate() + 1);
 
-  const registrations = await prisma.eventRegistration.findMany({
-    where: {
-      userId,
-      status: { in: ['CONFIRMED', 'WAITLIST'] },
-      event: {
+  const eventSelect = {
+    title: true,
+    gameName: true,
+    startHour: true,
+    startMinute: true,
+    durationHours: true,
+    durationMinutes: true,
+  };
+
+  const [registrations, ownedEvents, ownBoxes] = await Promise.all([
+    prisma.eventRegistration.findMany({
+      where: {
+        userId,
+        status: { in: ['CONFIRMED', 'WAITLIST'] },
+        event: {
+          date: { gte: dayStart, lt: dayEnd },
+          status: { notIn: ['CANCELLED', 'COMPLETED'] },
+        },
+      },
+      include: { event: { select: eventSelect } },
+    }),
+    prisma.event.findMany({
+      where: {
+        createdBy: userId,
         date: { gte: dayStart, lt: dayEnd },
         status: { notIn: ['CANCELLED', 'COMPLETED'] },
       },
-    },
-    include: {
-      event: {
-        select: {
-          title: true,
-          gameName: true,
-          startHour: true,
-          startMinute: true,
-          durationHours: true,
-          durationMinutes: true,
-        },
+      select: eventSelect,
+    }),
+    prisma.surpriseBox.findMany({
+      where: {
+        createdById: userId,
+        status: SurpriseBoxStatus.OPEN,
+        eventDate: { gte: dayStart, lt: dayEnd },
       },
-    },
-  });
+      select: { title: true, startHour: true, startMinute: true, durationHours: true, durationMinutes: true },
+    }),
+  ]);
+
+  const checkOverlap = (startHour: number | null, startMinute: number | null, durationHours: number | null, durationMinutes: number | null) => {
+    if (startHour === null || startHour === undefined) return false;
+    const currentStart = startHour * 60 + (startMinute ?? 0);
+    const currentDuration = (durationHours ?? 0) * 60 + (durationMinutes ?? 0);
+    const currentEnd = currentStart + (currentDuration > 0 ? currentDuration : 1);
+    return newStart < currentEnd && currentStart < newEnd;
+  };
 
   for (const registration of registrations) {
     const event = registration.event;
-    if (event.startHour === null || event.startHour === undefined) continue;
+    if (checkOverlap(event.startHour, event.startMinute, event.durationHours, event.durationMinutes)) {
+      return getReadableConflictTitle(event);
+    }
+  }
 
-    const currentStart = event.startHour * 60 + (event.startMinute ?? 0);
-    const currentDuration = (event.durationHours ?? 0) * 60 + (event.durationMinutes ?? 0);
-    const currentEnd = currentStart + (currentDuration > 0 ? currentDuration : 1);
-    const overlaps = newStart < currentEnd && currentStart < newEnd;
+  for (const event of ownedEvents) {
+    if (checkOverlap(event.startHour, event.startMinute, event.durationHours, event.durationMinutes)) {
+      return getReadableConflictTitle(event);
+    }
+  }
 
-    if (overlaps) return getReadableConflictTitle(event);
+  for (const box of ownBoxes) {
+    if (checkOverlap(box.startHour, box.startMinute, box.durationHours, box.durationMinutes)) {
+      return box.title ?? 'partida a elegir';
+    }
   }
 
   return null;
@@ -282,7 +313,7 @@ export const createSurpriseBox = async (req: Request, res: Response) => {
     }
 
     const existingOpenBox = await prisma.surpriseBox.findFirst({
-      where: { status: SurpriseBoxStatus.OPEN },
+      where: { createdById: userId, status: SurpriseBoxStatus.OPEN },
       select: { id: true, title: true },
     });
 
