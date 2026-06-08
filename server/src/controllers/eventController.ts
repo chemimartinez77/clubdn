@@ -578,6 +578,11 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
             status: true,
             date: true,
           }
+        },
+        draftFromSurpriseBox: {
+          select: {
+            token: true,
+          }
         }
       },
       orderBy: { date: 'asc' }
