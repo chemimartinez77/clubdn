@@ -79,6 +79,7 @@ const GameImage = ({
 export { GameImage, GamePlaceholder };
 
 const statusColors = {
+  DRAFT: 'bg-purple-100 text-purple-800',
   SCHEDULED: 'bg-blue-100 text-blue-800',
   ONGOING: 'bg-green-100 text-green-800',
   COMPLETED: 'bg-[var(--color-tableRowHover)] text-[var(--color-text)]',
@@ -86,6 +87,7 @@ const statusColors = {
 };
 
 const statusLabels = {
+  DRAFT: 'Por decidir',
   SCHEDULED: 'Programado',
   ONGOING: 'En curso',
   COMPLETED: 'Completado',
@@ -95,6 +97,7 @@ const statusLabels = {
 function getEffectiveStatus(event: { status: string; date: string; startHour?: number | null; startMinute?: number | null; durationHours?: number | null; durationMinutes?: number | null }): string {
   if (event.status === 'CANCELLED') return 'CANCELLED';
   if (event.status === 'COMPLETED') return 'COMPLETED';
+  if (event.status === 'DRAFT') return 'DRAFT';
   const now = new Date();
   const base = new Date(event.date);
   if (event.startHour != null) base.setHours(event.startHour, event.startMinute ?? 0, 0, 0);

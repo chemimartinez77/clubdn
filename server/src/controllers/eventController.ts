@@ -452,14 +452,14 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
 
-    const where: any = {
-      status: {
-        not: 'CANCELLED'
-      }
-    };
+    // Los DRAFT solo los ve su creador; el resto ve SCHEDULED/ONGOING/COMPLETED
+    const where: any = userId
+      ? { OR: [{ status: { notIn: ['CANCELLED', 'DRAFT'] } }, { status: 'DRAFT', createdBy: userId }] }
+      : { status: { notIn: ['CANCELLED', 'DRAFT'] } };
 
     if (status) {
       where.status = status;
+      delete where.OR;
     }
 
     if (search) {

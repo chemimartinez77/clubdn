@@ -318,6 +318,7 @@ enum EventType {
 
 // Estados de eventos
 enum EventStatus {
+  DRAFT
   SCHEDULED
   ONGOING
   COMPLETED
@@ -392,6 +393,7 @@ model Event {
   gamePlayHistory  GamePlayHistory[]
   gameValidations  GameValidation[]
   firstPlayerSpins FirstPlayerSpin[]
+  draftFromSurpriseBox    SurpriseBox? @relation("SurpriseBoxDraftEvent")
   resolvedFromSurpriseBox SurpriseBox? @relation("SurpriseBoxResolvedEvent")
 
   // Idioma
@@ -517,6 +519,8 @@ model SurpriseBox {
   createdBy        User               @relation("SurpriseBoxCreator", fields: [createdById], references: [id], onDelete: Cascade)
   resolvedByUserId String?
   resolvedByUser   User?              @relation("SurpriseBoxResolver", fields: [resolvedByUserId], references: [id])
+  draftEventId     String?            @unique
+  draftEvent       Event?             @relation("SurpriseBoxDraftEvent", fields: [draftEventId], references: [id])
   resolvedEventId  String?            @unique
   resolvedEvent    Event?             @relation("SurpriseBoxResolvedEvent", fields: [resolvedEventId], references: [id])
   winningOptionId  String?            @unique

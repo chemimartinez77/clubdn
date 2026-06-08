@@ -4,6 +4,24 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-06-08 (sesión 1)
+
+### feat(caja-misteriosa): crear evento borrador en el calendario al crear una caja misteriosa
+
+Cuando se crea una caja misteriosa, ahora se genera automáticamente un evento en estado `DRAFT` con título `"<título de la caja> · Por decidir"`. Este evento aparece en el calendario del organizador para que la fecha/hora quede reservada y visible antes de que se resuelva la votación.
+
+- **Prisma schema** — nuevo valor `DRAFT` en el enum `EventStatus`; nuevo campo `draftEventId` en `SurpriseBox` con su relación inversa `draftFromSurpriseBox` en `Event`. — `server/prisma/schema.prisma`.
+- **Migración** — `server/prisma/migrations/20260608100000_add_draft_event_and_surprise_box_draft_event/migration.sql`.
+- **`server/src/controllers/surpriseBoxController.ts`**:
+  - `createSurpriseBox`: crea el evento DRAFT en la misma transacción que la caja y vincula ambos mediante `draftEventId`.
+  - `voteSurpriseBox`: en lugar de crear un evento nuevo al resolver, actualiza el evento DRAFT a `SCHEDULED` con el título definitivo y los datos del juego ganador. Se mantiene un fallback de creación para cajas antiguas sin `draftEventId`.
+  - `closeSurpriseBox`: cancela el evento DRAFT si existe cuando el organizador cierra la caja manualmente.
+  - `surpriseBoxInclude` y `serializeSurpriseBox` incluyen `draftEvent` en la respuesta serializada.
+- **`server/src/controllers/eventController.ts`** — `getEvents` excluye los eventos `DRAFT` del listado general, pero los incluye si el usuario autenticado es el creador, de modo que solo el organizador los ve en su calendario.
+- **`client/src/types/event.ts`** — añadido `'DRAFT'` al tipo `EventStatus`.
+- **`client/src/components/events/EventCard.tsx`** — badge morado "Por decidir" para eventos en estado DRAFT; `getEffectiveStatus` gestiona correctamente el nuevo estado.
+- **`client/src/components/events/EventCalendar.tsx`** — el resumen de cada día en la vista mensual distingue y cuenta las cajas misteriosas pendientes (`n caja(s) misteriosa(s)`) por separado de las partidas y eventos normales.
+
 ## 2026-06-01 (sesión 1)
 
 ### feat(caja-sorpresa): añadir el flujo completo de votación y creación automática de partidas

@@ -28,6 +28,13 @@ const surpriseBoxInclude = {
   options: {
     orderBy: { position: 'asc' as const },
   },
+  draftEvent: {
+    select: {
+      id: true,
+      title: true,
+      date: true,
+    },
+  },
   resolvedEvent: {
     select: {
       id: true,
@@ -211,6 +218,7 @@ async function serializeSurpriseBox(box: Prisma.SurpriseBoxGetPayload<{ include:
       isWinner: option.id === box.winningOptionId,
     })),
     winningOptionId: box.winningOptionId,
+    draftEvent: box.draftEvent,
     resolvedEvent: box.resolvedEvent,
   };
 }
@@ -341,40 +349,67 @@ export const createSurpriseBox = async (req: Request, res: Response) => {
 
     const gameMap = new Map(games.map((game) => [game.id, game]));
 
-    const created = await prisma.surpriseBox.create({
-      data: {
-        token: generateInvitationToken(),
-        title: parsed.data.title,
-        subtitle: parsed.data.subtitle,
-        description: parsed.data.description,
-        coverImageUrl: getRandomCover(),
-        eventDate: parsed.data.eventDate,
-        startHour: parsed.data.startHour,
-        startMinute: parsed.data.startMinute,
-        durationHours: parsed.data.durationHours,
-        durationMinutes: parsed.data.durationMinutes,
-        location: parsed.data.location,
-        address: parsed.data.address,
-        maxAttendees: parsed.data.maxAttendees,
-        requiresApproval: parsed.data.requiresApproval,
-        allowLateJoin: parsed.data.allowLateJoin,
-        language: parsed.data.language,
-        englishLevel: parsed.data.englishLevel,
-        createdById: userId,
-        options: {
-          create: parsed.data.options.map((option, index) => {
-            const game = gameMap.get(option.gameId!);
-            return {
-              position: index,
-              gameId: option.gameId!,
-              gameName: game?.name || option.gameId!,
-              gameImage: game?.image || null,
-              gameThumbnail: game?.thumbnail || null,
-            };
-          }),
+    const created = await prisma.$transaction(async (tx) => {
+      const draftTitle = `${parsed.data.title} · Por decidir`;
+      const draftEvent = await tx.event.create({
+        data: {
+          title: draftTitle,
+          description: parsed.data.description || 'Caja misteriosa: el juego se decidirá por votación',
+          type: 'PARTIDA',
+          status: 'DRAFT',
+          date: parsed.data.eventDate,
+          startHour: parsed.data.startHour,
+          startMinute: parsed.data.startMinute,
+          durationHours: parsed.data.durationHours,
+          durationMinutes: parsed.data.durationMinutes,
+          location: parsed.data.location,
+          address: parsed.data.address,
+          maxAttendees: parsed.data.maxAttendees,
+          requiresApproval: parsed.data.requiresApproval,
+          allowLateJoin: parsed.data.allowLateJoin,
+          language: parsed.data.language,
+          englishLevel: parsed.data.englishLevel,
+          createdBy: userId,
         },
-      },
-      include: surpriseBoxInclude,
+        select: { id: true },
+      });
+
+      return tx.surpriseBox.create({
+        data: {
+          token: generateInvitationToken(),
+          title: parsed.data.title,
+          subtitle: parsed.data.subtitle,
+          description: parsed.data.description,
+          coverImageUrl: getRandomCover(),
+          eventDate: parsed.data.eventDate,
+          startHour: parsed.data.startHour,
+          startMinute: parsed.data.startMinute,
+          durationHours: parsed.data.durationHours,
+          durationMinutes: parsed.data.durationMinutes,
+          location: parsed.data.location,
+          address: parsed.data.address,
+          maxAttendees: parsed.data.maxAttendees,
+          requiresApproval: parsed.data.requiresApproval,
+          allowLateJoin: parsed.data.allowLateJoin,
+          language: parsed.data.language,
+          englishLevel: parsed.data.englishLevel,
+          createdById: userId,
+          draftEventId: draftEvent.id,
+          options: {
+            create: parsed.data.options.map((option, index) => {
+              const game = gameMap.get(option.gameId!);
+              return {
+                position: index,
+                gameId: option.gameId!,
+                gameName: game?.name || option.gameId!,
+                gameImage: game?.image || null,
+                gameThumbnail: game?.thumbnail || null,
+              };
+            }),
+          },
+        },
+        include: surpriseBoxInclude,
+      });
     });
 
     return res.status(201).json({
@@ -445,7 +480,7 @@ export const closeSurpriseBox = async (req: Request, res: Response) => {
 
     const existing = await prisma.surpriseBox.findUnique({
       where: { id },
-      select: { id: true, createdById: true, status: true },
+      select: { id: true, createdById: true, status: true, draftEventId: true },
     });
 
     if (!existing) {
@@ -460,13 +495,18 @@ export const closeSurpriseBox = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Solo se pueden cerrar cajas sorpresa abiertas' });
     }
 
-    const updated = await prisma.surpriseBox.update({
-      where: { id },
-      data: {
-        status: SurpriseBoxStatus.CLOSED,
-        closedAt: new Date(),
-      },
-      include: surpriseBoxInclude,
+    const updated = await prisma.$transaction(async (tx) => {
+      if (existing.draftEventId) {
+        await tx.event.update({
+          where: { id: existing.draftEventId },
+          data: { status: 'CANCELLED', cancelledAt: new Date(), cancelledById: userId },
+        });
+      }
+      return tx.surpriseBox.update({
+        where: { id },
+        data: { status: SurpriseBoxStatus.CLOSED, closedAt: new Date() },
+        include: surpriseBoxInclude,
+      });
     });
 
     return res.status(200).json({
@@ -559,34 +599,52 @@ export const voteSurpriseBox = async (req: Request, res: Response) => {
 
       await tx.$queryRaw`SELECT id FROM "SurpriseBox" WHERE id = ${box.id} FOR UPDATE`;
 
-      const createdEvent = await tx.event.create({
-        data: {
-          title: resolvedEventTitle,
-          description: box.description || `Caja misteriosa resuelta: ${option.gameName}`,
-          type: 'PARTIDA',
-          date: box.eventDate,
-          startHour: box.startHour,
-          startMinute: box.startMinute,
-          durationHours: box.durationHours,
-          durationMinutes: box.durationMinutes,
-          location: box.location,
-          address: box.address,
-          maxAttendees: box.maxAttendees,
-          requiresApproval: box.requiresApproval,
-          allowLateJoin: box.allowLateJoin,
-          language: box.language,
-          englishLevel: box.englishLevel,
-          gameName: option.gameName,
-          gameImage: option.gameImage || option.gameThumbnail || null,
-          bggId: option.gameId,
-          createdBy: box.createdById,
-        },
-        select: { id: true },
-      });
+      // Reutilizar el evento DRAFT si existe, o crear uno nuevo como fallback
+      let resolvedEventId: string;
+      if (box.draftEventId) {
+        await tx.event.update({
+          where: { id: box.draftEventId },
+          data: {
+            title: resolvedEventTitle,
+            description: box.description || `Caja misteriosa resuelta: ${option.gameName}`,
+            status: 'SCHEDULED',
+            gameName: option.gameName,
+            gameImage: option.gameImage || option.gameThumbnail || null,
+            bggId: option.gameId,
+          },
+        });
+        resolvedEventId = box.draftEventId;
+      } else {
+        const createdEvent = await tx.event.create({
+          data: {
+            title: resolvedEventTitle,
+            description: box.description || `Caja misteriosa resuelta: ${option.gameName}`,
+            type: 'PARTIDA',
+            date: box.eventDate,
+            startHour: box.startHour,
+            startMinute: box.startMinute,
+            durationHours: box.durationHours,
+            durationMinutes: box.durationMinutes,
+            location: box.location,
+            address: box.address,
+            maxAttendees: box.maxAttendees,
+            requiresApproval: box.requiresApproval,
+            allowLateJoin: box.allowLateJoin,
+            language: box.language,
+            englishLevel: box.englishLevel,
+            gameName: option.gameName,
+            gameImage: option.gameImage || option.gameThumbnail || null,
+            bggId: option.gameId,
+            createdBy: box.createdById,
+          },
+          select: { id: true },
+        });
+        resolvedEventId = createdEvent.id;
+      }
 
       await tx.eventRegistration.create({
         data: {
-          eventId: createdEvent.id,
+          eventId: resolvedEventId,
           userId: box.createdById,
           status: 'CONFIRMED',
         },
@@ -595,7 +653,7 @@ export const voteSurpriseBox = async (req: Request, res: Response) => {
       if (userId !== box.createdById) {
         await tx.eventRegistration.create({
           data: {
-            eventId: createdEvent.id,
+            eventId: resolvedEventId,
             userId,
             status: 'CONFIRMED',
           },
@@ -608,7 +666,7 @@ export const voteSurpriseBox = async (req: Request, res: Response) => {
           status: SurpriseBoxStatus.RESOLVED,
           winningOptionId: option.id,
           resolvedByUserId: userId,
-          resolvedEventId: createdEvent.id,
+          resolvedEventId,
           resolvedAt: new Date(),
         },
         include: surpriseBoxInclude,

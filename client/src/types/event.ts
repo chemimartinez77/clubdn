@@ -2,7 +2,7 @@
 import type { BadgeCategory } from './badge';
 
 export type EventType = 'PARTIDA' | 'TORNEO' | 'OTROS';
-export type EventStatus = 'SCHEDULED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
+export type EventStatus = 'DRAFT' | 'SCHEDULED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
 export type RegistrationStatus = 'CONFIRMED' | 'CANCELLED' | 'WAITLIST' | 'PENDING_APPROVAL';
 
 export interface Event {

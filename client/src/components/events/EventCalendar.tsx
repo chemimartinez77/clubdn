@@ -106,11 +106,13 @@ export default function EventCalendar({ events, currentMonth, onDaySelect }: Eve
         </div>
 
         {hasEvents && (() => {
-          const partidas = dayEvents.filter(e => e.type === 'PARTIDA').length;
-          const otros = dayEvents.filter(e => e.type !== 'PARTIDA').length;
+          const drafts = dayEvents.filter(e => e.status === 'DRAFT').length;
+          const partidas = dayEvents.filter(e => e.type === 'PARTIDA' && e.status !== 'DRAFT').length;
+          const otros = dayEvents.filter(e => e.type !== 'PARTIDA' && e.status !== 'DRAFT').length;
           const parts: string[] = [];
           if (partidas > 0) parts.push(`${partidas} ${partidas === 1 ? 'partida' : 'partidas'}`);
           if (otros > 0) parts.push(`${otros} ${otros === 1 ? 'evento' : 'eventos'}`);
+          if (drafts > 0) parts.push(`${drafts} caja${drafts > 1 ? 's' : ''} misteriosa${drafts > 1 ? 's' : ''}`);
           return (
             <div className={summaryTextClass}>
               {parts.join(', ')}
