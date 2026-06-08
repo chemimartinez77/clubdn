@@ -152,6 +152,7 @@ export default function EventManagement() {
   };
 
   const statusColors = {
+    DRAFT: 'bg-purple-100 text-purple-800',
     SCHEDULED: 'bg-blue-100 text-blue-800',
     ONGOING: 'bg-green-100 text-green-800',
     COMPLETED: 'bg-[var(--color-tableRowHover)] text-[var(--color-text)]',
