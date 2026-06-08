@@ -222,7 +222,7 @@ export default function SurpriseBoxes() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
+              <div className="opacity-50">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Título</label>
                 <input
                   disabled
@@ -231,7 +231,7 @@ export default function SurpriseBoxes() {
                   className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)]"
                 />
               </div>
-              <div>
+              <div className="opacity-50">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Subtítulo</label>
                 <input
                   disabled
@@ -252,7 +252,7 @@ export default function SurpriseBoxes() {
                   className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)] cursor-not-allowed"
                 />
               </div>
-              <div>
+              <div className="opacity-50">
                 <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Ubicación</label>
                 <input
                   disabled
