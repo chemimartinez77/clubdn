@@ -124,6 +124,10 @@ export default function EventCard({ event }: EventCardProps) {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [selectedGameSource, setSelectedGameSource] = useState<'bgg' | 'rpggeek'>('bgg');
 
+  const cardHref = event.status === 'DRAFT' && event.draftFromSurpriseBox?.token
+    ? `/caja-sorpresa/${event.draftFromSurpriseBox.token}`
+    : `/events/${event.id}`;
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('es-ES', {
@@ -151,7 +155,7 @@ export default function EventCard({ event }: EventCardProps) {
   return (
     <>
       <div
-        onClick={() => navigate(`/events/${event.id}`)}
+        onClick={() => navigate(cardHref)}
         className="block bg-[var(--color-cardBackground)] rounded-lg border border-[var(--color-cardBorder)] hover:border-[var(--color-primary-300)] hover:shadow-md transition-all cursor-pointer"
       >
         <div className="p-6">

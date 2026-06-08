@@ -176,7 +176,12 @@ export default function EventCalendarDay({ events, currentMonth }: EventCalendar
               return (
                 <div
                   key={event.id}
-                  onClick={() => navigate(`/events/${event.id}`)}
+                  onClick={() => {
+                    const href = event.status === 'DRAFT' && event.draftFromSurpriseBox?.token
+                      ? `/caja-sorpresa/${event.draftFromSurpriseBox.token}`
+                      : `/events/${event.id}`;
+                    navigate(href);
+                  }}
                   className="block border border-[var(--color-cardBorder)] rounded-lg p-4 hover:shadow-md transition-shadow bg-[var(--color-cardBackground)] cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-3">

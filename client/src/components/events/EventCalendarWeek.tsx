@@ -130,7 +130,10 @@ export default function EventCalendarWeek({ events, currentMonth }: EventCalenda
                   key={event.id}
                   onClick={(eventClick) => {
                     eventClick.stopPropagation();
-                    navigate(`/events/${event.id}`);
+                    const href = event.status === 'DRAFT' && event.draftFromSurpriseBox?.token
+                      ? `/caja-sorpresa/${event.draftFromSurpriseBox.token}`
+                      : `/events/${event.id}`;
+                    navigate(href);
                   }}
                   className={`block text-sm p-2 rounded cursor-pointer ${
                     isFull

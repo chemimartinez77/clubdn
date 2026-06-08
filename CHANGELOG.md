@@ -6,6 +6,15 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ## 2026-06-08 (sesión 1)
 
+### fix(caja-misteriosa): los eventos DRAFT del calendario enlazan a la caja misteriosa, no a la partida
+
+Al hacer clic en un evento "Por decidir" en el calendario (vista lista, semana o día), el usuario era enviado a la página de detalle de la partida —que aún no existe como tal— en lugar de a la landing de la caja misteriosa. Se añade `draftFromSurpriseBox { token }` al include del listado de eventos para que el token llegue al frontend, y los tres componentes de calendario comprueban `event.status === 'DRAFT'` para redirigir a `/caja-sorpresa/:token` cuando corresponde, manteniendo el fallback a `/events/:id` para compatibilidad con cajas antiguas sin token vinculado.
+
+- `server/src/controllers/eventController.ts` — añadido `draftFromSurpriseBox { token }` al `eventDetailInclude` compartido.
+- `client/src/types/event.ts` — añadido campo opcional `draftFromSurpriseBox?: { token: string } | null` a la interfaz `Event`.
+- `client/src/components/events/EventCard.tsx` — calcula `cardHref` según el estado del evento antes de navegar.
+- `client/src/components/events/EventCalendarWeek.tsx` y `EventCalendarDay.tsx` — misma lógica de redirección condicional en sus respectivos `onClick`.
+
 ### feat(caja-misteriosa): crear evento borrador en el calendario al crear una caja misteriosa
 
 Cuando se crea una caja misteriosa, ahora se genera automáticamente un evento en estado `DRAFT` con título `"<título de la caja> · Por decidir"`. Este evento aparece en el calendario del organizador para que la fecha/hora quede reservada y visible antes de que se resuelva la votación.

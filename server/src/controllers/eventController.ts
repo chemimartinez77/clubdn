@@ -151,6 +151,11 @@ const eventDetailInclude = {
       status: true,
       date: true,
     }
+  },
+  draftFromSurpriseBox: {
+    select: {
+      token: true,
+    }
   }
 } satisfies Prisma.EventInclude;
 

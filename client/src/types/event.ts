@@ -89,6 +89,7 @@ export interface Event {
   language?: string;
   englishLevel?: string | null;
   status: EventStatus;
+  draftFromSurpriseBox?: { token: string } | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
