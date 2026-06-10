@@ -75,7 +75,7 @@ export default function MembershipManagement() {
       const res = await api.get<ApiResponse<RecentBajasResponse>>(`/api/membership/bajas-recientes?${bajasQueryParams}`);
       return res.data.data!;
     },
-    enabled: bajasOpen,
+    enabled: true,
   });
 
   const togglePaymentMutation = useMutation({
@@ -266,6 +266,11 @@ export default function MembershipManagement() {
           <div>
             <h1 className="text-3xl font-bold text-[var(--color-text)]">Gestión de Pagos</h1>
             <p className="text-[var(--color-textSecondary)] mt-1">Control de pagos mensuales de membresías</p>
+            {bajasResponse && (
+              <p className="text-sm text-[var(--color-textSecondary)] mt-1">
+                <span className="font-semibold text-[var(--color-text)]">{bajasResponse.total} {bajasResponse.total === 1 ? 'baja' : 'bajas'}</span> en {bajasResponse.label}
+              </p>
+            )}
           </div>
         </div>
 
