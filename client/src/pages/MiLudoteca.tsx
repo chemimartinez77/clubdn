@@ -220,7 +220,10 @@ export default function MiLudoteca() {
       const res = await api.get<ApiResponse<BggSyncJob | null>>('/api/my-ludoteca/bgg-sync-jobs/latest');
       return res.data.data;
     },
-    refetchInterval: 10000,
+    refetchInterval: (query) => {
+      const job = query.state.data as BggSyncJob | null | undefined;
+      return job && (job.status === 'QUEUED' || job.status === 'PENDING' || job.status === 'PROCESSING') ? 10000 : false;
+    },
   });
 
   const { data: bggUsernameData } = useQuery({

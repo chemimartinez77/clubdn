@@ -4,6 +4,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-06-10 (sesión 2)
+
+### refactor(admin): mover "Bajas recientes" al inicio de Gestión de Pagos y cargar siempre
+
+La sección "Bajas recientes" pasó de ser una tarjeta colapsable al final de la página a una tarjeta fija visible nada más entrar, situada justo debajo del título "Gestión de Pagos". La query se lanza al cargar la página (se eliminó el `enabled: bajasOpen`) y se eliminó el estado `bajasOpen`/`setBajasOpen` que ya no era necesario.
+
+- `client/src/pages/admin/MembershipManagement.tsx` — tarjeta de bajas reposicionada antes del Card de pagos, eliminada la versión colapsable del final, eliminado estado `bajasOpen`.
+
+### fix(mi-ludoteca): detener el polling de sincronización BGG cuando el job ha terminado
+
+El `refetchInterval` de la query del último job de sincronización con BGG era fijo a 10 segundos, lo que causaba peticiones innecesarias incluso cuando el job ya había finalizado. Se cambia a una función que solo activa el polling cuando el job tiene estado `QUEUED`, `PENDING` o `PROCESSING`.
+
+- `client/src/pages/MiLudoteca.tsx` — `refetchInterval` convertido a función condicional.
+
 ## 2026-06-10 (sesión 1)
 
 ### feat(admin): bajas recientes y contador de usuarios en gestión de pagos

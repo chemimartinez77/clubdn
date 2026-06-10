@@ -43,7 +43,6 @@ export default function MembershipManagement() {
   const [sortCol, setSortCol] = useState<'firstName' | 'lastName' | 'status'>('lastName');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [isConsolidateModalOpen, setIsConsolidateModalOpen] = useState(false);
-  const [bajasOpen, setBajasOpen] = useState(false);
   const [bajasMode, setBajasMode] = useState<'days' | 'month'>('month');
   const [bajasDays, setBajasDays] = useState(30);
   const prevMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
@@ -266,13 +265,112 @@ export default function MembershipManagement() {
           <div>
             <h1 className="text-3xl font-bold text-[var(--color-text)]">Gestión de Pagos</h1>
             <p className="text-[var(--color-textSecondary)] mt-1">Control de pagos mensuales de membresías</p>
-            {bajasResponse && (
-              <p className="text-sm text-[var(--color-textSecondary)] mt-1">
-                <span className="font-semibold text-[var(--color-text)]">{bajasResponse.total} {bajasResponse.total === 1 ? 'baja' : 'bajas'}</span> en {bajasResponse.label}
-              </p>
-            )}
           </div>
         </div>
+
+        <Card>
+          <CardHeader>
+            <div>
+              <h2 className="text-lg font-semibold text-[var(--color-text)]">Bajas recientes</h2>
+              <p className="text-sm text-[var(--color-textSecondary)] mt-0.5">Usuarios dados de baja en el período seleccionado</p>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap items-end gap-4 mb-4">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBajasMode('month')}
+                  className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${bajasMode === 'month' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'border-[var(--color-inputBorder)] text-[var(--color-textSecondary)] hover:border-[var(--color-primary)]'}`}
+                >
+                  Mes natural
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBajasMode('days')}
+                  className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${bajasMode === 'days' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'border-[var(--color-inputBorder)] text-[var(--color-textSecondary)] hover:border-[var(--color-primary)]'}`}
+                >
+                  Últimos N días
+                </button>
+              </div>
+
+              {bajasMode === 'month' ? (
+                <>
+                  <select
+                    value={bajasMonth}
+                    onChange={(e) => setBajasMonth(parseInt(e.target.value))}
+                    className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-sm"
+                  >
+                    {MONTHS.map((name, idx) => (
+                      <option key={idx} value={idx}>{name}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={bajasYear}
+                    onChange={(e) => setBajasYear(parseInt(e.target.value))}
+                    className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-sm"
+                  >
+                    {[currentYear - 2, currentYear - 1, currentYear].map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-[var(--color-textSecondary)]">Días:</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={3650}
+                    value={bajasDays}
+                    onChange={(e) => setBajasDays(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-24 px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-sm"
+                  />
+                </div>
+              )}
+            </div>
+
+            {bajasLoading ? (
+              <div className="py-6 text-center text-[var(--color-textSecondary)] text-sm">Cargando...</div>
+            ) : bajasResponse && bajasResponse.bajas.length > 0 ? (
+              <>
+                <p className="text-sm text-[var(--color-textSecondary)] mb-3">
+                  {bajasResponse.total} {bajasResponse.total === 1 ? 'baja' : 'bajas'} en {bajasResponse.label}
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead className="bg-[var(--color-tableRowHover)]">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase">Nombre</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase">Apellidos</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase">Email</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase">Fecha de baja</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-[var(--color-cardBackground)] divide-y divide-gray-200">
+                      {bajasResponse.bajas.map((baja) => (
+                        <tr key={baja.userId} className="hover:bg-[var(--color-tableRowHover)]">
+                          <td className="px-4 py-2 whitespace-nowrap text-[var(--color-text)]">{baja.firstName}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-[var(--color-text)]">{baja.lastName}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-[var(--color-textSecondary)]">{baja.email}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-[var(--color-textSecondary)]">
+                            {baja.fechaBaja
+                              ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(baja.fechaBaja))
+                              : '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : bajasResponse ? (
+              <div className="py-6 text-center text-[var(--color-textSecondary)] text-sm">
+                No hay bajas en {bajasResponse.label}
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -502,119 +600,6 @@ export default function MembershipManagement() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <button
-              type="button"
-              className="w-full flex items-center justify-between text-left"
-              onClick={() => setBajasOpen((v) => !v)}
-            >
-              <div>
-                <h2 className="text-lg font-semibold text-[var(--color-text)]">Bajas recientes</h2>
-                <p className="text-sm text-[var(--color-textSecondary)] mt-0.5">Usuarios dados de baja en el período seleccionado</p>
-              </div>
-              <span className="text-[var(--color-textSecondary)] text-xl leading-none">{bajasOpen ? '▲' : '▼'}</span>
-            </button>
-          </CardHeader>
-
-          {bajasOpen && (
-            <CardContent>
-              <div className="flex flex-wrap items-end gap-4 mb-4">
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setBajasMode('month')}
-                    className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${bajasMode === 'month' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'border-[var(--color-inputBorder)] text-[var(--color-textSecondary)] hover:border-[var(--color-primary)]'}`}
-                  >
-                    Mes natural
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBajasMode('days')}
-                    className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${bajasMode === 'days' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'border-[var(--color-inputBorder)] text-[var(--color-textSecondary)] hover:border-[var(--color-primary)]'}`}
-                  >
-                    Últimos N días
-                  </button>
-                </div>
-
-                {bajasMode === 'month' ? (
-                  <>
-                    <select
-                      value={bajasMonth}
-                      onChange={(e) => setBajasMonth(parseInt(e.target.value))}
-                      className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-sm"
-                    >
-                      {MONTHS.map((name, idx) => (
-                        <option key={idx} value={idx}>{name}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={bajasYear}
-                      onChange={(e) => setBajasYear(parseInt(e.target.value))}
-                      className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-sm"
-                    >
-                      {[currentYear - 2, currentYear - 1, currentYear].map((y) => (
-                        <option key={y} value={y}>{y}</option>
-                      ))}
-                    </select>
-                  </>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm text-[var(--color-textSecondary)]">Días:</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={3650}
-                      value={bajasDays}
-                      onChange={(e) => setBajasDays(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-24 px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-sm"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {bajasLoading ? (
-                <div className="py-6 text-center text-[var(--color-textSecondary)] text-sm">Cargando...</div>
-              ) : bajasResponse && bajasResponse.bajas.length > 0 ? (
-                <>
-                  <p className="text-sm text-[var(--color-textSecondary)] mb-3">
-                    {bajasResponse.total} {bajasResponse.total === 1 ? 'baja' : 'bajas'} en {bajasResponse.label}
-                  </p>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 text-sm">
-                      <thead className="bg-[var(--color-tableRowHover)]">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase">Nombre</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase">Apellidos</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase">Email</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase">Fecha de baja</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-[var(--color-cardBackground)] divide-y divide-gray-200">
-                        {bajasResponse.bajas.map((baja) => (
-                          <tr key={baja.userId} className="hover:bg-[var(--color-tableRowHover)]">
-                            <td className="px-4 py-2 whitespace-nowrap text-[var(--color-text)]">{baja.firstName}</td>
-                            <td className="px-4 py-2 whitespace-nowrap text-[var(--color-text)]">{baja.lastName}</td>
-                            <td className="px-4 py-2 whitespace-nowrap text-[var(--color-textSecondary)]">{baja.email}</td>
-                            <td className="px-4 py-2 whitespace-nowrap text-[var(--color-textSecondary)]">
-                              {baja.fechaBaja
-                                ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(baja.fechaBaja))
-                                : '—'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              ) : bajasResponse ? (
-                <div className="py-6 text-center text-[var(--color-textSecondary)] text-sm">
-                  No hay bajas en {bajasResponse.label}
-                </div>
-              ) : null}
-            </CardContent>
-          )}
-        </Card>
       </div>
 
       {isConsolidateModalOpen && (
