@@ -676,6 +676,80 @@ export const togglePayment = async (req: Request, res: Response): Promise<void> 
 };
 
 /**
+ * GET /api/membership/bajas-recientes?days=30
+ * GET /api/membership/bajas-recientes?month=5&year=2026
+ * Lista usuarios dados de baja en un rango de días o en un mes natural concreto
+ */
+export const getBajasRecientes = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const now = new Date();
+    let desde: Date;
+    let hasta: Date;
+    let label: string;
+
+    if (req.query.month !== undefined || req.query.year !== undefined) {
+      const year = req.query.year ? parseInt(req.query.year as string) : now.getFullYear();
+      const month = req.query.month ? parseInt(req.query.month as string) : now.getMonth() + 1;
+      if (month < 1 || month > 12 || isNaN(year)) {
+        res.status(400).json({ success: false, message: 'Mes o año no válido' });
+        return;
+      }
+      desde = new Date(year, month - 1, 1);
+      hasta = new Date(year, month, 1);
+      label = `${desde.toLocaleString('es-ES', { month: 'long' })} ${year}`;
+    } else {
+      const days = req.query.days ? parseInt(req.query.days as string) : 30;
+      if (isNaN(days) || days < 1 || days > 3650) {
+        res.status(400).json({ success: false, message: 'El parámetro days debe ser un número entre 1 y 3650' });
+        return;
+      }
+      desde = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      hasta = now;
+      label = `Últimos ${days} días`;
+    }
+
+    const bajas = await prisma.membership.findMany({
+      where: {
+        type: 'BAJA',
+        fechaBaja: { gte: desde, lt: hasta },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profile: { select: { firstName: true, lastName: true } },
+          },
+        },
+      },
+      orderBy: { fechaBaja: 'desc' },
+    });
+
+    const result = bajas.map((m) => {
+      const nameParts = m.user.name.trim().split(/\s+/);
+      return {
+        userId: m.userId,
+        name: m.user.name,
+        firstName: m.user.profile?.firstName || nameParts[0] || '',
+        lastName: m.user.profile?.lastName || nameParts.slice(1).join(' ') || '',
+        email: m.user.email,
+        fechaBaja: m.fechaBaja?.toISOString() ?? null,
+        membershipType: m.type,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { desde: desde.toISOString(), hasta: hasta.toISOString(), label, total: result.length, bajas: result },
+    });
+  } catch (error) {
+    console.error('Error fetching bajas recientes:', error);
+    res.status(500).json({ success: false, message: 'Error al obtener bajas recientes' });
+  }
+};
+
+/**
  * POST /api/membership/payment/year
  * Marcar enero-diciembre del año natural actual, solo durante enero
  */

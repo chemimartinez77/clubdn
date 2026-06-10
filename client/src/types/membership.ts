@@ -95,6 +95,24 @@ export interface MarkFullYearData {
   year: number;
 }
 
+export interface RecentBaja {
+  userId: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  fechaBaja: string | null;
+  membershipType: MembershipType;
+}
+
+export interface RecentBajasResponse {
+  desde: string;
+  hasta: string;
+  label: string;
+  total: number;
+  bajas: RecentBaja[];
+}
+
 export interface ConsolidateCurrentMonthResponse {
   consolidatedAt: string;
   consolidatedBy: string;

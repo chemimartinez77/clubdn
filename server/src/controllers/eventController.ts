@@ -2640,6 +2640,7 @@ export const confirmEventPlayed = async (req: Request, res: Response): Promise<v
   try {
     const id = req.params['id']!;
     const userId = req.user!.userId;
+    const userRole = req.user!.role;
 
     const event = await prisma.event.findUnique({ where: { id } });
 
@@ -2648,8 +2649,14 @@ export const confirmEventPlayed = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    if (event.createdBy !== userId) {
-      res.status(403).json({ success: false, message: 'Solo el organizador puede confirmar la disputa' });
+    const isOrganizer = event.createdBy === userId;
+    const isAdmin = isAdminLikeRole(userRole);
+    const isParticipant = !isOrganizer && !isAdmin
+      ? await prisma.eventRegistration.findFirst({ where: { eventId: id, userId, status: 'CONFIRMED' } }).then(Boolean)
+      : false;
+
+    if (!isOrganizer && !isAdmin && !isParticipant) {
+      res.status(403).json({ success: false, message: 'Solo el organizador, un participante o un admin puede confirmar la disputa' });
       return;
     }
 
@@ -2687,6 +2694,7 @@ export const confirmEventNotPlayed = async (req: Request, res: Response): Promis
   try {
     const id = req.params['id']!;
     const userId = req.user!.userId;
+    const userRole = req.user!.role;
 
     const event = await prisma.event.findUnique({ where: { id } });
 
@@ -2695,8 +2703,14 @@ export const confirmEventNotPlayed = async (req: Request, res: Response): Promis
       return;
     }
 
-    if (event.createdBy !== userId) {
-      res.status(403).json({ success: false, message: 'Solo el organizador puede confirmar la disputa' });
+    const isOrganizer = event.createdBy === userId;
+    const isAdmin = isAdminLikeRole(userRole);
+    const isParticipant = !isOrganizer && !isAdmin
+      ? await prisma.eventRegistration.findFirst({ where: { eventId: id, userId, status: 'CONFIRMED' } }).then(Boolean)
+      : false;
+
+    if (!isOrganizer && !isAdmin && !isParticipant) {
+      res.status(403).json({ success: false, message: 'Solo el organizador, un participante o un admin puede confirmar la disputa' });
       return;
     }
 

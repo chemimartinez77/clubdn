@@ -4,6 +4,27 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-06-10 (sesión 1)
+
+### feat(admin): bajas recientes y contador de usuarios en gestión de pagos
+
+Se añaden dos mejoras en la página de administración "Gestión de Pagos" para facilitar el trabajo con la remesa bancaria:
+
+1. **Contador de usuarios**: en la parte inferior de la tabla de pagos aparece un texto con el número de usuarios visibles en el listado filtrado y, entre paréntesis, el total cuando hay filtros activos.
+
+2. **Sección "Bajas recientes"**: nueva tarjeta colapsable debajo de la tabla de pagos que muestra los usuarios dados de baja en un período seleccionable. Soporta dos modos: "Mes natural" (selector de mes + año, por defecto el mes anterior) y "Últimos N días" (campo numérico libre de 1 a 3650 días). La consulta solo se lanza cuando la sección está abierta.
+
+- `server/src/controllers/membershipController.ts` — nuevo endpoint `getBajasRecientes` (`GET /api/membership/bajas-recientes?days=N` o `?month=M&year=Y`) que filtra membresías con `type: 'BAJA'` por `fechaBaja` en el rango indicado.
+- `server/src/routes/membershipRoutes.ts` — ruta `/bajas-recientes` registrada con `authenticate` + `requireAdmin`.
+- `client/src/types/membership.ts` — interfaces `RecentBaja` y `RecentBajasResponse`.
+- `client/src/pages/admin/MembershipManagement.tsx` — contador en el footer de la tabla y nueva sección colapsable con controles de rango y tabla de resultados.
+
+### fix(eventos): participantes y admins también pueden confirmar si una partida se disputó
+
+La restricción que impedía confirmar la disputa de un evento solo permitía al organizador hacerlo. Se relaja para que también puedan confirmarla los participantes con registro `CONFIRMED` en la partida y cualquier usuario con rol admin.
+
+- `server/src/controllers/eventController.ts` — funciones `confirmEventPlayed` y `confirmEventNotPlayed`: se reemplaza la comprobación `event.createdBy === userId` por una verificación triple (organizador OR admin OR participante confirmado), consultando `EventRegistration` cuando es necesario.
+
 ## 2026-06-08 (sesión 1)
 
 ### fix(caja-misteriosa): los eventos DRAFT del calendario enlazan a la caja misteriosa, no a la partida
