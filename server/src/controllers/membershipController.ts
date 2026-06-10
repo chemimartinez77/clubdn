@@ -710,7 +710,6 @@ export const getBajasRecientes = async (req: Request, res: Response): Promise<vo
 
     const bajas = await prisma.membership.findMany({
       where: {
-        type: 'BAJA',
         fechaBaja: { gte: desde, lt: hasta },
       },
       include: {
