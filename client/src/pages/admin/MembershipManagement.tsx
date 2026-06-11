@@ -13,6 +13,7 @@ import type {
   MembershipType,
   PaymentStatus,
   RecentBajasResponse,
+  SepaSinMandatoResponse,
   TogglePaymentData,
   UsersMembershipResponse,
 } from '../../types/membership';
@@ -259,20 +260,34 @@ export default function MembershipManagement() {
   const canUseFullYear = isJanuary && selectedYear === currentYear;
 
   const [isDownloadingSepa, setIsDownloadingSepa] = useState(false);
+  const [isDownloadingSepaIncomplete, setIsDownloadingSepaIncomplete] = useState(false);
   const currentMonth = new Date().getMonth() + 1;
+
+  const { data: sepaSinMandatoResponse } = useQuery<SepaSinMandatoResponse>({
+    queryKey: ['sepa-sin-mandato'],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<SepaSinMandatoResponse>>('/api/membership/sepa-sin-mandato');
+      return res.data.data!;
+    },
+  });
+
+  const downloadSepaBlob = async (url: string, filename: string) => {
+    const res = await api.get(url, { responseType: 'blob' });
+    const objectUrl = window.URL.createObjectURL(new Blob([res.data]));
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(objectUrl);
+  };
 
   const handleDownloadSepa = async () => {
     setIsDownloadingSepa(true);
     try {
-      const res = await api.get(`/api/membership/sepa-remesa?month=${currentMonth}&year=${currentYear}`, {
-        responseType: 'blob',
-      });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `remesa_sepa_${currentYear}${String(currentMonth).padStart(2, '0')}.txt`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await downloadSepaBlob(
+        `/api/membership/sepa-remesa?month=${currentMonth}&year=${currentYear}`,
+        `remesa_sepa_${currentYear}${String(currentMonth).padStart(2, '0')}.txt`,
+      );
     } catch (err: any) {
       const text = await err.response?.data?.text?.();
       try {
@@ -286,6 +301,26 @@ export default function MembershipManagement() {
     }
   };
 
+  const handleDownloadSepaIncomplete = async () => {
+    setIsDownloadingSepaIncomplete(true);
+    try {
+      await downloadSepaBlob(
+        `/api/membership/sepa-remesa?month=${currentMonth}&year=${currentYear}&includeIncomplete=true`,
+        `remesa_sepa_incompleta_${currentYear}${String(currentMonth).padStart(2, '0')}.txt`,
+      );
+    } catch (err: any) {
+      const text = await err.response?.data?.text?.();
+      try {
+        const json = JSON.parse(text);
+        error(json.message || 'Error al generar la remesa SEPA incompleta');
+      } catch {
+        error('Error al generar la remesa SEPA incompleta');
+      }
+    } finally {
+      setIsDownloadingSepaIncomplete(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="max-w-full mx-auto space-y-6 px-4">
@@ -294,9 +329,14 @@ export default function MembershipManagement() {
             <h1 className="text-3xl font-bold text-[var(--color-text)]">Gestión de Pagos</h1>
             <p className="text-[var(--color-textSecondary)] mt-1">Control de pagos mensuales de membresías</p>
           </div>
-          <Button variant="outline" onClick={handleDownloadSepa} isLoading={isDownloadingSepa}>
-            Descargar remesa SEPA
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleDownloadSepa} isLoading={isDownloadingSepa}>
+              Descargar remesa SEPA
+            </Button>
+            <Button variant="ghost" onClick={handleDownloadSepaIncomplete} isLoading={isDownloadingSepaIncomplete}>
+              SEPA incompleto
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -402,6 +442,51 @@ export default function MembershipManagement() {
             ) : null}
           </CardContent>
         </Card>
+
+        {sepaSinMandatoResponse && sepaSinMandatoResponse.total > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-[var(--color-text)]">Socios sin mandato SEPA</h2>
+                  <p className="text-sm text-[var(--color-textSecondary)] mt-0.5">
+                    {sepaSinMandatoResponse.total} {sepaSinMandatoResponse.total === 1 ? 'socio tiene' : 'socios tienen'} IBAN pero les falta configurar el mandato SEPA
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead className="bg-[var(--color-tableRowHover)]">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase">Nombre</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase">Apellidos</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase">Membresía</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase">Pendiente</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-[var(--color-cardBackground)] divide-y divide-gray-200">
+                    {sepaSinMandatoResponse.members.map((m) => {
+                      const missing = [
+                        !m.hasMandateRef && 'Ref. mandato',
+                        !m.hasMandateDate && 'Fecha firma',
+                      ].filter(Boolean).join(', ');
+                      return (
+                        <tr key={m.userId} className="hover:bg-[var(--color-tableRowHover)]">
+                          <td className="px-4 py-2 whitespace-nowrap text-[var(--color-text)]">{m.firstName}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-[var(--color-text)]">{m.lastName}</td>
+                          <td className="px-4 py-2 whitespace-nowrap">{getMembershipBadge(m.membershipType)}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-amber-600 text-xs font-medium">{missing}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
