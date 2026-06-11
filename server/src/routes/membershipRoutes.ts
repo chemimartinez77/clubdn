@@ -11,6 +11,7 @@ import {
   consolidateCurrentMonth,
   getBajasRecientes
 } from '../controllers/membershipController';
+import { generateSepaRemesa } from '../controllers/sepaController';
 import { authenticate, requireAdmin } from '../middleware/auth';
 
 const router = Router();
@@ -18,6 +19,7 @@ const router = Router();
 // Todas las rutas requieren autenticación y permisos de admin
 router.get('/users', authenticate, requireAdmin, getUsersWithMembership);
 router.get('/bajas-recientes', authenticate, requireAdmin, getBajasRecientes);
+router.get('/sepa-remesa', authenticate, requireAdmin, generateSepaRemesa);
 router.get('/payment-status', authenticate, requireAdmin, getPaymentStatus);
 router.post('/:userId/create', authenticate, requireAdmin, createMembership);
 router.put('/:userId/upgrade-to-socio', authenticate, requireAdmin, upgradeToSocio);

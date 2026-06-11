@@ -19,7 +19,7 @@ const EMPTY_PROFILE_FORM = {
   firstName: '', lastName: '', dni: '',
   phone: '', address: '', city: '', province: '', postalCode: '', iban: '',
   avatar: '', imageConsentActivities: false, imageConsentSocial: false, membershipType: '',
-  notes: '', startDate: ''
+  notes: '', startDate: '', sepaMandateRef: '', sepaMandateDate: ''
 };
 
 const formatTrialPromotionMessage = (date: string | null) => {
@@ -170,6 +170,8 @@ export default function Members() {
         membershipChangeReason?: string;
         notes?: string;
         startDate?: string;
+        sepaMandateRef?: string;
+        sepaMandateDate?: string;
       } = {
         firstName: profileForm.firstName.trim(),
         lastName: profileForm.lastName.trim(),
@@ -184,7 +186,9 @@ export default function Members() {
         imageConsentActivities: profileForm.imageConsentActivities,
         imageConsentSocial: profileForm.imageConsentSocial,
         notes: profileForm.notes.trim() || undefined,
-        startDate: profileForm.startDate || undefined
+        startDate: profileForm.startDate || undefined,
+        sepaMandateRef: profileForm.sepaMandateRef.trim() || undefined,
+        sepaMandateDate: profileForm.sepaMandateDate || undefined,
       };
       // Incluir membershipType si hay cambio o es nuevo
       if (profileForm.membershipType) {
@@ -228,7 +232,9 @@ export default function Members() {
       imageConsentSocial: p.imageConsentSocial,
       membershipType: memberProfile.member.membershipType || '',
       notes: memberProfile.member.notes || '',
-      startDate: memberProfile.member.startDate ? memberProfile.member.startDate.slice(0, 10) : ''
+      startDate: memberProfile.member.startDate ? memberProfile.member.startDate.slice(0, 10) : '',
+      sepaMandateRef: memberProfile.member.sepaMandateRef || '',
+      sepaMandateDate: memberProfile.member.sepaMandateDate ? memberProfile.member.sepaMandateDate.slice(0, 10) : '',
     });
     setOriginalMembershipType(memberProfile.member.membershipType || '');
   }, [memberProfile]);
@@ -1065,6 +1071,28 @@ export default function Members() {
                     onChange={(e) => setProfileForm({ ...profileForm, iban: e.target.value })}
                     className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Ref. mandato SEPA</label>
+                    <input
+                      type="text"
+                      value={profileForm.sepaMandateRef}
+                      onChange={(e) => setProfileForm({ ...profileForm, sepaMandateRef: e.target.value })}
+                      placeholder="Ej. FAT140425"
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-1">Fecha firma mandato SEPA</label>
+                    <input
+                      type="date"
+                      value={profileForm.sepaMandateDate}
+                      onChange={(e) => setProfileForm({ ...profileForm, sepaMandateDate: e.target.value })}
+                      className="w-full px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-cardBackground)] text-[var(--color-text)]"
+                    />
+                  </div>
                 </div>
 
                 <div>

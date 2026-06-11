@@ -58,6 +58,8 @@ export interface MemberProfileDetails {
   showTrialPromotionWarning: boolean;
   trialPromotionWarningDate: string | null;
   notes: string | null;
+  sepaMandateRef: string | null;
+  sepaMandateDate: string | null;
   profile: MemberProfileInfo;
   reliability: MemberReliability;
 }

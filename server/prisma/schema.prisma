@@ -605,6 +605,10 @@ model Membership {
   trialStartDate    DateTime?      // Fecha de inicio del período de prueba actual (se rellena al marcar EN_PRUEBAS manualmente)
   billingStartDate  DateTime?      // Primer día del mes desde el que se exige pago (mes siguiente al paso a COLABORADOR)
 
+  // Domiciliación SEPA
+  sepaMandateRef    String?        // Referencia del mandato SEPA (ej. FAT140425)
+  sepaMandateDate   DateTime?      // Fecha de firma del mandato SEPA
+
   // Estado de pagos
   isActive          Boolean        @default(true)   // Si está al día con los pagos
   lastPaymentDate   DateTime?      // Último pago registrado

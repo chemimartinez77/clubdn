@@ -258,6 +258,34 @@ export default function MembershipManagement() {
   const canConsolidateCurrentMonth = selectedYear === currentYear && !response?.isCurrentMonthConsolidated;
   const canUseFullYear = isJanuary && selectedYear === currentYear;
 
+  const [isDownloadingSepa, setIsDownloadingSepa] = useState(false);
+  const currentMonth = new Date().getMonth() + 1;
+
+  const handleDownloadSepa = async () => {
+    setIsDownloadingSepa(true);
+    try {
+      const res = await api.get(`/api/membership/sepa-remesa?month=${currentMonth}&year=${currentYear}`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `remesa_sepa_${currentYear}${String(currentMonth).padStart(2, '0')}.txt`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      const text = await err.response?.data?.text?.();
+      try {
+        const json = JSON.parse(text);
+        error(json.message || 'Error al generar la remesa SEPA');
+      } catch {
+        error('Error al generar la remesa SEPA');
+      }
+    } finally {
+      setIsDownloadingSepa(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="max-w-full mx-auto space-y-6 px-4">
@@ -266,6 +294,9 @@ export default function MembershipManagement() {
             <h1 className="text-3xl font-bold text-[var(--color-text)]">Gestión de Pagos</h1>
             <p className="text-[var(--color-textSecondary)] mt-1">Control de pagos mensuales de membresías</p>
           </div>
+          <Button variant="outline" onClick={handleDownloadSepa} isLoading={isDownloadingSepa}>
+            Descargar remesa SEPA
+          </Button>
         </div>
 
         <Card>

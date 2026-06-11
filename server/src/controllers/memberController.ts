@@ -424,6 +424,8 @@ export const getMemberProfile = async (req: Request, res: Response): Promise<voi
           showTrialPromotionWarning,
           trialPromotionWarningDate,
           notes: user.membership?.notes || null,
+          sepaMandateRef: user.membership?.sepaMandateRef || null,
+          sepaMandateDate: user.membership?.sepaMandateDate?.toISOString() || null,
           profile: {
             id: profile.id,
             avatar: profile.avatar,
@@ -477,7 +479,9 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
       membershipType: newMembershipType,
       membershipChangeReason,
       notes,
-      startDate: startDateRaw
+      startDate: startDateRaw,
+      sepaMandateRef,
+      sepaMandateDate: sepaMandateDateRaw,
     } = req.body;
 
     // Obtener ID del admin que hace el cambio
@@ -701,6 +705,19 @@ export const updateMemberProfile = async (req: Request, res: Response): Promise<
           })
         );
       }
+    }
+
+    // Actualizar campos SEPA siempre que haya membresía y se envíen los datos
+    if (existingMembership && (sepaMandateRef !== undefined || sepaMandateDateRaw !== undefined)) {
+      const sepaUpdate: Record<string, any> = {};
+      if (sepaMandateRef !== undefined) sepaUpdate.sepaMandateRef = sepaMandateRef?.trim() || null;
+      if (sepaMandateDateRaw !== undefined) sepaUpdate.sepaMandateDate = sepaMandateDateRaw ? new Date(sepaMandateDateRaw) : null;
+      transactionOperations.push(
+        prisma.membership.update({
+          where: { userId: existingUser.id },
+          data: sepaUpdate
+        })
+      );
     }
 
     const [updatedUser, profile] = await prisma.$transaction(transactionOperations);
