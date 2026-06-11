@@ -27,14 +27,66 @@ const normalizeIban = (iban: string) => iban.replace(/\s+/g, '').toUpperCase();
 const amountCents = (eur: number) => Math.round(eur * 100);
 
 /**
- * GET /api/membership/sepa-remesa?month=M&year=Y
+ * GET /api/membership/sepa-sin-mandato
+ * Devuelve socios activos con IBAN pero sin mandato SEPA configurado.
+ */
+export const getSepaSinMandato = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const memberships = await prisma.membership.findMany({
+      where: {
+        fechaBaja: null,
+        type: { in: ['SOCIO', 'COLABORADOR', 'FAMILIAR'] },
+        OR: [
+          { sepaMandateRef: null },
+          { sepaMandateDate: null },
+        ],
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            profile: {
+              select: { firstName: true, lastName: true, iban: true },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // Solo los que tienen IBAN
+    const conIban = memberships.filter((m) => !!m.user.profile?.iban);
+
+    const result = conIban.map((m) => ({
+      userId: m.userId,
+      name: m.user.name,
+      firstName: m.user.profile?.firstName || '',
+      lastName: m.user.profile?.lastName || '',
+      iban: m.user.profile!.iban,
+      membershipType: m.type,
+      hasMandateRef: !!m.sepaMandateRef,
+      hasMandateDate: !!m.sepaMandateDate,
+    }));
+
+    res.json({ success: true, data: { total: result.length, members: result } });
+  } catch (error) {
+    console.error('Error obteniendo socios sin mandato SEPA:', error);
+    res.status(500).json({ success: false, message: 'Error al obtener socios sin mandato SEPA' });
+  }
+};
+
+/**
+ * GET /api/membership/sepa-remesa?month=M&year=Y[&includeIncomplete=true]
  * Genera el fichero Norma 19 (SEPA Direct Debit) para el mes indicado.
+ * Con includeIncomplete=true incluye socios con IBAN aunque les falte el mandato.
  */
 export const generateSepaRemesa = async (req: Request, res: Response): Promise<void> => {
   try {
     const now = new Date();
     const month = req.query.month ? parseInt(req.query.month as string) : now.getMonth() + 1;
     const year = req.query.year ? parseInt(req.query.year as string) : now.getFullYear();
+    const includeIncomplete = req.query.includeIncomplete === 'true';
 
     if (month < 1 || month > 12 || isNaN(year)) {
       res.status(400).json({ success: false, message: 'Mes o año no válido' });
@@ -49,13 +101,11 @@ export const generateSepaRemesa = async (req: Request, res: Response): Promise<v
     // Fecha de presentación al banco: hoy
     const presentationDate = formatDateYYYYMMDD(now);
 
-    // Recuperar todos los miembros activos con IBAN y mandato SEPA configurado
     const memberships = await prisma.membership.findMany({
       where: {
         fechaBaja: null,
-        sepaMandateRef: { not: null },
-        sepaMandateDate: { not: null },
         type: { in: ['SOCIO', 'COLABORADOR', 'FAMILIAR'] },
+        ...(includeIncomplete ? {} : { sepaMandateRef: { not: null }, sepaMandateDate: { not: null } }),
       },
       include: {
         user: {
@@ -81,7 +131,10 @@ export const generateSepaRemesa = async (req: Request, res: Response): Promise<v
     });
 
     if (toCobrar.length === 0) {
-      res.status(400).json({ success: false, message: 'No hay miembros con domiciliación SEPA configurada pendientes de cobro para este período' });
+      const msg = includeIncomplete
+        ? 'No hay miembros con IBAN pendientes de cobro para este período'
+        : 'No hay miembros con domiciliación SEPA configurada pendientes de cobro para este período';
+      res.status(400).json({ success: false, message: msg });
       return;
     }
 
@@ -127,8 +180,8 @@ export const generateSepaRemesa = async (req: Request, res: Response): Promise<v
       const fee = MEMBERSHIP_FEES[m.type] ?? 0;
       const cents = amountCents(fee);
       const iban = normalizeIban(m.user.profile!.iban!);
-      const mandateRef = m.sepaMandateRef!;
-      const mandateDate = formatDateYYYYMMDD(m.sepaMandateDate!);
+      const mandateRef = m.sepaMandateRef || 'PENDIENTE';
+      const mandateDate = m.sepaMandateDate ? formatDateYYYYMMDD(m.sepaMandateDate) : '00000000';
 
       // Determinar FRST o RCUR: FRST si no hay pagos anteriores registrados
       const hasPrior = m.user.payments.some((p) => p.year < year || (p.year === year && p.month < month));

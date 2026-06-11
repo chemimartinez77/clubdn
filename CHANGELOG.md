@@ -4,20 +4,20 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
-## 2026-06-10 (sesión 3)
+## 2026-06-11 (sesión 1)
 
-### feat(admin): generación de remesa SEPA (Norma 19) desde gestión de pagos
+### feat(admin): listado de socios sin mandato SEPA y botón de remesa incompleta
 
-Permite al admin descargar el fichero de domiciliación bancaria SEPA directamente desde la web sin necesidad de generarlo manualmente. El fichero sigue el formato Norma 19 de posiciones fijas (400 caracteres por línea) con registros 01, 02, 03 por miembro y totales 04, 05, 99. El tipo de secuencia (FRST/RCUR) se determina automáticamente según el historial de pagos del socio. Solo se incluyen miembros activos con IBAN, referencia de mandato y fecha de firma rellenos que no hayan pagado el mes solicitado.
+Se añaden dos funcionalidades complementarias a la generación de remesas SEPA en "Gestión de Pagos", para cubrir el caso en que los socios tienen IBAN pero aún no tienen el mandato configurado:
 
-- `server/prisma/schema.prisma` — nuevos campos `sepaMandateRef` y `sepaMandateDate` en el modelo `Membership`.
-- `server/prisma/migrations/20260610120000_add_sepa_mandate_fields/migration.sql` — migración aplicada en staging y producción.
-- `server/src/controllers/sepaController.ts` — nuevo controller con `generateSepaRemesa` (`GET /api/membership/sepa-remesa?month=M&year=Y`).
-- `server/src/routes/membershipRoutes.ts` — ruta `/sepa-remesa` registrada con `authenticate` + `requireAdmin`.
-- `server/src/controllers/memberController.ts` — `getMemberProfile` expone `sepaMandateRef` y `sepaMandateDate`; `updateMemberProfile` acepta y persiste ambos campos.
-- `client/src/types/members.ts` — `sepaMandateRef` y `sepaMandateDate` añadidos a `MemberProfileDetails`.
-- `client/src/pages/admin/Members.tsx` — campos "Ref. mandato SEPA" y "Fecha firma mandato SEPA" en la ficha del miembro, junto al IBAN.
-- `client/src/pages/admin/MembershipManagement.tsx` — botón "Descargar remesa SEPA" en la cabecera de la página.
+1. **Sección "Socios sin mandato SEPA"**: nueva tarjeta que aparece automáticamente (solo si hay algún caso) mostrando los socios activos con IBAN pero sin `sepaMandateRef` o `sepaMandateDate` rellenados. La columna "Pendiente" indica exactamente qué campo falta en cada caso (Ref. mandato, Fecha firma, o ambos). Permite a Nacho saber a quién pedirle los datos antes de lanzar la remesa definitiva.
+
+2. **Botón "SEPA incompleto"**: segundo botón en la cabecera de la página que descarga un fichero Norma 19 incluyendo a todos los socios con IBAN, aunque les falte el mandato. Los socios sin mandato aparecen con `PENDIENTE` como referencia y `00000000` como fecha. Útil como borrador para validar importes antes de tener todos los datos.
+
+- `server/src/controllers/sepaController.ts` — nuevo endpoint `getSepaSinMandato` (`GET /api/membership/sepa-sin-mandato`); `generateSepaRemesa` acepta nuevo parámetro `?includeIncomplete=true` que relaja el filtro a solo IBAN; valores de mandato vacíos se rellenan con `PENDIENTE`/`00000000`.
+- `server/src/routes/membershipRoutes.ts` — ruta `/sepa-sin-mandato` registrada con `authenticate` + `requireAdmin`.
+- `client/src/types/membership.ts` — interfaces `SepaSinMandatoMember` y `SepaSinMandatoResponse`.
+- `client/src/pages/admin/MembershipManagement.tsx` — query `sepa-sin-mandato`, handler `handleDownloadSepaIncomplete`, sección condicional con tabla de socios sin mandato y segundo botón "SEPA incompleto" en la cabecera. La lógica de descarga de blob se extrae a función `downloadSepaBlob` compartida por ambos botones.
 
 ## 2026-06-10 (sesión 2)
 

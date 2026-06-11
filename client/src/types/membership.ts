@@ -113,6 +113,22 @@ export interface RecentBajasResponse {
   bajas: RecentBaja[];
 }
 
+export interface SepaSinMandatoMember {
+  userId: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  iban: string | null;
+  membershipType: MembershipType;
+  hasMandateRef: boolean;
+  hasMandateDate: boolean;
+}
+
+export interface SepaSinMandatoResponse {
+  total: number;
+  members: SepaSinMandatoMember[];
+}
+
 export interface ConsolidateCurrentMonthResponse {
   consolidatedAt: string;
   consolidatedBy: string;
