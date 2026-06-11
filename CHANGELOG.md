@@ -4,6 +4,21 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-06-10 (sesión 3)
+
+### feat(admin): generación de remesa SEPA (Norma 19) desde gestión de pagos
+
+Permite al admin descargar el fichero de domiciliación bancaria SEPA directamente desde la web sin necesidad de generarlo manualmente. El fichero sigue el formato Norma 19 de posiciones fijas (400 caracteres por línea) con registros 01, 02, 03 por miembro y totales 04, 05, 99. El tipo de secuencia (FRST/RCUR) se determina automáticamente según el historial de pagos del socio. Solo se incluyen miembros activos con IBAN, referencia de mandato y fecha de firma rellenos que no hayan pagado el mes solicitado.
+
+- `server/prisma/schema.prisma` — nuevos campos `sepaMandateRef` y `sepaMandateDate` en el modelo `Membership`.
+- `server/prisma/migrations/20260610120000_add_sepa_mandate_fields/migration.sql` — migración aplicada en staging y producción.
+- `server/src/controllers/sepaController.ts` — nuevo controller con `generateSepaRemesa` (`GET /api/membership/sepa-remesa?month=M&year=Y`).
+- `server/src/routes/membershipRoutes.ts` — ruta `/sepa-remesa` registrada con `authenticate` + `requireAdmin`.
+- `server/src/controllers/memberController.ts` — `getMemberProfile` expone `sepaMandateRef` y `sepaMandateDate`; `updateMemberProfile` acepta y persiste ambos campos.
+- `client/src/types/members.ts` — `sepaMandateRef` y `sepaMandateDate` añadidos a `MemberProfileDetails`.
+- `client/src/pages/admin/Members.tsx` — campos "Ref. mandato SEPA" y "Fecha firma mandato SEPA" en la ficha del miembro, junto al IBAN.
+- `client/src/pages/admin/MembershipManagement.tsx` — botón "Descargar remesa SEPA" en la cabecera de la página.
+
 ## 2026-06-10 (sesión 2)
 
 ### refactor(admin): mover "Bajas recientes" al inicio de Gestión de Pagos y cargar siempre
