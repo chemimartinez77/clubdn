@@ -84,17 +84,15 @@ export const getSepaSinMandato = async (_req: Request, res: Response): Promise<v
 export const generateSepaRemesa = async (req: Request, res: Response): Promise<void> => {
   try {
     const now = new Date();
-    const month = req.query.month ? parseInt(req.query.month as string) : now.getMonth() + 1;
-    const year = req.query.year ? parseInt(req.query.year as string) : now.getFullYear();
-    const includeIncomplete = req.query.includeIncomplete === 'true';
+    const month = req.body.month ? parseInt(req.body.month) : now.getMonth() + 1;
+    const year = req.body.year ? parseInt(req.body.year) : now.getFullYear();
+    const includeIncomplete = req.body.includeIncomplete === true;
 
-    const rawTypes = req.query['types[]'];
-    const sepaTypes = (Array.isArray(rawTypes) ? rawTypes : rawTypes ? [rawTypes] : []) as string[];
-    const typesFilter = sepaTypes.filter(t => ['SOCIO', 'COLABORADOR', 'FAMILIAR'].includes(t));
+    const rawTypes: string[] = Array.isArray(req.body.types) ? req.body.types : [];
+    const typesFilter = rawTypes.filter(t => ['SOCIO', 'COLABORADOR', 'FAMILIAR'].includes(t));
     const effectiveTypes = typesFilter.length > 0 ? typesFilter : ['SOCIO', 'COLABORADOR', 'FAMILIAR'];
 
-    const rawIds = req.query['memberIds[]'];
-    const memberIds = (Array.isArray(rawIds) ? rawIds : rawIds ? [rawIds] : []) as string[];
+    const memberIds: string[] = Array.isArray(req.body.memberIds) ? req.body.memberIds : [];
 
     if (month < 1 || month > 12 || isNaN(year)) {
       res.status(400).json({ success: false, message: 'Mes o año no válido' });

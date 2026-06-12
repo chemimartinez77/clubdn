@@ -296,14 +296,6 @@ export default function MembershipManagement() {
     });
   };
 
-  const buildSepaUrl = (params: SepaDownloadParams): string => {
-    const base = `/api/membership/sepa-remesa?month=${params.month}&year=${params.year}`;
-    const incomplete = params.includeIncomplete ? '&includeIncomplete=true' : '';
-    const types = (params.types ?? []).map((t) => `&types[]=${t}`).join('');
-    const ids = (params.memberIds ?? []).map((id) => `&memberIds[]=${encodeURIComponent(id)}`).join('');
-    return `${base}${incomplete}${types}${ids}`;
-  };
-
   const [isDownloadingSepa, setIsDownloadingSepa] = useState(false);
   const [isDownloadingSepaIncomplete, setIsDownloadingSepaIncomplete] = useState(false);
   const currentMonth = new Date().getMonth() + 1;
@@ -316,8 +308,20 @@ export default function MembershipManagement() {
     },
   });
 
-  const downloadSepaBlob = async (url: string, filename: string) => {
-    const res = await api.get(url, { responseType: 'blob' });
+  const downloadSepaPost = async (params: SepaDownloadParams, filename: string) => {
+    const allEligibleIds = new Set(sepaEligibleUsers.map((u) => u.id));
+    const isFullSelection = sepaSelectionActive
+      ? selectedMemberIds.size === allEligibleIds.size && [...selectedMemberIds].every((id) => allEligibleIds.has(id))
+      : true;
+
+    const body: SepaDownloadParams = {
+      month: params.month,
+      year: params.year,
+      ...(params.includeIncomplete ? { includeIncomplete: true } : {}),
+      ...(!isFullSelection && selectedMemberIds.size > 0 ? { memberIds: [...selectedMemberIds] } : {}),
+    };
+
+    const res = await api.post('/api/membership/sepa-remesa', body, { responseType: 'blob' });
     const objectUrl = window.URL.createObjectURL(new Blob([res.data]));
     const a = document.createElement('a');
     a.href = objectUrl;
@@ -329,12 +333,10 @@ export default function MembershipManagement() {
   const handleDownloadSepa = async () => {
     setIsDownloadingSepa(true);
     try {
-      const url = buildSepaUrl({
-        month: currentMonth,
-        year: currentYear,
-        memberIds: sepaSelectionActive && selectedMemberIds.size > 0 ? [...selectedMemberIds] : undefined,
-      });
-      await downloadSepaBlob(url, `remesa_sepa_${currentYear}${String(currentMonth).padStart(2, '0')}.txt`);
+      await downloadSepaPost(
+        { month: currentMonth, year: currentYear },
+        `remesa_sepa_${currentYear}${String(currentMonth).padStart(2, '0')}.txt`,
+      );
     } catch (err: any) {
       const text = await err.response?.data?.text?.();
       try {
@@ -351,13 +353,10 @@ export default function MembershipManagement() {
   const handleDownloadSepaIncomplete = async () => {
     setIsDownloadingSepaIncomplete(true);
     try {
-      const url = buildSepaUrl({
-        month: currentMonth,
-        year: currentYear,
-        includeIncomplete: true,
-        memberIds: sepaSelectionActive && selectedMemberIds.size > 0 ? [...selectedMemberIds] : undefined,
-      });
-      await downloadSepaBlob(url, `remesa_sepa_incompleta_${currentYear}${String(currentMonth).padStart(2, '0')}.txt`);
+      await downloadSepaPost(
+        { month: currentMonth, year: currentYear, includeIncomplete: true },
+        `remesa_sepa_incompleta_${currentYear}${String(currentMonth).padStart(2, '0')}.txt`,
+      );
     } catch (err: any) {
       const text = await err.response?.data?.text?.();
       try {
