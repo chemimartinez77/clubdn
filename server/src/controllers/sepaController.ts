@@ -101,6 +101,11 @@ export const generateSepaRemesa = async (req: Request, res: Response): Promise<v
       return;
     }
 
+    if (!CLUB_IBAN) {
+      res.status(500).json({ success: false, message: 'Variable de entorno SEPA_CLUB_IBAN no configurada. Configúrala en Railway con el IBAN del club.' });
+      return;
+    }
+
     const chargeDate = new Date(year, month - 1, 1);
     const chargeDateStr = formatDateYYYYMMDD(chargeDate);
     const creationDate = formatDateYYYYMMDD(now);
