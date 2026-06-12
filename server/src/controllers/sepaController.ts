@@ -88,23 +88,29 @@ export const generateSepaRemesa = async (req: Request, res: Response): Promise<v
     const year = req.query.year ? parseInt(req.query.year as string) : now.getFullYear();
     const includeIncomplete = req.query.includeIncomplete === 'true';
 
+    const rawTypes = req.query['types[]'];
+    const sepaTypes = (Array.isArray(rawTypes) ? rawTypes : rawTypes ? [rawTypes] : []) as string[];
+    const typesFilter = sepaTypes.filter(t => ['SOCIO', 'COLABORADOR', 'FAMILIAR'].includes(t));
+    const effectiveTypes = typesFilter.length > 0 ? typesFilter : ['SOCIO', 'COLABORADOR', 'FAMILIAR'];
+
+    const rawIds = req.query['memberIds[]'];
+    const memberIds = (Array.isArray(rawIds) ? rawIds : rawIds ? [rawIds] : []) as string[];
+
     if (month < 1 || month > 12 || isNaN(year)) {
       res.status(400).json({ success: false, message: 'Mes o año no válido' });
       return;
     }
 
-    // Fecha de cargo: primer día hábil del mes solicitado (usamos el día 1)
     const chargeDate = new Date(year, month - 1, 1);
     const chargeDateStr = formatDateYYYYMMDD(chargeDate);
-    // Fecha de creación: hoy
     const creationDate = formatDateYYYYMMDD(now);
-    // Fecha de presentación al banco: hoy
     const presentationDate = formatDateYYYYMMDD(now);
 
     const memberships = await prisma.membership.findMany({
       where: {
         fechaBaja: null,
-        type: { in: ['SOCIO', 'COLABORADOR', 'FAMILIAR'] },
+        type: { in: effectiveTypes as ('SOCIO' | 'COLABORADOR' | 'FAMILIAR')[] },
+        ...(memberIds.length > 0 ? { userId: { in: memberIds } } : {}),
         ...(includeIncomplete ? {} : { sepaMandateRef: { not: null }, sepaMandateDate: { not: null } }),
       },
       include: {

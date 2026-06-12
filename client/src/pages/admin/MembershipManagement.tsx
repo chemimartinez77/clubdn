@@ -13,6 +13,8 @@ import type {
   MembershipType,
   PaymentStatus,
   RecentBajasResponse,
+  SepaDownloadParams,
+  SepaFilterType,
   SepaSinMandatoResponse,
   TogglePaymentData,
   UsersMembershipResponse,
@@ -56,6 +58,15 @@ export default function MembershipManagement() {
     pagado: true,
     anoCompleto: true,
   });
+
+  const SEPA_TYPES: SepaFilterType[] = ['SOCIO', 'COLABORADOR', 'FAMILIAR'];
+  const [sepaSelectionActive, setSepaSelectionActive] = useState(false);
+  const [sepaTypeFilters, setSepaTypeFilters] = useState<Record<SepaFilterType, boolean>>({
+    SOCIO: true,
+    COLABORADOR: true,
+    FAMILIAR: true,
+  });
+  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
 
   const { data: response, isLoading } = useQuery<UsersMembershipResponse>({
     queryKey: ['users-membership', selectedYear],
@@ -259,6 +270,40 @@ export default function MembershipManagement() {
   const canConsolidateCurrentMonth = selectedYear === currentYear && !response?.isCurrentMonthConsolidated;
   const canUseFullYear = isJanuary && selectedYear === currentYear;
 
+  const sepaEligibleUsers = (response?.users || []).filter(
+    (u) => u.membership && SEPA_TYPES.includes(u.membership.type as SepaFilterType),
+  );
+
+  const syncSelectionFromTypes = (filters: Record<SepaFilterType, boolean>) => {
+    setSelectedMemberIds(new Set(
+      sepaEligibleUsers
+        .filter((u) => filters[u.membership!.type as SepaFilterType])
+        .map((u) => u.id),
+    ));
+  };
+
+  const toggleSepaType = (type: SepaFilterType) => {
+    const newFilters = { ...sepaTypeFilters, [type]: !sepaTypeFilters[type] };
+    setSepaTypeFilters(newFilters);
+    syncSelectionFromTypes(newFilters);
+  };
+
+  const toggleMemberSepaSelection = (userId: string) => {
+    setSelectedMemberIds((prev) => {
+      const next = new Set(prev);
+      next.has(userId) ? next.delete(userId) : next.add(userId);
+      return next;
+    });
+  };
+
+  const buildSepaUrl = (params: SepaDownloadParams): string => {
+    const base = `/api/membership/sepa-remesa?month=${params.month}&year=${params.year}`;
+    const incomplete = params.includeIncomplete ? '&includeIncomplete=true' : '';
+    const types = (params.types ?? []).map((t) => `&types[]=${t}`).join('');
+    const ids = (params.memberIds ?? []).map((id) => `&memberIds[]=${encodeURIComponent(id)}`).join('');
+    return `${base}${incomplete}${types}${ids}`;
+  };
+
   const [isDownloadingSepa, setIsDownloadingSepa] = useState(false);
   const [isDownloadingSepaIncomplete, setIsDownloadingSepaIncomplete] = useState(false);
   const currentMonth = new Date().getMonth() + 1;
@@ -284,10 +329,12 @@ export default function MembershipManagement() {
   const handleDownloadSepa = async () => {
     setIsDownloadingSepa(true);
     try {
-      await downloadSepaBlob(
-        `/api/membership/sepa-remesa?month=${currentMonth}&year=${currentYear}`,
-        `remesa_sepa_${currentYear}${String(currentMonth).padStart(2, '0')}.txt`,
-      );
+      const url = buildSepaUrl({
+        month: currentMonth,
+        year: currentYear,
+        memberIds: sepaSelectionActive && selectedMemberIds.size > 0 ? [...selectedMemberIds] : undefined,
+      });
+      await downloadSepaBlob(url, `remesa_sepa_${currentYear}${String(currentMonth).padStart(2, '0')}.txt`);
     } catch (err: any) {
       const text = await err.response?.data?.text?.();
       try {
@@ -304,10 +351,13 @@ export default function MembershipManagement() {
   const handleDownloadSepaIncomplete = async () => {
     setIsDownloadingSepaIncomplete(true);
     try {
-      await downloadSepaBlob(
-        `/api/membership/sepa-remesa?month=${currentMonth}&year=${currentYear}&includeIncomplete=true`,
-        `remesa_sepa_incompleta_${currentYear}${String(currentMonth).padStart(2, '0')}.txt`,
-      );
+      const url = buildSepaUrl({
+        month: currentMonth,
+        year: currentYear,
+        includeIncomplete: true,
+        memberIds: sepaSelectionActive && selectedMemberIds.size > 0 ? [...selectedMemberIds] : undefined,
+      });
+      await downloadSepaBlob(url, `remesa_sepa_incompleta_${currentYear}${String(currentMonth).padStart(2, '0')}.txt`);
     } catch (err: any) {
       const text = await err.response?.data?.text?.();
       try {
@@ -330,14 +380,63 @@ export default function MembershipManagement() {
             <p className="text-[var(--color-textSecondary)] mt-1">Control de pagos mensuales de membresías</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleDownloadSepa} isLoading={isDownloadingSepa}>
-              Descargar remesa SEPA
-            </Button>
-            <Button variant="ghost" onClick={handleDownloadSepaIncomplete} isLoading={isDownloadingSepaIncomplete}>
-              SEPA incompleto
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSepaSelectionActive(true);
+                syncSelectionFromTypes(sepaTypeFilters);
+              }}
+            >
+              Remesa SEPA
             </Button>
           </div>
         </div>
+
+        {sepaSelectionActive && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-[var(--color-text)]">Configurar remesa SEPA</span>
+                  <button
+                    type="button"
+                    onClick={() => setSepaSelectionActive(false)}
+                    className="text-[var(--color-textSecondary)] hover:text-[var(--color-text)] text-lg leading-none"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  {SEPA_TYPES.map((type) => {
+                    const count = sepaEligibleUsers.filter((u) => u.membership?.type === type).length;
+                    return (
+                      <label key={type} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={sepaTypeFilters[type]}
+                          onChange={() => toggleSepaType(type)}
+                          className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)]"
+                        />
+                        <span className="text-sm text-[var(--color-textSecondary)]">{type} ({count})</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-[var(--color-textSecondary)]">
+                  {selectedMemberIds.size} {selectedMemberIds.size === 1 ? 'miembro seleccionado' : 'miembros seleccionados'}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" onClick={handleDownloadSepa} isLoading={isDownloadingSepa}>
+                    Descargar remesa
+                  </Button>
+                  <Button variant="ghost" onClick={handleDownloadSepaIncomplete} isLoading={isDownloadingSepaIncomplete}>
+                    Incluir sin mandato
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
@@ -603,6 +702,11 @@ export default function MembershipManagement() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-[var(--color-tableRowHover)]">
                     <tr>
+                      {sepaSelectionActive && (
+                        <th className="px-4 py-3 text-center text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider">
+                          SEPA
+                        </th>
+                      )}
                       <th
                         className="px-4 py-3 text-left text-xs font-medium text-[var(--color-textSecondary)] uppercase tracking-wider cursor-pointer select-none hover:text-[var(--color-text)]"
                         onClick={() => handleSort('firstName')}
@@ -637,6 +741,18 @@ export default function MembershipManagement() {
                   <tbody className="bg-[var(--color-cardBackground)] divide-y divide-gray-200">
                     {filteredUsers.map((user) => (
                       <tr key={user.id} className="hover:bg-[var(--color-tableRowHover)]">
+                        {sepaSelectionActive && (
+                          <td className="px-4 py-3 text-center">
+                            {user.membership && SEPA_TYPES.includes(user.membership.type as SepaFilterType) && (
+                              <input
+                                type="checkbox"
+                                checked={selectedMemberIds.has(user.id)}
+                                onChange={() => toggleMemberSepaSelection(user.id)}
+                                className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-inputBorder)] rounded focus:ring-[var(--color-primary)] cursor-pointer"
+                              />
+                            )}
+                          </td>
+                        )}
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="text-sm font-medium text-[var(--color-text)]">
                             {user.firstName || user.name.split(' ')[0]}

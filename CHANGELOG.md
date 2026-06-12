@@ -4,6 +4,21 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-06-12 (sesión 1)
+
+### feat(admin): selección granular de miembros para remesa SEPA
+
+A petición de Nacho, la generación del fichero SEPA Norma 19 deja de ser un proceso "todo o nadie" y permite elegir exactamente quién se incluye. El botón anterior "Descargar remesa SEPA" se sustituye por un botón "Remesa SEPA" que despliega un panel de configuración con dos niveles de selección:
+
+1. **Filtro por tipo**: checkboxes SOCIO / COLABORADOR / FAMILIAR con el conteo de miembros de cada tipo. Al marcar o desmarcar un tipo se seleccionan o deseleccionan masivamente todos sus miembros.
+2. **Selección individual**: cuando el panel está abierto aparece una columna "SEPA" en la tabla principal con un checkbox por cada miembro elegible. Permite al admin ajustar la selección miembro a miembro después del filtro por tipo.
+
+El contador "N miembros seleccionados" se actualiza en tiempo real. Los botones de descarga (remesa normal y con incompletos) generan el fichero solo con los miembros seleccionados.
+
+- `server/src/controllers/sepaController.ts` — `generateSepaRemesa` acepta dos nuevos parámetros opcionales de query string: `types[]` (array de tipos, retrocompatible: si se omite incluye los tres) y `memberIds[]` (array de `userId`); ambos filtros se aplican como intersección con las condiciones existentes (fechaBaja, mandato).
+- `client/src/types/membership.ts` — tipo `SepaFilterType` e interfaz `SepaDownloadParams` para construir la URL del endpoint de forma tipada.
+- `client/src/pages/admin/MembershipManagement.tsx` — estado `sepaSelectionActive`, `sepaTypeFilters` y `selectedMemberIds`; helpers `syncSelectionFromTypes`, `toggleSepaType`, `toggleMemberSepaSelection` y `buildSepaUrl`; panel de configuración condicional con checkboxes de tipo y conteos; columna SEPA condicional en la tabla; handlers de descarga actualizados para pasar los IDs seleccionados.
+
 ## 2026-06-11 (sesión 1)
 
 ### feat(admin): listado de socios sin mandato SEPA y botón de remesa incompleta

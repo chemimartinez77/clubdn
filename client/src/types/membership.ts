@@ -136,3 +136,13 @@ export interface ConsolidateCurrentMonthResponse {
   memberNames: string[];
   isCurrentMonthConsolidated: boolean;
 }
+
+export type SepaFilterType = 'SOCIO' | 'COLABORADOR' | 'FAMILIAR';
+
+export interface SepaDownloadParams {
+  month: number;
+  year: number;
+  includeIncomplete?: boolean;
+  types?: SepaFilterType[];
+  memberIds?: string[];
+}
