@@ -10,7 +10,11 @@ async function getPlayers(eventId: string) {
       include: { user: { select: { id: true, name: true, profile: { select: { nick: true } } } } }
     }),
     prisma.eventGuest.findMany({
-      where: { eventId, invitation: { status: 'USED' } },
+      // Un invitado cuenta como asistente mientras su invitación no esté cancelada.
+      // En la práctica el QR casi nunca se valida en puerta, así que durante la partida
+      // los invitados siguen en PENDING (y pasan a NOT_ATTENDED al cerrarse el evento).
+      // Filtrar solo por USED dejaba fuera de la ruleta a casi todos los invitados.
+      where: { eventId, invitation: { status: { in: ['PENDING', 'USED', 'NOT_ATTENDED'] } } },
       select: { id: true, guestFirstName: true, guestLastName: true }
     })
   ]);
