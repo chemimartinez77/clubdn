@@ -4,6 +4,23 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-06-26 (sesión 1)
+
+### feat(surprise-box): habilitar descripción en formulario y añadir acciones en landing
+
+Tres mejoras en la Caja Misteriosa:
+
+1. **Campo Descripción editable**: el textarea del formulario de creación estaba deshabilitado con el placeholder "Deshabilitado temporalmente". Ahora es editable y se envía al backend con el resto del formulario. La descripción ya se mostraba en la landing si venía rellena, por lo que no requirió cambios en backend.
+
+2. **Botones de acción en la landing pública** (`/caja-sorpresa/:token`): se añade una barra de acciones encima del card con dos botones:
+   - **"Compartir por WhatsApp"** (izquierda): visible siempre, construye el mensaje con título, fecha formateada y `previewUrl`, igual que el botón equivalente de "Mis cajas sorpresa".
+   - **"Cerrar"** (derecha): solo visible si el usuario autenticado es el creador de la caja y su estado es OPEN. Llama a `POST /api/surprise-boxes/:id/close` e invalida la query para refrescar el estado.
+
+3. **Botón WhatsApp centrado al final** del card de la landing, después de la sección de juegos/estados, para facilitar la compartición una vez revisado el contenido.
+
+- `client/src/pages/SurpriseBoxes.tsx` — campo descripción: quitado `disabled`, `opacity-50` y `cursor-not-allowed`; conectado a `form.description` con `onChange`.
+- `client/src/pages/SurpriseBoxLanding.tsx` — añadida función `formatShareDateTime`; añadidos `closeMutation`, `shareOnWhatsApp` e `isCreator`; barra de acciones superior y botón WhatsApp inferior centrado.
+
 ## 2026-06-12 (sesión 1)
 
 ### feat(admin): selección granular de miembros para remesa SEPA

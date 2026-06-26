@@ -263,14 +263,14 @@ export default function SurpriseBoxes() {
               </div>
             </div>
 
-            <div className="opacity-50">
+            <div>
               <label className="block text-sm font-medium text-[var(--color-textSecondary)] mb-2">Descripción</label>
               <textarea
-                disabled
-                value=""
+                value={form.description}
+                onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))}
                 rows={3}
-                placeholder="Deshabilitado temporalmente"
-                className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)] cursor-not-allowed resize-none"
+                placeholder="Descripción opcional de la caja misteriosa"
+                className="w-full px-3 py-2 border border-[var(--color-cardBorder)] rounded-lg bg-[var(--color-inputBackground)] text-[var(--color-text)] resize-none"
               />
             </div>
 

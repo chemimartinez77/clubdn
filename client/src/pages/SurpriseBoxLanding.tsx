@@ -6,6 +6,18 @@ import type { SurpriseBox } from '../types/surpriseBox';
 import { useToast } from '../hooks/useToast';
 import { useAuth } from '../contexts/AuthContext';
 
+function formatShareDateTime(box: SurpriseBox) {
+  const dateText = new Intl.DateTimeFormat('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(box.eventDate));
+
+  if (box.startHour == null) return dateText;
+
+  return `${dateText}, ${String(box.startHour).padStart(2, '0')}:${String(box.startMinute ?? 0).padStart(2, '0')}`;
+}
+
 function formatDate(box: SurpriseBox) {
   return new Intl.DateTimeFormat('es-ES', {
     weekday: 'long',
@@ -41,6 +53,24 @@ export default function SurpriseBoxLanding() {
     enabled: !!token,
     retry: false,
   });
+
+  const closeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.post(`/api/surprise-boxes/${id}/close`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['surpriseBoxPublic', token] });
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || 'Error al cerrar la caja misteriosa');
+    },
+  });
+
+  const shareOnWhatsApp = (b: SurpriseBox) => {
+    const message = `*${b.title}*\n*${formatShareDateTime(b)}*\n${b.previewUrl}`;
+    const w = window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+    void w;
+  };
 
   const voteMutation = useMutation({
     mutationFn: async (optionId: string) => {
@@ -83,9 +113,27 @@ export default function SurpriseBoxLanding() {
   }
 
   const winner = box.options.find((option) => option.id === box.winningOptionId) || null;
+  const isCreator = !!user && user.id === box.createdBy.id;
 
   return (
     <CardShell>
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => shareOnWhatsApp(box)}
+          className="px-4 py-2 rounded-lg bg-[var(--color-primary)] text-white hover:opacity-90 text-sm"
+        >
+          Compartir por WhatsApp
+        </button>
+        {isCreator && box.status === 'OPEN' && (
+          <button
+            onClick={() => closeMutation.mutate(box.id)}
+            disabled={closeMutation.isPending}
+            className="px-4 py-2 rounded-lg border border-[var(--color-cardBorder)] text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] text-sm disabled:opacity-50"
+          >
+            Cerrar
+          </button>
+        )}
+      </div>
       <div className="rounded-3xl border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] shadow-xl overflow-hidden">
         {box.coverImageUrl && (
           <div className="h-[432px] bg-[var(--color-tableRowHover)]">
@@ -195,6 +243,15 @@ export default function SurpriseBoxLanding() {
               </p>
             </div>
           )}
+
+          <div className="flex justify-center pt-2">
+            <button
+              onClick={() => shareOnWhatsApp(box)}
+              className="px-6 py-3 rounded-lg bg-[var(--color-primary)] text-white hover:opacity-90"
+            >
+              Compartir por WhatsApp
+            </button>
+          </div>
         </div>
       </div>
     </CardShell>
