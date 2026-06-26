@@ -45,6 +45,7 @@ export default function SurpriseBoxLanding() {
   const queryClient = useQueryClient();
   const { success, error: showError } = useToast();
   const { user } = useAuth();
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const { data: box, isLoading, isError } = useQuery({
     queryKey: ['surpriseBoxPublic', token],
@@ -103,7 +104,6 @@ export default function SurpriseBoxLanding() {
   }
 
   const winner = box.options.find((option) => option.id === box.winningOptionId) || null;
-  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   return (
     <CardShell>
