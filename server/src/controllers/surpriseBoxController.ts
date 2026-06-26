@@ -277,7 +277,6 @@ function validateCreatePayload(req: Request) {
       title,
       subtitle: subtitle || null,
       description: description || null,
-      coverImageUrl: getRandomCover(),
       location,
       address: address || null,
       eventDate,
@@ -349,6 +348,8 @@ export const createSurpriseBox = async (req: Request, res: Response) => {
 
     const gameMap = new Map(games.map((game) => [game.id, game]));
 
+    const coverImageUrl = getRandomCover();
+
     const created = await prisma.$transaction(async (tx) => {
       const draftTitle = `${parsed.data.title} · Por decidir`;
       const draftEvent = await tx.event.create({
@@ -369,6 +370,7 @@ export const createSurpriseBox = async (req: Request, res: Response) => {
           allowLateJoin: parsed.data.allowLateJoin,
           language: parsed.data.language,
           englishLevel: parsed.data.englishLevel,
+          gameImage: coverImageUrl,
           createdBy: userId,
         },
         select: { id: true },
@@ -380,7 +382,7 @@ export const createSurpriseBox = async (req: Request, res: Response) => {
           title: parsed.data.title,
           subtitle: parsed.data.subtitle,
           description: parsed.data.description,
-          coverImageUrl: getRandomCover(),
+          coverImageUrl,
           eventDate: parsed.data.eventDate,
           startHour: parsed.data.startHour,
           startMinute: parsed.data.startMinute,

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/axios';
@@ -5,6 +6,7 @@ import type { ApiResponse } from '../types/auth';
 import type { SurpriseBox } from '../types/surpriseBox';
 import { useToast } from '../hooks/useToast';
 import { useAuth } from '../contexts/AuthContext';
+import ImageLightbox from '../components/ui/ImageLightbox';
 
 function formatShareDateTime(box: SurpriseBox) {
   const dateText = new Intl.DateTimeFormat('es-ES', {
@@ -101,6 +103,7 @@ export default function SurpriseBoxLanding() {
   }
 
   const winner = box.options.find((option) => option.id === box.winningOptionId) || null;
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   return (
     <CardShell>
@@ -121,7 +124,10 @@ export default function SurpriseBoxLanding() {
       </div>
       <div className="rounded-3xl border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] shadow-xl overflow-hidden">
         {box.coverImageUrl && (
-          <div className="h-[432px] bg-[var(--color-tableRowHover)]">
+          <div
+            className="h-[432px] bg-[var(--color-tableRowHover)] cursor-zoom-in"
+            onClick={() => setLightboxOpen(true)}
+          >
             <img src={box.coverImageUrl} alt={box.title} className="w-full h-full object-cover" />
           </div>
         )}
@@ -239,6 +245,13 @@ export default function SurpriseBoxLanding() {
           </div>
         </div>
       </div>
+      {lightboxOpen && box.coverImageUrl && (
+        <ImageLightbox
+          src={box.coverImageUrl}
+          alt={box.title}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
     </CardShell>
   );
 }

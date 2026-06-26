@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Event } from '../../types/event';
 import EventExpansions from './EventExpansions';
 import GameDetailModal from '../games/GameDetailModal';
+import ImageLightbox from '../ui/ImageLightbox';
 
 interface EventCardProps {
   event: Event;
@@ -123,6 +124,7 @@ export default function EventCard({ event }: EventCardProps) {
   const navigate = useNavigate();
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [selectedGameSource, setSelectedGameSource] = useState<'bgg' | 'rpggeek'>('bgg');
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const cardHref = event.status === 'DRAFT' && event.draftFromSurpriseBox?.token
     ? `/caja-sorpresa/${event.draftFromSurpriseBox.token}`
@@ -162,26 +164,47 @@ export default function EventCard({ event }: EventCardProps) {
           <div className="flex items-start gap-4">
             {isPartida && (
               <div className="flex-shrink-0">
-                <div
-                  role={event.bggId ? 'button' : undefined}
-                  tabIndex={event.bggId ? 0 : -1}
-                  onClick={(mouseEvent) => {
-                    if (!event.bggId) return;
-                    mouseEvent.stopPropagation();
-                    openGameDetails(event.bggId);
-                  }}
-                  onKeyDown={(keyboardEvent) => {
-                    if (!event.bggId) return;
-                    if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
-                      keyboardEvent.preventDefault();
-                      keyboardEvent.stopPropagation();
+                {event.draftFromSurpriseBox && gameThumbnail ? (
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={(mouseEvent) => {
+                      mouseEvent.stopPropagation();
+                      setLightboxSrc(gameThumbnail);
+                    }}
+                    onKeyDown={(keyboardEvent) => {
+                      if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+                        keyboardEvent.preventDefault();
+                        keyboardEvent.stopPropagation();
+                        setLightboxSrc(gameThumbnail);
+                      }
+                    }}
+                    className="cursor-pointer rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  >
+                    <GameImage src={gameThumbnail} alt={event.gameName || 'Caja misteriosa'} size="md" />
+                  </div>
+                ) : (
+                  <div
+                    role={event.bggId ? 'button' : undefined}
+                    tabIndex={event.bggId ? 0 : -1}
+                    onClick={(mouseEvent) => {
+                      if (!event.bggId) return;
+                      mouseEvent.stopPropagation();
                       openGameDetails(event.bggId);
-                    }
-                  }}
-                  className={event.bggId ? 'cursor-pointer rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]' : ''}
-                >
-                  <GameImage src={gameThumbnail} alt={event.gameName || 'Juego'} size="md" />
-                </div>
+                    }}
+                    onKeyDown={(keyboardEvent) => {
+                      if (!event.bggId) return;
+                      if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+                        keyboardEvent.preventDefault();
+                        keyboardEvent.stopPropagation();
+                        openGameDetails(event.bggId);
+                      }
+                    }}
+                    className={event.bggId ? 'cursor-pointer rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]' : ''}
+                  >
+                    <GameImage src={gameThumbnail} alt={event.gameName || 'Juego'} size="md" />
+                  </div>
+                )}
               </div>
             )}
 
@@ -285,6 +308,13 @@ export default function EventCard({ event }: EventCardProps) {
         onClose={() => setSelectedGameId(null)}
         source={selectedGameSource}
       />
+      {lightboxSrc && (
+        <ImageLightbox
+          src={lightboxSrc}
+          alt="Caja misteriosa"
+          onClose={() => setLightboxSrc(null)}
+        />
+      )}
     </>
   );
 }
