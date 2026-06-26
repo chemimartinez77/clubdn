@@ -54,18 +54,6 @@ export default function SurpriseBoxLanding() {
     retry: false,
   });
 
-  const closeMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await api.post(`/api/surprise-boxes/${id}/close`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['surpriseBoxPublic', token] });
-    },
-    onError: (err: any) => {
-      showError(err.response?.data?.message || 'Error al cerrar la caja misteriosa');
-    },
-  });
-
   const shareOnWhatsApp = (b: SurpriseBox) => {
     const message = `*${b.title}*\n*${formatShareDateTime(b)}*\n${b.previewUrl}`;
     const w = window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
@@ -113,7 +101,6 @@ export default function SurpriseBoxLanding() {
   }
 
   const winner = box.options.find((option) => option.id === box.winningOptionId) || null;
-  const isCreator = !!user && user.id === box.createdBy.id;
 
   return (
     <CardShell>
@@ -124,15 +111,13 @@ export default function SurpriseBoxLanding() {
         >
           Compartir por WhatsApp
         </button>
-        {isCreator && box.status === 'OPEN' && (
-          <button
-            onClick={() => closeMutation.mutate(box.id)}
-            disabled={closeMutation.isPending}
-            className="px-4 py-2 rounded-lg border border-[var(--color-cardBorder)] text-[var(--color-text)] hover:bg-[var(--color-tableRowHover)] text-sm disabled:opacity-50"
-          >
-            Cerrar
-          </button>
-        )}
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Cerrar"
+          className="w-9 h-9 flex items-center justify-center rounded-full text-[var(--color-textSecondary)] hover:bg-[var(--color-tableRowHover)] hover:text-[var(--color-text)] text-xl leading-none"
+        >
+          ✕
+        </button>
       </div>
       <div className="rounded-3xl border border-[var(--color-cardBorder)] bg-[var(--color-cardBackground)] shadow-xl overflow-hidden">
         {box.coverImageUrl && (
