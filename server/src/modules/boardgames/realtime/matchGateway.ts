@@ -24,7 +24,10 @@ class MatchGateway {
       userId,
       response,
       heartbeat: setInterval(() => {
-        response.write(': keep-alive\n\n');
+        // Si la conexión ya está muerta pero 'close' no llegó a dispararse
+        // (típico detrás del proxy de Railway), el write falla y purgamos el
+        // cliente aquí para que no quede colgado acumulando memoria.
+        this.safeWrite(matchId, client, ': keep-alive\n\n');
       }, 25000),
     };
 
@@ -32,9 +35,25 @@ class MatchGateway {
     bucket.add(client);
     this.clients.set(matchId, bucket);
 
-    response.on('close', () => {
+    const cleanup = () => this.unsubscribe(matchId, client);
+    response.on('close', cleanup);
+    response.on('error', cleanup);
+    response.on('aborted', cleanup);
+  }
+
+  /** Escribe en la respuesta; si falla (socket cerrado), purga el cliente. */
+  private safeWrite(matchId: string, client: MatchStreamClient, chunk: string): boolean {
+    try {
+      if (client.response.writableEnded || client.response.destroyed) {
+        this.unsubscribe(matchId, client);
+        return false;
+      }
+      client.response.write(chunk);
+      return true;
+    } catch {
       this.unsubscribe(matchId, client);
-    });
+      return false;
+    }
   }
 
   async publish(
@@ -47,14 +66,17 @@ class MatchGateway {
       return;
     }
 
-    for (const client of bucket) {
+    // Copia para poder purgar clientes muertos mientras iteramos.
+    for (const client of [...bucket]) {
       try {
         const payload = await buildPayload(client.userId);
-        client.response.write(`event: ${event}\n`);
-        client.response.write(`data: ${JSON.stringify(payload)}\n\n`);
+        this.safeWrite(matchId, client, `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`);
       } catch (error) {
-        client.response.write('event: match:error\n');
-        client.response.write(`data: ${JSON.stringify({ message: 'No se pudo actualizar el estado en tiempo real' })}\n\n`);
+        this.safeWrite(
+          matchId,
+          client,
+          `event: match:error\ndata: ${JSON.stringify({ message: 'No se pudo actualizar el estado en tiempo real' })}\n\n`
+        );
         console.error('[MULTIPLAYER][SSE] Error al publicar evento:', error);
       }
     }

@@ -1,9 +1,9 @@
 // server/src/controllers/configController.ts
 import { Request, Response } from 'express';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../config/database';
 import { DEFAULT_CLUB_INTERESTS, normalizeClubInterestCatalog } from '../utils/clubInterests';
 
-const prisma = new PrismaClient();
 const DEFAULT_CLUB_INTERESTS_JSON = DEFAULT_CLUB_INTERESTS as unknown as Prisma.InputJsonValue;
 
 /**

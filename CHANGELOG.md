@@ -4,6 +4,19 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-06-28 (sesión 1)
+
+### fix(server): cerrar fugas de memoria en pool Prisma duplicado y SSE multijugador
+
+A raíz de una gráfica de consumo de memoria en Railway con un patrón de "escalera" ascendente (de ~200 MB a ~800 MB) en el servicio `clubdn-api`, se investigó el código en busca de fugas. Los logs de producción del último día no mostraban OOM-kills (los cortes verticales de la gráfica eran deploys, no crashes), por lo que la fuga es lenta y no llegaba a tocar el límite del contenedor, pero se corrigen sus dos orígenes más probables:
+
+1. **Pool de conexiones Prisma duplicado**: `configController.ts` instanciaba su propio `new PrismaClient()` a nivel de módulo en lugar de usar el singleton compartido. Esto abría un segundo pool permanente de conexiones (con `connection_limit=5`) más un query engine extra, sumando baseline de memoria de forma fija. Ahora importa el singleton de `config/database`.
+
+2. **Conexiones SSE zombie en el multijugador**: el gateway de tiempo real (`matchGateway`) solo limpiaba las conexiones con el evento `'close'`. Detrás del proxy de Railway ese evento no siempre se dispara al caerse un cliente, dejando colgados el objeto `Response`, su `setInterval` de heartbeat y el closure asociado para siempre (origen estructural del staircase). Se añade un `safeWrite()` que detecta el socket muerto (`writableEnded`/`destroyed` o `write` fallido) y purga el cliente al instante, además de handlers `'error'` y `'aborted'`. `publish()` ahora itera sobre una copia del bucket y usa `safeWrite`, purgando muertos también al emitir eventos.
+
+- `server/src/controllers/configController.ts` — sustituido `new PrismaClient()` por el import del singleton `prisma` de `../config/database`.
+- `server/src/modules/boardgames/realtime/matchGateway.ts` — nuevo método privado `safeWrite()`; `subscribe()` registra `cleanup` en `close`/`error`/`aborted`; `publish()` itera sobre copia del bucket y usa escritura segura.
+
 ## 2026-06-26 (sesión 1)
 
 ### feat(surprise-box): habilitar descripción en formulario y añadir acciones en landing
