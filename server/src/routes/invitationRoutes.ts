@@ -8,7 +8,8 @@ import {
   getInvitationByToken,
   validateInvitation,
   expireInvitations,
-  getInvitationHistory
+  getInvitationHistory,
+  updateInvitationStatusAdmin,
 } from '../controllers/invitationController';
 import { authenticate, requireAdmin } from '../middleware/auth';
 import { requireMembershipTypes } from '../middleware/membership';
@@ -18,6 +19,7 @@ const doorValidators = requireMembershipTypes([MembershipType.SOCIO, MembershipT
 
 router.post('/expire', authenticate, requireAdmin, expireInvitations);
 router.get('/admin/history', authenticate, requireAdmin, getInvitationHistory);
+router.patch('/admin/:id/status', authenticate, requireAdmin, updateInvitationStatusAdmin);
 router.get('/', authenticate, doorValidators, listInvitations);
 router.post('/', authenticate, doorValidators, createInvitation);
 router.delete('/:id', authenticate, doorValidators, cancelInvitation);

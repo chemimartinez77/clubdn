@@ -1,12 +1,13 @@
 // client/src/pages/admin/InvitationHistory.tsx
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '../../components/layout/Layout';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { api } from '../../api/axios';
 import type { ApiResponse } from '../../types/auth';
 
-type InvitationStatus = 'PENDING' | 'PENDING_APPROVAL' | 'USED' | 'EXPIRED' | 'CANCELLED' | 'NOT_ATTENDED';
+type InvitationStatus = 'RESERVED' | 'PENDING' | 'PENDING_APPROVAL' | 'USED' | 'EXPIRED' | 'CANCELLED' | 'NOT_ATTENDED';
+type StatusFilter = 'ALL' | 'USED' | 'NOT_ATTENDED';
 
 interface InvitationRecord {
   id: string;
@@ -34,6 +35,7 @@ interface HistoryResponse {
 }
 
 const STATUS_LABELS: Record<InvitationStatus, string> = {
+  RESERVED: 'Reservada',
   PENDING: 'Pendiente',
   PENDING_APPROVAL: 'Pend. aprobación',
   USED: 'Usada',
@@ -43,6 +45,7 @@ const STATUS_LABELS: Record<InvitationStatus, string> = {
 };
 
 const STATUS_STYLES: Record<InvitationStatus, string> = {
+  RESERVED: 'bg-purple-100 text-purple-800',
   PENDING: 'bg-yellow-100 text-yellow-800',
   PENDING_APPROVAL: 'bg-blue-100 text-blue-800',
   USED: 'bg-green-100 text-green-800',
@@ -51,17 +54,45 @@ const STATUS_STYLES: Record<InvitationStatus, string> = {
   NOT_ATTENDED: 'bg-orange-100 text-orange-800',
 };
 
+const ALL_STATUSES: InvitationStatus[] = [
+  'RESERVED', 'PENDING', 'PENDING_APPROVAL', 'USED', 'EXPIRED', 'CANCELLED', 'NOT_ATTENDED',
+];
+
+function Modal({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="relative bg-[var(--color-card)] rounded-xl shadow-xl max-w-md w-full">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center"
+          aria-label="Cerrar"
+        >
+          &times;
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function InvitationHistory() {
+  const queryClient = useQueryClient();
+
   const [guestName, setGuestName] = useState('');
   const [guestDni, setGuestDni] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
   const [memberName, setMemberName] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [page, setPage] = useState(1);
 
   const [debouncedGuestName, setDebouncedGuestName] = useState('');
   const [debouncedGuestDni, setDebouncedGuestDni] = useState('');
   const [debouncedGuestPhone, setDebouncedGuestPhone] = useState('');
   const [debouncedMemberName, setDebouncedMemberName] = useState('');
+
+  const [pickerInv, setPickerInv] = useState<InvitationRecord | null>(null);
+  const [pendingChange, setPendingChange] = useState<{ inv: InvitationRecord; newStatus: InvitationStatus } | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
 
   const debounce = (setter: (v: string) => void, value: string) => {
     clearTimeout((window as any)._invDebounceTimer);
@@ -79,16 +110,17 @@ export default function InvitationHistory() {
     if (field === 'memberName') { setMemberName(value); debounce(setDebouncedMemberName, value); }
   };
 
-  const hasFilters = !!(debouncedGuestName || debouncedGuestDni || debouncedGuestPhone || debouncedMemberName);
+  const hasFilters = !!(debouncedGuestName || debouncedGuestDni || debouncedGuestPhone || debouncedMemberName || statusFilter !== 'ALL');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['invitationHistory', page, debouncedGuestName, debouncedGuestDni, debouncedGuestPhone, debouncedMemberName],
+    queryKey: ['invitationHistory', page, debouncedGuestName, debouncedGuestDni, debouncedGuestPhone, debouncedMemberName, statusFilter],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), limit: '50' });
       if (debouncedGuestName) params.set('guestName', debouncedGuestName);
       if (debouncedGuestDni) params.set('guestDni', debouncedGuestDni);
       if (debouncedGuestPhone) params.set('guestPhone', debouncedGuestPhone);
       if (debouncedMemberName) params.set('memberName', debouncedMemberName);
+      if (statusFilter !== 'ALL') params.set('status', statusFilter);
       const response = await api.get<ApiResponse<HistoryResponse>>(`/api/invitations/admin/history?${params}`);
       const payload = response.data.data as any;
       if (payload?.data && payload?.pagination) return payload as HistoryResponse;
@@ -99,13 +131,47 @@ export default function InvitationHistory() {
     },
   });
 
+  const { mutate: changeStatus, isPending: isChanging } = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: InvitationStatus }) => {
+      await api.patch(`/api/invitations/admin/${id}/status`, { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invitationHistory'] });
+      setPendingChange(null);
+      setMutationError(null);
+    },
+    onError: (err: any) => {
+      setMutationError(err?.response?.data?.message ?? 'Error al actualizar el estado');
+    },
+  });
+
   const invitations = data?.data ?? [];
   const pagination = data?.pagination;
 
   const clearFilters = () => {
     setGuestName(''); setGuestDni(''); setGuestPhone(''); setMemberName('');
     setDebouncedGuestName(''); setDebouncedGuestDni(''); setDebouncedGuestPhone(''); setDebouncedMemberName('');
+    setStatusFilter('ALL');
     setPage(1);
+  };
+
+  const handleStatusClick = (inv: InvitationRecord) => {
+    setPickerInv(inv);
+  };
+
+  const handlePickStatus = (newStatus: InvitationStatus) => {
+    if (!pickerInv) return;
+    if (newStatus === pickerInv.status) {
+      setPickerInv(null);
+      return;
+    }
+    setPendingChange({ inv: pickerInv, newStatus });
+    setPickerInv(null);
+  };
+
+  const handleConfirm = () => {
+    if (!pendingChange) return;
+    changeStatus({ id: pendingChange.inv.id, status: pendingChange.newStatus });
   };
 
   return (
@@ -123,6 +189,15 @@ export default function InvitationHistory() {
                 {pagination ? `${pagination.total} invitaciones` : 'Invitaciones'}
               </CardTitle>
               <div className="flex gap-3 flex-wrap items-center">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => { setStatusFilter(e.target.value as StatusFilter); setPage(1); }}
+                  className="px-3 py-2 border border-[var(--color-inputBorder)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent text-sm bg-[var(--color-card)] text-[var(--color-text)]"
+                >
+                  <option value="ALL">Todos</option>
+                  <option value="USED">Asistió</option>
+                  <option value="NOT_ATTENDED">No asistió</option>
+                </select>
                 <input
                   type="text"
                   value={guestName}
@@ -212,9 +287,12 @@ export default function InvitationHistory() {
                           {new Date(inv.validDate).toLocaleDateString('es-ES')}
                         </td>
                         <td className="py-3 px-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[inv.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                          <button
+                            onClick={() => handleStatusClick(inv)}
+                            className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${STATUS_STYLES[inv.status] ?? 'bg-gray-100 text-gray-600'}`}
+                          >
                             {STATUS_LABELS[inv.status] ?? inv.status}
-                          </span>
+                          </button>
                         </td>
                         <td className="py-3 px-3 text-[var(--color-textSecondary)]">
                           {inv.validatedBy?.name ?? '-'}
@@ -252,6 +330,77 @@ export default function InvitationHistory() {
           </CardContent>
         </Card>
       </div>
+
+      {pickerInv && (
+        <Modal onClose={() => setPickerInv(null)}>
+          <div className="p-6">
+            <h2 className="text-lg font-semibold text-[var(--color-text)] mb-1 pr-8">Cambiar estado</h2>
+            <p className="text-sm text-[var(--color-textSecondary)] mb-4">
+              {pickerInv.guestFirstName} {pickerInv.guestLastName}
+            </p>
+            <div className="flex flex-col gap-2">
+              {ALL_STATUSES.map((status) => (
+                <button
+                  key={status}
+                  onClick={() => handlePickStatus(status)}
+                  className={`flex items-center justify-between px-4 py-2 rounded-lg border transition-colors text-left
+                    ${status === pickerInv.status
+                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10'
+                      : 'border-[var(--color-cardBorder)] hover:bg-[var(--color-tableRowHover)]'
+                    }`}
+                >
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[status]}`}>
+                    {STATUS_LABELS[status]}
+                  </span>
+                  {status === pickerInv.status && (
+                    <span className="text-xs text-[var(--color-textSecondary)]">actual</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {pendingChange && (
+        <Modal onClose={() => { setPendingChange(null); setMutationError(null); }}>
+          <div className="p-6">
+            <h2 className="text-lg font-semibold text-[var(--color-text)] mb-1 pr-8">Confirmar cambio de estado</h2>
+            <p className="text-sm text-[var(--color-textSecondary)] mb-4">
+              {pendingChange.inv.guestFirstName} {pendingChange.inv.guestLastName}
+            </p>
+            <p className="text-sm text-[var(--color-text)] mb-6">
+              {'¿Cambiar estado de '}
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[pendingChange.inv.status]}`}>
+                {STATUS_LABELS[pendingChange.inv.status]}
+              </span>
+              {' a '}
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[pendingChange.newStatus]}`}>
+                {STATUS_LABELS[pendingChange.newStatus]}
+              </span>
+              {'?'}
+            </p>
+            {mutationError && (
+              <p className="text-sm text-red-600 mb-4">{mutationError}</p>
+            )}
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => { setPendingChange(null); setMutationError(null); }}
+                className="px-4 py-2 border border-[var(--color-inputBorder)] rounded-lg text-sm hover:bg-[var(--color-tableRowHover)] transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={isChanging}
+                className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg text-sm hover:opacity-90 transition-opacity disabled:opacity-60"
+              >
+                {isChanging ? 'Guardando...' : 'Aceptar'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </Layout>
   );
 }

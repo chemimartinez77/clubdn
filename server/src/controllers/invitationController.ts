@@ -913,13 +913,42 @@ export const rejectInvitation = async (req: Request, res: Response): Promise<voi
 };
 
 // -------- Historial de invitados (admin) --------
+export const updateInvitationStatusAdmin = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body as { status: string };
+
+    const validStatuses = Object.values(InvitationStatus);
+    if (!validStatuses.includes(status as InvitationStatus)) {
+      res.status(400).json({ success: false, message: 'Estado inválido' });
+      return;
+    }
+
+    const invitation = await prisma.invitation.findUnique({ where: { id } });
+    if (!invitation) {
+      res.status(404).json({ success: false, message: 'Invitación no encontrada' });
+      return;
+    }
+
+    await prisma.invitation.update({
+      where: { id },
+      data: { status: status as InvitationStatus },
+    });
+
+    res.json({ success: true, message: 'Estado actualizado correctamente' });
+  } catch (error) {
+    console.error('[INVITATION] Error al actualizar estado (admin):', error);
+    res.status(500).json({ success: false, message: 'Error al actualizar el estado' });
+  }
+};
+
 export const getInvitationHistory = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
       page = '1', limit = '50',
       search = '',
       guestName = '', guestDni = '', guestPhone = '', memberName = '',
-      memberId = '',
+      memberId = '', status = '',
     } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
@@ -930,6 +959,9 @@ export const getInvitationHistory = async (req: Request, res: Response): Promise
 
     const where: any = {};
     if (memberId) where.memberId = memberId;
+    if (status && Object.values(InvitationStatus).includes(status as InvitationStatus)) {
+      where.status = status as InvitationStatus;
+    }
 
     let matchedInvitationIds: string[] = [];
     let total: number;
