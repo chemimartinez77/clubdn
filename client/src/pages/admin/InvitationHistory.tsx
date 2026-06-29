@@ -60,8 +60,9 @@ const ALL_STATUSES: InvitationStatus[] = [
 
 function Modal({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="relative bg-[var(--color-card)] rounded-xl shadow-xl max-w-md w-full">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="relative bg-[var(--color-modalBackground)] rounded-xl shadow-xl max-w-md w-full">
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-[var(--color-textSecondary)] hover:text-[var(--color-text)] transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center"
