@@ -5,26 +5,51 @@ import { prisma } from '../config/database';
 const CLUB_NAME = process.env.SEPA_CLUB_NAME || 'CLUB DREADNOUGHT';
 const CLUB_IBAN = process.env.SEPA_CLUB_IBAN || '';
 const CLUB_CREDITOR_ID = process.env.SEPA_CREDITOR_ID || 'ES97001G02953248';
-const MEMBERSHIP_FEES: Record<string, number> = {
-  SOCIO: 20,
-  COLABORADOR: 16,
-  FAMILIAR: 8,
-};
 
-const pad = (str: string, len: number, char = ' ', right = false): string => {
-  const s = String(str ?? '').slice(0, len);
-  return right ? s.padEnd(len, char) : s.padStart(len, char);
-};
+const COBRABLE_TYPES = ['SOCIO', 'COLABORADOR', 'FAMILIAR'] as const;
 
-const padRight = (str: string, len: number) => pad(str, len, ' ', true);
-const padLeft = (str: string, len: number, char = '0') => pad(str, len, char, false);
-
-const formatDateYYYYMMDD = (d: Date) =>
-  `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+const MONTH_NAMES = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+];
 
 const normalizeIban = (iban: string) => iban.replace(/\s+/g, '').toUpperCase();
 
-const amountCents = (eur: number) => Math.round(eur * 100);
+// Fecha en formato YYYY-MM-DD (ISO local, sin desfase de zona horaria)
+const formatDateISO = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+// Fecha-hora ISO sin milisegundos ni zona (pain.008 CreDtTm)
+const formatDateTime = (d: Date) => formatDateISO(d) + `T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+
+// Importe con 2 decimales y punto como separador
+const formatAmount = (eur: number) => eur.toFixed(2);
+
+// Escapa caracteres reservados de XML
+const xmlEscape = (str: string) =>
+  String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+
+/**
+ * Lee los precios de cuota desde ClubConfig.membershipTypes.
+ * Devuelve un mapa { SOCIO: 20, COLABORADOR: 16, FAMILIAR: 8, ... }.
+ */
+const getMembershipFees = async (): Promise<Record<string, number>> => {
+  const config = await prisma.clubConfig.findUnique({ where: { id: 'club_config' } });
+  const fees: Record<string, number> = {};
+  if (config && Array.isArray(config.membershipTypes)) {
+    for (const entry of config.membershipTypes as Array<{ type?: string; price?: number }>) {
+      if (entry && typeof entry.type === 'string' && typeof entry.price === 'number') {
+        fees[entry.type] = entry.price;
+      }
+    }
+  }
+  return fees;
+};
 
 /**
  * GET /api/membership/sepa-sin-mandato
@@ -76,25 +101,28 @@ export const getSepaSinMandato = async (_req: Request, res: Response): Promise<v
   }
 };
 
+interface SepaDebtor {
+  fullName: string;
+  iban: string;
+  amount: number;
+  mandateRef: string;
+  mandateDate: Date;
+  concept: string;
+  seqType: 'FRST' | 'RCUR';
+}
+
 /**
- * GET /api/membership/sepa-remesa?month=M&year=Y[&includeIncomplete=true]
- * Genera el fichero Norma 19 (SEPA Direct Debit) para el mes indicado.
- * Con includeIncomplete=true incluye socios con IBAN aunque les falte el mandato.
+ * GET /api/membership/sepa-xml?month=M&year=Y
+ * Genera el fichero SEPA XML (pain.008.001.02, adeudo directo CORE) para el mes indicado.
+ * Incluye a todos los miembros activos con IBAN y mandato (ref + fecha) que no hayan pagado el mes.
  */
-export const generateSepaRemesa = async (req: Request, res: Response): Promise<void> => {
+export const generateSepaXml = async (req: Request, res: Response): Promise<void> => {
   try {
     const now = new Date();
-    const month = req.body.month ? parseInt(req.body.month) : now.getMonth() + 1;
-    const year = req.body.year ? parseInt(req.body.year) : now.getFullYear();
-    const includeIncomplete = req.body.includeIncomplete === true;
+    const month = req.query.month ? parseInt(String(req.query.month)) : now.getMonth() + 1;
+    const year = req.query.year ? parseInt(String(req.query.year)) : now.getFullYear();
 
-    const rawTypes: string[] = Array.isArray(req.body.types) ? req.body.types : [];
-    const typesFilter = rawTypes.filter(t => ['SOCIO', 'COLABORADOR', 'FAMILIAR'].includes(t));
-    const effectiveTypes = typesFilter.length > 0 ? typesFilter : ['SOCIO', 'COLABORADOR', 'FAMILIAR'];
-
-    const memberIds: string[] = Array.isArray(req.body.memberIds) ? req.body.memberIds : [];
-
-    if (month < 1 || month > 12 || isNaN(year)) {
+    if (isNaN(month) || month < 1 || month > 12 || isNaN(year)) {
       res.status(400).json({ success: false, message: 'Mes o año no válido' });
       return;
     }
@@ -104,17 +132,17 @@ export const generateSepaRemesa = async (req: Request, res: Response): Promise<v
       return;
     }
 
+    const fees = await getMembershipFees();
+
     const chargeDate = new Date(year, month - 1, 1);
-    const chargeDateStr = formatDateYYYYMMDD(chargeDate);
-    const creationDate = formatDateYYYYMMDD(now);
-    const presentationDate = formatDateYYYYMMDD(now);
+    const conceptMonth = `${MONTH_NAMES[month - 1]} ${year}`;
 
     const memberships = await prisma.membership.findMany({
       where: {
         fechaBaja: null,
-        type: { in: effectiveTypes as ('SOCIO' | 'COLABORADOR' | 'FAMILIAR')[] },
-        ...(memberIds.length > 0 ? { userId: { in: memberIds } } : {}),
-        ...(includeIncomplete ? {} : { sepaMandateRef: { not: null }, sepaMandateDate: { not: null } }),
+        type: { in: [...COBRABLE_TYPES] },
+        sepaMandateRef: { not: null },
+        sepaMandateDate: { not: null },
       },
       include: {
         user: {
@@ -133,137 +161,161 @@ export const generateSepaRemesa = async (req: Request, res: Response): Promise<v
       orderBy: { createdAt: 'asc' },
     });
 
-    // Filtrar los que ya han pagado este mes
-    const toCobrar = memberships.filter((m) => {
+    const debtors: SepaDebtor[] = [];
+    for (const m of memberships) {
+      const iban = m.user.profile?.iban;
+      if (!iban) continue;
+
       const alreadyPaid = m.user.payments.some((p) => p.month === month && p.year === year);
-      return !alreadyPaid && m.user.profile?.iban;
-    });
+      if (alreadyPaid) continue;
 
-    if (toCobrar.length === 0) {
-      const msg = includeIncomplete
-        ? 'No hay miembros con IBAN pendientes de cobro para este período'
-        : 'No hay miembros con domiciliación SEPA configurada pendientes de cobro para este período';
-      res.status(400).json({ success: false, message: msg });
-      return;
-    }
-
-    const totalImporte = toCobrar.reduce((sum, m) => sum + (MEMBERSHIP_FEES[m.type] ?? 0), 0);
-    const totalCents = amountCents(totalImporte);
-    const numRecords = toCobrar.length;
-
-    const lines: string[] = [];
-
-    // Registro 01 — Cabecera presentador
-    const r01 =
-      '01' +
-      padLeft('19143001', 8) +
-      padRight(CLUB_CREDITOR_ID, 35) +
-      padRight(CLUB_NAME, 70) +
-      ' '.repeat(6) +
-      presentationDate +
-      'PRE' +
-      creationDate +
-      padLeft(String(numRecords + 4), 9, '0') + // total registros incluyendo cabeceras y totales
-      padLeft(String(numRecords), 9, '0') +
-      padLeft(String(totalCents), 12, '0') +
-      ' '.repeat(204);
-    lines.push(r01.slice(0, 400));
-
-    // Registro 02 — Cabecera ordenante
-    const clubIbanNorm = normalizeIban(CLUB_IBAN);
-    const r02 =
-      '02' +
-      padLeft('19143002', 8) +
-      padRight(CLUB_CREDITOR_ID, 35) +
-      presentationDate +
-      padRight(CLUB_NAME, 70) +
-      ' '.repeat(118) +
-      padRight(clubIbanNorm, 34) +
-      ' '.repeat(10) +
-      padLeft(String(numRecords), 9, '0') +
-      ' '.repeat(104);
-    lines.push(r02.slice(0, 400));
-
-    // Registros 03 — un adeudo por miembro
-    for (const m of toCobrar) {
-      const fee = MEMBERSHIP_FEES[m.type] ?? 0;
-      const cents = amountCents(fee);
-      const iban = normalizeIban(m.user.profile!.iban!);
-      const mandateRef = m.sepaMandateRef || 'PENDIENTE';
-      const mandateDate = m.sepaMandateDate ? formatDateYYYYMMDD(m.sepaMandateDate) : '00000000';
-
-      // Determinar FRST o RCUR: FRST si no hay pagos anteriores registrados
-      const hasPrior = m.user.payments.some((p) => p.year < year || (p.year === year && p.month < month));
-      const seqType = hasPrior ? 'RCUR' : 'FRST';
+      const amount = fees[m.type] ?? 0;
+      if (amount <= 0) continue;
 
       const nameParts = m.user.name.trim().split(/\s+/);
       const firstName = m.user.profile?.firstName || nameParts[0] || '';
       const lastName = m.user.profile?.lastName || nameParts.slice(1).join(' ') || '';
-      const fullName = `${firstName} ${lastName}`.toUpperCase().trim();
+      const fullName = `${firstName} ${lastName}`.trim() || m.user.name.trim();
 
-      const r03 =
-        '03' +
-        padLeft('19143003', 8) +
-        padRight(mandateRef, 35) +
-        padRight(mandateRef, 35) +
-        padRight(seqType, 8) +
-        padLeft(String(cents), 11, '0') +
-        '0' + // imponible IVA (0)
-        mandateDate +
-        ' '.repeat(11) +
-        padRight(fullName, 70) +
-        ' '.repeat(118) +
-        'A' +
-        padRight(iban, 34) +
-        ' '.repeat(14) +
-        padRight(m.type, 140);
-      lines.push(r03.slice(0, 400));
+      // FRST si no hay ningún pago anterior registrado; RCUR en caso contrario
+      const hasPrior = m.user.payments.some((p) => p.year < year || (p.year === year && p.month < month));
+
+      debtors.push({
+        fullName,
+        iban: normalizeIban(iban),
+        amount,
+        mandateRef: m.sepaMandateRef!,
+        mandateDate: m.sepaMandateDate!,
+        concept: `Cuota ${m.type} ${conceptMonth}`.slice(0, 140),
+        seqType: hasPrior ? 'RCUR' : 'FRST',
+      });
     }
 
-    // Registro 04 — Total ordenante
-    const r04 =
-      '04' +
-      padRight(CLUB_CREDITOR_ID, 35) +
-      ' '.repeat(11) +
-      chargeDateStr +
-      padLeft(String(totalCents), 12, '0') +
-      padLeft(String(0), 12, '0') +
-      padLeft(String(numRecords), 9, '0') +
-      padLeft(String(totalCents), 12, '0') +
-      ' '.repeat(299);
-    lines.push(r04.slice(0, 400));
+    if (debtors.length === 0) {
+      res.status(400).json({ success: false, message: 'No hay miembros con mandato SEPA pendientes de cobro para este período' });
+      return;
+    }
 
-    // Registro 05 — Total general
-    const r05 =
-      '05' +
-      padRight(CLUB_CREDITOR_ID, 35) +
-      ' '.repeat(11) +
-      padLeft(String(totalCents), 12, '0') +
-      padLeft(String(0), 12, '0') +
-      padLeft(String(numRecords), 9, '0') +
-      padLeft(String(totalCents), 12, '0') +
-      ' '.repeat(299);
-    lines.push(r05.slice(0, 400));
+    const clubIban = normalizeIban(CLUB_IBAN);
+    const msgId = `DN-${formatDateISO(now).replace(/-/g, '')}-${Date.now().toString().slice(-6)}`;
+    const totalAmount = debtors.reduce((sum, d) => sum + d.amount, 0);
+    const reqdColltnDt = formatDateISO(chargeDate);
 
-    // Registro 99 — Fin de fichero
-    const totalLines = lines.length + 1;
-    const r99 =
-      '99' +
-      padLeft(String(totalCents), 12, '0') +
-      padLeft(String(0), 12, '0') +
-      padLeft(String(numRecords), 9, '0') +
-      padLeft(String(totalLines), 9, '0') +
-      ' '.repeat(354);
-    lines.push(r99.slice(0, 400));
+    // pain.008 agrupa la secuencia (FRST/RCUR) a nivel de PmtInf,
+    // así que generamos un bloque PmtInf por cada tipo de secuencia presente.
+    const seqGroups: Array<'FRST' | 'RCUR'> = ['FRST', 'RCUR'];
+    const pmtInfBlocks: string[] = [];
+    let pmtInfCounter = 0;
 
-    const filename = `remesa_sepa_${year}${String(month).padStart(2, '0')}.txt`;
-    const content = lines.join('\r\n');
+    for (const seqType of seqGroups) {
+      const group = debtors.filter((d) => d.seqType === seqType);
+      if (group.length === 0) continue;
+      pmtInfCounter += 1;
 
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      const groupSum = group.reduce((sum, d) => sum + d.amount, 0);
+      const pmtInfId = `${msgId}-${seqType}`;
+
+      const txs = group.map((d, idx) => `
+      <DrctDbtTxInf>
+        <PmtId>
+          <EndToEndId>${xmlEscape(`${pmtInfId}-${idx + 1}`)}</EndToEndId>
+        </PmtId>
+        <InstdAmt Ccy="EUR">${formatAmount(d.amount)}</InstdAmt>
+        <DrctDbtTx>
+          <MndtRltdInf>
+            <MndtId>${xmlEscape(d.mandateRef)}</MndtId>
+            <DtOfSgntr>${formatDateISO(d.mandateDate)}</DtOfSgntr>
+            <AmdmntInd>false</AmdmntInd>
+          </MndtRltdInf>
+        </DrctDbtTx>
+        <DbtrAgt>
+          <FinInstnId>
+            <Othr>
+              <Id>NOTPROVIDED</Id>
+            </Othr>
+          </FinInstnId>
+        </DbtrAgt>
+        <Dbtr>
+          <Nm>${xmlEscape(d.fullName.slice(0, 70))}</Nm>
+        </Dbtr>
+        <DbtrAcct>
+          <Id>
+            <IBAN>${xmlEscape(d.iban)}</IBAN>
+          </Id>
+        </DbtrAcct>
+        <RmtInf>
+          <Ustrd>${xmlEscape(d.concept)}</Ustrd>
+        </RmtInf>
+      </DrctDbtTxInf>`).join('');
+
+      pmtInfBlocks.push(`
+    <PmtInf>
+      <PmtInfId>${xmlEscape(pmtInfId)}</PmtInfId>
+      <PmtMtd>DD</PmtMtd>
+      <NbOfTxs>${group.length}</NbOfTxs>
+      <CtrlSum>${formatAmount(groupSum)}</CtrlSum>
+      <PmtTpInf>
+        <SvcLvl>
+          <Cd>SEPA</Cd>
+        </SvcLvl>
+        <LclInstrm>
+          <Cd>CORE</Cd>
+        </LclInstrm>
+        <SeqTp>${seqType}</SeqTp>
+      </PmtTpInf>
+      <ReqdColltnDt>${reqdColltnDt}</ReqdColltnDt>
+      <Cdtr>
+        <Nm>${xmlEscape(CLUB_NAME)}</Nm>
+      </Cdtr>
+      <CdtrAcct>
+        <Id>
+          <IBAN>${xmlEscape(clubIban)}</IBAN>
+        </Id>
+      </CdtrAcct>
+      <CdtrAgt>
+        <FinInstnId>
+          <Othr>
+            <Id>NOTPROVIDED</Id>
+          </Othr>
+        </FinInstnId>
+      </CdtrAgt>
+      <ChrgBr>SLEV</ChrgBr>
+      <CdtrSchmeId>
+        <Id>
+          <PrvtId>
+            <Othr>
+              <Id>${xmlEscape(CLUB_CREDITOR_ID)}</Id>
+              <SchmeNm>
+                <Prtry>SEPA</Prtry>
+              </SchmeNm>
+            </Othr>
+          </PrvtId>
+        </Id>
+      </CdtrSchmeId>${txs}
+    </PmtInf>`);
+    }
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <CstmrDrctDbtInitn>
+    <GrpHdr>
+      <MsgId>${xmlEscape(msgId)}</MsgId>
+      <CreDtTm>${formatDateTime(now)}</CreDtTm>
+      <NbOfTxs>${debtors.length}</NbOfTxs>
+      <CtrlSum>${formatAmount(totalAmount)}</CtrlSum>
+      <InitgPty>
+        <Nm>${xmlEscape(CLUB_NAME)}</Nm>
+      </InitgPty>
+    </GrpHdr>${pmtInfBlocks.join('')}
+  </CstmrDrctDbtInitn>
+</Document>`;
+
+    const filename = `sepa_${year}${String(month).padStart(2, '0')}.xml`;
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(content);
+    res.send(xml);
   } catch (error) {
-    console.error('Error generando remesa SEPA:', error);
-    res.status(500).json({ success: false, message: 'Error al generar la remesa SEPA' });
+    console.error('Error generando XML SEPA:', error);
+    res.status(500).json({ success: false, message: 'Error al generar el XML SEPA' });
   }
 };

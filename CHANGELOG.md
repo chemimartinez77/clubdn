@@ -4,6 +4,28 @@ Registro de cambios y nuevas funcionalidades implementadas en la aplicación.
 
 ---
 
+## 2026-06-29 (sesión 1)
+
+### feat(admin): generar XML SEPA (pain.008) en sustitución de la remesa Norma 19
+
+Se sustituye el generador de remesa SEPA en formato Norma 19 (fichero de texto plano con registros 01/02/03/04/05/99) por un generador de **XML SEPA estándar** (`pain.008.001.02`, adeudo directo CORE). El botón "Remesa SEPA" de Gestión de Pagos, que antes abría un panel de configuración con filtros por tipo y selección manual de miembros, pasa a llamarse **"Generar XML SEPA"** y descarga directamente el fichero `.xml` sin pasos intermedios.
+
+Comportamiento del nuevo generador:
+
+1. **Selección automática**: incluye a todos los miembros activos (`fechaBaja = null`) de tipo SOCIO/COLABORADOR/FAMILIAR que tengan IBAN y mandato completo (`sepaMandateRef` + `sepaMandateDate`) y que no hayan pagado el mes en curso. Se excluyen los de importe 0.
+2. **Importes desde la base de datos**: el precio de cada cuota se lee de `ClubConfig.membershipTypes` (fuente de verdad de la app: SOCIO 20, COLABORADOR 16, FAMILIAR 8) en lugar de estar hardcodeado.
+3. **Mapeo de campos**: `<Nm>` nombre + apellidos del deudor, `<IBAN>` cuenta del deudor, `<InstdAmt>` importe, `<MndtId>`/`<DtOfSgntr>` datos del mandato, `<RmtInf>/<Ustrd>` concepto generado (`Cuota <TIPO> <mes> <año>`, recortado a 140 caracteres).
+4. **Secuencia FRST/RCUR**: como `pain.008` agrupa la secuencia a nivel de `PmtInf`, las transacciones se reparten en bloques `PmtInf` separados por tipo de secuencia (FRST si el miembro no tiene ningún pago anterior registrado, RCUR en caso contrario).
+
+Se conserva la tarjeta informativa "Socios sin mandato SEPA" (`getSepaSinMandato`), que avisa de qué socios tienen IBAN pero les falta configurar el mandato y, por tanto, quedan fuera del fichero. La edición de los datos del mandato (`memberController`) y los campos del esquema (`Membership.sepaMandateRef`/`sepaMandateDate`, `UserProfile.iban`) no se tocan, ya que son la fuente de datos del XML.
+
+Requiere las variables de entorno en Railway: `SEPA_CLUB_IBAN` (obligatoria), `SEPA_CLUB_NAME` y `SEPA_CREDITOR_ID` (por defecto `ES97001G02953248`).
+
+- `server/src/controllers/sepaController.ts` — eliminada `generateSepaRemesa` (Norma 19) y añadida `generateSepaXml` (pain.008); helpers de fecha ISO/datetime, `xmlEscape`, `formatAmount` y `getMembershipFees` (lee precios de ClubConfig).
+- `server/src/routes/membershipRoutes.ts` — `POST /sepa-remesa` reemplazada por `GET /sepa-xml`.
+- `client/src/pages/admin/MembershipManagement.tsx` — botón "Remesa SEPA" → "Generar XML SEPA" con descarga directa (`handleGenerateSepaXml`); eliminados el panel de configuración, la columna de checkboxes "SEPA" y todo el estado/handlers de selección.
+- `client/src/types/membership.ts` — eliminados los tipos `SepaDownloadParams` y `SepaFilterType` (ya no se usan); se conserva `SepaSinMandatoResponse`.
+
 ## 2026-06-28 (sesión 1)
 
 ### fix(server): cerrar fugas de memoria en pool Prisma duplicado y SSE multijugador
